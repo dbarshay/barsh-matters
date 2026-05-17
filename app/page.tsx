@@ -783,7 +783,7 @@ function uniqueSuggestionValues(values: string[], limit = 12) {
 }
 
 async function fetchMatterByDisplayNumber(displayNumberValue: string) {
-  const res = await fetch(`/api/clio/find-matter?displayNumber=${encodeURIComponent(displayNumberValue)}`, {
+  const res = await fetch(`/api/claim-index/by-matter?matter=${encodeURIComponent(displayNumberValue)}`, {
     cache: "no-store",
   });
 
@@ -879,7 +879,7 @@ async function hydrateMatterResultFromContext(
   if (!base?.id) return base;
 
   try {
-    const res = await fetch(`/api/clio/matter-context?matterId=${encodeURIComponent(base.id)}`, {
+    const res = await fetch(`/api/claim-index/by-matter?matterId=${encodeURIComponent(base.id)}`, {
       cache: "no-store",
     });
 

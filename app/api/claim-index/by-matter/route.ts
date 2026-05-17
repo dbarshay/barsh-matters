@@ -114,13 +114,40 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const row = await prisma.claimIndex.findUnique({
-    where: { matter_id: matterId },
-  });
+  const normalizedDisplayNumber = cleanText(matterParam).toUpperCase().startsWith("BRL")
+    ? cleanText(matterParam).toUpperCase()
+    : `BRL${matterId}`;
+
+  const row =
+    (await prisma.claimIndex.findFirst({
+      where: {
+        OR: [
+          { matter_id: matterId },
+          { display_number: normalizedDisplayNumber },
+          { display_number: { equals: normalizedDisplayNumber, mode: "insensitive" } },
+        ],
+      },
+    })) ||
+    (await prisma.claimIndex.findFirst({
+      where: {
+        display_number: {
+          contains: String(matterId),
+          mode: "insensitive",
+        },
+      },
+      orderBy: { indexed_at: "desc" },
+    }));
 
   if (!row) {
     return NextResponse.json(
-      { ok: false, error: `Matter BRL${matterId} was not found in ClaimIndex.` },
+      {
+        ok: false,
+        error: `${normalizedDisplayNumber} was not found in ClaimIndex.`,
+        searched: {
+          matterId,
+          displayNumber: normalizedDisplayNumber,
+        },
+      },
       { status: 404 }
     );
   }

@@ -233,6 +233,7 @@ return (
 }
 
 const DENIAL_REASON_LABELS: Record<string, string> = {
+  "12497990": "Medical Necessity (Peer Review)",
   "12497975": "Medical Necessity (IME)",
   "12498065": "Fee Schedule / Coding",
 };

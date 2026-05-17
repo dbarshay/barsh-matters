@@ -47,7 +47,7 @@ export default function BarshHeaderQuickNav() {
 
       if (/^BRL\d+$/i.test(displayNumber)) {
         const response = await fetch(
-          `/api/clio/find-matter?displayNumber=${encodeURIComponent(displayNumber)}`,
+          `/api/claim-index/by-matter?matter=${encodeURIComponent(displayNumber)}`,
           { cache: "no-store" }
         );
 
