@@ -497,7 +497,7 @@ export default function FilteredMattersPage() {
       setMasterInfoContactLoading(true);
 
       const type = masterInfoContactType(masterInfoEditDialog.field);
-      const response = await fetch(`/api/clio/contacts/search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`, {
+      const response = await fetch(`/api/reference-data/contact-search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`, {
         cache: "no-store",
       });
       const json = await response.json();
@@ -3199,7 +3199,7 @@ export default function FilteredMattersPage() {
                             letterSpacing: "0.05em",
                           }}
                         >
-                          Search Clio Contact
+                          Search Local Contact
                           <input
                             ref={masterInfoPrimaryInputRef}
                             value={masterInfoContactSearch}

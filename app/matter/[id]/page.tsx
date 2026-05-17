@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 
+const DIRECT_MATTER_SETTLEMENTS_ENABLED = false;
+
 function num(v: any) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -2568,14 +2570,14 @@ const activeGroupKey =
     const query = textValue(settlementPreviewInput.settledWithContactSearch || settlementPreviewInput.settledWith);
 
     if (query.length < 2) {
-      alert("Enter at least 2 characters to search Clio contacts.");
+      alert("Enter at least 2 characters to search local contacts.");
       return;
     }
 
     setSettledWithContactLoading(true);
 
     try {
-      const res = await fetch(`/api/clio/contacts/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/reference-data/contact-search?q=${encodeURIComponent(query)}&type=individual`);
       const json = await res.json();
 
       if (!res.ok || !json?.ok) {
@@ -2586,7 +2588,7 @@ const activeGroupKey =
 
       setSettledWithContactResults(Array.isArray(json.contacts) ? json.contacts : []);
     } catch (err: any) {
-      alert(err?.message || "Could not search Clio contacts.");
+      alert(err?.message || "Could not search local contacts.");
       setSettledWithContactResults([]);
     } finally {
       setSettledWithContactLoading(false);
@@ -2720,7 +2722,7 @@ const activeGroupKey =
     }
 
     if (!textValue(settlementPreviewInput.settledWithContactId)) {
-      alert("Select Settled With from Clio contacts before previewing settlement.");
+      alert("Select Settled With from local contacts before previewing settlement.");
       return;
     }
 
@@ -4072,106 +4074,243 @@ const activeGroupKey =
             alignItems: "center",
             justifyContent: "center",
             padding: 24,
-            background: "rgba(15, 23, 42, 0.45)",
+            background: "rgba(15, 23, 42, 0.52)",
           }}
         >
           <div
             style={{
-              width: "min(520px, calc(100vw - 48px))",
-              border: "1px solid #cbd5e1",
-              borderRadius: 18,
+              width: "min(620px, calc(100vw - 48px))",
+              border: "1px solid #bfdbfe",
+              borderRadius: 20,
               background: "#fff",
               boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
-              padding: 20,
+              overflow: "hidden",
             }}
           >
-            <h2 style={{ marginTop: 0, marginBottom: 8 }}>
-              Edit {identityFieldLabel(identityFieldEditModal)}
-            </h2>
-
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 16 }}>
-              This updates the local ClaimIndex value used by the direct matter page.
-            </div>
-
-            <label style={{ display: "grid", gap: 6, fontWeight: 900, marginBottom: 16 }}>
-              <span>{identityFieldLabel(identityFieldEditModal)}</span>
-              <input
-                type="text"
-                value={identityFieldInput}
-                onChange={(event) => setIdentityFieldInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    void saveIdentityFieldEditDialog();
-                  }
-
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    setIdentityFieldEditModal(null);
-                    setDirectFieldEditResult(null);
-                  }
-                }}
-                autoFocus
-                disabled={directFieldEditLoading}
-                style={{
-                  height: 42,
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10,
-                  padding: "0 10px",
-                  fontWeight: 800,
-                }}
-              />
-            </label>
-
-            {directFieldEditResult && !directFieldEditResult.ok && (
-              <div style={{ color: "#991b1b", fontWeight: 800, marginBottom: 12 }}>
-                {textValue(directFieldEditResult.error) ||
-                  `${identityFieldLabel(identityFieldEditModal)} could not be updated.`}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 16,
+                padding: "18px 18px 16px",
+                borderBottom: "1px solid #dbeafe",
+                background: "#eff6ff",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    color: "#1d4ed8",
+                    fontSize: 21,
+                    lineHeight: 1.15,
+                    fontWeight: 950,
+                  }}
+                >
+                  Edit {identityFieldLabel(identityFieldEditModal)}
+                </h2>
+                <div
+                  style={{
+                    marginTop: 7,
+                    color: "#1e40af",
+                    fontSize: 13,
+                    fontWeight: 850,
+                  }}
+                >
+                  Direct Matter field edit · Local ClaimIndex update, no Clio writeback.
+                </div>
               </div>
-            )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button
                 type="button"
+                aria-label="Close edit dialog"
                 onClick={() => {
                   setIdentityFieldEditModal(null);
                   setDirectFieldEditResult(null);
                 }}
                 disabled={directFieldEditLoading}
                 style={{
-                  minWidth: 96,
+                  width: 38,
                   height: 38,
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10,
-                  background: "#f8fafc",
-                  color: "#334155",
+                  borderRadius: 999,
+                  border: "1px solid #bfdbfe",
+                  background: "#fff",
+                  color: "#64748b",
+                  fontSize: 26,
+                  lineHeight: "32px",
                   fontWeight: 900,
                   cursor: directFieldEditLoading ? "not-allowed" : "pointer",
                 }}
               >
-                Cancel
+                ×
               </button>
+            </div>
 
-              <button
-                type="button"
-                onClick={saveIdentityFieldEditDialog}
-                disabled={directFieldEditLoading || !textValue(identityFieldInput)}
+            <div style={{ padding: 18 }}>
+              <div
                 style={{
-                  minWidth: 118,
-                  height: 38,
-                  border: "1px solid #16a34a",
-                  borderRadius: 10,
-                  background: directFieldEditLoading ? "#bbf7d0" : "#16a34a",
-                  color: "#fff",
-                  fontWeight: 900,
-                  cursor:
-                    directFieldEditLoading || !textValue(identityFieldInput)
-                      ? "not-allowed"
-                      : "pointer",
+                  display: "grid",
+                  gap: 8,
+                  marginBottom: 16,
                 }}
               >
-                {directFieldEditLoading ? "Saving..." : "Save"}
-              </button>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 950,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#475569",
+                  }}
+                >
+                  Current
+                </div>
+                <div
+                  style={{
+                    minHeight: 62,
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 14px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 12,
+                    background: "#f8fafc",
+                    color: "#0f172a",
+                    fontSize: 16,
+                    fontWeight: 900,
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {identityFieldCurrentValue(identityFieldEditModal) || "—"}
+                </div>
+              </div>
+
+              <label style={{ display: "grid", gap: 8, marginBottom: 14 }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 950,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#475569",
+                  }}
+                >
+                  {identityFieldEditModal === "claimNumber" ? "Edit Claim Number" : "Search Local Contact"}
+                </span>
+                <input
+                  type="text"
+                  value={identityFieldInput}
+                  placeholder={
+                    identityFieldEditModal === "claimNumber"
+                      ? "Enter Claim Number"
+                      : `Start typing ${identityFieldLabel(identityFieldEditModal)}`
+                  }
+                  onChange={(event) => setIdentityFieldInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void saveIdentityFieldEditDialog();
+                    }
+
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setIdentityFieldEditModal(null);
+                      setDirectFieldEditResult(null);
+                    }
+                  }}
+                  autoFocus
+                  disabled={directFieldEditLoading}
+                  style={{
+                    height: 48,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 12,
+                    padding: "0 12px",
+                    fontSize: 16,
+                    fontWeight: 850,
+                    color: "#0f172a",
+                    outline: "none",
+                  }}
+                />
+              </label>
+
+              <div
+                style={{
+                  padding: "10px 12px",
+                  border: "1px solid #bae6fd",
+                  borderRadius: 10,
+                  background: "#e0f2fe",
+                  color: "#075985",
+                  fontSize: 13,
+                  fontWeight: 850,
+                  lineHeight: 1.3,
+                  marginBottom: 18,
+                }}
+              >
+                This dialog updates the local ClaimIndex value used by the direct matter page.  It does not search Clio contacts, validate Clio custom fields, or write to Clio.
+              </div>
+
+              {directFieldEditResult && !directFieldEditResult.ok && (
+                <div
+                  style={{
+                    padding: "9px 11px",
+                    border: "1px solid #fecaca",
+                    borderRadius: 10,
+                    background: "#fef2f2",
+                    color: "#991b1b",
+                    fontWeight: 850,
+                    marginBottom: 14,
+                  }}
+                >
+                  {textValue(directFieldEditResult.error) ||
+                    `${identityFieldLabel(identityFieldEditModal)} could not be updated.`}
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIdentityFieldEditModal(null);
+                    setDirectFieldEditResult(null);
+                  }}
+                  disabled={directFieldEditLoading}
+                  style={{
+                    minWidth: 110,
+                    height: 42,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 12,
+                    background: "#fff",
+                    color: "#334155",
+                    fontSize: 14,
+                    fontWeight: 950,
+                    cursor: directFieldEditLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={saveIdentityFieldEditDialog}
+                  disabled={directFieldEditLoading || !textValue(identityFieldInput)}
+                  style={{
+                    minWidth: 150,
+                    height: 42,
+                    border: "1px solid #16a34a",
+                    borderRadius: 12,
+                    background: directFieldEditLoading ? "#bbf7d0" : "#16a34a",
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 950,
+                    cursor:
+                      directFieldEditLoading || !textValue(identityFieldInput)
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {directFieldEditLoading ? "Saving..." : "Confirm Edit"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -6869,7 +7008,7 @@ const activeGroupKey =
                         settledWith: e.target.value,
                       })
                     }
-                    placeholder="Search Clio contacts"
+                    placeholder="Search local contacts"
                     style={{
                       width: "100%",
                       padding: 8,
@@ -6898,7 +7037,7 @@ const activeGroupKey =
 
                 {settlementPreviewInput.settledWithContactId && (
                   <div style={{ marginTop: 6, fontSize: 12, color: "#166534", fontWeight: 700 }}>
-                    Selected Clio person contact: {settlementPreviewInput.settledWithContactName} (ID {settlementPreviewInput.settledWithContactId})
+                    Selected local person contact: {settlementPreviewInput.settledWithContactName} (ID {settlementPreviewInput.settledWithContactId})
                   </div>
                 )}
 
@@ -7203,7 +7342,7 @@ const activeGroupKey =
                   {textValue(settlementPreviewInput.settledWithContactName) || "—"}
                 </div>
                 <div>
-                  <strong>Clio Contact ID:</strong>
+                  <strong>Local Contact ID:</strong>
                   <br />
                   {textValue(settlementPreviewInput.settledWithContactId) || "—"}
                 </div>
@@ -7216,12 +7355,12 @@ const activeGroupKey =
                   <strong>Source:</strong>
                   <br />
                   {textValue(settlementPreviewInput.settledWithContactId)
-                    ? "Selected from Clio person-contact search"
+                    ? "Selected from local person-contact search"
                     : "No Clio person contact selected"}
                 </div>
               </div>
               <div style={{ marginTop: 6, color: "#1e3a8a", fontSize: 12 }}>
-                SETTLED_WITH must be selected from Clio contacts and must validate as a Person contact before writeback.
+                SETTLED_WITH must be selected from local contacts and must validate as a Person contact before writeback.
               </div>
             </div>
 

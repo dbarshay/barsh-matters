@@ -87,7 +87,13 @@ function shapeMatter(row: any) {
     dateOfLoss: firstText(row.date_of_loss, raw?.dateOfLoss, raw?.date_of_loss),
 
     indexAaaNumber: firstText(row.index_aaa_number, raw?.indexAaaNumber, raw?.index_aaa_number),
-    masterLawsuitId: firstText(row.master_lawsuit_id, raw?.masterLawsuitId, raw?.master_lawsuit_id),
+    index_aaa_number: firstText(row.index_aaa_number, raw?.indexAaaNumber, raw?.index_aaa_number),
+
+    masterLawsuitId: firstText(row.master_lawsuit_id, raw?.masterLawsuitId, raw?.master_lawsuit_id, raw?.lawsuitId),
+    master_lawsuit_id: firstText(row.master_lawsuit_id, raw?.master_lawsuit_id, raw?.masterLawsuitId, raw?.lawsuitId),
+    masterLawsuitID: firstText(row.master_lawsuit_id, raw?.masterLawsuitID, raw?.masterLawsuitId, raw?.master_lawsuit_id, raw?.lawsuitId),
+    lawsuitId: firstText(row.master_lawsuit_id, raw?.lawsuitId, raw?.masterLawsuitId, raw?.master_lawsuit_id),
+    lawsuitID: firstText(row.master_lawsuit_id, raw?.lawsuitID, raw?.lawsuitId, raw?.masterLawsuitId, raw?.master_lawsuit_id),
 
     paymentVoluntary: row.payment_voluntary ?? raw?.paymentVoluntary ?? raw?.payment_voluntary ?? 0,
     balancePresuit: row.balance_presuit ?? raw?.balancePresuit ?? raw?.balance_presuit ?? row.balance_amount ?? 0,
