@@ -8,6 +8,19 @@ function textValue(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+const DENIAL_REASON_LABELS: Record<string, string> = {
+  "12497975": "Medical Necessity (IME)",
+  "12497990": "Medical Necessity (Peer Review)",
+};
+
+function denialReasonLabel(value: unknown): string {
+  const cleaned = textValue(value);
+  if (!cleaned) return "";
+  return DENIAL_REASON_LABELS[cleaned] || cleaned;
+}
+
+
+
 function jsonError(message: string, status = 400, details: Record<string, unknown> = {}) {
   return NextResponse.json(
     {

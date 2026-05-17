@@ -216,6 +216,7 @@ return (
 }
 
 const DENIAL_REASON_LABELS: Record<string, string> = {
+  "12497990": "Medical Necessity (Peer Review)",
   "12497975": "Medical Necessity (IME)",
   "12498065": "Fee Schedule / Coding",
 };
@@ -2940,14 +2941,14 @@ const activeGroupKey =
     const query = textValue(settlementPreviewInput.settledWithContactSearch || settlementPreviewInput.settledWith);
 
     if (query.length < 2) {
-      alert("Enter at least 2 characters to search Clio contacts.");
+      alert("Enter at least 2 characters to search local contacts.");
       return;
     }
 
     setSettledWithContactLoading(true);
 
     try {
-      const res = await fetch(`/api/clio/contacts/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/reference-data/contact-search?q=${encodeURIComponent(query)}&type=individual`);
       const json = await res.json();
 
       if (!res.ok || !json?.ok) {
@@ -2958,7 +2959,7 @@ const activeGroupKey =
 
       setSettledWithContactResults(Array.isArray(json.contacts) ? json.contacts : []);
     } catch (err: any) {
-      alert(err?.message || "Could not search Clio contacts.");
+      alert(err?.message || "Could not search local contacts.");
       setSettledWithContactResults([]);
     } finally {
       setSettledWithContactLoading(false);
@@ -3092,7 +3093,7 @@ const activeGroupKey =
     }
 
     if (!textValue(settlementPreviewInput.settledWithContactId)) {
-      alert("Select Settled With from Clio contacts before previewing settlement.");
+      alert("Select Settled With from local contacts before previewing settlement.");
       return;
     }
 
@@ -7503,7 +7504,7 @@ const activeGroupKey =
                         settledWith: e.target.value,
                       })
                     }
-                    placeholder="Search Clio contacts"
+                    placeholder="Search local contacts"
                     style={{
                       width: "100%",
                       padding: 8,
@@ -7532,7 +7533,7 @@ const activeGroupKey =
 
                 {settlementPreviewInput.settledWithContactId && (
                   <div style={{ marginTop: 6, fontSize: 12, color: "#166534", fontWeight: 700 }}>
-                    Selected Clio person contact: {settlementPreviewInput.settledWithContactName} (ID {settlementPreviewInput.settledWithContactId})
+                    Selected local person contact: {settlementPreviewInput.settledWithContactName} (ID {settlementPreviewInput.settledWithContactId})
                   </div>
                 )}
 
@@ -7837,7 +7838,7 @@ const activeGroupKey =
                   {textValue(settlementPreviewInput.settledWithContactName) || "—"}
                 </div>
                 <div>
-                  <strong>Clio Contact ID:</strong>
+                  <strong>Local Contact ID:</strong>
                   <br />
                   {textValue(settlementPreviewInput.settledWithContactId) || "—"}
                 </div>
@@ -7850,7 +7851,7 @@ const activeGroupKey =
                   <strong>Source:</strong>
                   <br />
                   {textValue(settlementPreviewInput.settledWithContactId)
-                    ? "Selected from Clio person-contact search"
+                    ? "Selected from local person-contact search"
                     : "No Clio person contact selected"}
                 </div>
               </div>
