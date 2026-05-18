@@ -123,12 +123,12 @@ for (const item of forbiddenUiPatterns) {
 
 const requiredUiPatterns = [
   {
-    label: "Barsh Matters Payments label",
-    pattern: /Barsh Matters Payments/,
+    label: "Payments label",
+    pattern: /Payments/,
   },
   {
-    label: "Barsh Matters Balance label",
-    pattern: /Barsh Matters Balance/,
+    label: "Balance label",
+    pattern: /Balance/,
   },
   {
     label: "local payment record void copy",
