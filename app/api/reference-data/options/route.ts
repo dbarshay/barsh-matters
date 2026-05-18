@@ -25,6 +25,13 @@ const TYPE_ALIASES: Record<string, string> = {
   rendering_provider: "treating_provider",
   rendering_providers: "treating_provider",
 
+  court: "court_venue",
+  courts: "court_venue",
+  venue: "court_venue",
+  venues: "court_venue",
+  court_venue: "court_venue",
+  court_venues: "court_venue",
+
   service_type: "service_type",
   service_types: "service_type",
   service: "service_type",
@@ -47,6 +54,7 @@ const TYPE_LABELS: Record<string, string> = {
   insurer: "Insurers / Companies",
   provider_client: "Providers / Clients",
   treating_provider: "Treating Providers",
+  court_venue: "Courts / Venues",
   service_type: "Service Types",
   denial_reason: "Denial Reasons",
   closed_reason: "Closed Reasons / Final Statuses",
