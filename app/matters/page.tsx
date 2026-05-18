@@ -326,6 +326,9 @@ export default function FilteredMattersPage() {
   const [masterPaymentCheckNumberInput, setMasterPaymentCheckNumberInput] = useState("");
   const [masterPaymentPosting, setMasterPaymentPosting] = useState(false);
   const [masterPaymentPostResult, setMasterPaymentPostResult] = useState<any>(null);
+  const [masterPaymentReceiptsLoading, setMasterPaymentReceiptsLoading] = useState(false);
+  const [masterPaymentReceipts, setMasterPaymentReceipts] = useState<any[]>([]);
+  const [masterPaymentReceiptsError, setMasterPaymentReceiptsError] = useState("");
 
   function masterPaymentPreviewAmountValue(): number {
     const cleaned = String(masterPaymentAmountInput || "").replace(/[$,\s]/g, "");
@@ -380,6 +383,63 @@ export default function FilteredMattersPage() {
         expectedBalance: Math.max(currentBalance - paymentToPost, 0),
       };
     });
+  }
+
+  async function loadMasterPaymentReceipts() {
+    const billRows = masterWorkspaceBillRows(masterSettlementDetailRows);
+
+    if (billRows.length === 0) {
+      setMasterPaymentReceipts([]);
+      setMasterPaymentReceiptsError("");
+      return;
+    }
+
+    setMasterPaymentReceiptsLoading(true);
+    setMasterPaymentReceiptsError("");
+
+    try {
+      const allReceipts: any[] = [];
+
+      for (const row of billRows) {
+        const matterId = Number(row?.matterId || row?.matter_id || row?.id || 0);
+        const display = clean(row?.displayNumber || row?.display_number);
+        const claimAmount = masterWorkspaceBillAmount(row);
+
+        if (!matterId) continue;
+
+        const response = await fetch(
+          `/api/matters/apply-payment?matterId=${encodeURIComponent(String(matterId))}&claimAmount=${encodeURIComponent(String(claimAmount))}`,
+          { cache: "no-store" }
+        );
+
+        const json = await response.json().catch(() => null);
+        if (!response.ok || !json?.ok) {
+          throw new Error(json?.error || `Payment receipt readback failed for ${display || matterId}.`);
+        }
+
+        const rows = Array.isArray(json.rows) ? json.rows : [];
+        for (const receipt of rows) {
+          allReceipts.push({
+            ...receipt,
+            sourceMatterId: matterId,
+            sourceDisplayNumber: display || receipt?.displayNumber || "",
+          });
+        }
+      }
+
+      allReceipts.sort((a, b) => {
+        const aTime = Date.parse(a?.createdAt || a?.updatedAt || "") || 0;
+        const bTime = Date.parse(b?.createdAt || b?.updatedAt || "") || 0;
+        if (aTime !== bTime) return bTime - aTime;
+        return Number(b?.id || 0) - Number(a?.id || 0);
+      });
+
+      setMasterPaymentReceipts(allReceipts);
+    } catch (error: any) {
+      setMasterPaymentReceiptsError(error?.message || String(error));
+    } finally {
+      setMasterPaymentReceiptsLoading(false);
+    }
   }
 
   async function postMasterPaymentLocally() {
@@ -460,6 +520,8 @@ export default function FilteredMattersPage() {
         message: `Posted ${money(amount)} across ${results.length} bill matter(s).`,
         results,
       });
+
+      await loadMasterPaymentReceipts();
 
       resetMasterPaymentPreviewForm();
       setMasterPaymentFormOpen(false);
@@ -1220,6 +1282,12 @@ export default function FilteredMattersPage() {
       billCount: billRows.length,
     };
   }, [masterSettlementDetailRows]);
+
+  useEffect(() => {
+    if (kind !== "master" || activeMasterWorkspaceTab !== "payments") return;
+    void loadMasterPaymentReceipts();
+  }, [kind, activeMasterWorkspaceTab, masterSettlementDetailRows]);
+
 
   const masterInsurerSummary = useMemo(() => {
     const insurers = Array.from(
@@ -2864,7 +2932,7 @@ export default function FilteredMattersPage() {
                         color: "#166534",
                       }}
                     >
-                      <span>Payment controls: Preview only</span>
+                      <span>Payment controls: Active</span>
                       <span
                         style={{
                           display: "inline-flex",
@@ -2917,13 +2985,65 @@ export default function FilteredMattersPage() {
                         Recent Receipts
                       </span>
                       <span style={{ fontSize: 12, fontWeight: 800, color: "#64748b" }}>
-                        None
+                        {masterPaymentReceiptsLoading ? "Loading..." : `${masterPaymentReceipts.length} shown`}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: 13, fontWeight: 750, color: "#64748b" }}>
-                      Posted lawsuit payments appear on child bill payment receipts.
-                    </div>
+                    {masterPaymentReceiptsError && (
+                      <div style={{ fontSize: 13, fontWeight: 750, color: "#991b1b" }}>
+                        {masterPaymentReceiptsError}
+                      </div>
+                    )}
+
+                    {!masterPaymentReceiptsError && masterPaymentReceipts.length === 0 && (
+                      <div style={{ fontSize: 13, fontWeight: 750, color: "#64748b" }}>
+                        No child bill payment receipts are currently active or historical for this lawsuit.
+                      </div>
+                    )}
+
+                    {!masterPaymentReceiptsError && masterPaymentReceipts.length > 0 && (
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: 6,
+                          maxHeight: 230,
+                          overflowY: "auto",
+                          paddingRight: 2,
+                        }}
+                      >
+                        {masterPaymentReceipts.slice(0, 8).map((receipt: any) => (
+                          <div
+                            key={`master-payment-receipt-${receipt.sourceDisplayNumber || receipt.displayNumber}-${receipt.id}`}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr auto",
+                              gap: 6,
+                              padding: "8px 9px",
+                              border: receipt.voided ? "1px solid #fecaca" : "1px solid #dbe4f0",
+                              borderRadius: 12,
+                              background: receipt.voided ? "#fff7f7" : "#ffffff",
+                            }}
+                          >
+                            <div style={{ display: "grid", gap: 2 }}>
+                              <div style={{ fontSize: 12, fontWeight: 950, color: "#0f172a" }}>
+                                {receipt.sourceDisplayNumber || receipt.displayNumber || "—"} · {receipt.paymentDate || receipt.transactionDate || "—"}
+                              </div>
+                              <div style={{ fontSize: 11, fontWeight: 750, color: "#475569" }}>
+                                {receipt.transactionType || "Payment"} · {receipt.transactionStatus || "—"} · Check {receipt.checkNumber || "—"}
+                              </div>
+                              {receipt.voided && (
+                                <div style={{ fontSize: 11, fontWeight: 900, color: "#991b1b" }}>
+                                  Voided
+                                </div>
+                              )}
+                            </div>
+                            <strong style={{ fontSize: 13, color: receipt.voided ? "#991b1b" : "#166534", whiteSpace: "nowrap" }}>
+                              {money(receipt.paymentAmount)}
+                            </strong>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
