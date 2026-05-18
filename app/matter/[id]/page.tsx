@@ -5903,7 +5903,7 @@ const activeGroupKey =
                         )}
                         <div>{paymentEditingReceipt ? "New Amount" : "Payment Amount"}: {money(paymentFormAmountValue())}</div>
                         {paymentEditingReceipt && (
-                          <div>Clio Delta: {signedMoneyValue(paymentFormDeltaValue())}</div>
+                          <div>Local Payment Delta: {signedMoneyValue(paymentFormDeltaValue())}</div>
                         )}
                         {paymentEditingReceipt && (
                           <div
@@ -5918,8 +5918,8 @@ const activeGroupKey =
                             }}
                           >
                             {Math.abs(paymentFormDeltaValue()) >= 0.005
-                              ? `This edit will change Clio financials by ${signedMoneyValue(paymentFormDeltaValue())}.`
-                              : "Metadata-only edit.  Clio financial totals will not change."}
+                              ? `This edit will change local payment totals by ${signedMoneyValue(paymentFormDeltaValue())}.`
+                              : "Metadata-only edit.  Local payment totals will not change."}
                           </div>
                         )}
                         <div>Expected Payments Posted: {money(expectedPaymentsPostedAfterPaymentForm())}</div>
@@ -6015,7 +6015,7 @@ const activeGroupKey =
                     </div>
 
                     <div style={{ padding: "0 18px 16px", fontSize: 12, color: "#64748b", fontWeight: 700 }}>
-                      Payment amount changes update Clio Payment Voluntary and Balance Presuit.  Other receipt fields are stored locally for posting history and remittance workflows.
+                      Payment amount changes update Barsh Matters local payment totals and Balance.  Other receipt fields are stored locally for posting history and remittance workflows.
                     </div>
                     </div>
                   </div>
@@ -6317,7 +6317,7 @@ const activeGroupKey =
                         type="button"
                         disabled={paymentVoidLoadingId === Number(receipt.id) || matterIsClosedForPayment()}
                         onClick={() => handleVoidPaymentReceipt(receipt)}
-                        title="Void payment and reverse Clio financial writeback."
+                        title="Void payment and reverse the local payment total."
                         style={{
                           minWidth: 48,
                           height: 30,
@@ -6458,7 +6458,7 @@ const activeGroupKey =
 
           {!paymentReceiptsLoading && paymentReceipts.length > 0 && (
             <div style={{ marginTop: 8, fontSize: 11, color: "#64748b", fontWeight: 700 }}>
-              Edit updates payment receipt details; amount edits apply only the difference to Clio.  Void reverses the Clio financial writeback and keeps the receipt as an audit record.
+              Edit updates payment receipt details; amount edits apply only the difference to local payment totals.  Void reverses the local payment total and keeps the receipt as an audit record.
             </div>
           )}
         </div>
