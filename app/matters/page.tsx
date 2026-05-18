@@ -609,6 +609,115 @@ export default function FilteredMattersPage() {
     );
   }
 
+  function masterLawsuitOptions(): any {
+    const local = masterLawsuitMetadata || {};
+    return local?.lawsuitOptions && typeof local.lawsuitOptions === "object" ? local.lawsuitOptions : {};
+  }
+
+  function masterLocalMetadataValue(field: string): string {
+    const local = masterLawsuitMetadata || {};
+    const options = masterLawsuitOptions();
+
+    if (field === "indexAaaNumber") {
+      return clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber);
+    }
+
+    if (field === "dateOfLoss") {
+      return clean(options?.dateOfLoss);
+    }
+
+    if (field === "dateFiled") {
+      return clean(options?.dateFiled);
+    }
+
+    if (field === "filingFee") {
+      return clean(options?.filingFee);
+    }
+
+    if (field === "serviceFee") {
+      return clean(options?.serviceFee);
+    }
+
+    if (field === "otherCourtCosts") {
+      return clean(options?.otherCourtCosts);
+    }
+
+    return "";
+  }
+
+  function masterIndexAaaDisplayValue(): string {
+    return masterInfoDisplayValue("indexAaaNumber", masterLocalMetadataValue("indexAaaNumber") || "—");
+  }
+
+  function masterDateFiledDisplayValue(): string {
+    const override = masterInfoOverrides.dateFiled;
+    if (override !== undefined) return formatMasterDateDisplay(override);
+
+    return formatMasterDateDisplay(masterLocalMetadataValue("dateFiled") || "—");
+  }
+
+  function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "otherCourtCosts"): string {
+    const override = masterInfoOverrides[field];
+    if (override !== undefined) return override || "$0.00";
+
+    const raw = masterLocalMetadataValue(field);
+    const n = Number(String(raw || "").replace(/[^0-9.-]/g, ""));
+
+    return Number.isFinite(n) && n !== 0 ? money(n) : "$0.00";
+  }
+
+  function masterCourtCostsDisplayValue(): string {
+    const filing = Number(String(masterInfoOverrides.filingFee ?? masterLocalMetadataValue("filingFee") ?? "").replace(/[^0-9.-]/g, ""));
+    const service = Number(String(masterInfoOverrides.serviceFee ?? masterLocalMetadataValue("serviceFee") ?? "").replace(/[^0-9.-]/g, ""));
+    const other = Number(String(masterInfoOverrides.otherCourtCosts ?? masterLocalMetadataValue("otherCourtCosts") ?? "").replace(/[^0-9.-]/g, ""));
+
+    const total =
+      (Number.isFinite(filing) ? filing : 0) +
+      (Number.isFinite(service) ? service : 0) +
+      (Number.isFinite(other) ? other : 0);
+
+    return money(total);
+  }
+
+  function localMetadataPayloadWith(field: string, after: string, selectedCourtDetails: any) {
+    const local = masterLawsuitMetadata || {};
+    const options = masterLawsuitOptions();
+
+    const payload: any = {
+      masterLawsuitId: clean(value),
+      venue: clean(local?.venue) || clean(options?.venue),
+      venueSelection: clean(local?.venueSelection) || clean(options?.venueSelection),
+      venueOther: clean(local?.venueOther) || clean(options?.venueOther),
+      indexAaaNumber: clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber),
+      dateOfLoss: clean(options?.dateOfLoss),
+      dateFiled: clean(options?.dateFiled),
+      filingFee: clean(options?.filingFee),
+      serviceFee: clean(options?.serviceFee),
+      otherCourtCosts: clean(options?.otherCourtCosts),
+      selectedCourtDetails: options?.selectedCourtDetails || null,
+    };
+
+    if (field === "court") {
+      payload.venue = after;
+      payload.venueSelection = after;
+      payload.venueOther = "";
+      payload.selectedCourtDetails = selectedCourtDetails || null;
+    }
+
+    if (field === "indexAaaNumber") payload.indexAaaNumber = after;
+    if (field === "dateOfLoss") payload.dateOfLoss = after;
+    if (field === "dateFiled") payload.dateFiled = after;
+    if (field === "filingFee") payload.filingFee = after;
+    if (field === "serviceFee") payload.serviceFee = after;
+    if (field === "otherCourtCosts") payload.otherCourtCosts = after;
+
+    return payload;
+  }
+
+  function masterInfoFieldPersistsLocally(field: string): boolean {
+    return ["court", "indexAaaNumber", "dateOfLoss", "dateFiled", "filingFee", "serviceFee", "otherCourtCosts"].includes(field);
+  }
+
   function masterInfoMoneyNumber(field: string, fallback: any): number {
     const raw = masterInfoDisplayValue(field, fallback);
     const cleaned = String(raw || "").replace(/[^0-9.-]/g, "");
@@ -638,6 +747,28 @@ export default function FilteredMattersPage() {
     if (!cleaned) return "";
     const n = Number(cleaned);
     return Number.isFinite(n) ? n.toFixed(2) : value;
+  }
+
+  function formatMasterDateDisplay(value: any): string {
+    const raw = clean(value);
+    if (!raw || raw === "—") return "—";
+
+    const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      return `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+    }
+
+    const slashMatch = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (slashMatch) {
+      return `${slashMatch[1].padStart(2, "0")}/${slashMatch[2].padStart(2, "0")}/${slashMatch[3]}`;
+    }
+
+    const date = new Date(raw);
+    if (!Number.isNaN(date.getTime())) {
+      return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+    }
+
+    return raw;
   }
 
   function masterInfoDateInputValue(value: any): string {
@@ -847,11 +978,13 @@ export default function FilteredMattersPage() {
       ...prev,
     ]);
 
-    if (kind === "court") {
+    const localMetadataPersisted = masterInfoFieldPersistsLocally(field);
+
+    if (localMetadataPersisted) {
       const masterLawsuitId = clean(value);
 
       if (!masterLawsuitId) {
-        window.alert("Cannot save Court because no Master Lawsuit ID is available.");
+        window.alert(`Cannot save ${label} because no Master Lawsuit ID is available.`);
         return;
       }
 
@@ -859,19 +992,13 @@ export default function FilteredMattersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({
-          masterLawsuitId,
-          venue: after,
-          venueSelection: after,
-          venueOther: "",
-          selectedCourtDetails,
-        }),
+        body: JSON.stringify(localMetadataPayloadWith(field, after, selectedCourtDetails)),
       });
 
       const json = await response.json().catch(() => null);
 
       if (!response.ok || !json?.ok) {
-        window.alert(json?.error || "Court could not be saved locally.");
+        window.alert(json?.error || `${label} could not be saved locally.`);
         return;
       }
 
@@ -891,7 +1018,7 @@ export default function FilteredMattersPage() {
         selectedContactId: masterInfoSelectedContact?.id || null,
         selectedContactName: masterInfoSelectedContact?.name || null,
         selectedCourtDetails,
-        localLawsuitPersisted: kind === "court",
+        localLawsuitPersisted: localMetadataPersisted,
         clioWriteAttempted: false,
       },
     });
@@ -1491,6 +1618,19 @@ export default function FilteredMattersPage() {
     return `${datesOfLoss[0]} + ${datesOfLoss.length - 1} more`;
   }, [rows]);
 
+  function masterDateOfLossDisplayValue(): string {
+    const override = masterInfoOverrides.dateOfLoss;
+    if (override !== undefined) return formatMasterDateDisplay(override);
+
+    const local = masterLocalMetadataValue("dateOfLoss");
+    if (local) return formatMasterDateDisplay(local);
+
+    if (!masterDateOfLossSummary || masterDateOfLossSummary === "—") return "—";
+    if (masterDateOfLossSummary.includes(" + ")) return masterDateOfLossSummary;
+
+    return formatMasterDateDisplay(masterDateOfLossSummary);
+  }
+
   function updateMasterSettlementBillDraft(rowId: string, field: "settlementAmount" | "interest" | "attorneyFee" | "filingFee", value: string) {
     setMasterSettlementBillDrafts((prev) => ({
       ...prev,
@@ -1798,11 +1938,11 @@ export default function FilteredMattersPage() {
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Date of Loss</span>
-                  <strong>{masterDateOfLossSummary}</strong>
+                  <strong>{masterDateOfLossDisplayValue()}</strong>
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Index / AAA Number</span>
-                  <strong>—</strong>
+                  <strong>{masterIndexAaaDisplayValue()}</strong>
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Court</span>
@@ -1810,7 +1950,7 @@ export default function FilteredMattersPage() {
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Date Filed</span>
-                  <strong>—</strong>
+                  <strong>{masterDateFiledDisplayValue()}</strong>
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Lawsuit Amount</span>
@@ -1818,7 +1958,7 @@ export default function FilteredMattersPage() {
                 </div>
                 <div style={masterSummaryItemStyle}>
                   <span>Court Costs</span>
-                  <strong>$0.00</strong>
+                  <strong>{masterCourtCostsDisplayValue()}</strong>
                 </div>
               </div>
             ) : (
@@ -2497,10 +2637,10 @@ export default function FilteredMattersPage() {
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Date of Loss</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("dateOfLoss", masterDateOfLossSummary)}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterDateOfLossDisplayValue()}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("dateOfLoss", "Date of Loss", masterInfoDisplayValue("dateOfLoss", masterDateOfLossSummary))}
+                          onClick={() => openMasterInfoEditDialog("dateOfLoss", "Date of Loss", masterInfoDisplayValue("dateOfLoss", masterDateOfLossDisplayValue()))}
                           title="Open Date of Loss edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
@@ -2551,10 +2691,10 @@ export default function FilteredMattersPage() {
                     >
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Index / AAA Number</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("indexAaaNumber", "—")}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterIndexAaaDisplayValue()}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("indexAaaNumber", "Index / AAA Number", masterInfoDisplayValue("indexAaaNumber", "—"))}
+                          onClick={() => openMasterInfoEditDialog("indexAaaNumber", "Index / AAA Number", masterIndexAaaDisplayValue())}
                           title="Open Index / AAA Number edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
@@ -2589,10 +2729,10 @@ export default function FilteredMattersPage() {
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Date Filed</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("dateFiled", "—")}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterDateFiledDisplayValue()}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("dateFiled", "Date Filed", masterInfoDisplayValue("dateFiled", "—"))}
+                          onClick={() => openMasterInfoEditDialog("dateFiled", "Date Filed", masterDateFiledDisplayValue())}
                           title="Open Date Filed edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
@@ -2608,10 +2748,10 @@ export default function FilteredMattersPage() {
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Index Fee</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("filingFee", "$0.00")}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterMetadataMoneyDisplayValue("filingFee")}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("filingFee", "Index Fee", masterInfoDisplayValue("filingFee", "$0.00"))}
+                          onClick={() => openMasterInfoEditDialog("filingFee", "Index Fee", masterMetadataMoneyDisplayValue("filingFee"))}
                           title="Open Index Fee edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
@@ -2627,10 +2767,10 @@ export default function FilteredMattersPage() {
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Service Fee</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("serviceFee", "$0.00")}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterMetadataMoneyDisplayValue("serviceFee")}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("serviceFee", "Service Fee", masterInfoDisplayValue("serviceFee", "$0.00"))}
+                          onClick={() => openMasterInfoEditDialog("serviceFee", "Service Fee", masterMetadataMoneyDisplayValue("serviceFee"))}
                           title="Open Service Fee edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
@@ -2646,10 +2786,10 @@ export default function FilteredMattersPage() {
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Other Court Fees</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterInfoDisplayValue("otherCourtCosts", "$0.00")}</strong>
+                        <strong style={masterSummaryCardValueStyle}>{masterMetadataMoneyDisplayValue("otherCourtCosts")}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("otherCourtCosts", "Other Court Fees", masterInfoDisplayValue("otherCourtCosts", "$0.00"))}
+                          onClick={() => openMasterInfoEditDialog("otherCourtCosts", "Other Court Fees", masterMetadataMoneyDisplayValue("otherCourtCosts"))}
                           title="Open Other Court Fees edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,

@@ -397,6 +397,11 @@ export async function POST(req: NextRequest) {
     const venue =
       venueSelection === "Other" ? venueOther : text(body?.venue || venueSelection);
     const indexAaaNumber = text(body?.indexAaaNumber);
+    const dateOfLoss = text(body?.dateOfLoss);
+    const dateFiled = text(body?.dateFiled);
+    const filingFee = text(body?.filingFee);
+    const serviceFee = text(body?.serviceFee);
+    const otherCourtCosts = text(body?.otherCourtCosts);
     const lawsuitNotes = text(body?.lawsuitNotes);
     const amountSoughtMode = normalizeAmountSoughtMode(body?.amountSoughtMode);
     const customAmountSought =
@@ -483,6 +488,11 @@ export async function POST(req: NextRequest) {
       venueSelection,
       venueOther,
       selectedCourtDetails: body?.selectedCourtDetails || null,
+      dateOfLoss: dateOfLoss || text(existingOptions.dateOfLoss),
+      dateFiled: dateFiled || text(existingOptions.dateFiled),
+      filingFee: filingFee || text(existingOptions.filingFee),
+      serviceFee: serviceFee || text(existingOptions.serviceFee),
+      otherCourtCosts: otherCourtCosts || text(existingOptions.otherCourtCosts),
       amountSoughtMode,
       customAmountSought,
       indexAaaNumber: clioPostFilingWrite.indexAaaNumber || indexAaaNumber,
