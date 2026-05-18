@@ -52,14 +52,26 @@ export default function BarshHeaderQuickNav() {
         );
 
         const json = await response.json();
-        const matterId = json?.matters?.[0]?.id || json?.matter?.id || json?.matterId || json?.id;
+        const resolvedMatter =
+          json?.matters?.[0] ||
+          json?.matter ||
+          json?.overlay ||
+          json?.row ||
+          json;
+        const resolvedDisplayNumber =
+          resolvedMatter?.displayNumber ||
+          resolvedMatter?.display_number ||
+          json?.displayNumber ||
+          json?.display_number ||
+          displayNumber;
+        const matterId = resolvedMatter?.id || json?.matterId || json?.id;
 
-        if (!response.ok || !json?.ok || !matterId) {
+        if (!response.ok || !json?.ok || (!resolvedDisplayNumber && !matterId)) {
           setStatus(`No matter found for ${displayNumber}.`);
           return;
         }
 
-        window.location.href = `/matter/${matterId}`;
+        window.location.href = `/matter/${encodeURIComponent(resolvedDisplayNumber || matterId)}`;
         return;
       }
 

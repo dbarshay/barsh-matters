@@ -792,7 +792,13 @@ async function fetchMatterByDisplayNumber(displayNumberValue: string) {
     throw new Error(json?.error || "Matter lookup failed.");
   }
 
-  return Array.isArray(json.matters) ? json.matters : [];
+  if (Array.isArray(json.matters)) return json.matters;
+  if (json.matter) return [json.matter];
+  if (json.overlay) return [json.overlay];
+  if (json.row) return [json.row];
+  if (json.displayNumber || json.display_number || json.matterId || json.id) return [json];
+
+  return [];
 }
 
 async function fetchFastRows(url: string) {
@@ -1687,10 +1693,11 @@ export default function Home() {
         throw new Error(`No exact matter found for ${display}.`);
       }
 
-      const id = matterId(exact);
+      const resolvedDisplay = displayNumber(exact) || display;
+      const id = resolvedDisplay || matterId(exact);
 
       if (!id) {
-        throw new Error(`Matter ${display} was found, but no matter id was returned.`);
+        throw new Error(`Matter ${display} was found, but no matter number was returned.`);
       }
 
       window.location.href = `/matter/${encodeURIComponent(id)}`;

@@ -701,6 +701,8 @@ const activeGroupKey =
 
       if (displayNumber) {
         params.set("matterDisplayNumber", displayNumber);
+      } else if (/^\d+$/.test(String(matterId || ""))) {
+        params.set("matterDisplayNumber", String(matterId));
       }
 
       if (masterLawsuitId) {
@@ -1804,6 +1806,7 @@ const activeGroupKey =
 
         if (Number.isFinite(numericMatterId) && numericMatterId > 0) {
           localParams.set("matterId", String(numericMatterId));
+          localParams.set("matterDisplayNumber", String(matterId));
         } else {
           localParams.set("displayNumber", String(matterId));
         }

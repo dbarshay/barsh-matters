@@ -36,16 +36,33 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const matterId = Number(url.searchParams.get("matterId") || "");
-    const displayNumber = textValue(url.searchParams.get("displayNumber"));
+    const displayNumber = textValue(
+      url.searchParams.get("displayNumber") ||
+      url.searchParams.get("matterDisplayNumber")
+    );
+    const normalizedDisplayNumber =
+      displayNumber && /^\d+$/.test(displayNumber)
+        ? `BRL${displayNumber}`
+        : displayNumber;
 
     if ((!Number.isFinite(matterId) || matterId <= 0) && !displayNumber) {
       return jsonError("A valid matterId or displayNumber is required.");
     }
 
+    const displayNumberWhere =
+      displayNumber && normalizedDisplayNumber && normalizedDisplayNumber !== displayNumber
+        ? {
+            OR: [
+              { display_number: displayNumber },
+              { display_number: normalizedDisplayNumber },
+            ],
+          }
+        : { display_number: displayNumber };
+
     const row = await prisma.claimIndex.findFirst({
-      where: Number.isFinite(matterId) && matterId > 0
-        ? { matter_id: matterId }
-        : { display_number: displayNumber },
+      where: displayNumber
+        ? displayNumberWhere
+        : { matter_id: matterId },
       select: {
         matter_id: true,
         display_number: true,
