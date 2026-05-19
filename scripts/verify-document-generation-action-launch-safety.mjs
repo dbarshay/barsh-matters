@@ -31,7 +31,7 @@ console.log("=== DOCUMENT GENERATION ACTION POPUP SAFETY VERIFICATION ===");
 mustContain(direct, directPath, "direct launcher", "launchMatterDocumentGenerationDialog");
 mustContain(direct, directPath, "direct popup state", "matterDocumentGenerationPopupOpen");
 mustContain(direct, directPath, "direct popup renderer", "renderMatterDocumentGenerationPopup");
-mustContain(direct, directPath, "direct popup title", "Direct Matter Document Generation Preview");
+mustContain(direct, directPath, "direct popup title", "Direct Matter Document Generation");
 mustContain(direct, directPath, "direct action title", "Open the Direct Matter document generation preview popup.");
 mustContain(direct, directPath, "direct preview loader", "loadMatterDocumentDataPreview");
 mustContain(direct, directPath, "direct preview panel reuse", "renderMatterDocumentDataPreviewPanel");
@@ -41,7 +41,7 @@ mustContain(direct, directPath, "Document Generation label", "Document Generatio
 mustContain(master, masterPath, "master launcher", "launchMasterDocumentGenerationDialog");
 mustContain(master, masterPath, "master popup state", "masterDocumentGenerationPopupOpen");
 mustContain(master, masterPath, "master popup renderer", "renderMasterDocumentGenerationPopup");
-mustContain(master, masterPath, "master popup title", "Master Lawsuit Document Generation Preview");
+mustContain(master, masterPath, "master popup title", "Master Lawsuit Document Generation");
 mustContain(master, masterPath, "master action title", "Open the Master Lawsuit document generation preview popup.");
 mustContain(master, masterPath, "master preview loader", "loadMasterDocumentDataPreview");
 mustContain(master, masterPath, "master preview panel reuse", "renderMasterDocumentDataPreviewPanel");

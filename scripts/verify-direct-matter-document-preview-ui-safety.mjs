@@ -31,9 +31,9 @@ mustContain("matter preview result state", "matterDocumentDataPreview");
 mustContain("matter preview loader", "loadMatterDocumentDataPreview");
 mustContain("matter preview renderer", "renderMatterDocumentDataPreviewPanel");
 mustContain("direct matter packet endpoint", "/api/documents/matter-packet");
-mustContain("preview button", "Preview Matter Data");
-mustContain("templateFields JSON details", "Raw templateFields JSON");
-mustContain("referenceData JSON details", "Raw referenceData JSON");
+mustContain("preview button", "Refresh Data");
+mustContain("templateFields JSON details", "Raw Template Fields");
+mustContain("referenceData JSON details", "Raw Reference Data");
 mustContain("documents section renderer", "{renderMatterDocumentDataPreviewPanel()}");
 mustContain("explicit no generation language", "It does not generate documents, upload documents, write to Clio, or change the print queue.");
 

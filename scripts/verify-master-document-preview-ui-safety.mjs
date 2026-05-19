@@ -32,10 +32,10 @@ mustContain("master preview id resolver", "currentMasterLawsuitIdForDocumentPrev
 mustContain("master preview loader", "loadMasterDocumentDataPreview");
 mustContain("master preview renderer", "renderMasterDocumentDataPreviewPanel");
 mustContain("master packet endpoint", "/api/documents/packet?masterLawsuitId=");
-mustContain("preview button", "Preview Lawsuit Data");
-mustContain("templateFields JSON details", "Raw templateFields JSON");
-mustContain("referenceData JSON details", "Raw referenceData JSON");
-mustContain("selectedCourtDetails JSON details", "Raw selectedCourtDetails JSON");
+mustContain("preview button", "Refresh Data");
+mustContain("templateFields JSON details", "Raw Template Fields");
+mustContain("referenceData JSON details", "Raw Reference Data");
+mustContain("selectedCourtDetails JSON details", "Raw Court Details");
 mustContain("explicit no generation language", "It does not generate documents, upload documents, write to Clio, or change the print queue.");
 mustContain("documents workspace renderer", "{renderMasterDocumentDataPreviewPanel()}");
 

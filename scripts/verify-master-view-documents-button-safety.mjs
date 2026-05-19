@@ -30,11 +30,11 @@ mustContain("Document Generation action label", "Document Generation");
 mustContain("document generation launcher", "launchMasterDocumentGenerationDialog");
 mustContain("document generation popup state", "masterDocumentGenerationPopupOpen");
 mustContain("document generation popup renderer", "renderMasterDocumentGenerationPopup");
-mustContain("master popup title", "Master Lawsuit Document Generation Preview");
+mustContain("master popup title", "Master Lawsuit Document Generation");
 mustContain("master popup action title", "Open the Master Lawsuit document generation preview popup.");
 mustContain("master preview loader", "loadMasterDocumentDataPreview");
 mustContain("master preview panel reuse", "renderMasterDocumentDataPreviewPanel");
-mustContain("Preview Lawsuit Data button", "Preview Lawsuit Data");
+mustContain("Refresh Data button", "Refresh Data");
 mustContain("Master packet endpoint", "/api/documents/packet?masterLawsuitId=");
 mustContain("master no-generation language", "No documents are generated from this popup.");
 

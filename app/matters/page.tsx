@@ -1779,7 +1779,7 @@ export default function FilteredMattersPage() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Master Lawsuit Document Generation Preview"
+        aria-label="Master Lawsuit Document Generation"
         style={{
           position: "fixed",
           left: 24,
@@ -1808,9 +1808,9 @@ export default function FilteredMattersPage() {
         >
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: 20 }}>Document Generation Preview</h2>
+              <h2 style={{ margin: 0, fontSize: 22 }}>Document Generation</h2>
               <div style={{ marginTop: 4, color: "#64748b", fontWeight: 800, fontSize: 12 }}>
-                Master Lawsuit local packet data only.  No documents are generated from this popup.
+                Review the local lawsuit data that future templates will use.  No documents are generated from this popup.
               </div>
             </div>
 
@@ -1860,9 +1860,9 @@ export default function FilteredMattersPage() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 18 }}>Document Data Preview</h3>
+            <h3 style={{ margin: 0, fontSize: 18 }}>Template Data Review</h3>
             <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13, maxWidth: 860 }}>
-              Read-only local packet data for future Master Lawsuit templates.  This preview reads local Lawsuit metadata, ClaimIndex, and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+              This is a read-only review of the data available for future Master Lawsuit templates.  It reads local Lawsuit metadata, ClaimIndex, and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
             </p>
           </div>
 
@@ -1881,7 +1881,7 @@ export default function FilteredMattersPage() {
               whiteSpace: "nowrap",
             }}
           >
-            {masterDocumentDataPreviewLoading ? "Loading..." : "Preview Lawsuit Data"}
+            {masterDocumentDataPreviewLoading ? "Loading..." : "Refresh Data"}
           </button>
         </div>
 
@@ -1966,21 +1966,21 @@ export default function FilteredMattersPage() {
             </div>
 
             <details style={{ marginTop: 12 }}>
-              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw templateFields JSON</summary>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Template Fields</summary>
               <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(templateFields, null, 2)}
               </pre>
             </details>
 
             <details style={{ marginTop: 10 }}>
-              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw referenceData JSON</summary>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Reference Data</summary>
               <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(referenceData, null, 2)}
               </pre>
             </details>
 
             <details style={{ marginTop: 10 }}>
-              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw selectedCourtDetails JSON</summary>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Court Details</summary>
               <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(uiFields.selectedCourtDetails || templateFields.courtDetails || null, null, 2)}
               </pre>
