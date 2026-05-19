@@ -43,7 +43,7 @@ export type GraphDraftPayloadPreview = {
     toRecipients: GraphRecipientPayload[];
     ccRecipients: GraphRecipientPayload[];
     bccRecipients: GraphRecipientPayload[];
-    singleValueExtendedProperties: Array<{
+    singleValueExtendedProperties?: Array<{
       id: string;
       value: string;
     }>;
@@ -217,7 +217,9 @@ export function buildGraphDraftPayloadPreview(input: GraphDraftInput): GraphDraf
       toRecipients: toGraphRecipients(to),
       ccRecipients: toGraphRecipients(cc),
       bccRecipients: toGraphRecipients(bcc),
-      singleValueExtendedProperties: extendedProperties,
+      ...(extendedProperties.length > 0
+        ? { singleValueExtendedProperties: extendedProperties }
+        : {}),
     },
     attachmentPlan,
     validation: {

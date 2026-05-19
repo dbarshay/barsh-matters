@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertGraphDraftEnvironmentReady, graphFetchJson, graphMailboxMessagesUrl } from "@/lib/graph/client";
 import { buildGraphDraftPayloadPreview, normalizeGraphRecipients } from "@/lib/graph/draft";
 import { persistGraphDraftMetadata } from "@/lib/graph/emailPersistence";
+import { resolveMaildropForGraphDraftMatterId } from "@/lib/graph/maildropForDraft";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,59 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const context = objectValue(body.context);
+  let context = objectValue(body.context);
   const draft = objectValue(body.draft);
+
+  const resolvedMaildrop =
+    !clean(context.clioMaildropEmail) && body?.matterId
+      ? await resolveMaildropForGraphDraftMatterId(body.matterId)
+      : null;
+
+  if (resolvedMaildrop?.clioMaildropEmail) {
+    context = {
+      ...context,
+      clioMaildropEmail: resolvedMaildrop.clioMaildropEmail,
+      clioMaildropLabel: resolvedMaildrop.clioMaildropLabel,
+    };
+  }
+
+  let to = normalizeGraphRecipients(body.to || draft.to || context.to || context.suggestedToEmail);
+  let cc = normalizeGraphRecipients(
+    body.cc ||
+      draft.cc ||
+      (context.clioMaildropEmail
+        ? [{ name: context.clioMaildropLabel || "MailDrop", email: context.clioMaildropEmail }]
+        : context.suggestedCcEmail)
+  );
+  let bcc = normalizeGraphRecipients(body.bcc || draft.bcc);
+
+  if (resolvedMaildrop?.clioMaildropEmail) {
+    const resolvedMaildropCc = normalizeGraphRecipients([
+      {
+        name: resolvedMaildrop.clioMaildropLabel,
+        email: resolvedMaildrop.clioMaildropEmail,
+      },
+    ]);
+
+    const existingCcEmails = new Set(
+      cc
+        .map((recipient) => clean(recipient.email).toLowerCase())
+        .filter(Boolean)
+    );
+    const missingMaildropCc = resolvedMaildropCc.filter((recipient) => {
+      const email = clean(recipient.email).toLowerCase();
+      return email && !existingCcEmails.has(email);
+    });
+
+    if (missingMaildropCc.length > 0) {
+      cc = [...cc, ...missingMaildropCc];
+    }
+  }
+
+  const resolvedMatterId = context.matterId || body.matterId || null;
+  const resolvedMatterDisplayNumber =
+    clean(context.matterDisplayNumber || context.clioDisplayNumber) ||
+    (resolvedMatterId && /^\d+$/.test(String(resolvedMatterId)) ? `BRL${String(resolvedMatterId)}` : "");
 
   const preview =
     body.graphDraftPayloadPreview && typeof body.graphDraftPayloadPreview === "object"
@@ -34,15 +86,9 @@ export async function POST(req: NextRequest) {
       : buildGraphDraftPayloadPreview({
           subject: clean(body.subject || draft.subject || context.subject) || "Document",
           bodyText: clean(body.bodyText || body.body || draft.body || context.body) || "Please see the attached document.",
-          to: normalizeGraphRecipients(body.to || draft.to || context.to || context.suggestedToEmail),
-          cc: normalizeGraphRecipients(
-            body.cc ||
-              draft.cc ||
-              (context.clioMaildropEmail
-                ? [{ name: context.clioMaildropLabel || "MailDrop", email: context.clioMaildropEmail }]
-                : context.suggestedCcEmail)
-          ),
-          bcc: normalizeGraphRecipients(body.bcc || draft.bcc),
+          to,
+          cc,
+          bcc,
           attachments: Array.isArray(body.attachments)
             ? body.attachments
             : Array.isArray(draft.attachments)
@@ -50,8 +96,8 @@ export async function POST(req: NextRequest) {
               : [],
           matterContext: {
             source: clean(context.source),
-            matterId: context.matterId,
-            matterDisplayNumber: clean(context.matterDisplayNumber || context.clioDisplayNumber),
+            matterId: resolvedMatterId,
+            matterDisplayNumber: resolvedMatterDisplayNumber,
             masterLawsuitId: clean(context.masterLawsuitId),
             clioMatterId: context.clioMatterId,
             clioDisplayNumber: clean(context.clioDisplayNumber),
@@ -180,8 +226,8 @@ export async function POST(req: NextRequest) {
     payload: preview,
     context: {
       source: clean(context.source),
-      matterId: context.matterId,
-      matterDisplayNumber: clean(context.matterDisplayNumber || context.clioDisplayNumber),
+      matterId: resolvedMatterId,
+      matterDisplayNumber: resolvedMatterDisplayNumber,
       masterLawsuitId: clean(context.masterLawsuitId),
       clioMatterId: context.clioMatterId,
       clioDisplayNumber: clean(context.clioDisplayNumber),
@@ -196,6 +242,9 @@ export async function POST(req: NextRequest) {
     graphCallsMade: true,
     createsOutlookDraft: true,
     databaseRecordsChanged: true,
+    maildropResolutionAttempted: Boolean(body?.matterId),
+    maildropResolvedForPayload: Boolean(resolvedMaildrop?.clioMaildropEmail),
+    maildropResolutionSource: resolvedMaildrop?.source || null,
     payload: preview,
     draft: draftMetadata,
     persisted,
