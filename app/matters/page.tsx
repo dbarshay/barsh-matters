@@ -269,7 +269,7 @@ function filteredUrl(kind: FilterKind, value: string) {
 }
 
 type WorkflowKind = "patient" | "claim" | "";
-type MasterWorkspaceTab = "documents" | "settlement" | "payments" | "close_paid_settlements";
+type MasterWorkspaceTab = "documents" | "settlement" | "payments" | "email_threads" | "close_paid_settlements";
 
 function getWorkflowFromUrl(): WorkflowKind {
   if (typeof window === "undefined") return "";
@@ -310,6 +310,14 @@ export default function FilteredMattersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeMasterWorkspaceTab, setActiveMasterWorkspaceTab] = useState<MasterWorkspaceTab>("payments");
+  const [masterEmailThreadPreviewLoading, setMasterEmailThreadPreviewLoading] = useState(false);
+  const [masterEmailThreadPreviewResult, setMasterEmailThreadPreviewResult] = useState<any>(null);
+  const [masterGraphThreadSyncPreviewLoading, setMasterGraphThreadSyncPreviewLoading] = useState(false);
+  const [masterGraphThreadSyncPreviewResult, setMasterGraphThreadSyncPreviewResult] = useState<any>(null);
+  const [masterGraphThreadSyncLoading, setMasterGraphThreadSyncLoading] = useState(false);
+  const [masterGraphThreadSyncResult, setMasterGraphThreadSyncResult] = useState<any>(null);
+  const [expandedMasterEmailThreadId, setExpandedMasterEmailThreadId] = useState<string | null>(null);
+  const [expandedMasterEmailMessageId, setExpandedMasterEmailMessageId] = useState<string | null>(null);
 
   function masterPaymentTodayInput(): string {
     const d = new Date();
@@ -1869,6 +1877,521 @@ export default function FilteredMattersPage() {
   }
 
 
+  function formatMasterEmailThreadTimestamp(value: any): string {
+    const raw = clean(value);
+    if (!raw) return "—";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function summarizeMasterEmailRecipients(value: any): string {
+    const recipients = Array.isArray(value) ? value : [];
+    const labels = recipients
+      .map((recipient: any) => {
+        const emailAddress = recipient?.emailAddress || {};
+        const name = clean(emailAddress.name || recipient?.name);
+        const address = clean(emailAddress.address || recipient?.email || recipient?.address);
+        if (name && address) return `${name} <${address}>`;
+        return name || address;
+      })
+      .filter(Boolean);
+
+    return labels.length ? labels.join(", ") : "—";
+  }
+
+  function currentMasterEmailLawsuitId(): string {
+    return currentMasterLawsuitIdForDocumentPreview() || clean(value);
+  }
+
+  function firstMasterEmailConversationId(): string {
+    const threads = Array.isArray(masterEmailThreadPreviewResult?.threads) ? masterEmailThreadPreviewResult.threads : [];
+    return clean(threads[0]?.conversationId);
+  }
+
+  function masterEmailSyncContext(conversationId: string) {
+    const masterId = currentMasterEmailLawsuitId();
+    const threads = Array.isArray(masterEmailThreadPreviewResult?.threads) ? masterEmailThreadPreviewResult.threads : [];
+    const matchingThread =
+      threads.find((thread: any) => clean(thread?.conversationId) === conversationId) ||
+      threads[0] ||
+      {};
+
+    return {
+      conversationId,
+      masterLawsuitId: masterId,
+      clioDisplayNumber: clean(matchingThread?.clioDisplayNumber),
+      clioMaildropLabel: clean(matchingThread?.clioMaildropLabel),
+      limit: 25,
+    };
+  }
+
+  async function loadMasterEmailThreadPreview() {
+    const masterId = currentMasterEmailLawsuitId();
+
+    if (!masterId) {
+      setMasterEmailThreadPreviewResult({
+        ok: false,
+        error: "No Lawsuit ID is available for master Email / Threads lookup.",
+      });
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("masterLawsuitId", masterId);
+    params.set("limit", "25");
+
+    setMasterEmailThreadPreviewLoading(true);
+    setMasterEmailThreadPreviewResult(null);
+
+    try {
+      const response = await fetch(`/api/graph/local-thread-preview?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const json = await response.json().catch(() => ({}));
+      setMasterEmailThreadPreviewResult(json);
+    } catch (err: any) {
+      setMasterEmailThreadPreviewResult({
+        ok: false,
+        error: err?.message || "Could not load local master email/thread records.",
+      });
+    } finally {
+      setMasterEmailThreadPreviewLoading(false);
+    }
+  }
+
+  async function previewMasterGraphThreadUpdates() {
+    const conversationId = firstMasterEmailConversationId();
+
+    if (!conversationId) {
+      setMasterGraphThreadSyncPreviewResult({
+        ok: false,
+        error: "Load local Master Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+      });
+      return;
+    }
+
+    setMasterGraphThreadSyncPreviewLoading(true);
+    setMasterGraphThreadSyncPreviewResult(null);
+    setMasterGraphThreadSyncResult(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.set("confirm", "preview-graph-thread-sync");
+      params.set("conversationId", conversationId);
+      params.set("limit", "25");
+
+      const response = await fetch(`/api/graph/thread-sync-preview?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const json = await response.json().catch(() => ({}));
+      setMasterGraphThreadSyncPreviewResult(json);
+    } catch (err: any) {
+      setMasterGraphThreadSyncPreviewResult({
+        ok: false,
+        error: err?.message || "Master Graph thread sync preview failed.",
+      });
+    } finally {
+      setMasterGraphThreadSyncPreviewLoading(false);
+    }
+  }
+
+  async function syncMasterGraphThreadToBarshMatters() {
+    const conversationId = firstMasterEmailConversationId();
+
+    if (!conversationId) {
+      setMasterGraphThreadSyncResult({
+        ok: false,
+        error: "Load local Master Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+      });
+      return;
+    }
+
+    if (!masterGraphThreadSyncPreviewResult || masterGraphThreadSyncPreviewResult.action !== "graph-thread-sync-preview") {
+      setMasterGraphThreadSyncResult({
+        ok: false,
+        error: "Run Preview Graph Updates before syncing this master thread to Barsh Matters.",
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata only.  It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation."
+    );
+
+    if (!confirmed) return;
+
+    setMasterGraphThreadSyncLoading(true);
+    setMasterGraphThreadSyncResult(null);
+
+    try {
+      const response = await fetch("/api/graph/thread-sync?confirm=sync-graph-thread", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(masterEmailSyncContext(conversationId)),
+      });
+
+      const json = await response.json().catch(() => ({}));
+      setMasterGraphThreadSyncResult(json);
+
+      if (response.ok && json?.action === "graph-thread-sync" && json?.databaseRecordsChanged === true) {
+        await loadMasterEmailThreadPreview();
+      }
+    } catch (err: any) {
+      setMasterGraphThreadSyncResult({
+        ok: false,
+        error: err?.message || "Master Graph thread sync failed.",
+      });
+    } finally {
+      setMasterGraphThreadSyncLoading(false);
+    }
+  }
+
+  function renderMasterEmailThreadsPanel() {
+    const threads = Array.isArray(masterEmailThreadPreviewResult?.threads) ? masterEmailThreadPreviewResult.threads : [];
+    const counts = masterEmailThreadPreviewResult?.counts || {};
+    const masterId = currentMasterEmailLawsuitId();
+    const hasConversationId = Boolean(firstMasterEmailConversationId());
+    const syncPreviewCounts = masterGraphThreadSyncPreviewResult?.counts || {};
+    const syncCounts = masterGraphThreadSyncResult?.counts || {};
+
+    return (
+      <section id="master-email-threads-section" style={masterWorkspacePanelStyle}>
+        <div style={masterWorkspacePanelHeaderStyle}>
+          <div>
+            <div style={masterWorkspacePanelEyebrowStyle}>Active Workspace</div>
+            <h2 style={masterWorkspacePanelTitleStyle}>Email / Threads</h2>
+            <p style={{ margin: "6px 0 0", color: colors.muted, lineHeight: 1.5 }}>
+              Master Lawsuit email metadata and Microsoft Graph thread sync.  Local preview reads Barsh Matters records only.  Graph update preview reads Microsoft Graph without persistence.  Confirmed sync persists local Barsh Matters email metadata only.
+            </p>
+          </div>
+          <div style={masterWorkspacePanelPillStyle}>Preview-first Graph sync</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          <button
+            type="button"
+            onClick={loadMasterEmailThreadPreview}
+            disabled={masterEmailThreadPreviewLoading || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
+            style={{
+              padding: "8px 11px",
+              border: "1px solid #2563eb",
+              background: masterEmailThreadPreviewLoading ? "#f3f4f6" : "#2563eb",
+              color: masterEmailThreadPreviewLoading ? "#666" : "#fff",
+              borderRadius: 8,
+              cursor: masterEmailThreadPreviewLoading ? "not-allowed" : "pointer",
+              fontWeight: 850,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {masterEmailThreadPreviewLoading ? "Loading..." : "Refresh Email Threads"}
+          </button>
+
+          <button
+            type="button"
+            onClick={previewMasterGraphThreadUpdates}
+            disabled={!hasConversationId || masterEmailThreadPreviewLoading || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
+            title={!hasConversationId ? "Load local Master Email / Threads first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
+            style={{
+              padding: "8px 11px",
+              border: "1px solid #0f766e",
+              background:
+                !hasConversationId || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading ? "#f3f4f6" : "#0f766e",
+              color:
+                !hasConversationId || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading ? "#666" : "#fff",
+              borderRadius: 8,
+              cursor:
+                !hasConversationId || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading ? "not-allowed" : "pointer",
+              fontWeight: 850,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {masterGraphThreadSyncPreviewLoading ? "Previewing..." : "Preview Graph Updates"}
+          </button>
+
+          <button
+            type="button"
+            onClick={syncMasterGraphThreadToBarshMatters}
+            disabled={
+              !hasConversationId ||
+              !masterGraphThreadSyncPreviewResult ||
+              masterGraphThreadSyncPreviewLoading ||
+              masterGraphThreadSyncLoading
+            }
+            title="Run only after Preview Graph Updates.  Persists local EmailThread / EmailMessage metadata only."
+            style={{
+              padding: "8px 11px",
+              border: "1px solid #7c3aed",
+              background:
+                !hasConversationId ||
+                !masterGraphThreadSyncPreviewResult ||
+                masterGraphThreadSyncPreviewLoading ||
+                masterGraphThreadSyncLoading
+                  ? "#f3f4f6"
+                  : "#7c3aed",
+              color:
+                !hasConversationId ||
+                !masterGraphThreadSyncPreviewResult ||
+                masterGraphThreadSyncPreviewLoading ||
+                masterGraphThreadSyncLoading
+                  ? "#666"
+                  : "#fff",
+              borderRadius: 8,
+              cursor:
+                !hasConversationId ||
+                !masterGraphThreadSyncPreviewResult ||
+                masterGraphThreadSyncPreviewLoading ||
+                masterGraphThreadSyncLoading
+                  ? "not-allowed"
+                  : "pointer",
+              fontWeight: 850,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {masterGraphThreadSyncLoading ? "Syncing..." : "Sync Thread to Barsh Matters"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 10,
+            marginBottom: 14,
+          }}
+        >
+          <div style={masterWorkspaceCardStyle}>
+            <div style={masterWorkspaceCardLabelStyle}>Lawsuit ID</div>
+            <div style={masterWorkspaceCardTextStyle}>{masterId || "—"}</div>
+          </div>
+          <div style={masterWorkspaceCardStyle}>
+            <div style={masterWorkspaceCardLabelStyle}>Threads</div>
+            <div style={masterWorkspaceCardTextStyle}>{Number(counts.threads || 0)}</div>
+          </div>
+          <div style={masterWorkspaceCardStyle}>
+            <div style={masterWorkspaceCardLabelStyle}>Messages</div>
+            <div style={masterWorkspaceCardTextStyle}>{Number(counts.messages || 0)}</div>
+          </div>
+          <div style={masterWorkspaceCardStyle}>
+            <div style={masterWorkspaceCardLabelStyle}>Safety</div>
+            <div style={{ ...masterWorkspaceCardTextStyle, color: "#16a34a", fontWeight: 950 }}>Preview First</div>
+          </div>
+        </div>
+
+        {masterEmailThreadPreviewResult && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 8, marginBottom: 14, fontSize: 12 }}>
+            {[
+              ["Graph calls", masterEmailThreadPreviewResult.graphCallsMade ? "YES" : "No"],
+              ["Creates draft", masterEmailThreadPreviewResult.createsOutlookDraft ? "YES" : "No"],
+              ["Sends email", masterEmailThreadPreviewResult.sendsEmail ? "YES" : "No"],
+              ["Reads mailbox", masterEmailThreadPreviewResult.readsMailbox ? "YES" : "No"],
+              ["Syncs mailbox", masterEmailThreadPreviewResult.syncsMailbox ? "YES" : "No"],
+              ["DB changed", masterEmailThreadPreviewResult.databaseRecordsChanged ? "YES" : "No"],
+            ].map(([label, itemValue]) => (
+              <div key={label} style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 10, background: "#f8fafc" }}>
+                <div style={{ fontSize: 10, fontWeight: 950, color: colors.subtle, textTransform: "uppercase" }}>{label}</div>
+                <div style={{ marginTop: 3, fontWeight: 950, color: itemValue === "YES" ? "#dc2626" : "#16a34a" }}>{itemValue}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {masterGraphThreadSyncPreviewResult && (
+          <section style={{ border: "1px solid #99f6e4", borderRadius: 16, padding: 14, background: "#f0fdfa", marginBottom: 14 }}>
+            <div style={{ fontWeight: 950, color: "#0f766e", marginBottom: 8 }}>Graph Update Preview</div>
+            {masterGraphThreadSyncPreviewResult.error ? (
+              <div style={{ color: "#dc2626", fontWeight: 850 }}>{clean(masterGraphThreadSyncPreviewResult.error)}</div>
+            ) : (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 8, fontSize: 12 }}>
+                  {[
+                    ["Graph calls", masterGraphThreadSyncPreviewResult.graphCallsMade ? "YES" : "No"],
+                    ["Reads mailbox", masterGraphThreadSyncPreviewResult.readsMailbox ? "YES" : "No"],
+                    ["Creates draft", masterGraphThreadSyncPreviewResult.createsOutlookDraft ? "YES" : "No"],
+                    ["Sends email", masterGraphThreadSyncPreviewResult.sendsEmail ? "YES" : "No"],
+                    ["Syncs mailbox", masterGraphThreadSyncPreviewResult.syncsMailbox ? "YES" : "No"],
+                    ["DB changed", masterGraphThreadSyncPreviewResult.databaseRecordsChanged ? "YES" : "No"],
+                  ].map(([label, itemValue]) => (
+                    <div key={label} style={{ border: "1px solid #ccfbf1", borderRadius: 12, padding: 10, background: "#fff" }}>
+                      <div style={{ fontSize: 10, fontWeight: 950, color: colors.subtle, textTransform: "uppercase" }}>{label}</div>
+                      <div style={{ marginTop: 3, fontWeight: 950, color: itemValue === "YES" ? "#dc2626" : "#16a34a" }}>{itemValue}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, color: colors.ink, fontSize: 13, fontWeight: 800 }}>
+                  Graph messages found: {Number(syncPreviewCounts.graphMessages || 0)} · Drafts: {Number(syncPreviewCounts.drafts || 0)} · Sent/received: {Number(syncPreviewCounts.sentOrReceived || 0)} · With attachments: {Number(syncPreviewCounts.withAttachments || 0)}
+                </div>
+                <div style={{ marginTop: 6, color: colors.muted, fontSize: 12 }}>Preview only.  No Barsh Matters records were updated.</div>
+              </>
+            )}
+          </section>
+        )}
+
+        {masterGraphThreadSyncResult && (
+          <section style={{ border: "1px solid #ddd6fe", borderRadius: 16, padding: 14, background: "#f5f3ff", marginBottom: 14 }}>
+            <div style={{ fontWeight: 950, color: "#6d28d9", marginBottom: 8 }}>Graph Thread Sync Result</div>
+            {masterGraphThreadSyncResult.error ? (
+              <div style={{ color: "#dc2626", fontWeight: 850 }}>{clean(masterGraphThreadSyncResult.error)}</div>
+            ) : (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 8, fontSize: 12 }}>
+                  {[
+                    ["Graph calls", masterGraphThreadSyncResult.graphCallsMade ? "YES" : "No"],
+                    ["Reads mailbox", masterGraphThreadSyncResult.readsMailbox ? "YES" : "No"],
+                    ["Creates draft", masterGraphThreadSyncResult.createsOutlookDraft ? "YES" : "No"],
+                    ["Sends email", masterGraphThreadSyncResult.sendsEmail ? "YES" : "No"],
+                    ["Syncs mailbox", masterGraphThreadSyncResult.syncsMailbox ? "YES" : "No"],
+                    ["DB changed", masterGraphThreadSyncResult.databaseRecordsChanged ? "YES" : "No"],
+                  ].map(([label, itemValue]) => (
+                    <div key={label} style={{ border: "1px solid #ede9fe", borderRadius: 12, padding: 10, background: "#fff" }}>
+                      <div style={{ fontSize: 10, fontWeight: 950, color: colors.subtle, textTransform: "uppercase" }}>{label}</div>
+                      <div style={{ marginTop: 3, fontWeight: 950, color: itemValue === "YES" ? "#dc2626" : "#16a34a" }}>{itemValue}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, color: colors.ink, fontSize: 13, fontWeight: 800 }}>
+                  Graph messages: {Number(syncCounts.graphMessages || 0)} · Messages upserted: {Number(masterGraphThreadSyncResult.persisted?.messagesUpserted || 0)} · Matter links created: {Number(masterGraphThreadSyncResult.persisted?.matterLinksCreated || 0)}
+                </div>
+                <div style={{ marginTop: 6, color: colors.muted, fontSize: 12 }}>
+                  Confirmed sync persists local Barsh Matters email metadata only.  It does not send email, create drafts, write Clio, upload documents, or use local Outlook automation.
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {masterEmailThreadPreviewResult?.error && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", fontWeight: 800 }}>
+            {clean(masterEmailThreadPreviewResult.error)}
+          </div>
+        )}
+
+        {!masterEmailThreadPreviewResult && !masterEmailThreadPreviewLoading && (
+          <div style={{ marginTop: 12, color: colors.muted }}>
+            Click Refresh Email Threads to load locally persisted Microsoft Graph thread records for this Master Lawsuit.
+          </div>
+        )}
+
+        {masterEmailThreadPreviewLoading && (
+          <div style={{ marginTop: 12, color: colors.muted }}>Loading local master email/thread records...</div>
+        )}
+
+        {masterEmailThreadPreviewResult && threads.length === 0 && !masterEmailThreadPreviewResult?.error && (
+          <div style={{ marginTop: 12, color: colors.muted }}>
+            No local email/thread records found yet for this Master Lawsuit.
+          </div>
+        )}
+
+        {threads.length > 0 && (
+          <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
+            {threads.map((thread: any) => {
+              const threadKey = clean(thread.id || thread.conversationId);
+              const threadExpanded = expandedMasterEmailThreadId === threadKey;
+              const messages = Array.isArray(thread.messages) ? thread.messages : [];
+
+              return (
+                <article key={threadKey} style={{ display: "grid", gap: 10, padding: 14, borderRadius: 16, border: "1px solid #e2e8f0", background: "#ffffff", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 950, color: colors.ink }}>{clean(thread.subject) || "Email thread"}</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: colors.subtle, fontWeight: 750 }}>
+                        {formatMasterEmailThreadTimestamp(thread.latestMessageAt)} · {messages.length} message{messages.length === 1 ? "" : "s"} · {clean(thread.clioMaildropLabel) || "No MailDrop label"}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setExpandedMasterEmailThreadId(threadExpanded ? null : threadKey)}
+                      style={{ fontSize: 12, padding: "5px 9px", border: "1px solid #94a3b8", borderRadius: 999, background: threadExpanded ? "#e2e8f0" : "#fff", cursor: "pointer", whiteSpace: "nowrap", fontWeight: 800 }}
+                    >
+                      {threadExpanded ? "Hide Thread" : "View Thread"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Source</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink }}>{clean(thread.source) || "—"}</div></div>
+                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Direction</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink }}>{clean(thread.direction) || "—"}</div></div>
+                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Conversation ID</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink, overflowWrap: "anywhere" }}>{clean(thread.conversationId) || "—"}</div></div>
+                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>MailDrop Present</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: thread.clioMaildropEmailPresent ? "#16a34a" : "#dc2626" }}>{thread.clioMaildropEmailPresent ? "Yes" : "No"}</div></div>
+                  </div>
+
+                  {threadExpanded && (
+                    <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 12, border: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                      {messages.length === 0 && <div style={{ color: colors.muted }}>This local thread has no persisted message records yet.</div>}
+
+                      {messages.map((message: any) => {
+                        const messageKey = clean(message.id || message.graphMessageId);
+                        const messageExpanded = expandedMasterEmailMessageId === messageKey;
+
+                        return (
+                          <div key={messageKey} style={{ border: "1px solid #e2e8f0", borderRadius: 12, background: "#ffffff", padding: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                              <div>
+                                <div style={{ fontWeight: 950, color: colors.ink }}>{message.isDraft ? "Draft" : message.isSent ? "Sent" : "Message"} · {clean(message.subject) || clean(thread.subject) || "No subject"}</div>
+                                <div style={{ marginTop: 4, fontSize: 12, color: colors.subtle, fontWeight: 750 }}>
+                                  {formatMasterEmailThreadTimestamp(message.sentAt || message.receivedAt)} · From: {clean(message.fromEmail || message.from) || "—"}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setExpandedMasterEmailMessageId(messageExpanded ? null : messageKey)}
+                                style={{ fontSize: 12, padding: "5px 9px", border: "1px solid #94a3b8", borderRadius: 999, background: messageExpanded ? "#e2e8f0" : "#fff", cursor: "pointer", whiteSpace: "nowrap", fontWeight: 800 }}
+                              >
+                                {messageExpanded ? "Hide Details" : "Details"}
+                              </button>
+                            </div>
+
+                            <div style={{ marginTop: 8, color: colors.muted, fontSize: 13, lineHeight: 1.45 }}>
+                              {clean(message.bodyPreview) || "No local body preview available."}
+                            </div>
+
+                            {message.webLinkPresent && (
+                              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 850, color: "#16a34a" }}>
+                                Outlook web link is stored locally.
+                              </div>
+                            )}
+
+                            {messageExpanded && (
+                              <div style={{ marginTop: 10, display: "grid", gap: 8, fontSize: 12, color: colors.ink }}>
+                                <div><strong>To:</strong> {summarizeMasterEmailRecipients(message.toRecipients)}</div>
+                                <div><strong>Cc:</strong> {summarizeMasterEmailRecipients(message.ccRecipients)}</div>
+                                <div><strong>Bcc:</strong> {summarizeMasterEmailRecipients(message.bccRecipients)}</div>
+                                <div><strong>Graph Message ID:</strong> <span style={{ overflowWrap: "anywhere" }}>{clean(message.graphMessageId) || "—"}</span></div>
+                                <div><strong>Attachments:</strong> {Array.isArray(message.attachments) ? message.attachments.length : 0}</div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        {masterEmailThreadPreviewResult && (
+          <details style={{ marginTop: 14 }}>
+            <summary style={{ cursor: "pointer", fontWeight: 850 }}>Raw local master thread preview JSON</summary>
+            <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto", margin: "8px 0 0 0", padding: 10, background: "#0f172a", color: "#e5e7eb", borderRadius: 10, fontSize: 12 }}>
+              {JSON.stringify(masterEmailThreadPreviewResult, null, 2)}
+            </pre>
+          </details>
+        )}
+      </section>
+    );
+  }
+
   function renderMasterDocumentGenerationPopup() {
     if (!masterDocumentGenerationPopupOpen) return null;
     const documentData = masterDocumentDataPreview?.packet?.metadata?.documentData;
@@ -3334,7 +3857,9 @@ export default function FilteredMattersPage() {
           </section>
         )}
 
-        {kind === "master" && activeMasterWorkspaceTab !== "settlement" && (
+        {kind === "master" && activeMasterWorkspaceTab === "email_threads" && renderMasterEmailThreadsPanel()}
+
+        {kind === "master" && activeMasterWorkspaceTab !== "settlement" && activeMasterWorkspaceTab !== "email_threads" && (
           <section style={masterWorkspacePanelStyle}>
 
             {activeMasterWorkspaceTab !== "payments" && (
@@ -4022,6 +4547,30 @@ export default function FilteredMattersPage() {
                         }}
                       >
                         Document Generation
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMasterWorkspaceTab("email_threads");
+                          void loadMasterEmailThreadPreview();
+                        }}
+                        title="Open master lawsuit email/thread records and preview-first Microsoft Graph sync."
+                        style={{
+                          width: "100%",
+                          minWidth: 0,
+                          height: 44,
+                          border: "1px solid #0f766e",
+                          borderRadius: 999,
+                          background: "#ecfeff",
+                          color: "#0f766e",
+                          fontSize: 12,
+                          fontWeight: 950,
+                          cursor: "pointer",
+                          boxShadow: "none",
+                        }}
+                      >
+                        Email / Threads
                       </button>
 
                       <button
