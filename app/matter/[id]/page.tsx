@@ -3395,6 +3395,7 @@ const activeGroupKey =
           padding: 18,
           overflow: "auto",
           boxShadow: "0 28px 80px rgba(15, 23, 42, 0.28)",
+          cursor: "default",
         }}
       >
         <div
@@ -3405,6 +3406,7 @@ const activeGroupKey =
             borderRadius: 22,
             border: "1px solid #cbd5e1",
             padding: 18,
+            cursor: "default",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
@@ -5691,9 +5693,9 @@ const activeGroupKey =
                     </button>
 
                     <button
+                        title="Open the Direct Matter document generation preview popup."
                         onClick={launchMatterDocumentGenerationDialog}
                       type="button"
-                      title="Open the Direct Matter document generation preview popup."
                       style={{
                         width: "100%",
                         minWidth: 0,
@@ -5704,7 +5706,7 @@ const activeGroupKey =
                         color: "#334155",
                         fontSize: 12,
                         fontWeight: 950,
-                        cursor: "not-allowed",
+                        cursor: "pointer",
                         opacity: 0.82,
                       }}
                     >

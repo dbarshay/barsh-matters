@@ -1791,6 +1791,7 @@ export default function FilteredMattersPage() {
           padding: 18,
           overflow: "auto",
           boxShadow: "0 28px 80px rgba(15, 23, 42, 0.28)",
+          cursor: "default",
         }}
       >
         <div
@@ -1801,6 +1802,7 @@ export default function FilteredMattersPage() {
             borderRadius: 22,
             border: "1px solid #cbd5e1",
             padding: 18,
+            cursor: "default",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
