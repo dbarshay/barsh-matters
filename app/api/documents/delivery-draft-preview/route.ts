@@ -63,6 +63,7 @@ function normalizeContext(raw: Record<string, unknown>): DocumentDeliveryContext
     settledWithName: clean(raw.settledWithName) || undefined,
     settledWithEmail: clean(raw.settledWithEmail) || undefined,
     clioMaildropEmail: clean(raw.clioMaildropEmail) || undefined,
+    clioMaildropLabel: clean(raw.clioMaildropLabel) || undefined,
     matterId: clean(raw.matterId) || undefined,
     masterLawsuitId: clean(raw.masterLawsuitId) || undefined,
   };

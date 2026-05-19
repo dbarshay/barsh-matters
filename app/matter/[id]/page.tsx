@@ -3415,8 +3415,25 @@ const activeGroupKey =
     };
   }
 
-  function launchMatterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
+  async function resolveMatterMaildropForDelivery(context: DocumentDeliveryContext): Promise<DocumentDeliveryContext> {
+    const queryMatterId = encodeURIComponent(String(context.matterId || matterId || ""));
+    const response = await fetch(`/api/documents/clio-maildrop-resolve?source=direct_matter&matterId=${queryMatterId}`);
+    const json = await response.json().catch(() => ({}));
+
+    if (!response.ok || !json?.ok) {
+      alert(json?.error || "Could not resolve this matter's Clio Maildrop address.");
+      return context;
+    }
+
+    return {
+      ...context,
+      clioMaildropEmail: json.maildropEmail || context.clioMaildropEmail,
+      clioMaildropLabel: json.maildropLabel || context.clioMaildropLabel,
+    };
+  }
+
+  async function launchMatterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = await resolveMatterMaildropForDelivery(buildMatterDocumentDeliveryContext(selectedTemplate));
     window.location.href = buildMailtoHref(context);
   }
 

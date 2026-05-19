@@ -353,3 +353,193 @@ model ReferenceAlias {
   @@index([entityId])
   @@index([normalizedAlias])
 }
+
+model EmailThread {
+  id                       String         @id @default(cuid())
+  provider                 String         @default("microsoft_graph")
+  mailboxUserId            String?
+  mailboxUserPrincipalName String?
+  conversationId           String
+  internetMessageId        String?
+  subject                  String?
+  normalizedSubject        String?
+  latestMessageAt          DateTime?
+  lastSyncedAt             DateTime?
+  direction                String?
+  source                   String?
+  matterId                 Int?
+  matterDisplayNumber      String?
+  masterLawsuitId          String?
+  clioMatterId             Int?
+  clioDisplayNumber        String?
+  clioMaildropEmail        String?
+  clioMaildropLabel        String?
+  status                   String         @default("active")
+  metadata                 Json?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  messages                 EmailMessage[]
+
+  @@unique([provider, conversationId, mailboxUserPrincipalName])
+  @@index([provider])
+  @@index([conversationId])
+  @@index([internetMessageId])
+  @@index([matterId])
+  @@index([matterDisplayNumber])
+  @@index([masterLawsuitId])
+  @@index([clioMatterId])
+  @@index([clioDisplayNumber])
+  @@index([latestMessageAt])
+}
+
+model EmailMessage {
+  id                       String            @id @default(cuid())
+  threadId                 String
+  thread                   EmailThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  provider                 String            @default("microsoft_graph")
+  mailboxUserId            String?
+  mailboxUserPrincipalName String?
+  graphMessageId           String?
+  internetMessageId        String?
+  conversationId           String?
+  subject                  String?
+  from                     String?
+  fromEmail                String?
+  toRecipients             Json?
+  ccRecipients             Json?
+  bccRecipients            Json?
+  replyTo                  Json?
+  sentAt                   DateTime?
+  receivedAt               DateTime?
+  folderId                 String?
+  folderName               String?
+  direction                String?
+  isDraft                  Boolean           @default(false)
+  isSent                   Boolean           @default(false)
+  isRead                   Boolean?
+  hasAttachments           Boolean           @default(false)
+  importance               String?
+  bodyPreview              String?
+  bodyText                 String?
+  bodyHtml                 String?
+  webLink                  String?
+  raw                      Json?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  attachments              EmailAttachment[]
+
+  @@unique([provider, graphMessageId, mailboxUserPrincipalName])
+  @@index([threadId])
+  @@index([provider])
+  @@index([graphMessageId])
+  @@index([internetMessageId])
+  @@index([conversationId])
+  @@index([sentAt])
+  @@index([receivedAt])
+  @@index([folderName])
+  @@index([direction])
+}
+
+model EmailAttachment {
+  id                      String       @id @default(cuid())
+  messageId               String
+  message                 EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  provider                String       @default("microsoft_graph")
+  graphAttachmentId       String?
+  name                    String?
+  contentType             String?
+  sizeBytes               Int?
+  isInline                Boolean      @default(false)
+  contentId               String?
+  clioDocumentId          String?
+  clioDocumentName        String?
+  clioDocumentVersionUuid String?
+  storageStatus           String       @default("metadata_only")
+  metadata                Json?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  @@index([messageId])
+  @@index([graphAttachmentId])
+  @@index([clioDocumentId])
+  @@index([storageStatus])
+}
+
+model EmailSyncState {
+  id                       String    @id @default(cuid())
+  provider                 String    @default("microsoft_graph")
+  mailboxUserId            String?
+  mailboxUserPrincipalName String?
+  folderId                 String?
+  folderName               String
+  deltaLink                String?
+  nextLink                 String?
+  lastSyncedAt             DateTime?
+  lastSuccessfulSyncAt     DateTime?
+  lastErrorAt              DateTime?
+  lastError                String?
+  status                   String    @default("idle")
+  metadata                 Json?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@unique([provider, mailboxUserPrincipalName, folderName])
+  @@index([provider])
+  @@index([mailboxUserPrincipalName])
+  @@index([folderName])
+  @@index([status])
+  @@index([lastSyncedAt])
+}
+
+model EmailMatterLink {
+  id                  String   @id @default(cuid())
+  threadId            String?
+  messageId           String?
+  matterId            Int?
+  matterDisplayNumber String?
+  masterLawsuitId     String?
+  clioMatterId        Int?
+  clioDisplayNumber   String?
+  linkReason          String?
+  confidence          String?
+  createdBy           String?
+  createdAt           DateTime @default(now())
+  metadata            Json?
+
+  @@index([threadId])
+  @@index([messageId])
+  @@index([matterId])
+  @@index([matterDisplayNumber])
+  @@index([masterLawsuitId])
+  @@index([clioMatterId])
+  @@index([clioDisplayNumber])
+}
+
+model EmailFilingLog {
+  id                 String   @id @default(cuid())
+  threadId           String?
+  messageId          String?
+  provider           String   @default("microsoft_graph")
+  targetSystem       String   @default("clio")
+  targetType         String?
+  targetId           String?
+  action             String
+  status             String   @default("preview")
+  previewOnly        Boolean  @default(true)
+  clioRecordsChanged Boolean  @default(false)
+  databaseChanged    Boolean  @default(false)
+  requestedBy        String?
+  error              String?
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([threadId])
+  @@index([messageId])
+  @@index([targetSystem])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([action])
+  @@index([status])
+  @@index([createdAt])
+}

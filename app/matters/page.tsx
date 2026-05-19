@@ -1817,8 +1817,25 @@ export default function FilteredMattersPage() {
     };
   }
 
-  function launchMasterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = buildMasterDocumentDeliveryContext(selectedTemplate);
+  async function resolveMasterMaildropForDelivery(context: DocumentDeliveryContext): Promise<DocumentDeliveryContext> {
+    const queryMasterLawsuitId = encodeURIComponent(String(context.masterLawsuitId || currentMasterLawsuitIdForDocumentPreview() || ""));
+    const response = await fetch(`/api/documents/clio-maildrop-resolve?source=master_lawsuit&masterLawsuitId=${queryMasterLawsuitId}`);
+    const json = await response.json().catch(() => ({}));
+
+    if (!response.ok || !json?.ok) {
+      alert(json?.error || "Could not resolve the master lawsuit Clio Maildrop address.");
+      return context;
+    }
+
+    return {
+      ...context,
+      clioMaildropEmail: json.maildropEmail || context.clioMaildropEmail,
+      clioMaildropLabel: json.maildropLabel || context.clioMaildropLabel,
+    };
+  }
+
+  async function launchMasterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = await resolveMasterMaildropForDelivery(buildMasterDocumentDeliveryContext(selectedTemplate));
     window.location.href = buildMailtoHref(context);
   }
 

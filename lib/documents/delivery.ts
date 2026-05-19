@@ -23,6 +23,7 @@ export type DocumentDeliveryContext = {
   settledWithName?: string;
   settledWithEmail?: string;
   clioMaildropEmail?: string;
+  clioMaildropLabel?: string;
   matterId?: string;
   masterLawsuitId?: string;
 };
@@ -105,9 +106,21 @@ function encodeMailtoComponent(value: string): string {
   );
 }
 
+function formatEmailRecipient(label: unknown, email: unknown): string {
+  const cleanLabel = clean(label);
+  const cleanEmail = clean(email);
+
+  if (!cleanEmail) return "";
+  if (!cleanLabel) return cleanEmail;
+
+  return `${cleanLabel} <${cleanEmail}>`;
+}
+
 export function buildMailtoHref(context: DocumentDeliveryContext): string {
   const to = clean(context.settledWithEmail) || clean(context.suggestedRecipientEmail);
-  const cc = clean(context.clioMaildropEmail) || clean(context.suggestedCcEmail);
+  const cc =
+    formatEmailRecipient(context.clioMaildropLabel, context.clioMaildropEmail) ||
+    clean(context.suggestedCcEmail);
   const subject = buildDocumentEmailSubject(context);
   const body = buildDocumentEmailBody(context);
 
