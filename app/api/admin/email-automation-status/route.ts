@@ -173,6 +173,7 @@ function firstText(...values: unknown[]): string | null {
 function normalizeMaildropAddressRow(row: any) {
   const details = readDetails(row);
   const address = firstText(
+    row?.clioMaildropEmail,
     row?.email,
     row?.emailAddress,
     row?.maildropEmail,
@@ -183,6 +184,7 @@ function normalizeMaildropAddressRow(row: any) {
     row?.address,
     row?.normalizedEmail,
     row?.normalizedAddress,
+    details.clioMaildropEmail,
     details.email,
     details.emailAddress,
     details.maildropEmail,
@@ -198,8 +200,8 @@ function normalizeMaildropAddressRow(row: any) {
   return {
     id: String(row?.id ?? ""),
     address: address || "—",
-    normalizedAddress: firstText(row?.normalizedEmail, row?.normalizedAddress, details.normalizedEmail, details.normalizedAddress),
-    label: firstText(row?.label, row?.displayName, row?.name, details.label, details.displayName, details.name),
+    normalizedAddress: firstText(row?.normalizedEmail, row?.normalizedAddress, row?.clioMaildropEmail, details.normalizedEmail, details.normalizedAddress, details.clioMaildropEmail),
+    label: firstText(row?.clioMaildropLabel, row?.label, row?.displayName, row?.name, details.clioMaildropLabel, details.label, details.displayName, details.name),
     source: firstText(row?.source, details.source),
     matterId: firstText(row?.matterId, row?.matterID, details.matterId, details.matterID),
     masterLawsuitId: firstText(row?.masterLawsuitId, details.masterLawsuitId),
