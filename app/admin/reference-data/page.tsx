@@ -22,12 +22,24 @@ type EmailAutomationStatus = {
   generatedAt: string;
   knownThreadSync: {
     latestRun: EmailAutomationStatusLog | null;
+    health?: {
+      label: string;
+      stale: boolean;
+      ageMinutes: number | null;
+      thresholdMinutes: number;
+    };
     recentCount: number;
     statusCounts: Record<string, number>;
     recentLogs: EmailAutomationStatusLog[];
   };
   maildropDiscovery: {
     latestRun: EmailAutomationStatusLog | null;
+    health?: {
+      label: string;
+      stale: boolean;
+      ageMinutes: number | null;
+      thresholdMinutes: number;
+    };
     recentCount: number;
     statusCounts: Record<string, number>;
     recentLogs: EmailAutomationStatusLog[];
@@ -1083,6 +1095,7 @@ export default function AdminReferenceDataPage() {
                 <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Known-thread sync</div>
                 <div style={{ marginTop: 8, fontSize: 14 }}><strong>Last run:</strong> {formatStatusDate(emailAutomationStatus.knownThreadSync.latestRun?.createdAt)}</div>
                 <div style={{ marginTop: 4, fontSize: 14 }}><strong>Status:</strong> {emailAutomationStatus.knownThreadSync.latestRun?.status || "—"}</div>
+                <div style={{ marginTop: 4, fontSize: 14 }}><strong>Health:</strong> <span style={{ color: emailAutomationStatus.knownThreadSync.health?.stale ? "#991b1b" : "#166534", fontWeight: 850 }}>{emailAutomationStatus.knownThreadSync.health?.label || "—"}</span></div>
                 <div style={{ marginTop: 4, fontSize: 14 }}><strong>Recent logs:</strong> {emailAutomationStatus.knownThreadSync.recentCount}</div>
               </div>
 
@@ -1090,6 +1103,7 @@ export default function AdminReferenceDataPage() {
                 <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>MailDrop discovery</div>
                 <div style={{ marginTop: 8, fontSize: 14 }}><strong>Last run:</strong> {formatStatusDate(emailAutomationStatus.maildropDiscovery.latestRun?.createdAt)}</div>
                 <div style={{ marginTop: 4, fontSize: 14 }}><strong>Status:</strong> {emailAutomationStatus.maildropDiscovery.latestRun?.status || "—"}</div>
+                <div style={{ marginTop: 4, fontSize: 14 }}><strong>Health:</strong> <span style={{ color: emailAutomationStatus.maildropDiscovery.health?.stale ? "#991b1b" : "#166534", fontWeight: 850 }}>{emailAutomationStatus.maildropDiscovery.health?.label || "—"}</span></div>
                 <div style={{ marginTop: 4, fontSize: 14 }}><strong>Recent logs:</strong> {emailAutomationStatus.maildropDiscovery.recentCount}</div>
               </div>
 

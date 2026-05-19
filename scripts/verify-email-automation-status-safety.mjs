@@ -38,6 +38,8 @@ assertIncludes(route, "createsDrafts: false", "draft safety flag");
 assertIncludes(route, "sendsEmail: false", "send safety flag");
 assertIncludes(route, "writesClio: false", "Clio write safety flag");
 assertIncludes(route, "uploadsDocuments: false", "document upload safety flag");
+assertIncludes(route, "automationHealth", "automation health helper");
+assertIncludes(route, "graph_thread_sync_persisted", "existing persisted sync log action");
 assertIncludes(route, "callsGraph: false", "Graph call safety flag");
 assertIncludes(route, "callsClio: false", "Clio call safety flag");
 
@@ -63,6 +65,7 @@ assertIncludes(admin, "Email Automation Status", "admin status panel title");
 assertIncludes(admin, "/api/admin/email-automation-status", "admin status route fetch");
 assertIncludes(admin, "data-email-automation-status-panel", "admin status panel marker");
 assertIncludes(admin, "Refresh Status", "read-only refresh button");
+assertIncludes(admin, "Health:", "admin health display");
 
 assertExcludes(admin, [
   "/api/graph/background-thread-sync",

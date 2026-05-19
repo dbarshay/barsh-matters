@@ -60,12 +60,26 @@ function inferLogSource(row: any): string {
     .map((value) => String(value ?? "").toLowerCase())
     .join(" ");
 
-  if (candidates.includes(KNOWN_THREAD_SOURCE) || candidates.includes("background_thread_sync")) {
+  if (
+    candidates.includes(KNOWN_THREAD_SOURCE) ||
+    candidates.includes("background_thread_sync") ||
+    candidates.includes("background-thread-sync") ||
+    candidates.includes("graph-background-thread-sync")
+  ) {
     return KNOWN_THREAD_SOURCE;
   }
 
-  if (candidates.includes(MAILDROP_DISCOVERY_SOURCE) || candidates.includes("maildrop_discovery")) {
+  if (
+    candidates.includes(MAILDROP_DISCOVERY_SOURCE) ||
+    candidates.includes("maildrop_discovery") ||
+    candidates.includes("maildrop-discovery") ||
+    candidates.includes("graph-maildrop-discovery")
+  ) {
     return MAILDROP_DISCOVERY_SOURCE;
+  }
+
+  if (candidates.includes("graph_thread_sync_persisted")) {
+    return KNOWN_THREAD_SOURCE;
   }
 
   return String(row?.source ?? details.source ?? row?.workflow ?? details.workflow ?? "unknown");
@@ -125,6 +139,29 @@ function countStatus(rows: any[]) {
   }, {});
 }
 
+function automationHealth(latestRun: any, thresholdMinutes = 3) {
+  const createdAt = normalizeDate(latestRun?.createdAt);
+  if (!createdAt) {
+    return {
+      label: "No run log found",
+      stale: true,
+      ageMinutes: null,
+      thresholdMinutes,
+    };
+  }
+
+  const ageMs = Date.now() - new Date(createdAt).getTime();
+  const ageMinutes = Number.isFinite(ageMs) ? Math.max(0, Math.round(ageMs / 60000)) : null;
+  const stale = ageMinutes === null || ageMinutes > thresholdMinutes;
+
+  return {
+    label: stale ? `Stale (${ageMinutes ?? "unknown"} min)` : `Healthy (${ageMinutes} min)`,
+    stale,
+    ageMinutes,
+    thresholdMinutes,
+  };
+}
+
 function firstText(...values: unknown[]): string | null {
   for (const value of values) {
     const text = String(value ?? "").trim();
@@ -182,6 +219,17 @@ export async function GET() {
     maildropSourceGroups,
   ] = await Promise.all([
     prisma.emailFilingLog.findMany({
+      where: {
+        action: {
+          in: [
+            "graph_background_thread_sync",
+            "graph_maildrop_discovery",
+            "graph-background-thread-sync",
+            "graph-maildrop-discovery",
+            "graph_thread_sync_persisted",
+          ],
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 100,
     } as any),
@@ -215,12 +263,14 @@ export async function GET() {
     generatedAt: new Date().toISOString(),
     knownThreadSync: {
       latestRun: knownThreadLogs[0] ? compactLog(knownThreadLogs[0]) : null,
+      health: automationHealth(knownThreadLogs[0]),
       recentCount: knownThreadLogs.length,
       statusCounts: countStatus(knownThreadLogs),
       recentLogs: knownThreadLogs.slice(0, 10).map(compactLog),
     },
     maildropDiscovery: {
       latestRun: maildropDiscoveryLogs[0] ? compactLog(maildropDiscoveryLogs[0]) : null,
+      health: automationHealth(maildropDiscoveryLogs[0]),
       recentCount: maildropDiscoveryLogs.length,
       statusCounts: countStatus(maildropDiscoveryLogs),
       recentLogs: maildropDiscoveryLogs.slice(0, 10).map(compactLog),
