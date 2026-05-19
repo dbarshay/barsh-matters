@@ -9,7 +9,7 @@
     "lint": "eslint",
     "smoke:workflow": "bash scripts/smoke-workflow.sh",
     "smoke:workflow:prod": "bash scripts/smoke-workflow.sh https://clio-lawsuit-aggregator.vercel.app",
-    "verify:prod": "bash scripts/verify-prod.sh",
+    "verify:prod": "bash scripts/verify-prod.sh && npm run verify:document-delivery-preview-ui-safety",
     "verify:settlement-writeback-safety": "node scripts/verify-settlement-writeback-safety.mjs",
     "test:settlement-blocked-audit:local": "bash scripts/test-settlement-blocked-audit-local.sh",
     "verify:settled-with-person-contact-safety": "node scripts/verify-settled-with-person-contact-safety.mjs",
@@ -61,7 +61,8 @@
     "verify:graph-thread-sync-preview-safety": "node scripts/verify-graph-thread-sync-preview-safety.mjs",
     "verify:graph-thread-sync-persistence-safety": "node scripts/verify-graph-thread-sync-persistence-safety.mjs",
     "verify:master-email-thread-ui-safety": "node scripts/verify-master-email-thread-ui-safety.mjs",
-    "verify:prod-email-thread-coverage-safety": "node scripts/verify-prod-email-thread-coverage-safety.mjs"
+    "verify:prod-email-thread-coverage-safety": "node scripts/verify-prod-email-thread-coverage-safety.mjs",
+    "verify:document-delivery-preview-ui-safety": "node scripts/verify-document-delivery-preview-ui-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

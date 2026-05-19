@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
-import { buildMailtoHref, documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
+import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider";
 
@@ -1843,7 +1843,47 @@ export default function FilteredMattersPage() {
 
   async function launchMasterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
     const context = await resolveMasterMaildropForDelivery(buildMasterDocumentDeliveryContext(selectedTemplate));
-    window.location.href = buildMailtoHref(context);
+
+    try {
+      const response = await fetch("/api/documents/delivery-draft-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "master_lawsuit",
+          context,
+        }),
+      });
+
+      const preview = await response.json().catch(() => null);
+
+      if (!response.ok || !preview?.ok) {
+        alert(preview?.error || "Document delivery draft preview failed.");
+        return;
+      }
+
+      const draft = preview.draft || {};
+      const graphPreview = preview.graphDraftPayloadPreview || {};
+      const readiness = graphPreview.readiness || {};
+      const attachmentPlan = Array.isArray(graphPreview.attachmentPlan)
+        ? graphPreview.attachmentPlan
+        : Array.isArray(draft.attachments)
+          ? draft.attachments
+          : [];
+
+      alert(
+        "Document Email Draft Preview Only\n\n" +
+          "No Outlook draft was created.  No email was sent.  No Clio record, database record, document, or print-queue record was changed.\n\n" +
+          `Document: ${context.documentLabel || selectedTemplate?.label || "Document"}\n` +
+          `To: ${draft.to || "not resolved"}\n` +
+          `Cc / MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
+          `Subject: ${draft.subject || "not resolved"}\n` +
+          `Attachments planned: ${attachmentPlan.length}\n` +
+          `Ready for future Graph draft creation: ${readiness.readyForGraphDraftCreate ? "Yes" : "No"}\n\n` +
+          "This is the preview-first bridge for the later Graph draft-with-PDF-attachment workflow."
+      );
+    } catch (error: any) {
+      alert(error?.message || "Document delivery draft preview failed.");
+    }
   }
 
   function launchMasterDocumentPrint(selectedTemplate: { key: string; label: string; description: string } | null) {
