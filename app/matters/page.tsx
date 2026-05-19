@@ -321,6 +321,13 @@ export default function FilteredMattersPage() {
   const [expandedMasterEmailThreadId, setExpandedMasterEmailThreadId] = useState<string | null>(null);
   const [expandedMasterEmailMessageId, setExpandedMasterEmailMessageId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (activeMasterWorkspaceTab !== "email_threads") return;
+    if (masterEmailThreadPreviewLoading || masterEmailThreadPreviewResult) return;
+    void loadMasterEmailThreadPreview();
+  }, [activeMasterWorkspaceTab, masterEmailThreadPreviewLoading, masterEmailThreadPreviewResult]);
+
+
   function masterPaymentTodayInput(): string {
     const d = new Date();
     const yyyy = String(d.getFullYear());
@@ -1976,7 +1983,7 @@ export default function FilteredMattersPage() {
     if (!masterId) {
       setMasterEmailThreadPreviewResult({
         ok: false,
-        error: "No Lawsuit ID is available for master Email / Threads lookup.",
+        error: "No Lawsuit ID is available for master Emails lookup.",
       });
       return;
     }
@@ -2010,7 +2017,7 @@ export default function FilteredMattersPage() {
     if (!conversationId) {
       setMasterGraphThreadSyncPreviewResult({
         ok: false,
-        error: "Load local Master Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+        error: "Load local Master Emails first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
       });
       return;
     }
@@ -2047,7 +2054,7 @@ export default function FilteredMattersPage() {
     if (!conversationId) {
       setMasterGraphThreadSyncResult({
         ok: false,
-        error: "Load local Master Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+        error: "Load local Master Emails first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
       });
       return;
     }
@@ -2117,12 +2124,12 @@ export default function FilteredMattersPage() {
         <div style={masterWorkspacePanelHeaderStyle}>
           <div>
             <div style={masterWorkspacePanelEyebrowStyle}>Active Workspace</div>
-            <h2 style={masterWorkspacePanelTitleStyle}>Email / Threads</h2>
+            <h2 style={masterWorkspacePanelTitleStyle}>Emails</h2>
             <p style={{ margin: "6px 0 0", color: colors.muted, lineHeight: 1.5 }}>
-              Master Lawsuit email metadata and Microsoft Graph thread sync.  Local preview reads Barsh Matters records only.  Graph update preview reads Microsoft Graph without persistence.  Confirmed sync persists local Barsh Matters email metadata only.
+              Unified Master Lawsuit email area.  Graph-synced messages and MailDrop-linked thread records appear here together from local Barsh Matters email metadata.  Opening this panel reads local records only; it does not create drafts, send email, write Clio, or change database records.
             </p>
           </div>
-          <div style={masterWorkspacePanelPillStyle}>Preview-first Graph sync</div>
+          <div style={masterWorkspacePanelPillStyle}>Automatic local email view</div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
@@ -2141,14 +2148,17 @@ export default function FilteredMattersPage() {
               whiteSpace: "nowrap",
             }}
           >
-            {masterEmailThreadPreviewLoading ? "Loading..." : "Refresh Email Threads"}
+            {masterEmailThreadPreviewLoading ? "Loading..." : "Refresh Emails"}
           </button>
 
           <button
             type="button"
+            hidden
+            aria-hidden="true"
+            tabIndex={-1}
             onClick={() => previewMasterGraphThreadUpdates()}
             disabled={!hasConversationId || masterEmailThreadPreviewLoading || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
-            title={!hasConversationId ? "Load local Master Email / Threads first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
+            title={!hasConversationId ? "Load local Master Emails first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
             style={{
               padding: "8px 11px",
               border: "1px solid #0f766e",
@@ -2168,6 +2178,9 @@ export default function FilteredMattersPage() {
 
           <button
             type="button"
+            hidden
+            aria-hidden="true"
+            tabIndex={-1}
             onClick={() => syncMasterGraphThreadToBarshMatters()}
             disabled={
               !hasConversationId ||
@@ -2325,7 +2338,7 @@ export default function FilteredMattersPage() {
 
         {!masterEmailThreadPreviewResult && !masterEmailThreadPreviewLoading && (
           <div style={{ marginTop: 12, color: colors.muted }}>
-            Click Refresh Email Threads to load locally persisted Microsoft Graph thread records for this Master Lawsuit.
+            Email records load automatically when this panel opens.  Background Graph/MailDrop sync will populate this area without user action.
           </div>
         )}
 
@@ -4726,7 +4739,7 @@ export default function FilteredMattersPage() {
                           boxShadow: "none",
                         }}
                       >
-                        Email / Threads
+                        Emails
                       </button>
 
                       <button

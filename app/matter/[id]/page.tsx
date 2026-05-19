@@ -340,7 +340,7 @@ type MatterWorkspaceTab =
 const matterWorkspaceTabs: Array<{ key: MatterWorkspaceTab; label: string; note: string }> = [
   { key: "lawsuit", label: "Lawsuit", note: "Aggregation and lawsuit metadata" },
   { key: "documents", label: "Documents", note: "Preview, finalize, and Clio upload" },
-  { key: "email_threads", label: "Email / Threads", note: "Local Graph draft and thread records" },
+  { key: "email_threads", label: "Emails", note: "Matter emails and MailDrop threads" },
   { key: "audit_history", label: "Audit / History", note: "Local workflow history" },
 ];
 
@@ -594,8 +594,15 @@ const activeGroupKey =
   const [graphThreadSyncConversationId, setGraphThreadSyncConversationId] = useState<string>("");
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
+
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
     useState<MatterWorkspaceTab>("overview");
+  useEffect(() => {
+    if (activeWorkspaceTab !== "email_threads") return;
+    if (emailThreadPreviewLoading || emailThreadPreviewResult) return;
+    void loadMatterEmailThreadPreview();
+  }, [activeWorkspaceTab, emailThreadPreviewLoading, emailThreadPreviewResult]);
+
   const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [metadataSaving, setMetadataSaving] = useState(false);
   const [metadataEdit, setMetadataEdit] = useState<LawsuitMetadataEdit>(() =>
@@ -3592,7 +3599,7 @@ const activeGroupKey =
     if (!conversationId) {
       setGraphThreadSyncPreviewResult({
         ok: false,
-        error: "Load local Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+        error: "Load local Emails first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
       });
       return;
     }
@@ -3629,7 +3636,7 @@ const activeGroupKey =
     if (!conversationId) {
       setGraphThreadSyncResult({
         ok: false,
-        error: "Load local Email / Threads first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
+        error: "Load local Emails first so Barsh Matters can identify the stored Microsoft Graph conversationId.",
       });
       return;
     }
@@ -3706,9 +3713,9 @@ const activeGroupKey =
           }}
         >
           <div>
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Email / Threads</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Emails</h2>
             <p style={tabPlaceholderTextStyle}>
-              Read-only local Barsh Matters email metadata for this matter.  This panel reads persisted Microsoft Graph draft/thread records only.  It does not call Graph, create Outlook drafts, send email, sync the mailbox, attach documents, or write to Clio.
+              Unified matter email area.  Graph-synced messages and MailDrop-linked thread records appear here together from local Barsh Matters email metadata.  Opening this panel reads local records only; it does not create drafts, send email, write Clio, or change database records.
             </p>
           </div>
 
@@ -3728,14 +3735,17 @@ const activeGroupKey =
                 whiteSpace: "nowrap",
               }}
             >
-              {emailThreadPreviewLoading ? "Loading..." : "Refresh Email Threads"}
+              {emailThreadPreviewLoading ? "Loading..." : "Refresh Emails"}
             </button>
 
             <button
               type="button"
+              hidden
+              aria-hidden="true"
+              tabIndex={-1}
               onClick={() => previewGraphThreadUpdates()}
               disabled={!hasConversationId || emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
-              title={!hasConversationId ? "Load local Email / Threads first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
+              title={!hasConversationId ? "Load local Emails first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
               style={{
                 padding: "7px 10px",
                 border: "1px solid #0f766e",
@@ -3755,6 +3765,9 @@ const activeGroupKey =
 
             <button
               type="button"
+              hidden
+              aria-hidden="true"
+              tabIndex={-1}
               onClick={() => syncGraphThreadToBarshMatters()}
               disabled={
                 !hasConversationId ||
@@ -4001,7 +4014,7 @@ const activeGroupKey =
 
         {!emailThreadPreviewResult && !emailThreadPreviewLoading && (
           <div style={{ marginTop: 12, color: bmColors.muted }}>
-            Click Refresh Email Threads to load locally persisted Graph draft/thread records for this matter.
+            Email records load automatically when this panel opens.  Background Graph/MailDrop sync will populate this area without user action.
           </div>
         )}
 
@@ -7245,7 +7258,7 @@ const activeGroupKey =
                         boxShadow: activeWorkspaceTab === "email_threads" ? "0 10px 22px rgba(15, 118, 110, 0.24)" : "none",
                       }}
                     >
-                      Email / Threads
+                      Emails
                     </button>
 
                     <div style={{ display: "grid", alignContent: "start" }}>
