@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertGraphDraftEnvironmentReady, graphFetchJson, graphMailboxMessagesUrl } from "@/lib/graph/client";
 import { buildGraphDraftPayloadPreview, normalizeGraphRecipients } from "@/lib/graph/draft";
+import { persistGraphDraftMetadata } from "@/lib/graph/emailPersistence";
 
 export const dynamic = "force-dynamic";
 
@@ -163,22 +164,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const draftMetadata = {
+    graphMessageId: clean(graphResult.json?.id),
+    internetMessageId: clean(graphResult.json?.internetMessageId),
+    conversationId: clean(graphResult.json?.conversationId),
+    subject: clean(graphResult.json?.subject),
+    webLink: clean(graphResult.json?.webLink),
+    createdDateTime: clean(graphResult.json?.createdDateTime),
+    lastModifiedDateTime: clean(graphResult.json?.lastModifiedDateTime),
+  };
+
+  const persisted = await persistGraphDraftMetadata({
+    mailboxUserId: env.mailboxUserId,
+    graphDraft: draftMetadata,
+    payload: preview,
+    context: {
+      source: clean(context.source),
+      matterId: context.matterId,
+      matterDisplayNumber: clean(context.matterDisplayNumber || context.clioDisplayNumber),
+      masterLawsuitId: clean(context.masterLawsuitId),
+      clioMatterId: context.clioMatterId,
+      clioDisplayNumber: clean(context.clioDisplayNumber),
+      clioMaildropEmail: clean(context.clioMaildropEmail),
+      clioMaildropLabel: clean(context.clioMaildropLabel),
+    },
+  });
+
   return NextResponse.json({
     ...responseBase,
     previewOnly: false,
     graphCallsMade: true,
     createsOutlookDraft: true,
+    databaseRecordsChanged: true,
     payload: preview,
-    draft: {
-      graphMessageId: clean(graphResult.json?.id),
-      internetMessageId: clean(graphResult.json?.internetMessageId),
-      conversationId: clean(graphResult.json?.conversationId),
-      subject: clean(graphResult.json?.subject),
-      webLink: clean(graphResult.json?.webLink),
-      createdDateTime: clean(graphResult.json?.createdDateTime),
-      lastModifiedDateTime: clean(graphResult.json?.lastModifiedDateTime),
-    },
+    draft: draftMetadata,
+    persisted,
     note:
-      "Outlook draft created through Microsoft Graph.  Attachments remain deferred until finalized-document upload support is wired.",
+      "Outlook draft created through Microsoft Graph and draft metadata persisted locally.  Attachments remain deferred until finalized-document upload support is wired.",
   });
 }
