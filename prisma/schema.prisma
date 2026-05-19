@@ -18,23 +18,31 @@ model LawsuitSequenceCounter {
 }
 
 model Lawsuit {
-  id                    Int      @id @default(autoincrement())
-  masterLawsuitId       String   @unique
-  claimNumber           String?
-  lawsuitMatters        String
-  sharedFolderPath      String
-  venue                 String?
-  venueSelection        String?
-  venueOther            String?
-  indexAaaNumber        String?
-  lawsuitNotes          String?
-  lawsuitOptions        Json?
-  amountSoughtMode      String   @default("balance_presuit")
-  amountSought          Float?
-  customAmountSought    Float?
-  amountSoughtBreakdown Json?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                          Int       @id @default(autoincrement())
+  masterLawsuitId             String    @unique
+  claimNumber                 String?
+  lawsuitMatters              String
+  sharedFolderPath            String
+  venue                       String?
+  venueSelection              String?
+  venueOther                  String?
+  indexAaaNumber              String?
+  lawsuitNotes                String?
+  lawsuitOptions              Json?
+  amountSoughtMode            String    @default("balance_presuit")
+  amountSought                Float?
+  customAmountSought          Float?
+  amountSoughtBreakdown       Json?
+  clioMasterMatterId          Int?
+  clioMasterDisplayNumber     String?
+  clioMasterMatterDescription String?
+  clioMasterMappedAt          DateTime?
+  clioMasterMappingSource     String?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+
+  @@index([clioMasterMatterId])
+  @@index([clioMasterDisplayNumber])
 }
 
 model ClioToken {
@@ -115,8 +123,6 @@ model ClaimClusterCache {
 
   @@index([updated_at])
 }
-
-
 
 model DocumentFinalization {
   id                    Int      @id @default(autoincrement())
@@ -289,7 +295,6 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
 }
-
 
 model MatterLocalField {
   id                  String   @id @default(cuid())

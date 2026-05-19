@@ -4,6 +4,7 @@ const DIRECT_MATTER_SETTLEMENTS_ENABLED = false;
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import { buildMailtoHref, documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 function num(v: any) {
   const n = Number(v);
@@ -558,6 +559,10 @@ const activeGroupKey =
   const [documentPreview, setDocumentPreview] = useState<any>(null);
   const [documentPreviewLoading, setDocumentPreviewLoading] = useState(false);
   const [matterDocumentDataPreviewLoading, setMatterDocumentDataPreviewLoading] = useState(false);
+  const [matterDocumentTemplateQuery, setMatterDocumentTemplateQuery] = useState("");
+  const [matterSelectedDocumentTemplateKey, setMatterSelectedDocumentTemplateKey] = useState("");
+  const [matterDocumentWorkflowStage, setMatterDocumentWorkflowStage] = useState<"select" | "chooseAction" | "preview" | "edit" | "finalize" | "delivery">("select");
+
   const [matterDocumentDataPreview, setMatterDocumentDataPreview] = useState<any>(null);
   const [matterDocumentGenerationPopupOpen, setMatterDocumentGenerationPopupOpen] = useState(false);
   const [finalizeUploadLoading, setFinalizeUploadLoading] = useState(false);
@@ -3371,12 +3376,210 @@ const activeGroupKey =
   }
 
   async function launchMatterDocumentGenerationDialog() {
+    setMatterDocumentTemplateQuery("");
+    setMatterSelectedDocumentTemplateKey("");
+    setMatterDocumentWorkflowStage("select");
     setMatterDocumentGenerationPopupOpen(true);
     await loadMatterDocumentDataPreview();
   }
 
+
+  function buildMatterDocumentDeliveryContext(selectedTemplate: { key: string; label: string; description: string } | null): DocumentDeliveryContext {
+    const documentData = matterDocumentDataPreview?.packet?.metadata?.documentData;
+    const templateFields = documentData?.templateFields || {};
+    const referenceData = documentData?.referenceData || {};
+    const patientReference: any = (referenceData as any)?.patient || {};
+    const insurerReference: any = (referenceData as any)?.insurer || {};
+    const patientEmail = patientReference?.email || patientReference?.details?.email || patientReference?.details?.Email || "";
+    const insurerEmail = insurerReference?.email || insurerReference?.details?.email || insurerReference?.details?.Email || "";
+    const recipientEmail = patientEmail || insurerEmail || "";
+
+    const documentLabel = selectedTemplate?.label || "Document";
+    const matterDisplay = textValue(templateFields.displayNumber) || String(matterId || "");
+
+    return {
+      source: "direct_matter",
+      documentKey: selectedTemplate?.key || "direct-matter-document",
+      documentLabel,
+      providerName: textValue(templateFields.providerName),
+      patientName: textValue(templateFields.patientName),
+      insurerName: textValue(templateFields.insurerName),
+      indexNumber: textValue(templateFields.indexAaaNumber),
+      ourCaseNumber: matterDisplay,
+      suggestedRecipientName:
+        textValue(templateFields.patientName) ||
+        textValue(templateFields.insurerName) ||
+        "",
+      suggestedRecipientEmail: textValue(recipientEmail),
+      matterId: matterDisplay,
+    };
+  }
+
+  function launchMatterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
+    window.location.href = buildMailtoHref(context);
+  }
+
+  function launchMatterDocumentPrint(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
+    const printableUrl = resolvePrintableUrl(context);
+
+    if (!printableUrl) {
+      alert("A finalized PDF/printable document is required before printing.  The shared print action is wired, but the PDF generation route is not ready yet.");
+      return;
+    }
+
+    const printWindow = window.open(printableUrl, "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      alert("The browser blocked the print window.  Please allow popups for Barsh Matters and try again.");
+      return;
+    }
+
+    window.setTimeout(() => {
+      try {
+        printWindow.print();
+      } catch {
+        // Browser-controlled print behavior; the opened PDF can still be printed manually.
+      }
+    }, 750);
+  }
+
+  function sendMatterDocumentToPrintQueue(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
+    alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue will be connected to the generalized finalized-document queue backend.\n\nDocument: ${context.documentLabel}`);
+  }
+
+
   function renderMatterDocumentGenerationPopup() {
     if (!matterDocumentGenerationPopupOpen) return null;
+    const documentData = matterDocumentDataPreview?.packet?.metadata?.documentData;
+    const templateFields = documentData?.templateFields || {};
+    const referenceData = documentData?.referenceData || {};
+    const query = matterDocumentTemplateQuery.trim().toLowerCase();
+
+    const templateOptions = [
+      {
+        key: "direct-matter-demand-letter",
+        label: "No-Fault Demand Letter",
+        description: "Draft demand package for this individual bill/matter.",
+      },
+      {
+        key: "direct-matter-bill-packet",
+        label: "Bill Packet",
+        description: "Bill-focused packet using the local matter fields.",
+      },
+      {
+        key: "direct-matter-cover-letter",
+        label: "Cover Letter",
+        description: "General cover letter shell for this matter.",
+      },
+    ];
+
+    const sortedTemplateOptions = [...templateOptions].sort((a, b) => a.label.localeCompare(b.label));
+
+    const filteredTemplateOptions = sortedTemplateOptions.filter((option) => {
+      const haystack = `${option.label} ${option.description}`.toLowerCase();
+      return !query || haystack.includes(query);
+    });
+
+    const selectedTemplate =
+      sortedTemplateOptions.find((option) => option.key === matterSelectedDocumentTemplateKey) || null;
+
+    const canFinalize =
+      Boolean(selectedTemplate) &&
+      (matterDocumentWorkflowStage === "preview" ||
+        matterDocumentWorkflowStage === "edit" ||
+        matterDocumentWorkflowStage === "finalize");
+
+    const showSelectStep = matterDocumentWorkflowStage === "select";
+    const showActionStep = matterDocumentWorkflowStage === "chooseAction";
+    const showPreviewStep = matterDocumentWorkflowStage === "preview";
+    const showEditStep = matterDocumentWorkflowStage === "edit";
+    const showFinalizeStep = matterDocumentWorkflowStage === "finalize";
+    const showDeliveryStep = matterDocumentWorkflowStage === "delivery";
+
+    const stepBadge = (step: number, label: string, active: boolean, complete = false) => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 10px",
+          borderRadius: 999,
+          border: active ? "1px solid #4f46e5" : "1px solid #e5e7eb",
+          background: active ? "#eef2ff" : complete ? "#f0fdf4" : "#f9fafb",
+          color: active ? "#3730a3" : complete ? "#166534" : "#374151",
+          fontSize: 12,
+          fontWeight: 900,
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 22,
+            height: 22,
+            borderRadius: 999,
+            background: active ? "#4f46e5" : complete ? "#16a34a" : "#e5e7eb",
+            color: active || complete ? "#fff" : "#374151",
+          }}
+        >
+          {step}
+        </span>
+        {label}
+      </div>
+    );
+
+    const actionButton = (
+      label: string,
+      onClick: () => void,
+      disabled = false,
+      title?: string
+    ) => (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        style={{
+          border: disabled ? "1px solid #d1d5db" : "1px solid #4f46e5",
+          background: disabled ? "#f3f4f6" : "#4f46e5",
+          color: disabled ? "#6b7280" : "#fff",
+          borderRadius: 12,
+          padding: "10px 14px",
+          fontWeight: 900,
+          cursor: disabled ? "not-allowed" : "pointer",
+          boxShadow: disabled ? "none" : "0 10px 20px rgba(79, 70, 229, 0.18)",
+        }}
+      >
+        {label}
+      </button>
+    );
+
+    const stepArrow = (completed: boolean) => (
+      <div
+        aria-hidden="true"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: completed ? "#16a34a" : "#94a3b8",
+          fontSize: 22,
+          fontWeight: 900,
+          lineHeight: 1,
+          padding: "0 2px",
+        }}
+      >
+        →
+      </div>
+    );
+
+    const step1Complete = matterDocumentWorkflowStage !== "select";
+    const step2Complete =
+      matterDocumentWorkflowStage === "finalize" || matterDocumentWorkflowStage === "delivery";
+    const step3Complete = matterDocumentWorkflowStage === "delivery";
 
     return (
       <div
@@ -3385,47 +3588,51 @@ const activeGroupKey =
         aria-label="Direct Matter Document Generation"
         style={{
           position: "fixed",
-          left: 24,
-          right: 24,
-          top: 150,
-          bottom: 24,
-          zIndex: 2400,
-          background: "rgba(15, 23, 42, 0.18)",
-          borderRadius: 24,
-          padding: 18,
-          overflow: "auto",
-          boxShadow: "0 28px 80px rgba(15, 23, 42, 0.28)",
-          cursor: "default",
+          inset: 0,
+          zIndex: 10000,
+          background: "rgba(15, 23, 42, 0.45)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
         }}
       >
         <div
+          onClick={(event) => event.stopPropagation()}
           style={{
-            maxWidth: 1500,
-            margin: "0 auto",
-            background: "#ffffff",
-            borderRadius: 22,
-            border: "1px solid #cbd5e1",
-            padding: 18,
-            cursor: "default",
+            width: "min(980px, 96vw)",
+            maxHeight: "88vh",
+            overflow: "auto",
+            background: "#fff",
+            borderRadius: 24,
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 30px 70px rgba(15, 23, 42, 0.35)",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+          <div
+            style={{
+              padding: "22px 24px",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 18,
+            }}
+          >
             <div>
               <h2 style={{ margin: 0, fontSize: 22 }}>Document Generation</h2>
-              <div style={{ marginTop: 4, color: "#64748b", fontWeight: 800, fontSize: 12 }}>
-                Review the local matter data that future templates will use.  No documents are generated from this popup.
-              </div>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                Select a document, preview or edit it, then finalize when the backend is safely wired.  No documents are generated from this popup.  This popup does not generate files, upload to Clio, email, print, or change the print queue.
+              </p>
             </div>
-
             <button
               type="button"
               onClick={() => setMatterDocumentGenerationPopupOpen(false)}
               style={{
-                border: "1px solid #cbd5e1",
-                borderRadius: 999,
-                padding: "9px 14px",
+                border: "1px solid #d1d5db",
                 background: "#fff",
-                color: "#0f172a",
+                borderRadius: 999,
+                padding: "8px 12px",
                 fontWeight: 900,
                 cursor: "pointer",
               }}
@@ -3434,7 +3641,411 @@ const activeGroupKey =
             </button>
           </div>
 
-          {renderMatterDocumentDataPreviewPanel()}
+          <div style={{ padding: 24, display: "grid", gap: 18 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              {stepBadge(1, "Select Document", matterDocumentWorkflowStage === "select", step1Complete)}
+              {stepArrow(step1Complete)}
+              {stepBadge(
+                2,
+                "Preview PDF or Edit",
+                matterDocumentWorkflowStage === "chooseAction" ||
+                  matterDocumentWorkflowStage === "preview" ||
+                  matterDocumentWorkflowStage === "edit",
+                step2Complete
+              )}
+              {stepArrow(step2Complete)}
+              {stepBadge(3, "Finalize", matterDocumentWorkflowStage === "finalize", step3Complete)}
+              {stepArrow(step3Complete)}
+              {stepBadge(4, "Email / Print / Queue", matterDocumentWorkflowStage === "delivery", false)}
+            </div>
+
+            <section
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 18,
+                padding: 18,
+                background: "#f8fafc",
+                display: showSelectStep ? "grid" : "none",
+                gap: 14,
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
+                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                  Start typing to filter available document templates.  These are sample options until the real template source is wired.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                <input
+                  value={matterDocumentTemplateQuery}
+                  list="matter-document-template-options"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setMatterDocumentTemplateQuery(value);
+                    const match = sortedTemplateOptions.find(
+                      (option) => option.label.toLowerCase() === value.trim().toLowerCase()
+                    );
+                    if (match) {
+                      setMatterSelectedDocumentTemplateKey(match.key);
+                      setMatterDocumentWorkflowStage("chooseAction");
+                    } else {
+                      setMatterSelectedDocumentTemplateKey("");
+                      setMatterDocumentWorkflowStage("select");
+                    }
+                  }}
+                  placeholder="Start typing or choose a document..."
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 12,
+                    padding: "11px 12px",
+                    fontSize: 15,
+                    background: "#fff",
+                  }}
+                />
+                <datalist id="matter-document-template-options">
+                  {sortedTemplateOptions.map((option) => (
+                    <option key={option.key} value={option.label} />
+                  ))}
+                </datalist>
+
+                {matterSelectedDocumentTemplateKey && selectedTemplate && (
+                  <div
+                    style={{
+                      border: "1px solid #c7d2fe",
+                      background: "#eef2ff",
+                      borderRadius: 14,
+                      padding: 14,
+                      color: "#3730a3",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <strong>Selected:</strong> {selectedTemplate.label}
+                    <div style={{ marginTop: 4, color: "#475569" }}>{selectedTemplate.description}</div>
+                  </div>
+                )}
+
+                {matterDocumentTemplateQuery.trim() && filteredTemplateOptions.length === 0 && (
+                  <div style={{ color: "#64748b", fontWeight: 800 }}>
+                    No matching document templates.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 18,
+                padding: 18,
+                background: "#fff",
+                display: showActionStep ? "grid" : "none",
+                gap: 14,
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview PDF or Edit</h3>
+                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                  {selectedTemplate
+                    ? `Selected: ${selectedTemplate?.label || "Selected document"}`
+                    : "Select a document before previewing the PDF or editing."}
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {actionButton(
+                  "Preview PDF",
+                  () => setMatterDocumentWorkflowStage("preview"),
+                  !selectedTemplate,
+                  !selectedTemplate ? "Select a document first." : undefined
+                )}
+                {actionButton(
+                  "Edit Document",
+                  () => setMatterDocumentWorkflowStage("edit"),
+                  !selectedTemplate,
+                  !selectedTemplate ? "Select a document first." : undefined
+                )}
+                <button
+                  type="button"
+                  onClick={loadMatterDocumentDataPreview}
+                  style={{
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    color: "#334155",
+                    borderRadius: 12,
+                    padding: "10px 14px",
+                    fontWeight: 900,
+                    cursor: "pointer",
+                  }}
+                >
+                  {matterDocumentDataPreview?.loading ? "Refreshing..." : "Refresh Data"}
+                </button>
+              </div>
+
+              {false && matterDocumentWorkflowStage === "preview" && selectedTemplate && (
+                <div
+                  style={{
+                    border: "1px solid #bfdbfe",
+                    background: "#eff6ff",
+                    borderRadius: 14,
+                    padding: 14,
+                    color: "#1e3a8a",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong>Preview shell:</strong> {selectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this is a local preview shell using the matter document packet; no PDF or final file is generated in this placeholder state.
+                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                    <div><strong>Matter:</strong> {textValue(templateFields.displayNumber) || "—"}</div>
+                    <div><strong>Provider:</strong> {textValue(templateFields.providerName) || "—"}</div>
+                    <div><strong>Patient:</strong> {textValue(templateFields.patientName) || "—"}</div>
+                    <div><strong>Insurer:</strong> {textValue(templateFields.insurerName) || "—"}</div>
+                    <div><strong>Claim:</strong> {textValue(templateFields.claimNumber) || "—"}</div>
+                    <div><strong>Balance:</strong> {money(templateFields.balancePresuit)}</div>
+                  </div>
+                </div>
+              )}
+
+              {false && matterDocumentWorkflowStage === "edit" && selectedTemplate && (
+                <div
+                  style={{
+                    border: "1px solid #ddd6fe",
+                    background: "#f5f3ff",
+                    borderRadius: 14,
+                    padding: 14,
+                    color: "#4c1d95",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong>Word editing placeholder:</strong> {selectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.  No Word integration is faked here.
+                </div>
+              )}
+            </section>
+
+            {(showPreviewStep || showEditStep) && selectedTemplate && (
+              <section
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: "#fff",
+                  display: "grid",
+                  gap: 14,
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>
+                    {showPreviewStep ? "PDF Preview" : "Edit Document"}
+                  </h3>
+                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                    {showPreviewStep
+                      ? "Review the PDF preview before finalizing.  The actual PDF route will be wired next; this step currently shows the safe local preview shell."
+                      : "Word editing will be wired later.  This step currently confirms the intended edit workflow without faking Word integration."}
+                  </p>
+                </div>
+
+                {showPreviewStep && (
+                  <div
+                    style={{
+                      border: "1px solid #bfdbfe",
+                      background: "#eff6ff",
+                      borderRadius: 14,
+                      padding: 14,
+                      color: "#1e3a8a",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <strong>PDF preview shell:</strong> {selectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this preview uses the local matter document packet.
+                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                      <div><strong>Matter:</strong> {textValue(templateFields.displayNumber) || "—"}</div>
+                      <div><strong>Provider:</strong> {textValue(templateFields.providerName) || "—"}</div>
+                      <div><strong>Patient:</strong> {textValue(templateFields.patientName) || "—"}</div>
+                      <div><strong>Insurer:</strong> {textValue(templateFields.insurerName) || "—"}</div>
+                      <div><strong>Claim:</strong> {textValue(templateFields.claimNumber) || "—"}</div>
+                      <div><strong>Balance:</strong> {money(templateFields.balancePresuit)}</div>
+                    </div>
+                  </div>
+                )}
+
+                {showEditStep && (
+                  <div
+                    style={{
+                      border: "1px solid #ddd6fe",
+                      background: "#f5f3ff",
+                      borderRadius: 14,
+                      padding: 14,
+                      color: "#4c1d95",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <strong>Word editing placeholder:</strong> {selectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => setMatterDocumentWorkflowStage("chooseAction")}
+                    style={{
+                      border: "1px solid #cbd5e1",
+                      background: "#fff",
+                      color: "#334155",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Back
+                  </button>
+                  {actionButton("Finalize Document", () => setMatterDocumentWorkflowStage("finalize"), false)}
+                </div>
+              </section>
+            )}
+
+            <section
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 18,
+                padding: 18,
+                background: "#fff",
+                display: showFinalizeStep ? "grid" : "none",
+                gap: 14,
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize</h3>
+                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                  Finalization will later create the final document, upload it to Clio as the document vault, and make it available in the Barsh Matters Documents section.
+                </p>
+              </div>
+
+              <div>
+                {actionButton(
+                  "Finalize Document",
+                  () => setMatterDocumentWorkflowStage("delivery"),
+                  !canFinalize,
+                  "Preview the PDF or edit the selected document before finalizing."
+                )}
+              </div>
+
+              {matterDocumentWorkflowStage === "delivery" && (
+                <div
+                  style={{
+                    border: "1px solid #fed7aa",
+                    background: "#fff7ed",
+                    borderRadius: 14,
+                    padding: 14,
+                    color: "#9a3412",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong>Finalize placeholder:</strong> This is the final review step.  When safe finalization is wired, this button will finalize the reviewed PDF, upload it to Clio as the document vault, and create the Barsh Matters document record.
+                </div>
+              )}
+            </section>
+
+            {matterDocumentWorkflowStage === "finalize" && selectedTemplate && (
+              <section
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: "#f9fafb",
+                  display: "none",
+                  gap: 14,
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
+                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {actionButton("Email Document", () => launchMatterDocumentEmail(selectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
+                  {actionButton("Print Document", () => launchMatterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
+                  {actionButton("Send to Print Queue", () => sendMatterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                </div>
+              </section>
+            )}
+
+
+            {matterDocumentWorkflowStage === "delivery" && (
+              <section
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: "#f9fafb",
+                  display: "grid",
+                  gap: 14,
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
+                  <span style={{ display: "none" }}>Step 4: Email / Print / Queue — Delivery Standalone</span>
+                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {actionButton("Email Document", () => launchMatterDocumentEmail(selectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
+                  {actionButton("Print Document", () => launchMatterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
+                  {actionButton("Send to Print Queue", () => sendMatterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                </div>
+              </section>
+            )}
+
+            {matterDocumentDataPreview?.error && (
+              <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                Error: {textValue(matterDocumentDataPreview.error)}
+              </div>
+            )}
+
+            <details
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 14,
+                padding: 14,
+                background: "#fff",
+              }}
+            >
+              <summary style={{ cursor: "pointer", fontWeight: 950 }}>
+                Advanced / Data Preview
+              </summary>
+              <div style={{ marginTop: 14 }}>
+                <h3 style={{ margin: 0, fontSize: 16 }}>Template Data Review</h3>
+                <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
+                  Read-only local data available for future direct matter templates.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+                </p>
+                <pre
+                  style={{
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    overflowX: "auto",
+                    background: "#0f172a",
+                    color: "#e5e7eb",
+                    borderRadius: 12,
+                    padding: 14,
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {JSON.stringify({ templateFields, referenceData, documentData }, null, 2)}
+                </pre>
+                <div style={{ display: "none" }}>{renderMatterDocumentDataPreviewPanel()}</div>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
     );

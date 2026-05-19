@@ -16,52 +16,47 @@ function fail(message) {
 
 const buttonRegex = /<button[\s\S]*?<\/button>/g;
 const buttons = [...page.matchAll(buttonRegex)].map((match) => match[0]);
-const docgenButtons = buttons.filter((button) => button.includes("launchMasterDocumentGenerationDialog"));
+const matching = buttons.filter((button) => button.includes('data-docgen-action="master"'));
 
-if (docgenButtons.length === 0) {
-  fail(`${pagePath}: could not find a button containing launchMasterDocumentGenerationDialog`);
+if (matching.length !== 1) {
+  fail(`${pagePath}: expected exactly one master docgen action button, found ${matching.length}`);
 } else {
-  pass(`${pagePath}: found ${docgenButtons.length} button(s) containing launchMasterDocumentGenerationDialog`);
+  const button = matching[0];
+  pass(`${pagePath}: found exactly one master docgen action button`);
 
-  const button = docgenButtons[0];
+  const requiredInButton = [
+    "Document Generation",
+    "launchMasterDocumentGenerationDialog",
+    "onMouseDown",
+    "onClick",
+    "Open the Master Lawsuit document generation preview popup.",
+    'cursor: "pointer"',
+    'pointerEvents: "auto"',
+  ];
 
-  if (button.includes("Document Generation")) {
-    pass(`${pagePath}: button shows Document Generation label`);
-  } else {
-    fail(`${pagePath}: button does not show Document Generation label`);
+  for (const needle of requiredInButton) {
+    if (button.includes(needle)) pass(`${pagePath}: action button contains ${needle}`);
+    else fail(`${pagePath}: action button missing ${needle}`);
   }
 
-  if (button.includes("Open the Master Lawsuit document generation preview popup.")) {
-    pass(`${pagePath}: button has popup title`);
-  } else {
-    fail(`${pagePath}: button missing popup title`);
-  }
-
-  if (!button.includes("not-allowed")) {
-    pass(`${pagePath}: button does not use not-allowed cursor`);
-  } else {
-    fail(`${pagePath}: button still uses not-allowed cursor`);
-  }
-
-  if (!button.includes("disabled")) {
-    pass(`${pagePath}: button is not disabled`);
-  } else {
-    fail(`${pagePath}: button still contains disabled`);
+  const forbiddenInButton = ["not-allowed", "disabled", 'pointerEvents: "none"'];
+  for (const needle of forbiddenInButton) {
+    if (!button.includes(needle)) pass(`${pagePath}: action button does not contain ${needle}`);
+    else fail(`${pagePath}: action button contains forbidden ${needle}`);
   }
 }
 
-const required = [
-  "launchMasterDocumentGenerationDialog",
+const requiredInPage = [
   "setMasterDocumentGenerationPopupOpen(true)",
+  'setActiveMasterWorkspaceTab("documents")',
   "await loadMasterDocumentDataPreview()",
   "renderMasterDocumentGenerationPopup",
   "Master Lawsuit Document Generation Preview",
-  "Open the Master Lawsuit document generation preview popup.",
 ];
 
-for (const needle of required) {
-  if (page.includes(needle)) pass(`${pagePath}: found ${needle}`);
-  else fail(`${pagePath}: missing ${needle}`);
+for (const needle of requiredInPage) {
+  if (page.includes(needle)) pass(`${pagePath}: page contains ${needle}`);
+  else fail(`${pagePath}: page missing ${needle}`);
 }
 
 if (failures > 0) {
