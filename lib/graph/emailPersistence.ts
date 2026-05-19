@@ -297,3 +297,355 @@ export async function persistGraphDraftMetadata(
     conversationId,
   };
 }
+
+export type PersistGraphThreadSyncMessage = {
+  graphMessageId?: string | null;
+  internetMessageId?: string | null;
+  conversationId?: string | null;
+  subject?: string | null;
+  from?: any;
+  toRecipients?: any[];
+  ccRecipients?: any[];
+  bccRecipients?: any[];
+  replyTo?: any[];
+  sentAt?: string | null;
+  receivedAt?: string | null;
+  folderId?: string | null;
+  folderName?: string | null;
+  isDraft?: boolean;
+  isRead?: boolean | null;
+  hasAttachments?: boolean;
+  importance?: string | null;
+  bodyPreview?: string | null;
+  bodyText?: string | null;
+  bodyHtml?: string | null;
+  webLink?: string | null;
+  webLinkPresent?: boolean;
+  raw?: any;
+};
+
+export type PersistGraphThreadSyncParams = {
+  mailboxUserId: string;
+  conversationId: string;
+  messages: PersistGraphThreadSyncMessage[];
+  context?: {
+    source?: string | null;
+    matterId?: string | number | null;
+    matterDisplayNumber?: string | null;
+    masterLawsuitId?: string | null;
+    clioMatterId?: string | number | null;
+    clioDisplayNumber?: string | null;
+    clioMaildropEmail?: string | null;
+    clioMaildropLabel?: string | null;
+  };
+};
+
+export type PersistGraphThreadSyncResult = {
+  emailThreadId: string;
+  conversationId: string;
+  messagesUpserted: number;
+  matterLinksCreated: number;
+  filingLogId: string;
+};
+
+function graphRecipientAddress(value: any): string {
+  return clean(value?.emailAddress?.address || value?.address || value?.email);
+}
+
+function graphRecipientName(value: any): string {
+  return clean(value?.emailAddress?.name || value?.name || value?.displayName);
+}
+
+function graphFromDisplay(value: any): string {
+  const name = graphRecipientName(value);
+  const address = graphRecipientAddress(value);
+  if (name && address) return `${name} <${address}>`;
+  return name || address;
+}
+
+function graphFromEmail(value: any): string {
+  return graphRecipientAddress(value);
+}
+
+function latestGraphMessageDate(messages: PersistGraphThreadSyncMessage[]): Date | null {
+  let latest: Date | null = null;
+
+  for (const message of messages || []) {
+    const date = dateOrNull(message.receivedAt || message.sentAt);
+    if (!date) continue;
+    if (!latest || date.getTime() > latest.getTime()) latest = date;
+  }
+
+  return latest;
+}
+
+function graphMessageDirection(message: PersistGraphThreadSyncMessage, mailboxUserPrincipalName: string): string {
+  if (message.isDraft) return "outbound";
+  const fromEmail = graphFromEmail(message.from).toLowerCase();
+  const mailbox = clean(mailboxUserPrincipalName).toLowerCase();
+  if (fromEmail && mailbox && fromEmail === mailbox) return "outbound";
+  return "inbound";
+}
+
+function threadDirectionFromMessages(messages: PersistGraphThreadSyncMessage[], mailboxUserPrincipalName: string): string {
+  const directions = new Set(messages.map((message) => graphMessageDirection(message, mailboxUserPrincipalName)));
+  if (directions.size === 1) return [...directions][0] || "unknown";
+  if (directions.size > 1) return "mixed";
+  return "unknown";
+}
+
+export async function persistGraphThreadSyncMessages(
+  params: PersistGraphThreadSyncParams
+): Promise<PersistGraphThreadSyncResult> {
+  const mailboxUserPrincipalName = clean(params.mailboxUserId);
+  const conversationId = clean(params.conversationId);
+  const context = params.context || {};
+  const messages = (params.messages || []).filter((message) => clean(message.graphMessageId));
+
+  if (!mailboxUserPrincipalName) {
+    throw new Error("Cannot persist Graph thread sync without mailbox user principal name.");
+  }
+
+  if (!conversationId) {
+    throw new Error("Cannot persist Graph thread sync without conversationId.");
+  }
+
+  if (!messages.length) {
+    throw new Error("Cannot persist Graph thread sync without at least one Graph message.");
+  }
+
+  const matterId = numberOrNull(context.matterId);
+  const clioMatterId = numberOrNull(context.clioMatterId);
+  const matterDisplayNumber = clean(context.matterDisplayNumber || context.clioDisplayNumber);
+  const masterLawsuitId = clean(context.masterLawsuitId);
+  const clioDisplayNumber = clean(context.clioDisplayNumber);
+  const clioMaildropEmail = clean(context.clioMaildropEmail);
+  const clioMaildropLabel = clean(context.clioMaildropLabel);
+  const latestMessageAt = latestGraphMessageDate(messages) || new Date();
+  const primaryMessage = messages[messages.length - 1] || messages[0];
+  const primarySubject = clean(primaryMessage?.subject || messages[0]?.subject);
+  const primaryInternetMessageId = clean(primaryMessage?.internetMessageId || messages[0]?.internetMessageId);
+  const direction = threadDirectionFromMessages(messages, mailboxUserPrincipalName);
+  const now = new Date();
+
+  const thread = await prisma.emailThread.upsert({
+    where: {
+      provider_conversationId_mailboxUserPrincipalName: {
+        provider: PROVIDER,
+        conversationId,
+        mailboxUserPrincipalName,
+      },
+    },
+    update: {
+      internetMessageId: primaryInternetMessageId || undefined,
+      subject: primarySubject || undefined,
+      normalizedSubject: primarySubject.toLowerCase() || undefined,
+      latestMessageAt,
+      lastSyncedAt: now,
+      direction,
+      source: clean(context.source) || "graph_thread_sync",
+      matterId,
+      matterDisplayNumber: matterDisplayNumber || null,
+      masterLawsuitId: masterLawsuitId || null,
+      clioMatterId,
+      clioDisplayNumber: clioDisplayNumber || null,
+      clioMaildropEmail: clioMaildropEmail || null,
+      clioMaildropLabel: clioMaildropLabel || null,
+      status: "active",
+      metadata: {
+        lastGraphThreadSyncAt: now.toISOString(),
+        syncedMessageCount: messages.length,
+        attachmentMetadataOnly: true,
+      },
+    },
+    create: {
+      provider: PROVIDER,
+      mailboxUserPrincipalName,
+      conversationId,
+      internetMessageId: primaryInternetMessageId || null,
+      subject: primarySubject || null,
+      normalizedSubject: primarySubject.toLowerCase() || null,
+      latestMessageAt,
+      lastSyncedAt: now,
+      direction,
+      source: clean(context.source) || "graph_thread_sync",
+      matterId,
+      matterDisplayNumber: matterDisplayNumber || null,
+      masterLawsuitId: masterLawsuitId || null,
+      clioMatterId,
+      clioDisplayNumber: clioDisplayNumber || null,
+      clioMaildropEmail: clioMaildropEmail || null,
+      clioMaildropLabel: clioMaildropLabel || null,
+      status: "active",
+      metadata: {
+        firstGraphThreadSyncAt: now.toISOString(),
+        syncedMessageCount: messages.length,
+        attachmentMetadataOnly: true,
+      },
+    },
+  });
+
+  let messagesUpserted = 0;
+  let matterLinksCreated = 0;
+  let lastMessageId: string | null = null;
+
+  for (const message of messages) {
+    const graphMessageId = clean(message.graphMessageId);
+    if (!graphMessageId) continue;
+
+    const messageDirection = graphMessageDirection(message, mailboxUserPrincipalName);
+    const isDraft = Boolean(message.isDraft);
+    const sentAt = dateOrNull(message.sentAt);
+    const receivedAt = dateOrNull(message.receivedAt);
+    const from = graphFromDisplay(message.from);
+    const fromEmail = graphFromEmail(message.from);
+    const bodyPreview = clean(message.bodyPreview);
+    const bodyText = clean(message.bodyText);
+    const bodyHtml = clean(message.bodyHtml);
+    const webLink = clean(message.webLink);
+
+    const persistedMessage = await prisma.emailMessage.upsert({
+      where: {
+        provider_graphMessageId_mailboxUserPrincipalName: {
+          provider: PROVIDER,
+          graphMessageId,
+          mailboxUserPrincipalName,
+        },
+      },
+      update: {
+        threadId: thread.id,
+        internetMessageId: clean(message.internetMessageId) || undefined,
+        conversationId,
+        subject: clean(message.subject) || undefined,
+        from: from || null,
+        fromEmail: fromEmail || null,
+        toRecipients: Array.isArray(message.toRecipients) ? message.toRecipients : [],
+        ccRecipients: Array.isArray(message.ccRecipients) ? message.ccRecipients : [],
+        bccRecipients: Array.isArray(message.bccRecipients) ? message.bccRecipients : [],
+        replyTo: Array.isArray(message.replyTo) ? message.replyTo : [],
+        sentAt,
+        receivedAt,
+        folderId: clean(message.folderId) || null,
+        folderName: clean(message.folderName) || (isDraft ? "drafts" : null),
+        direction: messageDirection,
+        isDraft,
+        isSent: !isDraft && Boolean(sentAt),
+        isRead: typeof message.isRead === "boolean" ? message.isRead : null,
+        hasAttachments: Boolean(message.hasAttachments),
+        importance: clean(message.importance) || null,
+        bodyPreview: bodyPreview || null,
+        bodyText: bodyText || null,
+        bodyHtml: bodyHtml || null,
+        webLink: webLink || null,
+        raw: {
+          source: "graph_thread_sync",
+          graphMessage: message.raw || message,
+          attachmentMetadataOnly: true,
+        },
+      },
+      create: {
+        threadId: thread.id,
+        provider: PROVIDER,
+        mailboxUserPrincipalName,
+        graphMessageId,
+        internetMessageId: clean(message.internetMessageId) || null,
+        conversationId,
+        subject: clean(message.subject) || null,
+        from: from || null,
+        fromEmail: fromEmail || null,
+        toRecipients: Array.isArray(message.toRecipients) ? message.toRecipients : [],
+        ccRecipients: Array.isArray(message.ccRecipients) ? message.ccRecipients : [],
+        bccRecipients: Array.isArray(message.bccRecipients) ? message.bccRecipients : [],
+        replyTo: Array.isArray(message.replyTo) ? message.replyTo : [],
+        sentAt,
+        receivedAt,
+        folderId: clean(message.folderId) || null,
+        folderName: clean(message.folderName) || (isDraft ? "drafts" : null),
+        direction: messageDirection,
+        isDraft,
+        isSent: !isDraft && Boolean(sentAt),
+        isRead: typeof message.isRead === "boolean" ? message.isRead : null,
+        hasAttachments: Boolean(message.hasAttachments),
+        importance: clean(message.importance) || null,
+        bodyPreview: bodyPreview || null,
+        bodyText: bodyText || null,
+        bodyHtml: bodyHtml || null,
+        webLink: webLink || null,
+        raw: {
+          source: "graph_thread_sync",
+          graphMessage: message.raw || message,
+          attachmentMetadataOnly: true,
+        },
+      },
+    });
+
+    messagesUpserted += 1;
+    lastMessageId = persistedMessage.id;
+
+    if (matterId || matterDisplayNumber || masterLawsuitId || clioMatterId || clioDisplayNumber) {
+      const existingLink = await prisma.emailMatterLink.findFirst({
+        where: {
+          threadId: thread.id,
+          messageId: persistedMessage.id,
+          linkReason: "graph_thread_sync",
+        },
+      });
+
+      if (!existingLink) {
+        await prisma.emailMatterLink.create({
+          data: {
+            threadId: thread.id,
+            messageId: persistedMessage.id,
+            matterId,
+            matterDisplayNumber: matterDisplayNumber || null,
+            masterLawsuitId: masterLawsuitId || null,
+            clioMatterId,
+            clioDisplayNumber: clioDisplayNumber || null,
+            linkReason: "graph_thread_sync",
+            confidence: "confirmed",
+            createdBy: "barsh_matters_graph_sync",
+            metadata: {
+              clioMaildropEmail,
+              clioMaildropLabel,
+              graphMessageId,
+              conversationId,
+            },
+          },
+        });
+        matterLinksCreated += 1;
+      }
+    }
+  }
+
+  const filingLog = await prisma.emailFilingLog.create({
+    data: {
+      threadId: thread.id,
+      messageId: lastMessageId,
+      provider: PROVIDER,
+      targetSystem: "barsh_matters",
+      targetType: "email_thread",
+      targetId: conversationId,
+      action: "graph_thread_sync_persisted",
+      status: "synced",
+      previewOnly: false,
+      clioRecordsChanged: false,
+      databaseChanged: true,
+      requestedBy: "barsh_matters",
+      metadata: {
+        mailboxUserPrincipalName,
+        conversationId,
+        messagesUpserted,
+        matterLinksCreated,
+        attachmentMetadataOnly: true,
+      },
+    },
+  });
+
+  return {
+    emailThreadId: thread.id,
+    conversationId,
+    messagesUpserted,
+    matterLinksCreated,
+    filingLogId: filingLog.id,
+  };
+}
