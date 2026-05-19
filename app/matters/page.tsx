@@ -63,7 +63,7 @@ function matterId(m: any) {
 }
 
 function displayNumber(m: any) {
-  return (
+return (
     clean(m?.displayNumber) ||
     clean(m?.display_number) ||
     clean(m?.matterNumber) ||
@@ -578,6 +578,8 @@ export default function FilteredMattersPage() {
   const [masterAuditHistoryOpen, setMasterAuditHistoryOpen] = useState(false);
   const [masterAuditHistoryLoading, setMasterAuditHistoryLoading] = useState(false);
   const [masterAuditHistoryError, setMasterAuditHistoryError] = useState("");
+  const [masterDocumentDataPreviewLoading, setMasterDocumentDataPreviewLoading] = useState(false);
+  const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
   const [masterAuditHistoryEntries, setMasterAuditHistoryEntries] = useState<any[]>([]);
   const masterNoteTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const masterNoteDeleteConfirmButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1712,6 +1714,215 @@ export default function FilteredMattersPage() {
     void load();
   }, []);
 
+  function masterDocumentPreviewText(value: unknown): string {
+    return String(value ?? "").trim();
+  }
+
+  function masterDocumentPreviewDate(value: unknown): string {
+    const raw = masterDocumentPreviewText(value);
+    if (!raw) return "";
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[2]}/${match[3]}/${match[1]}`;
+    return raw;
+  }
+
+  function currentMasterLawsuitIdForDocumentPreview() {
+    if (typeof window === "undefined") return "";
+    return masterDocumentPreviewText(new URLSearchParams(window.location.search).get("master"));
+  }
+
+  async function loadMasterDocumentDataPreview() {
+    const previewMasterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!previewMasterLawsuitId) {
+      setMasterDocumentDataPreview({
+        ok: false,
+        error: "No Lawsuit ID is available for document data preview.",
+        packet: null,
+      });
+      return;
+    }
+
+    setMasterDocumentDataPreviewLoading(true);
+    setMasterDocumentDataPreview(null);
+
+    try {
+      const res = await fetch(`/api/documents/packet?masterLawsuitId=${encodeURIComponent(previewMasterLawsuitId)}`);
+      const json = await res.json();
+      setMasterDocumentDataPreview(json);
+
+      if (!res.ok) {
+        throw new Error(json?.error || "Master lawsuit document data preview failed.");
+      }
+    } catch (err: any) {
+      setMasterDocumentDataPreview({
+        ok: false,
+        error: err?.message || "Master lawsuit document data preview failed.",
+        packet: null,
+      });
+    } finally {
+      setMasterDocumentDataPreviewLoading(false);
+    }
+  }
+
+  function renderMasterDocumentDataPreviewPanel() {
+    const documentData = masterDocumentDataPreview?.packet?.metadata?.documentData;
+    const templateFields = documentData?.templateFields || {};
+    const uiFields = documentData?.uiFields || {};
+    const claimIndexFields = documentData?.claimIndexFields || {};
+    const referenceData = documentData?.referenceData || {};
+    const refresh = masterDocumentDataPreview?.packet?.refresh || {};
+    const previewMasterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    return (
+      <section
+        style={{
+          border: "1px solid #cbd5e1",
+          borderRadius: 18,
+          padding: 18,
+          margin: "0 0 18px",
+          background: "#f8fafc",
+          boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 18 }}>Document Data Preview</h3>
+            <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13, maxWidth: 860 }}>
+              Read-only local packet data for future Master Lawsuit templates.  This preview reads local Lawsuit metadata, ClaimIndex, and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadMasterDocumentDataPreview}
+            disabled={masterDocumentDataPreviewLoading || !previewMasterLawsuitId}
+            style={{
+              border: 0,
+              borderRadius: 999,
+              padding: "10px 16px",
+              fontWeight: 900,
+              background: masterDocumentDataPreviewLoading || !previewMasterLawsuitId ? "#e5e7eb" : "#2563eb",
+              color: masterDocumentDataPreviewLoading || !previewMasterLawsuitId ? "#64748b" : "#fff",
+              cursor: masterDocumentDataPreviewLoading || !previewMasterLawsuitId ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {masterDocumentDataPreviewLoading ? "Loading..." : "Preview Lawsuit Data"}
+          </button>
+        </div>
+
+        {masterDocumentDataPreview?.error && (
+          <div style={{ marginTop: 12, color: "#991b1b", fontWeight: 800 }}>
+            Error: {masterDocumentPreviewText(masterDocumentDataPreview.error)}
+          </div>
+        )}
+
+        {documentData && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+                gap: 10,
+                marginTop: 14,
+              }}
+            >
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Lawsuit ID</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.masterLawsuitId) || previewMasterLawsuitId || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Ready for Templates</div>
+                <div style={{ fontWeight: 900 }}>{documentData.readyForTemplates ? "Yes" : "No"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Generates Documents</div>
+                <div style={{ fontWeight: 900 }}>{documentData.generatesDocuments ? "Yes" : "No"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Clio Correctness Dependency</div>
+                <div style={{ fontWeight: 900 }}>{documentData.clioCorrectnessDependency ? "Yes" : "No"}</div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                gap: 10,
+                marginTop: 12,
+              }}
+            >
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Provider</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.providerName) || masterDocumentPreviewText(claimIndexFields.providerName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Patient</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.patientName) || masterDocumentPreviewText(claimIndexFields.patientName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Insurer</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.insurerName) || masterDocumentPreviewText(claimIndexFields.insurerName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Claim Number</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.claimNumber) || masterDocumentPreviewText(claimIndexFields.claimNumber) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Court</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.courtName) || masterDocumentPreviewText(uiFields.courtName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Index / AAA Number</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewText(templateFields.indexAaaNumber) || masterDocumentPreviewText(uiFields.indexAaaNumber) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Date of Loss</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewDate(templateFields.dateOfLoss || uiFields.dateOfLoss) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Date Filed</div>
+                <div style={{ fontWeight: 900 }}>{masterDocumentPreviewDate(templateFields.dateFiled || uiFields.dateFiled) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Court Costs Total</div>
+                <div style={{ fontWeight: 900 }}>{money(templateFields.courtCostsTotal ?? uiFields.courtCostsTotal)}</div>
+              </div>
+            </div>
+
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw templateFields JSON</summary>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+                {JSON.stringify(templateFields, null, 2)}
+              </pre>
+            </details>
+
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw referenceData JSON</summary>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+                {JSON.stringify(referenceData, null, 2)}
+              </pre>
+            </details>
+
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw selectedCourtDetails JSON</summary>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+                {JSON.stringify(uiFields.selectedCourtDetails || templateFields.courtDetails || null, null, 2)}
+              </pre>
+            </details>
+
+            <div style={{ marginTop: 10, fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+              Refresh: {masterDocumentPreviewText(refresh.reason) || "—"}.
+            </div>
+          </>
+        )}
+      </section>
+    );
+  }
+
+
   return (
     <main style={pageStyle}>
       <div style={shellStyle}>
@@ -2452,9 +2663,16 @@ export default function FilteredMattersPage() {
                   <div style={masterWorkspaceCardStyle}>
                     <div style={masterWorkspaceCardLabelStyle}>Next UI Step</div>
                     <div style={masterWorkspaceCardTextStyle}>
-                      {activeMasterWorkspaceTab === "documents"
-                        ? "Move the existing read-only packet preview shell into this Documents workspace."
-                        : "Move settlement close preview into this Close Paid Settlements workspace."}
+                      {activeMasterWorkspaceTab === "documents" ? (
+                        <>
+                          <div>
+                            Move the existing read-only packet preview shell into this Documents workspace.
+                          </div>
+                          {renderMasterDocumentDataPreviewPanel()}
+                        </>
+                      ) : (
+                        "Move settlement close preview into this Close Paid Settlements workspace."
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2655,6 +2873,7 @@ export default function FilteredMattersPage() {
                       </div>
                     </div>
                   </section>
+
 
                   <section
                     style={{

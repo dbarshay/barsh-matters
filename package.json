@@ -35,7 +35,8 @@
     "verify:matter-local-field-safety": "node scripts/verify-matter-local-field-safety.mjs",
     "verify:local-document-packet-safety": "node scripts/verify-local-document-packet-safety.mjs",
     "verify:direct-matter-document-packet-safety": "node scripts/verify-direct-matter-document-packet-safety.mjs",
-    "verify:direct-matter-document-preview-ui-safety": "node scripts/verify-direct-matter-document-preview-ui-safety.mjs"
+    "verify:direct-matter-document-preview-ui-safety": "node scripts/verify-direct-matter-document-preview-ui-safety.mjs",
+    "verify:master-document-preview-ui-safety": "node scripts/verify-master-document-preview-ui-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
