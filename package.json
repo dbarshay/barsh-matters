@@ -56,7 +56,8 @@
     "verify:graph-draft-payload-safety": "node scripts/verify-graph-draft-payload-safety.mjs",
     "verify:graph-create-draft-safety": "node scripts/verify-graph-create-draft-safety.mjs",
     "verify:graph-draft-persistence-safety": "node scripts/verify-graph-draft-persistence-safety.mjs",
-    "verify:graph-local-thread-preview-safety": "node scripts/verify-graph-local-thread-preview-safety.mjs"
+    "verify:graph-local-thread-preview-safety": "node scripts/verify-graph-local-thread-preview-safety.mjs",
+    "verify:direct-matter-email-thread-ui-safety": "node scripts/verify-direct-matter-email-thread-ui-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

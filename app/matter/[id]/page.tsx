@@ -333,6 +333,7 @@ type MatterWorkspaceTab =
   | "overview"
   | "lawsuit"
   | "documents"
+  | "email_threads"
   | "settlement"
   | "print_queue"
   | "audit_history";
@@ -340,6 +341,7 @@ type MatterWorkspaceTab =
 const matterWorkspaceTabs: Array<{ key: MatterWorkspaceTab; label: string; note: string }> = [
   { key: "lawsuit", label: "Lawsuit", note: "Aggregation and lawsuit metadata" },
   { key: "documents", label: "Documents", note: "Preview, finalize, and Clio upload" },
+  { key: "email_threads", label: "Email / Threads", note: "Local Graph draft and thread records" },
   { key: "audit_history", label: "Audit / History", note: "Local workflow history" },
 ];
 
@@ -583,6 +585,10 @@ const activeGroupKey =
   const [printQueueStatusFilter, setPrintQueueStatusFilter] = useState<"" | "queued" | "printed" | "hold" | "skipped">("");
   const [printQueueStatusLoadingId, setPrintQueueStatusLoadingId] = useState<number | null>(null);
   const [printQueueStatusResult, setPrintQueueStatusResult] = useState<any>(null);
+  const [emailThreadPreviewLoading, setEmailThreadPreviewLoading] = useState(false);
+  const [emailThreadPreviewResult, setEmailThreadPreviewResult] = useState<any>(null);
+  const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
+  const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
     useState<MatterWorkspaceTab>("overview");
   const [showMetadataModal, setShowMetadataModal] = useState(false);
@@ -3467,6 +3473,444 @@ const activeGroupKey =
   }
 
 
+  function formatEmailThreadTimestamp(value: any): string {
+    const raw = textValue(value);
+    if (!raw) return "—";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function summarizeEmailRecipients(value: any): string {
+    const recipients = Array.isArray(value) ? value : [];
+    const labels = recipients
+      .map((recipient: any) => {
+        const emailAddress = recipient?.emailAddress || {};
+        const name = textValue(emailAddress.name || recipient?.name);
+        const address = textValue(emailAddress.address || recipient?.email || recipient?.address);
+        if (name && address) return `${name} <${address}>`;
+        return name || address;
+      })
+      .filter(Boolean);
+
+    return labels.length ? labels.join(", ") : "—";
+  }
+
+  async function loadMatterEmailThreadPreview() {
+    const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
+    const params = new URLSearchParams();
+    params.set("limit", "25");
+
+    if (matterId) params.set("matterId", String(matterId));
+    if (displayNumber) params.set("matterDisplayNumber", displayNumber);
+
+    setEmailThreadPreviewLoading(true);
+    setEmailThreadPreviewResult(null);
+
+    try {
+      const response = await fetch(`/api/graph/local-thread-preview?${params.toString()}`);
+      const json = await response.json().catch(() => ({}));
+      setEmailThreadPreviewResult(json);
+    } catch (err: any) {
+      setEmailThreadPreviewResult({
+        ok: false,
+        error: err?.message || "Could not load local email/thread records.",
+      });
+    } finally {
+      setEmailThreadPreviewLoading(false);
+    }
+  }
+
+  function renderMatterEmailThreadsPanel() {
+    const threads = Array.isArray(emailThreadPreviewResult?.threads) ? emailThreadPreviewResult.threads : [];
+    const counts = emailThreadPreviewResult?.counts || {};
+    const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
+
+    return (
+      <section id="matter-email-threads-section" style={tabPlaceholderPanelStyle}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Email / Threads</h2>
+            <p style={tabPlaceholderTextStyle}>
+              Read-only local Barsh Matters email metadata for this matter.  This panel reads persisted Microsoft Graph draft/thread records only.  It does not call Graph, create Outlook drafts, send email, sync the mailbox, attach documents, or write to Clio.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadMatterEmailThreadPreview}
+            disabled={emailThreadPreviewLoading}
+            style={{
+              padding: "7px 10px",
+              border: "1px solid #2563eb",
+              background: emailThreadPreviewLoading ? "#f3f4f6" : "#2563eb",
+              color: emailThreadPreviewLoading ? "#666" : "#fff",
+              borderRadius: 4,
+              cursor: emailThreadPreviewLoading ? "not-allowed" : "pointer",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {emailThreadPreviewLoading ? "Loading..." : "Refresh Email Threads"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 10,
+            marginTop: 14,
+            marginBottom: 14,
+          }}
+        >
+          <div style={bmStatCardStyle}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Matter</div>
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
+              {displayNumber || "—"}
+            </div>
+          </div>
+
+          <div style={bmStatCardStyle}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Threads</div>
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
+              {num(counts.threads)}
+            </div>
+          </div>
+
+          <div style={bmStatCardStyle}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Messages</div>
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
+              {num(counts.messages)}
+            </div>
+          </div>
+
+          <div style={bmStatCardStyle}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Safety</div>
+            <div style={{ marginTop: 4, fontSize: 13, fontWeight: 900, color: bmColors.green }}>
+              Read Only
+            </div>
+          </div>
+        </div>
+
+        {emailThreadPreviewResult && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+              gap: 8,
+              marginBottom: 14,
+              fontSize: 12,
+            }}
+          >
+            {[
+              ["Graph calls", emailThreadPreviewResult.graphCallsMade ? "YES" : "No"],
+              ["Creates draft", emailThreadPreviewResult.createsOutlookDraft ? "YES" : "No"],
+              ["Sends email", emailThreadPreviewResult.sendsEmail ? "YES" : "No"],
+              ["Reads mailbox", emailThreadPreviewResult.readsMailbox ? "YES" : "No"],
+              ["Syncs mailbox", emailThreadPreviewResult.syncsMailbox ? "YES" : "No"],
+              ["DB changed", emailThreadPreviewResult.databaseRecordsChanged ? "YES" : "No"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  border: "1px solid " + bmColors.line,
+                  borderRadius: 12,
+                  padding: 10,
+                  background: "#f8fafc",
+                }}
+              >
+                <div style={{ fontSize: 10, fontWeight: 950, color: bmColors.subtle, textTransform: "uppercase" }}>
+                  {label}
+                </div>
+                <div
+                  style={{
+                    marginTop: 3,
+                    fontWeight: 950,
+                    color: value === "YES" ? bmColors.red : bmColors.green,
+                  }}
+                >
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {emailThreadPreviewResult?.error && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid #fecaca",
+              background: "#fef2f2",
+              color: "#991b1b",
+              fontWeight: 800,
+            }}
+          >
+            {textValue(emailThreadPreviewResult.error)}
+          </div>
+        )}
+
+        {!emailThreadPreviewResult && !emailThreadPreviewLoading && (
+          <div style={{ marginTop: 12, color: bmColors.muted }}>
+            Click Refresh Email Threads to load locally persisted Graph draft/thread records for this matter.
+          </div>
+        )}
+
+        {emailThreadPreviewLoading && (
+          <div style={{ marginTop: 12, color: bmColors.muted }}>
+            Loading local email/thread records...
+          </div>
+        )}
+
+        {emailThreadPreviewResult &&
+          threads.length === 0 &&
+          !emailThreadPreviewResult?.error && (
+            <div style={{ marginTop: 12, color: bmColors.muted }}>
+              No local email/thread records found yet for this matter.
+            </div>
+          )}
+
+        {threads.length > 0 && (
+          <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
+            {threads.map((thread: any) => {
+              const threadKey = textValue(thread.id || thread.conversationId);
+              const threadExpanded = expandedEmailThreadId === threadKey;
+              const messages = Array.isArray(thread.messages) ? thread.messages : [];
+
+              return (
+                <article
+                  key={threadKey}
+                  style={{
+                    display: "grid",
+                    gap: 10,
+                    padding: 14,
+                    borderRadius: 16,
+                    border: "1px solid " + bmColors.line,
+                    background: "#ffffff",
+                    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 950, color: bmColors.ink }}>
+                        {textValue(thread.subject) || "Email thread"}
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: bmColors.subtle, fontWeight: 750 }}>
+                        {formatEmailThreadTimestamp(thread.latestMessageAt)} · {messages.length} message{messages.length === 1 ? "" : "s"} · {textValue(thread.clioMaildropLabel) || "No MailDrop label"}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setExpandedEmailThreadId(threadExpanded ? null : threadKey)}
+                      style={{
+                        fontSize: 12,
+                        padding: "5px 9px",
+                        border: "1px solid #94a3b8",
+                        borderRadius: 999,
+                        background: threadExpanded ? "#e2e8f0" : "#fff",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {threadExpanded ? "Hide Thread" : "View Thread"}
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                      gap: 10,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Source</div>
+                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink }}>{textValue(thread.source) || "—"}</div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Direction</div>
+                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink }}>{textValue(thread.direction) || "—"}</div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Conversation ID</div>
+                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink, overflowWrap: "anywhere" }}>{textValue(thread.conversationId) || "—"}</div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>MailDrop Present</div>
+                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: thread.clioMaildropEmailPresent ? bmColors.green : bmColors.red }}>
+                        {thread.clioMaildropEmailPresent ? "Yes" : "No"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {threadExpanded && (
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 10,
+                        padding: 10,
+                        borderRadius: 12,
+                        border: "1px solid " + bmColors.softLine,
+                        background: bmColors.page,
+                      }}
+                    >
+                      {messages.length === 0 && (
+                        <div style={{ color: bmColors.muted }}>
+                          This local thread has no persisted message records yet.
+                        </div>
+                      )}
+
+                      {messages.map((message: any) => {
+                        const messageKey = textValue(message.id || message.graphMessageId);
+                        const messageExpanded = expandedEmailMessageId === messageKey;
+
+                        return (
+                          <div
+                            key={messageKey}
+                            style={{
+                              border: "1px solid " + bmColors.line,
+                              borderRadius: 12,
+                              background: "#ffffff",
+                              padding: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 10,
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontWeight: 950, color: bmColors.ink }}>
+                                  {message.isDraft ? "Draft" : message.isSent ? "Sent" : "Message"} · {textValue(message.subject) || textValue(thread.subject) || "No subject"}
+                                </div>
+                                <div style={{ marginTop: 4, fontSize: 12, color: bmColors.subtle, fontWeight: 750 }}>
+                                  {formatEmailThreadTimestamp(message.sentAt || message.receivedAt)} · From: {textValue(message.fromEmail || message.from) || "—"}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setExpandedEmailMessageId(messageExpanded ? null : messageKey)}
+                                style={{
+                                  fontSize: 12,
+                                  padding: "5px 9px",
+                                  border: "1px solid #94a3b8",
+                                  borderRadius: 999,
+                                  background: messageExpanded ? "#e2e8f0" : "#fff",
+                                  cursor: "pointer",
+                                  whiteSpace: "nowrap",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {messageExpanded ? "Hide Details" : "Details"}
+                              </button>
+                            </div>
+
+                            <div style={{ marginTop: 8, color: bmColors.muted, fontSize: 13, lineHeight: 1.45 }}>
+                              {textValue(message.bodyPreview) || "No local body preview available."}
+                            </div>
+
+                            {message.webLinkPresent && (
+                              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 850, color: bmColors.green }}>
+                                Outlook web link is stored locally.
+                              </div>
+                            )}
+
+                            {messageExpanded && (
+                              <div
+                                style={{
+                                  marginTop: 10,
+                                  display: "grid",
+                                  gap: 8,
+                                  fontSize: 12,
+                                  color: bmColors.ink,
+                                }}
+                              >
+                                <div><strong>To:</strong> {summarizeEmailRecipients(message.toRecipients)}</div>
+                                <div><strong>Cc:</strong> {summarizeEmailRecipients(message.ccRecipients)}</div>
+                                <div><strong>Bcc:</strong> {summarizeEmailRecipients(message.bccRecipients)}</div>
+                                <div><strong>Graph Message ID:</strong> <span style={{ overflowWrap: "anywhere" }}>{textValue(message.graphMessageId) || "—"}</span></div>
+                                <div><strong>Attachments:</strong> {Array.isArray(message.attachments) ? message.attachments.length : 0}</div>
+
+                                {Array.isArray(message.attachments) && message.attachments.length > 0 && (
+                                  <ul style={{ margin: "0 0 0 18px", padding: 0 }}>
+                                    {message.attachments.map((attachment: any) => (
+                                      <li key={textValue(attachment.id || attachment.name)}>
+                                        {textValue(attachment.name) || "Attachment"} · {textValue(attachment.storageStatus) || "metadata"}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        {emailThreadPreviewResult && (
+          <details style={{ marginTop: 14 }}>
+            <summary style={{ cursor: "pointer", fontWeight: 850 }}>
+              Raw local thread preview JSON
+            </summary>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                overflowX: "auto",
+                margin: "8px 0 0 0",
+                padding: 10,
+                background: "#0f172a",
+                color: "#e5e7eb",
+                borderRadius: 10,
+                fontSize: 12,
+              }}
+            >
+              {JSON.stringify(emailThreadPreviewResult, null, 2)}
+            </pre>
+          </details>
+        )}
+      </section>
+    );
+  }
+
   function renderMatterDocumentGenerationPopup() {
     if (!matterDocumentGenerationPopupOpen) return null;
     const documentData = matterDocumentDataPreview?.packet?.metadata?.documentData;
@@ -6340,6 +6784,30 @@ const activeGroupKey =
                       }}
                     >
                       Document Generation
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Open read-only local email and Microsoft Graph thread records for this matter."
+                      onClick={() => {
+                        setActiveWorkspaceTab("email_threads");
+                        void loadMatterEmailThreadPreview();
+                      }}
+                      style={{
+                        width: "100%",
+                        minWidth: 0,
+                        height: 44,
+                        border: "1px solid #0f766e",
+                        borderRadius: 999,
+                        background: activeWorkspaceTab === "email_threads" ? "#0f766e" : "#ecfeff",
+                        color: activeWorkspaceTab === "email_threads" ? "#ffffff" : "#0f766e",
+                        fontSize: 12,
+                        fontWeight: 950,
+                        cursor: "pointer",
+                        boxShadow: activeWorkspaceTab === "email_threads" ? "0 10px 22px rgba(15, 118, 110, 0.24)" : "none",
+                      }}
+                    >
+                      Email / Threads
                     </button>
 
                     <div style={{ display: "grid", alignContent: "start" }}>
@@ -10178,6 +10646,8 @@ const activeGroupKey =
           )}
         </section>
       )}
+
+      {activeWorkspaceTab === "email_threads" && renderMatterEmailThreadsPanel()}
 
       {activeWorkspaceTab === "audit_history" && (
         <section id="matter-audit-history-section" style={tabPlaceholderPanelStyle}>
