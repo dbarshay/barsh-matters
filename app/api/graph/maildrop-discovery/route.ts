@@ -5,6 +5,38 @@ import { getGraphAuthConfig, getGraphAuthReadiness } from "@/lib/graph/config";
 import { persistGraphThreadSyncMessages } from "@/lib/graph/emailPersistence";
 import { loadKnownMaildropAddresses } from "@/lib/graph/maildropRegistry";
 
+
+const MAILDROP_DISCOVERY_SOURCE = "graph_maildrop_discovery";
+
+async function createMaildropDiscoveryRunLog(input: {
+  status: string;
+  previewOnly: boolean;
+  databaseChanged: boolean;
+  targetId?: string | null;
+  error?: string | null;
+  metadata?: Record<string, any>;
+}) {
+  return prisma.emailFilingLog.create({
+    data: {
+      provider: "microsoft_graph",
+      targetSystem: "barsh_matters",
+      targetType: "maildrop_discovery_run",
+      targetId: input.targetId || "maildrop-discovery",
+      action: MAILDROP_DISCOVERY_SOURCE,
+      status: input.status,
+      previewOnly: input.previewOnly,
+      clioRecordsChanged: false,
+      databaseChanged: input.databaseChanged,
+      requestedBy: "barsh_matters_cron",
+      error: input.error || null,
+      metadata: {
+        source: "graph_maildrop_discovery",
+        ...input.metadata,
+      },
+    },
+  });
+}
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -146,7 +178,7 @@ async function loadKnownMaildrops(limit: number) {
 
 function contextFromMaildropRecord(record: any) {
   return {
-    source: "graph_maildrop_discovery",
+    source: MAILDROP_DISCOVERY_SOURCE,
     matterId: numberOrNull(record.matterId),
     matterDisplayNumber: clean(record.matterDisplayNumber),
     masterLawsuitId: clean(record.masterLawsuitId),
@@ -362,6 +394,22 @@ async function runMaildropDiscovery(req: NextRequest) {
       persisted,
     });
   }
+
+  await createMaildropDiscoveryRunLog({
+    status: matchesByConversation.size ? "matched" : "no_matches",
+    previewOnly: false,
+    databaseChanged: true,
+    metadata: {
+      knownMaildrops: knownByEmail.size,
+      scannedGraphMessages: rows.length,
+      matchedMessages: Array.from(matchesByConversation.values()).reduce((sum, match) => sum + match.messages.length, 0),
+      discoveredThreads: matchesByConversation.size,
+      messagesUpserted,
+      matterLinksCreated,
+      filingLogsCreated,
+      nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
+    },
+  });
 
   return NextResponse.json({
     ...base,

@@ -105,3 +105,10 @@ if (failures > 0) {
 
 console.log("\n=== GRAPH MAILDROP DISCOVERY SAFETY VERIFICATION PASSED ===");
 console.log("MailDrop discovery can preview or sync recent mailbox messages matched against locally known MailDrop recipients only.");
+
+
+const routeSource = read(routePath);
+mustContain(routePath, routeSource, "createMaildropDiscoveryRunLog");
+mustContain(routePath, routeSource, "maildrop_discovery_run");
+mustContain(routePath, routeSource, "no_matches");
+mustContain(routePath, routeSource, "no_known_maildrops");
