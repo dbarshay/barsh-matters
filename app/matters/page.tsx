@@ -314,8 +314,10 @@ export default function FilteredMattersPage() {
   const [masterEmailThreadPreviewResult, setMasterEmailThreadPreviewResult] = useState<any>(null);
   const [masterGraphThreadSyncPreviewLoading, setMasterGraphThreadSyncPreviewLoading] = useState(false);
   const [masterGraphThreadSyncPreviewResult, setMasterGraphThreadSyncPreviewResult] = useState<any>(null);
+  const [masterGraphThreadSyncPreviewConversationId, setMasterGraphThreadSyncPreviewConversationId] = useState<string>("");
   const [masterGraphThreadSyncLoading, setMasterGraphThreadSyncLoading] = useState(false);
   const [masterGraphThreadSyncResult, setMasterGraphThreadSyncResult] = useState<any>(null);
+  const [masterGraphThreadSyncConversationId, setMasterGraphThreadSyncConversationId] = useState<string>("");
   const [expandedMasterEmailThreadId, setExpandedMasterEmailThreadId] = useState<string | null>(null);
   const [expandedMasterEmailMessageId, setExpandedMasterEmailMessageId] = useState<string | null>(null);
 
@@ -1966,8 +1968,8 @@ export default function FilteredMattersPage() {
     }
   }
 
-  async function previewMasterGraphThreadUpdates() {
-    const conversationId = firstMasterEmailConversationId();
+  async function previewMasterGraphThreadUpdates(conversationIdOverride?: string) {
+    const conversationId = clean(conversationIdOverride) || firstMasterEmailConversationId();
 
     if (!conversationId) {
       setMasterGraphThreadSyncPreviewResult({
@@ -1978,6 +1980,7 @@ export default function FilteredMattersPage() {
     }
 
     setMasterGraphThreadSyncPreviewLoading(true);
+    setMasterGraphThreadSyncPreviewConversationId(conversationId);
     setMasterGraphThreadSyncPreviewResult(null);
     setMasterGraphThreadSyncResult(null);
 
@@ -2002,8 +2005,8 @@ export default function FilteredMattersPage() {
     }
   }
 
-  async function syncMasterGraphThreadToBarshMatters() {
-    const conversationId = firstMasterEmailConversationId();
+  async function syncMasterGraphThreadToBarshMatters(conversationIdOverride?: string) {
+    const conversationId = clean(conversationIdOverride) || masterGraphThreadSyncPreviewConversationId || firstMasterEmailConversationId();
 
     if (!conversationId) {
       setMasterGraphThreadSyncResult({
@@ -2021,6 +2024,15 @@ export default function FilteredMattersPage() {
       return;
     }
 
+    const previewConversationId = clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId);
+    if (previewConversationId && previewConversationId !== conversationId) {
+      setMasterGraphThreadSyncResult({
+        ok: false,
+        error: "Preview Graph Updates must be run for this specific master thread before syncing it.",
+      });
+      return;
+    }
+
     const confirmed = window.confirm(
       "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata only.  It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation."
     );
@@ -2028,6 +2040,7 @@ export default function FilteredMattersPage() {
     if (!confirmed) return;
 
     setMasterGraphThreadSyncLoading(true);
+    setMasterGraphThreadSyncConversationId(conversationId);
     setMasterGraphThreadSyncResult(null);
 
     try {
@@ -2097,7 +2110,7 @@ export default function FilteredMattersPage() {
 
           <button
             type="button"
-            onClick={previewMasterGraphThreadUpdates}
+            onClick={() => previewMasterGraphThreadUpdates()}
             disabled={!hasConversationId || masterEmailThreadPreviewLoading || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
             title={!hasConversationId ? "Load local Master Email / Threads first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
             style={{
@@ -2119,7 +2132,7 @@ export default function FilteredMattersPage() {
 
           <button
             type="button"
-            onClick={syncMasterGraphThreadToBarshMatters}
+            onClick={() => syncMasterGraphThreadToBarshMatters()}
             disabled={
               !hasConversationId ||
               !masterGraphThreadSyncPreviewResult ||
@@ -2307,13 +2320,71 @@ export default function FilteredMattersPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setExpandedMasterEmailThreadId(threadExpanded ? null : threadKey)}
-                      style={{ fontSize: 12, padding: "5px 9px", border: "1px solid #94a3b8", borderRadius: 999, background: threadExpanded ? "#e2e8f0" : "#fff", cursor: "pointer", whiteSpace: "nowrap", fontWeight: 800 }}
-                    >
-                      {threadExpanded ? "Hide Thread" : "View Thread"}
-                    </button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        onClick={() => previewMasterGraphThreadUpdates(clean(thread.conversationId))}
+                        disabled={!clean(thread.conversationId) || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
+                        title="Preview Microsoft Graph updates for this specific master thread without persisting changes."
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 9px",
+                          border: "1px solid #0f766e",
+                          borderRadius: 999,
+                          background: masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "#f3f4f6" : "#ecfeff",
+                          color: "#0f766e",
+                          cursor: !clean(thread.conversationId) || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading ? "not-allowed" : "pointer",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "Previewing..." : "Preview This Thread"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => syncMasterGraphThreadToBarshMatters(clean(thread.conversationId))}
+                        disabled={
+                          !clean(thread.conversationId) ||
+                          !masterGraphThreadSyncPreviewResult ||
+                          clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId) !== clean(thread.conversationId) ||
+                          masterGraphThreadSyncPreviewLoading ||
+                          masterGraphThreadSyncLoading
+                        }
+                        title="Run only after Preview This Thread.  Persists local EmailThread / EmailMessage metadata only."
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 9px",
+                          border: "1px solid #7c3aed",
+                          borderRadius: 999,
+                          background:
+                            masterGraphThreadSyncLoading && masterGraphThreadSyncConversationId === clean(thread.conversationId)
+                              ? "#f3f4f6"
+                              : "#f5f3ff",
+                          color: "#6d28d9",
+                          cursor:
+                            !clean(thread.conversationId) ||
+                            !masterGraphThreadSyncPreviewResult ||
+                            clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId) !== clean(thread.conversationId) ||
+                            masterGraphThreadSyncPreviewLoading ||
+                            masterGraphThreadSyncLoading
+                              ? "not-allowed"
+                              : "pointer",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {masterGraphThreadSyncLoading && masterGraphThreadSyncConversationId === clean(thread.conversationId) ? "Syncing..." : "Sync This Thread"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedMasterEmailThreadId(threadExpanded ? null : threadKey)}
+                        style={{ fontSize: 12, padding: "5px 9px", border: "1px solid #94a3b8", borderRadius: 999, background: threadExpanded ? "#e2e8f0" : "#fff", cursor: "pointer", whiteSpace: "nowrap", fontWeight: 800 }}
+                      >
+                        {threadExpanded ? "Hide Thread" : "View Thread"}
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>

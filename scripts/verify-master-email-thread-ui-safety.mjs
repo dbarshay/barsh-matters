@@ -41,8 +41,8 @@ console.log("\\n=== VERIFY MASTER UI MARKERS ===");
   'function firstMasterEmailConversationId()',
   'function masterEmailSyncContext',
   'async function loadMasterEmailThreadPreview()',
-  'async function previewMasterGraphThreadUpdates()',
-  'async function syncMasterGraphThreadToBarshMatters()',
+  'async function previewMasterGraphThreadUpdates(conversationIdOverride?: string)',
+  'async function syncMasterGraphThreadToBarshMatters(conversationIdOverride?: string)',
   'function renderMasterEmailThreadsPanel()',
   'id="master-email-threads-section"',
   'setActiveMasterWorkspaceTab("email_threads")',
@@ -55,6 +55,13 @@ console.log("\\n=== VERIFY MASTER UI MARKERS ===");
   '/api/graph/thread-sync?confirm=sync-graph-thread',
   'masterLawsuitId: masterId',
   'Confirmed sync persists local Barsh Matters email metadata only.',
+  'masterGraphThreadSyncPreviewConversationId',
+  'masterGraphThreadSyncConversationId',
+  'async function previewMasterGraphThreadUpdates(conversationIdOverride?: string)',
+  'async function syncMasterGraphThreadToBarshMatters(conversationIdOverride?: string)',
+  'Preview This Thread',
+  'Sync This Thread',
+  'Preview Graph Updates must be run for this specific master thread before syncing it.',
 ].forEach((marker) => mustContain(pagePath, page, marker));
 
 console.log("\\n=== VERIFY SUPPORTING ROUTES HAVE EXPECTED SAFETY MARKERS ===");

@@ -589,8 +589,10 @@ const activeGroupKey =
   const [emailThreadPreviewResult, setEmailThreadPreviewResult] = useState<any>(null);
   const [graphThreadSyncPreviewLoading, setGraphThreadSyncPreviewLoading] = useState(false);
   const [graphThreadSyncPreviewResult, setGraphThreadSyncPreviewResult] = useState<any>(null);
+  const [graphThreadSyncPreviewConversationId, setGraphThreadSyncPreviewConversationId] = useState<string>("");
   const [graphThreadSyncLoading, setGraphThreadSyncLoading] = useState(false);
   const [graphThreadSyncResult, setGraphThreadSyncResult] = useState<any>(null);
+  const [graphThreadSyncConversationId, setGraphThreadSyncConversationId] = useState<string>("");
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
@@ -3556,8 +3558,8 @@ const activeGroupKey =
     };
   }
 
-  async function previewGraphThreadUpdates() {
-    const conversationId = firstMatterEmailConversationId();
+  async function previewGraphThreadUpdates(conversationIdOverride?: string) {
+    const conversationId = textValue(conversationIdOverride) || firstMatterEmailConversationId();
 
     if (!conversationId) {
       setGraphThreadSyncPreviewResult({
@@ -3568,6 +3570,7 @@ const activeGroupKey =
     }
 
     setGraphThreadSyncPreviewLoading(true);
+    setGraphThreadSyncPreviewConversationId(conversationId);
     setGraphThreadSyncPreviewResult(null);
     setGraphThreadSyncResult(null);
 
@@ -3592,8 +3595,8 @@ const activeGroupKey =
     }
   }
 
-  async function syncGraphThreadToBarshMatters() {
-    const conversationId = firstMatterEmailConversationId();
+  async function syncGraphThreadToBarshMatters(conversationIdOverride?: string) {
+    const conversationId = textValue(conversationIdOverride) || graphThreadSyncPreviewConversationId || firstMatterEmailConversationId();
 
     if (!conversationId) {
       setGraphThreadSyncResult({
@@ -3611,6 +3614,15 @@ const activeGroupKey =
       return;
     }
 
+    const previewConversationId = textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId);
+    if (previewConversationId && previewConversationId !== conversationId) {
+      setGraphThreadSyncResult({
+        ok: false,
+        error: "Preview Graph Updates must be run for this specific thread before syncing it.",
+      });
+      return;
+    }
+
     const confirmed = window.confirm(
       "Sync this Microsoft Graph thread to Barsh Matters local email records?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata only.  It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation."
     );
@@ -3618,6 +3630,7 @@ const activeGroupKey =
     if (!confirmed) return;
 
     setGraphThreadSyncLoading(true);
+    setGraphThreadSyncConversationId(conversationId);
     setGraphThreadSyncResult(null);
 
     try {
@@ -3692,7 +3705,7 @@ const activeGroupKey =
 
             <button
               type="button"
-              onClick={previewGraphThreadUpdates}
+              onClick={() => previewGraphThreadUpdates()}
               disabled={!hasConversationId || emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
               title={!hasConversationId ? "Load local Email / Threads first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
               style={{
@@ -3714,7 +3727,7 @@ const activeGroupKey =
 
             <button
               type="button"
-              onClick={syncGraphThreadToBarshMatters}
+              onClick={() => syncGraphThreadToBarshMatters()}
               disabled={
                 !hasConversationId ||
                 !graphThreadSyncPreviewResult ||
@@ -4015,22 +4028,80 @@ const activeGroupKey =
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setExpandedEmailThreadId(threadExpanded ? null : threadKey)}
-                      style={{
-                        fontSize: 12,
-                        padding: "5px 9px",
-                        border: "1px solid #94a3b8",
-                        borderRadius: 999,
-                        background: threadExpanded ? "#e2e8f0" : "#fff",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {threadExpanded ? "Hide Thread" : "View Thread"}
-                    </button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        onClick={() => previewGraphThreadUpdates(textValue(thread.conversationId))}
+                        disabled={!textValue(thread.conversationId) || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
+                        title="Preview Microsoft Graph updates for this specific thread without persisting changes."
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 9px",
+                          border: "1px solid #0f766e",
+                          borderRadius: 999,
+                          background: graphThreadSyncPreviewLoading && graphThreadSyncPreviewConversationId === textValue(thread.conversationId) ? "#f3f4f6" : "#ecfeff",
+                          color: "#0f766e",
+                          cursor: !textValue(thread.conversationId) || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {graphThreadSyncPreviewLoading && graphThreadSyncPreviewConversationId === textValue(thread.conversationId) ? "Previewing..." : "Preview This Thread"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => syncGraphThreadToBarshMatters(textValue(thread.conversationId))}
+                        disabled={
+                          !textValue(thread.conversationId) ||
+                          !graphThreadSyncPreviewResult ||
+                          textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId) !== textValue(thread.conversationId) ||
+                          graphThreadSyncPreviewLoading ||
+                          graphThreadSyncLoading
+                        }
+                        title="Run only after Preview This Thread.  Persists local EmailThread / EmailMessage metadata only."
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 9px",
+                          border: "1px solid #7c3aed",
+                          borderRadius: 999,
+                          background:
+                            graphThreadSyncLoading && graphThreadSyncConversationId === textValue(thread.conversationId)
+                              ? "#f3f4f6"
+                              : "#f5f3ff",
+                          color: "#6d28d9",
+                          cursor:
+                            !textValue(thread.conversationId) ||
+                            !graphThreadSyncPreviewResult ||
+                            textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId) !== textValue(thread.conversationId) ||
+                            graphThreadSyncPreviewLoading ||
+                            graphThreadSyncLoading
+                              ? "not-allowed"
+                              : "pointer",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {graphThreadSyncLoading && graphThreadSyncConversationId === textValue(thread.conversationId) ? "Syncing..." : "Sync This Thread"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedEmailThreadId(threadExpanded ? null : threadKey)}
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 9px",
+                          border: "1px solid #94a3b8",
+                          borderRadius: 999,
+                          background: threadExpanded ? "#e2e8f0" : "#fff",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {threadExpanded ? "Hide Thread" : "View Thread"}
+                      </button>
+                    </div>
                   </div>
 
                   <div

@@ -23,14 +23,21 @@ const requiredPageMarkers = [
   'const [graphThreadSyncPreviewLoading, setGraphThreadSyncPreviewLoading] = useState(false);',
   'const [graphThreadSyncLoading, setGraphThreadSyncLoading] = useState(false);',
   'function firstMatterEmailConversationId()',
-  'async function previewGraphThreadUpdates()',
-  'async function syncGraphThreadToBarshMatters()',
+  'async function previewGraphThreadUpdates(conversationIdOverride?: string)',
+  'async function syncGraphThreadToBarshMatters(conversationIdOverride?: string)',
   '/api/graph/thread-sync-preview?${params.toString()}',
   '/api/graph/thread-sync?confirm=sync-graph-thread',
   'Preview Graph Updates',
   'Sync Thread to Barsh Matters',
   'Run Preview Graph Updates before syncing this thread to Barsh Matters.',
   'It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation.',
+  'graphThreadSyncPreviewConversationId',
+  'graphThreadSyncConversationId',
+  'async function previewGraphThreadUpdates(conversationIdOverride?: string)',
+  'async function syncGraphThreadToBarshMatters(conversationIdOverride?: string)',
+  'Preview This Thread',
+  'Sync This Thread',
+  'Preview Graph Updates must be run for this specific thread before syncing it.',
 ];
 
 const requiredRouteMarkers = [
