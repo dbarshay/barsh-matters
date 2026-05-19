@@ -44,7 +44,10 @@
     "verify:document-generation-action-button-clickable-safety": "node scripts/verify-document-generation-action-button-clickable-safety.mjs",
     "verify:document-delivery-draft-preview-safety": "node scripts/verify-document-delivery-draft-preview-safety.mjs",
     "verify:clio-master-matter-preview-safety": "node scripts/verify-clio-master-matter-preview-safety.mjs",
-    "verify:clio-master-mapping-schema-safety": "node scripts/verify-clio-master-mapping-schema-safety.mjs"
+    "verify:clio-master-mapping-schema-safety": "node scripts/verify-clio-master-mapping-schema-safety.mjs",
+    "verify:clio-master-matter-confirm-safety": "node scripts/verify-clio-master-matter-confirm-safety.mjs",
+    "verify:clio-master-crossref-preview-safety": "node scripts/verify-clio-master-crossref-preview-safety.mjs",
+    "verify:clio-master-crossref-confirm-safety": "node scripts/verify-clio-master-crossref-confirm-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

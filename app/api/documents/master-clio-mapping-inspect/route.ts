@@ -63,6 +63,17 @@ export async function GET(req: NextRequest) {
       return display && display !== "BRL30121" && display !== "BRL30122";
     });
 
+    const explicitLawsuitMappings = lawsuits
+      .filter((lawsuit: any) => lawsuit.clioMasterMatterId || lawsuit.clioMasterDisplayNumber)
+      .map((lawsuit: any) => ({
+        localMasterLawsuitId: lawsuit.masterLawsuitId,
+        clioMasterMatterId: lawsuit.clioMasterMatterId || null,
+        clioMasterDisplayNumber: lawsuit.clioMasterDisplayNumber || null,
+        clioMasterMatterDescription: lawsuit.clioMasterMatterDescription || null,
+        clioMasterMappedAt: lawsuit.clioMasterMappedAt || null,
+        clioMasterMappingSource: lawsuit.clioMasterMappingSource || null,
+      }));
+
     return NextResponse.json({
       ok: true,
       action: "master-clio-mapping-inspection",
@@ -77,17 +88,19 @@ export async function GET(req: NextRequest) {
         claimIndexRows,
         brlCandidates,
         possibleMasterClioMappings,
+        explicitLawsuitMappings,
       },
       summary: {
         lawsuitRows: lawsuits.length,
         claimIndexRows: claimIndexRows.length,
         brlCandidateCount: brlCandidates.length,
         possibleMasterClioMappingCount: possibleMasterClioMappings.length,
+        explicitLawsuitMappingCount: explicitLawsuitMappings.length,
         knownClioTesterMattersPresent: brlCandidates
           .filter((row) => row.clioDisplayNumber === "BRL30121" || row.clioDisplayNumber === "BRL30122")
           .map((row) => row.clioDisplayNumber),
         masterAppearsMappedToClio:
-          possibleMasterClioMappings.length > 0,
+          explicitLawsuitMappings.length > 0 || possibleMasterClioMappings.length > 0,
       },
     });
   } catch (error: any) {

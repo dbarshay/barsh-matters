@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { clioFetch } from "@/lib/clio";
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -29,6 +30,95 @@ function safeJson(value: unknown): unknown {
 function buildClioMatterDescription(masterLawsuitId: string) {
   return `MASTER LAWSUIT - ${masterLawsuitId}`;
 }
+
+async function readClioMatterClient(matterId: number | string) {
+  const id = Number(matterId);
+  if (!Number.isFinite(id) || id <= 0) return null;
+
+  const fields = "id,display_number,client{id,name}";
+  const res = await clioFetch(
+    `/api/v4/matters/${encodeURIComponent(String(id))}.json?fields=${encodeURIComponent(fields)}`
+  );
+
+  const bodyText = await res.text();
+  let json: any = {};
+  try {
+    json = bodyText ? JSON.parse(bodyText) : {};
+  } catch {
+    json = { raw: bodyText };
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      matterId: id,
+      error: `Could not read Clio matter client: status ${res.status}; body ${bodyText || "(empty)"}`,
+    };
+  }
+
+  const matter = json?.data || {};
+  const client = matter?.client || {};
+  const clientId = Number(client?.id);
+
+  if (!Number.isFinite(clientId) || clientId <= 0) {
+    return {
+      ok: false,
+      matterId: id,
+      displayNumber: clean(matter?.display_number),
+      error: "Child Clio matter did not include a valid client id.",
+    };
+  }
+
+  return {
+    ok: true,
+    matterId: id,
+    displayNumber: clean(matter?.display_number),
+    clientId,
+    clientName: clean(client?.name),
+  };
+}
+
+async function findClientFromChildClioMatters(rows: Array<{ matter_id: number | null; display_number?: string | null }>) {
+  const candidates = rows
+    .map((row) => ({
+      matterId: Number(row.matter_id),
+      displayNumber: clean(row.display_number),
+    }))
+    .filter((row) => Number.isFinite(row.matterId) && row.matterId > 0);
+
+  const attempts = [];
+
+  for (const candidate of candidates) {
+    const result = await readClioMatterClient(candidate.matterId);
+    attempts.push({
+      candidate,
+      result,
+    });
+
+    if (result?.ok && result.clientId) {
+      return {
+        ok: true,
+        clientId: result.clientId,
+        clientName: result.clientName,
+        sourceMatterId: result.matterId,
+        sourceDisplayNumber: result.displayNumber || candidate.displayNumber,
+        attempts,
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    clientId: null,
+    clientName: "",
+    sourceMatterId: null,
+    sourceDisplayNumber: "",
+    attempts,
+    error: "No child Clio matter with a readable client was found.",
+  };
+}
+
+
 
 function buildPlannedMapping(masterLawsuitId: string) {
   return {
@@ -87,11 +177,15 @@ export async function GET(req: NextRequest) {
       new Set(claimIndexRows.map((row) => clean(row.claim_number_raw)).filter(Boolean))
     );
 
+    const childClient = await findClientFromChildClioMatters(claimIndexRows);
+
     const plannedClioMatterPayload = {
       data: {
         description: buildClioMatterDescription(masterLawsuitId),
         // Clio assigns the BRLXXXXX display number.  Barsh Matters must store it after creation.
         status: "Open",
+        client: childClient.ok ? { id: childClient.clientId, name: childClient.clientName } : null,
+        client_id: childClient.ok ? childClient.clientId : null,
         customMetadataForMappingOnly: {
           localMasterLawsuitId: masterLawsuitId,
           claimNumber: lawsuit?.claimNumber || claimNumbers[0] || null,
@@ -129,9 +223,11 @@ export async function GET(req: NextRequest) {
         insurerNames,
         claimNumbers,
       },
+      childClient,
       plannedClioMatterPayload,
       plannedLocalMapping,
       blockingWarnings: [
+        ...(childClient.ok ? [] : [childClient.error || "Could not derive Clio client from child matters."]),
         ...(lawsuit ? [] : [`No local Lawsuit row found for ${masterLawsuitId}.`]),
         ...(claimIndexRows.length ? [] : [`No local ClaimIndex rows found for ${masterLawsuitId}.`]),
       ],
@@ -140,6 +236,7 @@ export async function GET(req: NextRequest) {
         clioCreateEndpoint: "POST /api/v4/matters.json",
         mustCaptureClioMatterId: true,
         mustCaptureClioDisplayNumber: true,
+        mustUseChildMatterClient: true,
         mustStoreMappingInBarshMatters: true,
         mustNotUseMasterLawsuitIdAsClioDisplayNumber: true,
         clioAssignsBrlDisplayNumber: true,
