@@ -39,16 +39,16 @@ excluded_master="$(echo "$packet" | jq -r --argjson id "$MASTER_MATTER_ID" '.pac
 
 if [ "$packet_ok" != "true" ]; then
   packet_reason="$(echo "$packet" | jq -r '.packet.metadata.refresh.reason // .packet.refresh.reason // .metadata.refresh.reason // .reason // empty')"
-  packet_blocking_count="$(echo "$packet" | jq -r '((.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .readiness.blockingErrors // []) | length)')"
+  packet_blocking_count="$(echo "$packet" | jq -r '((.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .packet.validation.blockingErrors // .readiness.blockingErrors // []) | length)')"
   packet_has_missing_fixture_errors="$(echo "$packet" | jq -r '[
-    (.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .readiness.blockingErrors // [])[]
+    (.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .packet.validation.blockingErrors // .readiness.blockingErrors // [])[]
   ] | any(. == "No ClaimIndex rows found for MASTER_LAWSUIT_ID." or . == "No master matter found for MASTER_LAWSUIT_ID." or . == "No child bill matters found for MASTER_LAWSUIT_ID.")')"
 
   if { [ "$packet_reason" = "local-document-packet-no-clio-refresh" ] || [ "$packet_has_missing_fixture_errors" = "true" ]; } && [ "$packet_blocking_count" != "0" ]; then
     echo "WARN: packet endpoint returned structured no-data response for ${MASTER_LAWSUIT_ID}; continuing because production may not contain seeded smoke fixture rows."
   else
     echo "FAIL: packet endpoint did not return ok=true and did not return expected structured no-data response" >&2
-    echo "$packet" | jq '{ok, reason: (.packet.metadata.refresh.reason // .packet.refresh.reason // .metadata.refresh.reason // .reason // null), blockingErrors: (.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .readiness.blockingErrors // [])}' >&2
+    echo "$packet" | jq '{ok, reason: (.packet.metadata.refresh.reason // .packet.refresh.reason // .metadata.refresh.reason // .reason // null), blockingErrors: (.packet.metadata.readiness.blockingErrors // .packet.readiness.blockingErrors // .packet.validation.blockingErrors // .readiness.blockingErrors // [])}' >&2
     exit 1
   fi
 else
