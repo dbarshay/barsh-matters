@@ -3356,9 +3356,9 @@ export default function FilteredMattersPage() {
                       </button>
 
                       <button
+                          title="Open the Master Lawsuit document generation preview popup."
                           onClick={launchMasterDocumentGenerationDialog}
                         type="button"
-                        title="Open the Master Lawsuit document generation preview popup."
                         style={{
                           width: "100%",
                           minWidth: 0,
@@ -3369,7 +3369,7 @@ export default function FilteredMattersPage() {
                           color: "#334155",
                           fontSize: 12,
                           fontWeight: 950,
-                          cursor: "not-allowed",
+                          cursor: "pointer",
                           opacity: 0.82,
                         }}
                       >
