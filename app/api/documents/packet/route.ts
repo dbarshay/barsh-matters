@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ingestMattersFromClioBatch } from "@/lib/ingestMattersFromClioBatch";
-import { indexMatterInternal } from "@/lib/indexMatterInternal";
 
 function clean(value: unknown): string {
   return String(value || "").trim();
@@ -18,6 +16,16 @@ function num(value: unknown): number {
 
 function money(value: unknown): number {
   return Math.round(num(value) * 100) / 100;
+}
+
+function moneyOption(value: unknown): number {
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.-]/g, "");
+    if (!cleaned) return 0;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : 0;
+  }
+  return money(value);
 }
 
 function uniqueStrings(values: unknown[]): string[] {
@@ -77,49 +85,114 @@ function deriveField(masterValue: unknown, childValues: unknown[], label: string
   };
 }
 
-async function forceRefreshOnlyThisLawsuit(masterLawsuitId: string) {
-  const seedRows = await prisma.claimIndex.findMany({
-    where: { master_lawsuit_id: masterLawsuitId },
-    select: { matter_id: true },
-  });
 
-  const matterIds = Array.from(
-    new Set(
-      seedRows
-        .map((row) => Number(row.matter_id))
-        .filter((id) => Number.isFinite(id) && id > 0)
-    )
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, any>) : {};
+}
+
+function compactObject(value: Record<string, any>): Record<string, any> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => {
+      if (v === null || v === undefined) return false;
+      if (typeof v === "string" && !v.trim()) return false;
+      if (Array.isArray(v) && v.length === 0) return false;
+      if (typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0) return false;
+      return true;
+    })
   );
+}
 
-  const refreshedMatterIds: number[] = [];
-  const errors: any[] = [];
-  const batchSize = 25;
-
-  for (let i = 0; i < matterIds.length; i += batchSize) {
-    const batch = matterIds.slice(i, i + batchSize);
-
-    try {
-      const results = await ingestMattersFromClioBatch(batch);
-
-      for (const result of results as any[]) {
-        if (result.ok) refreshedMatterIds.push(result.matterId);
-        else errors.push(result);
-      }
-    } catch {
-      for (const id of batch) {
-        const result = await indexMatterInternal(id, { force: true });
-        if (result.ok) refreshedMatterIds.push(id);
-        else errors.push(result);
-      }
-    }
-  }
+function referenceSummary(entity: any | null) {
+  if (!entity) return null;
+  const details = asRecord(entity.details);
+  const hidden = asRecord(details._hiddenImportFields);
 
   return {
-    seedCount: seedRows.length,
-    refreshedMatterIds,
-    errors,
+    id: entity.id,
+    type: entity.type,
+    displayName: entity.displayName,
+    normalizedName: entity.normalizedName,
+    notes: entity.notes || "",
+    source: entity.source || "",
+    details,
+    hiddenDetails: hidden,
   };
 }
+
+function findReferenceEntity(entities: any[], type: string, value: unknown) {
+  const wanted = clean(value).toLowerCase();
+  if (!wanted) return null;
+
+  return (
+    entities.find((entity) => {
+      const displayName = clean(entity.displayName).toLowerCase();
+      const normalizedName = clean(entity.normalizedName).toLowerCase();
+      return entity.type === type && (displayName === wanted || normalizedName === wanted);
+    }) || null
+  );
+}
+
+async function loadDocumentReferenceData(args: {
+  providerName: string;
+  patientName: string;
+  insurerName: string;
+  courtName: string;
+  treatingProviderNames: string[];
+}) {
+  const lookupValues = uniqueStrings([
+    args.providerName,
+    args.patientName,
+    args.insurerName,
+    args.courtName,
+    ...args.treatingProviderNames,
+  ]);
+
+  if (lookupValues.length === 0) {
+    return {
+      provider: null,
+      patient: null,
+      insurer: null,
+      court: null,
+      treatingProviders: [],
+      lookupValues,
+    };
+  }
+
+  const entities = await prisma.referenceEntity.findMany({
+    where: {
+      active: true,
+      type: {
+        in: ["provider_client", "patient", "insurer_company", "court_venue", "treating_provider"],
+      },
+      displayName: {
+        in: lookupValues,
+      },
+    },
+    select: {
+      id: true,
+      type: true,
+      displayName: true,
+      normalizedName: true,
+      notes: true,
+      details: true,
+      source: true,
+    },
+  });
+
+  const treatingProviders = uniqueStrings(args.treatingProviderNames)
+    .map((name) => referenceSummary(findReferenceEntity(entities, "treating_provider", name)))
+    .filter(Boolean);
+
+  return {
+    provider: referenceSummary(findReferenceEntity(entities, "provider_client", args.providerName)),
+    patient: referenceSummary(findReferenceEntity(entities, "patient", args.patientName)),
+    insurer: referenceSummary(findReferenceEntity(entities, "insurer_company", args.insurerName)),
+    court: referenceSummary(findReferenceEntity(entities, "court_venue", args.courtName)),
+    treatingProviders,
+    lookupValues,
+  };
+}
+
 
 export async function GET(req: NextRequest) {
   const masterLawsuitId = clean(req.nextUrl.searchParams.get("masterLawsuitId"));
@@ -154,8 +227,6 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const refresh = await forceRefreshOnlyThisLawsuit(masterLawsuitId);
-
   const rawRows = await prisma.claimIndex.findMany({
     where: { master_lawsuit_id: masterLawsuitId },
     orderBy: [
@@ -186,7 +257,6 @@ export async function GET(req: NextRequest) {
   if (masterRows.length === 0) blockingErrors.push("No master matter found for MASTER_LAWSUIT_ID.");
   if (masterRows.length > 1) blockingErrors.push("Multiple master matters found for MASTER_LAWSUIT_ID.");
   if (childRows.length === 0) blockingErrors.push("No child bill matters found for MASTER_LAWSUIT_ID.");
-  if (refresh.errors.length > 0) warnings.push("One or more lawsuit matters could not be refreshed from Clio.");
 
   const master = masterRows[0] || null;
 
@@ -224,6 +294,85 @@ export async function GET(req: NextRequest) {
     "index/AAA number",
     warnings
   );
+
+  const lawsuitOptions = asRecord(lawsuit?.lawsuitOptions);
+  const selectedCourtDetails = lawsuitOptions.selectedCourtDetails || null;
+  const dateOfLoss = clean(lawsuitOptions.dateOfLoss);
+  const dateFiled = clean(lawsuitOptions.dateFiled);
+  const indexFee = moneyOption(lawsuitOptions.indexFee ?? lawsuitOptions.filingFee);
+  const serviceFee = moneyOption(lawsuitOptions.serviceFee);
+  const otherCourtFees = moneyOption(lawsuitOptions.otherCourtFees ?? lawsuitOptions.otherCourtCosts);
+  const courtCostsTotal =
+    moneyOption(lawsuitOptions.courtCostsTotal) || money(indexFee + serviceFee + otherCourtFees);
+  const treatingProviderNames = uniqueStrings(childRows.map((row: any) => row.treating_provider));
+
+  const referenceData = await loadDocumentReferenceData({
+    providerName: provider.value,
+    patientName: patient.value,
+    insurerName: insurer.value,
+    courtName: lawsuit?.venue || "",
+    treatingProviderNames,
+  });
+
+  const courtReferenceDetails =
+    selectedCourtDetails ||
+    referenceData.court?.details ||
+    null;
+
+  const templateFields = compactObject({
+    masterLawsuitId,
+    providerName: provider.value,
+    patientName: patient.value,
+    insurerName: insurer.value,
+    claimNumber: claimNumber.value,
+    courtName: lawsuit?.venue || "",
+    courtSelection: lawsuit?.venueSelection || "",
+    courtOther: lawsuit?.venueOther || "",
+    courtDetails: courtReferenceDetails,
+    indexAaaNumber: indexAaaNumber.value,
+    dateOfLoss,
+    dateFiled,
+    indexFee,
+    serviceFee,
+    otherCourtFees,
+    courtCostsTotal,
+    treatingProviderNames,
+  });
+
+  const documentData = {
+    readyForTemplates: true,
+    generatesDocuments: false,
+    localOnly: true,
+    clioCorrectnessDependency: false,
+    sources: {
+      lawsuitUiFields: !!lawsuit,
+      claimIndex: rows.length > 0,
+      referenceData: true,
+      clio: false,
+    },
+    uiFields: {
+      courtName: lawsuit?.venue || "",
+      courtSelection: lawsuit?.venueSelection || "",
+      courtOther: lawsuit?.venueOther || "",
+      selectedCourtDetails,
+      indexAaaNumber: indexAaaNumber.value,
+      dateOfLoss,
+      dateFiled,
+      indexFee,
+      serviceFee,
+      otherCourtFees,
+      courtCostsTotal,
+    },
+    claimIndexFields: {
+      providerName: provider.value,
+      patientName: patient.value,
+      insurerName: insurer.value,
+      claimNumber: claimNumber.value,
+      treatingProviderNames,
+    },
+    referenceData,
+    templateFields,
+  };
 
   if (!lawsuit) {
     warnings.push("No local Lawsuit row found for MASTER_LAWSUIT_ID; packet is using ClaimIndex-derived metadata only.");
@@ -308,7 +457,8 @@ export async function GET(req: NextRequest) {
         source: lawsuit?.venue ? "lawsuit" : "missing",
       },
       lawsuitNotes: lawsuit?.lawsuitNotes || "",
-      lawsuitOptions: lawsuit?.lawsuitOptions || null,
+      lawsuitOptions,
+      documentData,
       amountSought,
       caption: {
         providerName: provider.value,
@@ -364,12 +514,14 @@ export async function GET(req: NextRequest) {
     },
 
     refresh: {
-      seedCount: refresh.seedCount,
-      refreshedMatterCount: refresh.refreshedMatterIds.length,
-      refreshedMatterIds: refresh.refreshedMatterIds,
-      errorCount: refresh.errors.length,
-      errors: refresh.errors,
-      scope: "master-lawsuit-only",
+      skipped: true,
+      reason: "local-document-packet-no-clio-refresh",
+      clioCorrectnessDependency: false,
+      seedCount: 0,
+      refreshedMatterCount: 0,
+      refreshedMatterIds: [],
+      errorCount: 0,
+      errors: [],
     },
   };
 

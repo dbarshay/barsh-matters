@@ -32,7 +32,8 @@
     "verify:reference-import-history-safety": "node scripts/verify-reference-import-history-safety.mjs",
     "verify:reference-import-cleanup-preview-safety": "node scripts/verify-reference-import-cleanup-preview-safety.mjs",
     "verify:reference-import-cleanup-confirm-safety": "node scripts/verify-reference-import-cleanup-confirm-safety.mjs",
-    "verify:matter-local-field-safety": "node scripts/verify-matter-local-field-safety.mjs"
+    "verify:matter-local-field-safety": "node scripts/verify-matter-local-field-safety.mjs",
+    "verify:local-document-packet-safety": "node scripts/verify-local-document-packet-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
