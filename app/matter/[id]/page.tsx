@@ -4834,7 +4834,7 @@ const activeGroupKey =
       done: providerFeeDefaultsLoaded,
       detail: providerFeeDefaultsLoaded
         ? "Provider/client Clio defaults were loaded or checked.  Missing defaults remain non-blocking."
-        : "Open the Settlement tab and confirm provider fee defaults were checked.",
+        : "Auto-loads when this tab opens from the read-only Clio provider/client contact defaults.  Open the Settlement tab and confirm provider fee defaults were checked.",
     },
     {
       label: "Writeback preview ready",
