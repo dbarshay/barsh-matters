@@ -75,6 +75,18 @@ echo "=== RUN CLAIMINDEX REBUILD STATUS SAFETY VERIFIER ==="
 npm run verify:claimindex-rebuild-status-safety
 
 echo
+echo "=== RUN DIRECT MATTER EMAIL THREAD UI SAFETY VERIFIER ==="
+npm run verify:direct-matter-email-thread-ui-safety
+
+echo "=== RUN MASTER EMAIL THREAD UI SAFETY VERIFIER ==="
+npm run verify:master-email-thread-ui-safety
+
+echo "=== RUN GRAPH THREAD SYNC PREVIEW SAFETY VERIFIER ==="
+npm run verify:graph-thread-sync-preview-safety
+
+echo "=== RUN GRAPH THREAD SYNC PERSISTENCE SAFETY VERIFIER ==="
+npm run verify:graph-thread-sync-persistence-safety
+
 echo "=== RUN PRODUCTION WORKFLOW SMOKE TEST ==="
 npm run smoke:workflow:prod
 
