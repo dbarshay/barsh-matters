@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildGraphDraftPayloadPreview, normalizeGraphRecipients } from "@/lib/graph/draft";
+import { resolveMaildropForGraphDraftMatterId } from "@/lib/graph/maildropForDraft";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +12,15 @@ function objectValue(value: unknown): Record<string, any> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, any>) : {};
 }
 
+
 export async function POST(req: NextRequest) {
   try {
     const body = objectValue(await req.json().catch(() => ({})));
-    const context = objectValue(body.context);
+    let context = objectValue(body.context);
     const draft = objectValue(body.draft);
 
     const to = normalizeGraphRecipients(body.to || draft.to || context.suggestedToEmail || context.to);
-    const cc = normalizeGraphRecipients(
+    let cc = normalizeGraphRecipients(
       body.cc ||
         draft.cc ||
         (context.clioMaildropEmail
@@ -32,6 +34,40 @@ export async function POST(req: NextRequest) {
       : Array.isArray(draft.attachments)
         ? draft.attachments
         : [];
+
+    const resolvedMaildrop =
+      !clean(context.clioMaildropEmail) && body?.matterId
+        ? await resolveMaildropForGraphDraftMatterId(body.matterId)
+        : null;
+
+    if (resolvedMaildrop?.clioMaildropEmail) {
+      context = {
+        ...context,
+        clioMaildropEmail: resolvedMaildrop.clioMaildropEmail,
+        clioMaildropLabel: resolvedMaildrop.clioMaildropLabel,
+      };
+
+      const resolvedMaildropCc = normalizeGraphRecipients([
+        {
+          name: resolvedMaildrop.clioMaildropLabel,
+          email: resolvedMaildrop.clioMaildropEmail,
+        },
+      ]);
+
+      const existingCcEmails = new Set(
+        cc
+          .map((recipient) => clean(recipient.email).toLowerCase())
+          .filter(Boolean)
+      );
+      const missingMaildropCc = resolvedMaildropCc.filter((recipient) => {
+        const email = clean(recipient.email).toLowerCase();
+        return email && !existingCcEmails.has(email);
+      });
+
+      if (missingMaildropCc.length > 0) {
+        cc = [...cc, ...missingMaildropCc];
+      }
+    }
 
     const preview = buildGraphDraftPayloadPreview({
       subject: clean(body.subject || draft.subject || context.subject) || "Document",
@@ -65,6 +101,9 @@ export async function POST(req: NextRequest) {
       databaseRecordsChanged: false,
       crossPlatformRuntime: true,
       localOutlookAutomationRequired: false,
+      maildropResolutionAttempted: Boolean(body?.matterId),
+      maildropResolvedForPayload: Boolean(resolvedMaildrop?.clioMaildropEmail),
+      maildropResolutionSource: resolvedMaildrop?.source || null,
       payload: preview,
       note:
         "Preview only.  This route converts Barsh Matters document delivery data into a Microsoft Graph draft-message payload shape.  It does not create a draft, send email, read a mailbox, write to Clio, or write to the database.",
