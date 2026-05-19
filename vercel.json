@@ -7,6 +7,10 @@
     {
       "path": "/api/graph/background-thread-sync",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/graph/maildrop-discovery",
+      "schedule": "* * * * *"
     }
   ]
 }
