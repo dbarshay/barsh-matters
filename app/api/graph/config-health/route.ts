@@ -1,46 +1,16 @@
 import { NextResponse } from "next/server";
+import {
+  acceptedGraphEnvironmentAliases,
+  getGraphAuthConfig,
+  getGraphAuthReadiness,
+  requiredGraphEnvironment,
+} from "@/lib/graph/config";
 
 export const dynamic = "force-dynamic";
 
-type GraphEnvStatus = {
-  name: string;
-  configured: boolean;
-  requiredFor: string;
-};
-
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function configured(name: string): boolean {
-  return clean(process.env[name]).length > 0;
-}
-
-function envStatus(name: string, requiredFor: string): GraphEnvStatus {
-  return {
-    name,
-    configured: configured(name),
-    requiredFor,
-  };
-}
-
-function firstConfigured(names: string[]): string | null {
-  return names.find((name) => configured(name)) || null;
-}
-
 export async function GET() {
-  const tenantEnvNames = ["MICROSOFT_GRAPH_TENANT_ID", "AZURE_TENANT_ID"];
-  const clientIdEnvNames = ["MICROSOFT_GRAPH_CLIENT_ID", "AZURE_CLIENT_ID"];
-  const clientSecretEnvNames = ["MICROSOFT_GRAPH_CLIENT_SECRET", "AZURE_CLIENT_SECRET"];
-  const mailboxEnvNames = ["MICROSOFT_GRAPH_MAILBOX_USER_ID", "MICROSOFT_GRAPH_DEFAULT_MAILBOX", "OUTLOOK_DEFAULT_MAILBOX"];
-
-  const tenantConfiguredAs = firstConfigured(tenantEnvNames);
-  const clientIdConfiguredAs = firstConfigured(clientIdEnvNames);
-  const clientSecretConfiguredAs = firstConfigured(clientSecretEnvNames);
-  const mailboxConfiguredAs = firstConfigured(mailboxEnvNames);
-
-  const appOnlyReady = Boolean(tenantConfiguredAs && clientIdConfiguredAs && clientSecretConfiguredAs);
-  const mailboxReady = Boolean(mailboxConfiguredAs);
+  const config = getGraphAuthConfig();
+  const readiness = getGraphAuthReadiness(config);
 
   return NextResponse.json({
     action: "graph-config-health",
@@ -55,44 +25,29 @@ export async function GET() {
     databaseRecordsChanged: false,
     env: {
       tenant: {
-        configured: Boolean(tenantConfiguredAs),
-        configuredAs: tenantConfiguredAs,
-        acceptedNames: tenantEnvNames,
+        configured: readiness.tenantConfigured,
+        configuredAs: readiness.tenantConfiguredAs,
+        acceptedNames: config.tenantEnvNames,
       },
       clientId: {
-        configured: Boolean(clientIdConfiguredAs),
-        configuredAs: clientIdConfiguredAs,
-        acceptedNames: clientIdEnvNames,
+        configured: readiness.clientIdConfigured,
+        configuredAs: readiness.clientIdConfiguredAs,
+        acceptedNames: config.clientIdEnvNames,
       },
       clientSecret: {
-        configured: Boolean(clientSecretConfiguredAs),
-        configuredAs: clientSecretConfiguredAs,
-        acceptedNames: clientSecretEnvNames,
+        configured: readiness.clientSecretConfigured,
+        configuredAs: readiness.clientSecretConfiguredAs,
+        acceptedNames: config.clientSecretEnvNames,
       },
       mailbox: {
-        configured: Boolean(mailboxConfiguredAs),
-        configuredAs: mailboxConfiguredAs,
-        acceptedNames: mailboxEnvNames,
+        configured: readiness.mailboxConfigured,
+        configuredAs: readiness.mailboxConfiguredAs,
+        acceptedNames: config.mailboxEnvNames,
       },
     },
-    requiredEnvironment: [
-      envStatus("MICROSOFT_GRAPH_TENANT_ID", "Microsoft Graph app-only token acquisition"),
-      envStatus("MICROSOFT_GRAPH_CLIENT_ID", "Microsoft Graph app-only token acquisition"),
-      envStatus("MICROSOFT_GRAPH_CLIENT_SECRET", "Microsoft Graph app-only token acquisition"),
-      envStatus("MICROSOFT_GRAPH_MAILBOX_USER_ID", "Outlook draft creation and mailbox sync target"),
-    ],
-    aliasesAccepted: {
-      MICROSOFT_GRAPH_TENANT_ID: tenantEnvNames,
-      MICROSOFT_GRAPH_CLIENT_ID: clientIdEnvNames,
-      MICROSOFT_GRAPH_CLIENT_SECRET: clientSecretEnvNames,
-      MICROSOFT_GRAPH_MAILBOX_USER_ID: mailboxEnvNames,
-    },
-    readiness: {
-      appOnlyTokenConfigReady: appOnlyReady,
-      mailboxTargetReady: mailboxReady,
-      readyForFutureDraftCreation: appOnlyReady && mailboxReady,
-      readyForFutureReadOnlySync: appOnlyReady && mailboxReady,
-    },
+    requiredEnvironment: requiredGraphEnvironment(),
+    aliasesAccepted: acceptedGraphEnvironmentAliases(),
+    readiness,
     plannedGraphScopes: [
       "Mail.Read",
       "Mail.ReadWrite",

@@ -50,7 +50,8 @@
     "verify:clio-master-crossref-confirm-safety": "node scripts/verify-clio-master-crossref-confirm-safety.mjs",
     "verify:clio-maildrop-inspection-safety": "node scripts/verify-clio-maildrop-inspection-safety.mjs",
     "verify:clio-maildrop-delivery-safety": "node scripts/verify-clio-maildrop-delivery-safety.mjs",
-    "verify:graph-config-health-safety": "node scripts/verify-graph-config-health-safety.mjs"
+    "verify:graph-config-health-safety": "node scripts/verify-graph-config-health-safety.mjs",
+    "verify:graph-token-foundation-safety": "node scripts/verify-graph-token-foundation-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

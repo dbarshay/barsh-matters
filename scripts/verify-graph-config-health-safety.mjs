@@ -27,11 +27,13 @@ function mustNotContain(label, text, needle) {
 }
 
 const routePath = "app/api/graph/config-health/route.ts";
+const configPath = "lib/graph/config.ts";
 const schemaPath = "prisma/schema.prisma";
 const migrationPath = "prisma/migrations/20260519093000_add_graph_email_thread_foundation/migration.sql";
 const packagePath = "package.json";
 
 const route = read(routePath);
+const config = read(configPath);
 const schema = read(schemaPath);
 const migration = read(migrationPath);
 const packageJson = read(packagePath);
@@ -49,15 +51,24 @@ mustContain(routePath, route, "readsMailbox: false");
 mustContain(routePath, route, "syncsMailbox: false");
 mustContain(routePath, route, "clioRecordsChanged: false");
 mustContain(routePath, route, "databaseRecordsChanged: false");
-mustContain(routePath, route, "MICROSOFT_GRAPH_TENANT_ID");
-mustContain(routePath, route, "MICROSOFT_GRAPH_CLIENT_ID");
-mustContain(routePath, route, "MICROSOFT_GRAPH_CLIENT_SECRET");
-mustContain(routePath, route, "MICROSOFT_GRAPH_MAILBOX_USER_ID");
-mustContain(routePath, route, "AZURE_TENANT_ID");
-mustContain(routePath, route, "OUTLOOK_DEFAULT_MAILBOX");
+mustContain(routePath, route, "getGraphAuthConfig");
+mustContain(routePath, route, "getGraphAuthReadiness");
+mustContain(routePath, route, "requiredGraphEnvironment");
+mustContain(routePath, route, "acceptedGraphEnvironmentAliases");
 mustContain(routePath, route, "Mail.Read");
 mustContain(routePath, route, "Mail.ReadWrite");
 mustContain(routePath, route, "Mail.Send");
+
+mustContain(configPath, config, "MICROSOFT_GRAPH_TENANT_ID");
+mustContain(configPath, config, "MICROSOFT_GRAPH_CLIENT_ID");
+mustContain(configPath, config, "MICROSOFT_GRAPH_CLIENT_SECRET");
+mustContain(configPath, config, "MICROSOFT_GRAPH_MAILBOX_USER_ID");
+mustContain(configPath, config, "AZURE_TENANT_ID");
+mustContain(configPath, config, "AZURE_CLIENT_ID");
+mustContain(configPath, config, "AZURE_CLIENT_SECRET");
+mustContain(configPath, config, "OUTLOOK_DEFAULT_MAILBOX");
+mustContain(configPath, config, "getGraphAuthConfig");
+mustContain(configPath, config, "getGraphAuthReadiness");
 
 mustNotContain(routePath, route, "fetch(");
 mustNotContain(routePath, route, "prisma.");
