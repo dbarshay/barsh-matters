@@ -557,6 +557,8 @@ const activeGroupKey =
   const [packetLoading, setPacketLoading] = useState(false);
   const [documentPreview, setDocumentPreview] = useState<any>(null);
   const [documentPreviewLoading, setDocumentPreviewLoading] = useState(false);
+  const [matterDocumentDataPreviewLoading, setMatterDocumentDataPreviewLoading] = useState(false);
+  const [matterDocumentDataPreview, setMatterDocumentDataPreview] = useState<any>(null);
   const [finalizeUploadLoading, setFinalizeUploadLoading] = useState(false);
   const [finalizeUploadResult, setFinalizeUploadResult] = useState<any>(null);
   const [finalizationHistory, setFinalizationHistory] = useState<any>(null);
@@ -3342,6 +3344,172 @@ const activeGroupKey =
     } finally {
       setCurrentSettlementValuesLoading(false);
     }
+  }
+
+  async function loadMatterDocumentDataPreview() {
+    setMatterDocumentDataPreviewLoading(true);
+    setMatterDocumentDataPreview(null);
+
+    try {
+      const res = await fetch(`/api/documents/matter-packet?matterId=${encodeURIComponent(String(matterId))}`);
+      const json = await res.json();
+      setMatterDocumentDataPreview(json);
+
+      if (!res.ok) {
+        throw new Error(json?.error || "Direct matter document data preview failed.");
+      }
+    } catch (err: any) {
+      setMatterDocumentDataPreview({
+        ok: false,
+        error: err?.message || "Direct matter document data preview failed.",
+        packet: null,
+      });
+    } finally {
+      setMatterDocumentDataPreviewLoading(false);
+    }
+  }
+
+  function renderMatterDocumentDataPreviewPanel() {
+    const documentData = matterDocumentDataPreview?.packet?.metadata?.documentData;
+    const templateFields = documentData?.templateFields || {};
+    const referenceData = documentData?.referenceData || {};
+    const refresh = matterDocumentDataPreview?.packet?.refresh || {};
+
+    return (
+      <section
+        style={{
+          border: "1px solid #cbd5e1",
+          borderRadius: 18,
+          padding: 18,
+          margin: "0 0 18px",
+          background: "#f8fafc",
+          boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 18 }}>Document Data Preview</h3>
+            <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13, maxWidth: 820 }}>
+              Read-only local packet data for future Direct Matter templates.  This preview reads ClaimIndex and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadMatterDocumentDataPreview}
+            disabled={matterDocumentDataPreviewLoading}
+            style={{
+              border: 0,
+              borderRadius: 999,
+              padding: "10px 16px",
+              fontWeight: 900,
+              background: matterDocumentDataPreviewLoading ? "#e5e7eb" : "#2563eb",
+              color: matterDocumentDataPreviewLoading ? "#64748b" : "#fff",
+              cursor: matterDocumentDataPreviewLoading ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {matterDocumentDataPreviewLoading ? "Loading..." : "Preview Matter Data"}
+          </button>
+        </div>
+
+        {matterDocumentDataPreview?.error && (
+          <div style={{ marginTop: 12, color: "#991b1b", fontWeight: 800 }}>
+            Error: {textValue(matterDocumentDataPreview.error)}
+          </div>
+        )}
+
+        {documentData && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+                gap: 10,
+                marginTop: 14,
+              }}
+            >
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Scope</div>
+                <div style={{ fontWeight: 900 }}>{textValue(documentData.documentScope) || "direct_matter"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Ready for Templates</div>
+                <div style={{ fontWeight: 900 }}>{documentData.readyForTemplates ? "Yes" : "No"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Generates Documents</div>
+                <div style={{ fontWeight: 900 }}>{documentData.generatesDocuments ? "Yes" : "No"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Clio Correctness Dependency</div>
+                <div style={{ fontWeight: 900 }}>{documentData.clioCorrectnessDependency ? "Yes" : "No"}</div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                gap: 10,
+                marginTop: 12,
+              }}
+            >
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>BRL Number</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.displayNumber) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Provider</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.providerName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Patient</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.patientName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Insurer</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.insurerName) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Claim Number</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.claimNumber) || "—"}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Claim Amount</div>
+                <div style={{ fontWeight: 900 }}>{money(templateFields.claimAmount)}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Balance</div>
+                <div style={{ fontWeight: 900 }}>{money(templateFields.balancePresuit)}</div>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Treating Provider</div>
+                <div style={{ fontWeight: 900 }}>{textValue(templateFields.treatingProviderName) || "—"}</div>
+              </div>
+            </div>
+
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw templateFields JSON</summary>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+                {JSON.stringify(templateFields, null, 2)}
+              </pre>
+            </details>
+
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw referenceData JSON</summary>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+                {JSON.stringify(referenceData, null, 2)}
+              </pre>
+            </details>
+
+            <div style={{ marginTop: 10, fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+              Refresh: {textValue(refresh.reason) || "—"}.
+            </div>
+          </>
+        )}
+      </section>
+    );
   }
 
   async function loadSettlementDocumentsPreview(masterLawsuitIdInput?: string) {
@@ -6726,6 +6894,7 @@ const activeGroupKey =
       {activeWorkspaceTab === "documents" && !alreadyAggregated && (
         <section style={tabPlaceholderPanelStyle}>
           <h2 style={{ marginTop: 0 }}>Documents</h2>
+          {renderMatterDocumentDataPreviewPanel()}
           <p style={tabPlaceholderTextStyle}>
             Document generation becomes available after a lawsuit is generated or the matter is connected to a
             MASTER_LAWSUIT_ID.  Preview and download actions remain non-persistent; final upload to Clio remains explicit only.
@@ -9576,7 +9745,8 @@ const activeGroupKey =
         <>
           <hr style={{ margin: "18px 0 20px 0", border: 0, borderTop: "1px solid #999"  }} />
 
-          {activeWorkspaceTab === "documents" && alreadyAggregated && (
+          {activeWorkspaceTab === "documents" && alreadyAggregated && renderMatterDocumentDataPreviewPanel()}
+      {activeWorkspaceTab === "documents" && alreadyAggregated && (
         <section
           style={{
             border: "1px solid #bfbfbf",
