@@ -58,7 +58,8 @@ function graphThreadMessagesUrl(mailboxUserId: string, conversationId: string, l
     ].join(",")
   );
   params.set("$filter", `conversationId eq '${escapeGraphFilterString(conversationId)}'`);
-  params.set("$orderby", "receivedDateTime asc");
+  // Do not combine conversationId filtering with Graph-side receivedDateTime ordering.
+  // Microsoft Graph can reject that combination as "too complex"; sort locally after retrieval.
   params.set("$top", String(limit));
 
   return `${graphApiBase()}/users/${encodeURIComponent(mailboxUserId)}/messages?${params.toString()}`;
@@ -266,7 +267,14 @@ async function runBackgroundThreadSync(req: NextRequest) {
     const rows = Array.isArray(graphResult.json?.value) ? graphResult.json.value : [];
     const messages = rows
       .map((row: any) => normalizeGraphMessage(row, conversationId))
-      .filter((row: any) => clean(row.graphMessageId));
+      .filter((row: any) => clean(row.graphMessageId))
+      .sort((a: any, b: any) => {
+        const aTime = Date.parse(clean(a.receivedAt || a.sentAt || a.lastModifiedAt));
+        const bTime = Date.parse(clean(b.receivedAt || b.sentAt || b.lastModifiedAt));
+        const aSafe = Number.isFinite(aTime) ? aTime : 0;
+        const bSafe = Number.isFinite(bTime) ? bTime : 0;
+        return aSafe - bSafe;
+      });
 
     graphMessages += messages.length;
 

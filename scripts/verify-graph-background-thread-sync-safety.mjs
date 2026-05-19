@@ -50,6 +50,8 @@ console.log("\n=== VERIFY ROUTE READS KNOWN LOCAL THREADS AND GRAPH ONLY BY CONV
   "conversationId eq",
   "graphThreadMessagesUrl(config.mailboxUserId, conversationId",
   "Background known-thread sync only.",
+  'Do not combine conversationId filtering with Graph-side receivedDateTime ordering.',
+  ".sort((a: any, b: any) =>",
 ].forEach((marker) => mustContain(routePath, route, marker));
 
 console.log("\n=== VERIFY ROUTE PERSISTS LOCAL EMAIL METADATA ONLY ===");
@@ -63,6 +65,7 @@ console.log("\n=== VERIFY ROUTE PERSISTS LOCAL EMAIL METADATA ONLY ===");
 ].forEach((marker) => mustContain(routePath, route, marker));
 
 console.log("\n=== VERIFY NO DRAFT / SEND / CLIO / DOCUMENT UPLOAD WIRING ===");
+mustNotContain(routePath, route, 'params.set("$orderby"');
 [
   "createDraft",
   "create-draft",
