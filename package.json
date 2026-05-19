@@ -53,7 +53,8 @@
     "verify:graph-config-health-safety": "node scripts/verify-graph-config-health-safety.mjs",
     "verify:graph-token-foundation-safety": "node scripts/verify-graph-token-foundation-safety.mjs",
     "verify:graph-live-token-test-safety": "node scripts/verify-graph-live-token-test-safety.mjs",
-    "verify:graph-draft-payload-safety": "node scripts/verify-graph-draft-payload-safety.mjs"
+    "verify:graph-draft-payload-safety": "node scripts/verify-graph-draft-payload-safety.mjs",
+    "verify:graph-create-draft-safety": "node scripts/verify-graph-create-draft-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
