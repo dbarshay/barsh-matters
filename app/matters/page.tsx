@@ -564,6 +564,8 @@ export default function FilteredMattersPage() {
   const [masterSettlementInterestAmountInput, setMasterSettlementInterestAmountInput] = useState("");
   const [masterSettlementInterestFeePercentInput, setMasterSettlementInterestFeePercentInput] = useState("");
   const [masterSettlementNotesInput, setMasterSettlementNotesInput] = useState("");
+  const [masterSettlementLocalPreview, setMasterSettlementLocalPreview] = useState<any>(null);
+  const [masterSettlementLocalPreviewLoading, setMasterSettlementLocalPreviewLoading] = useState(false);
 
   const [masterInfoEditDialog, setMasterInfoEditDialog] = useState<null | {
     field: string;
@@ -1387,6 +1389,49 @@ export default function FilteredMattersPage() {
     setMasterSettlementInterestAmountInput("");
     setMasterSettlementInterestFeePercentInput("");
     setMasterSettlementNotesInput("");
+    setMasterSettlementLocalPreview(null);
+    setMasterSettlementLocalPreviewLoading(false);
+  }
+
+  async function runMasterSettlementLocalPreview() {
+    setMasterSettlementLocalPreviewLoading(true);
+    setMasterSettlementLocalPreview(null);
+
+    try {
+      const response = await fetch("/api/settlements/local-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          masterLawsuitId: currentMasterLawsuitIdForDocumentPreview(),
+          grossSettlementAmount: masterSettlementGrossValue(),
+          settledWith: masterSettlementWithInput,
+          settlementDate: masterSettlementDateInput,
+          paymentExpectedDate: masterSettlementPaymentExpectedDateInput,
+          allocationMode: "pro_rata_by_principal_balance",
+          principalFeePercent: masterSettlementPercentValue(masterSettlementPrincipalFeePercentInput),
+          interestAmount: masterSettlementInterestValue(),
+          interestFeePercent: masterSettlementPercentValue(masterSettlementInterestFeePercentInput),
+          notes: masterSettlementNotesInput,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+      setMasterSettlementLocalPreview({
+        ...(json || {}),
+        ok: Boolean(response.ok && json?.ok),
+        responseStatus: response.status,
+      });
+    } catch (error: any) {
+      setMasterSettlementLocalPreview({
+        ok: false,
+        action: "settlement-local-preview",
+        previewOnly: true,
+        localFirst: true,
+        error: error?.message || "Local settlement preview failed.",
+      });
+    } finally {
+      setMasterSettlementLocalPreviewLoading(false);
+    }
   }
 
   const masterWorkspaceTabButtonStyle = (tab: MasterWorkspaceTab): React.CSSProperties =>
@@ -6512,6 +6557,58 @@ export default function FilteredMattersPage() {
                     </div>
                   </div>
 
+                  {masterSettlementLocalPreview && (
+                    <section
+                      data-barsh-local-settlement-preview-panel="true"
+                      style={{
+                        border: masterSettlementLocalPreview.ok ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                        borderRadius: 16,
+                        background: masterSettlementLocalPreview.ok ? "#f0fdf4" : "#fef2f2",
+                        padding: 14,
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ fontWeight: 950, color: masterSettlementLocalPreview.ok ? "#166534" : "#991b1b" }}>
+                        Local-First Settlement Calculation Preview
+                      </div>
+                      <div style={{ color: "#475569", lineHeight: 1.45 }}>
+                        Preview only.  This reads Barsh Matters ClaimIndex data and does not write Clio, write the database, generate documents, print, queue, or close matters.
+                      </div>
+
+                      {masterSettlementLocalPreview.error && (
+                        <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                          Error: {masterSettlementLocalPreview.error}
+                        </div>
+                      )}
+
+                      {masterSettlementLocalPreview.summary && (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                          <div><strong>Rows:</strong> {masterSettlementLocalPreview.summary.rowCount ?? "—"}</div>
+                          <div><strong>Gross:</strong> {money(masterSettlementLocalPreview.summary.grossSettlementAmount)}</div>
+                          <div><strong>Allocated:</strong> {money(masterSettlementLocalPreview.summary.allocatedSettlementTotal)}</div>
+                          <div><strong>Interest:</strong> {money(masterSettlementLocalPreview.summary.interestAmountTotal)}</div>
+                          <div><strong>Principal Fee:</strong> {money(masterSettlementLocalPreview.summary.principalFeeTotal)}</div>
+                          <div><strong>Interest Fee:</strong> {money(masterSettlementLocalPreview.summary.interestFeeTotal)}</div>
+                          <div><strong>Total Fee:</strong> {money(masterSettlementLocalPreview.summary.totalFee)}</div>
+                          <div><strong>Provider Net:</strong> {money(masterSettlementLocalPreview.summary.providerNetTotal)}</div>
+                        </div>
+                      )}
+
+                      {Array.isArray(masterSettlementLocalPreview?.validation?.blockingErrors) && masterSettlementLocalPreview.validation.blockingErrors.length > 0 && (
+                        <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                          Blocking: {masterSettlementLocalPreview.validation.blockingErrors.join(" ")}
+                        </div>
+                      )}
+
+                      {Array.isArray(masterSettlementLocalPreview?.validation?.warnings) && masterSettlementLocalPreview.validation.warnings.length > 0 && (
+                        <div style={{ color: "#92400e", fontWeight: 900 }}>
+                          Warnings: {masterSettlementLocalPreview.validation.warnings.join(" ")}
+                        </div>
+                      )}
+                    </section>
+                  )}
+
                   <div
                     style={{
                       display: "flex",
@@ -6566,21 +6663,22 @@ export default function FilteredMattersPage() {
 
                     <button
                       type="button"
-                      disabled
-                      title="Preview only.  Settlement API/writeback will be wired after UI behavior is confirmed."
+                      onClick={runMasterSettlementLocalPreview}
+                      disabled={masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0}
+                      title="Preview local-first settlement calculations only.  No Clio writeback, database write, document generation, print queue change, or matter closure occurs."
                       style={{
                         minWidth: 250,
                         height: 44,
-                        border: "1px solid #bfdbfe",
+                        border: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "1px solid #bfdbfe" : "1px solid #2563eb",
                         borderRadius: 12,
-                        background: "#dbeafe",
-                        color: "#1d4ed8",
+                        background: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "#dbeafe" : "#2563eb",
+                        color: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "#1d4ed8" : "#ffffff",
                         fontWeight: 950,
                         fontSize: 15,
-                        cursor: "not-allowed",
+                        cursor: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "not-allowed" : "pointer",
                       }}
                     >
-                      Preview Only — No Writeback
+                      {masterSettlementLocalPreviewLoading ? "Previewing..." : "Preview Local Settlement"}
                     </button>
                   </div>
                 </div>

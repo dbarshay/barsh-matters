@@ -70,7 +70,9 @@
     "verify:maildrop-address-registry-safety": "node scripts/verify-maildrop-address-registry-safety.mjs",
     "verify:email-automation-status-safety": "node scripts/verify-email-automation-status-safety.mjs",
     "verify:clio-maildrop-resolve-source-scope-safety": "node scripts/verify-clio-maildrop-resolve-source-scope-safety.mjs",
-    "verify:master-email-strict-display-filter-safety": "node scripts/verify-master-email-strict-display-filter-safety.mjs"
+    "verify:master-email-strict-display-filter-safety": "node scripts/verify-master-email-strict-display-filter-safety.mjs",
+    "verify:local-first-settlement-preview-safety": "node scripts/verify-local-first-settlement-preview-safety.mjs",
+    "verify:local-first-settlement-preview-ui-safety": "node scripts/verify-local-first-settlement-preview-ui-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
