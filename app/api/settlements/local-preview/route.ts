@@ -188,6 +188,10 @@ export async function POST(req: NextRequest) {
     const principalFeePercent = percent(body.principalFeePercent);
     const interestFeePercent = percent(body.interestFeePercent);
     const allocationMode = clean(body.allocationMode) || "pro_rata_by_principal_balance";
+    const settledWith = clean(body.settledWith);
+    const settlementDate = clean(body.settlementDate);
+    const paymentExpectedDate = clean(body.paymentExpectedDate);
+    const notes = clean(body.notes);
 
     if (!masterLawsuitId) {
       return NextResponse.json(
@@ -375,6 +379,69 @@ export async function POST(req: NextRequest) {
       rowCount: previewRows.length,
     };
 
+    const settlementRecordPayload = {
+      payloadKind: "local-settlement-record-preview",
+      previewOnly: true,
+      recordIntent: "future-barsh-matters-local-settlement-record",
+      databaseRecordsChanged: false,
+      sourceOfTruth: "barsh-matters-local-claimindex",
+      masterLawsuitId,
+      settlementTerms: {
+        settledWith,
+        settlementDate,
+        paymentExpectedDate,
+        notes,
+        allocationMode: "pro_rata_by_principal_balance",
+        grossSettlementAmount,
+        interestAmount: summary.interestAmountTotal,
+        principalFeePercent,
+        interestFeePercent,
+      },
+      settlementTotals: {
+        allocatedSettlementTotal: summary.allocatedSettlementTotal,
+        interestAmountTotal: summary.interestAmountTotal,
+        principalFeeTotal: summary.principalFeeTotal,
+        interestFeeTotal: summary.interestFeeTotal,
+        totalFee: summary.totalFee,
+        providerPrincipalNetTotal: summary.providerPrincipalNetTotal,
+        providerInterestNetTotal: summary.providerInterestNetTotal,
+        providerNetTotal: summary.providerNetTotal,
+      },
+      settlementRows: previewRows.map((row) => ({
+        matterId: row.matterId,
+        displayNumber: row.displayNumber,
+        provider: row.provider,
+        patient: row.patient,
+        insurer: row.insurer,
+        claimNumber: row.claimNumber,
+        billNumber: row.billNumber,
+        dosStart: row.dosStart,
+        dosEnd: row.dosEnd,
+        denialReason: row.denialReason,
+        claimAmount: row.claimAmount,
+        principalBasis: row.principalBasis,
+        allocatedSettlement: row.allocatedSettlement,
+        interestAmount: row.interestAmount,
+        principalFee: row.principalFee,
+        interestFee: row.interestFee,
+        totalFee: row.totalFee,
+        providerPrincipalNet: row.providerPrincipalNet,
+        providerInterestNet: row.providerInterestNet,
+        providerNet: row.providerNet,
+        settlementStatus: "preview_only_not_recorded",
+      })),
+      roundingAdjustments,
+      safety: {
+        previewOnly: true,
+        clioRecordsChanged: false,
+        databaseRecordsChanged: false,
+        documentsGenerated: false,
+        printQueueChanged: false,
+        mattersClosed: false,
+        settlementWritebackPerformed: false,
+      },
+    };
+
     return NextResponse.json(
       {
         ok: blockingErrors.length === 0,
@@ -385,6 +452,7 @@ export async function POST(req: NextRequest) {
         summary,
         rows: previewRows,
         roundingAdjustments,
+        settlementRecordPayload,
         validation: {
           readyForLocalSettlementPreview: blockingErrors.length === 0,
           blockingErrors,

@@ -6595,6 +6595,33 @@ export default function FilteredMattersPage() {
                         </div>
                       )}
 
+                      {masterSettlementLocalPreview.settlementRecordPayload && (
+                        <div
+                          data-barsh-local-settlement-record-payload-preview="true"
+                          style={{
+                            border: "1px solid #86efac",
+                            borderRadius: 12,
+                            background: "#ffffff",
+                            padding: "10px 12px",
+                            display: "grid",
+                            gap: 6,
+                          }}
+                        >
+                          <div style={{ fontWeight: 950, color: "#166534" }}>
+                            Local Settlement Record Payload Preview
+                          </div>
+                          <div style={{ color: "#475569", lineHeight: 1.45 }}>
+                            Preview-only payload prepared for a future Barsh Matters local settlement record.  No database record is created here.
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
+                            <div><strong>Payload:</strong> {masterSettlementLocalPreview.settlementRecordPayload.payloadKind || "—"}</div>
+                            <div><strong>Record Intent:</strong> {masterSettlementLocalPreview.settlementRecordPayload.recordIntent || "—"}</div>
+                            <div><strong>Rows in Payload:</strong> {Array.isArray(masterSettlementLocalPreview.settlementRecordPayload.settlementRows) ? masterSettlementLocalPreview.settlementRecordPayload.settlementRows.length : "—"}</div>
+                            <div><strong>DB Changed:</strong> {masterSettlementLocalPreview.settlementRecordPayload.databaseRecordsChanged ? "Yes" : "No"}</div>
+                          </div>
+                        </div>
+                      )}
+
                       {Array.isArray(masterSettlementLocalPreview?.validation?.blockingErrors) && masterSettlementLocalPreview.validation.blockingErrors.length > 0 && (
                         <div style={{ color: "#991b1b", fontWeight: 900 }}>
                           Blocking: {masterSettlementLocalPreview.validation.blockingErrors.join(" ")}
