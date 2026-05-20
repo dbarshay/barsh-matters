@@ -448,11 +448,9 @@ const bmGlobalRightWrapStyle: React.CSSProperties = {
   gridColumn: "3",
   justifySelf: "end",
   position: "relative",
-  width: 330,
+  width: 560,
   height: 152,
-  display: "flex",
-  justifyContent: "flex-end",
-  alignItems: "flex-start",
+  display: "block",
 };
 
 const bmGlobalBrlLogoStyle: React.CSSProperties = {
@@ -463,29 +461,39 @@ const bmGlobalBrlLogoStyle: React.CSSProperties = {
 };
 
 const bmGlobalLogoLinkStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  right: 0,
   display: "inline-flex",
   alignItems: "flex-start",
   justifyContent: "flex-end",
   textDecoration: "none",
+  width: 330,
+  height: 152,
+  flexShrink: 0,
+  zIndex: 1,
 };
 
 const bmGlobalLogoStyle: React.CSSProperties = {
   width: 330,
   height: 152,
+  minWidth: 330,
   objectFit: "contain",
   objectPosition: "right top",
   display: "block",
+  flexShrink: 0,
 };
 
 const bmGlobalPrintButtonRowStyle: React.CSSProperties = {
   position: "absolute",
   top: 0,
-  right: 218,
+  right: 342,
   display: "flex",
   justifyContent: "flex-end",
   alignItems: "center",
   gap: 8,
   flexWrap: "nowrap",
+  zIndex: 2,
 };
 
 const bmGlobalLockedPrintQueueStyle: React.CSSProperties = {
@@ -757,19 +765,58 @@ const activeGroupKey =
     }
   }
 
+  const [administratorMenuOpen, setAdministratorMenuOpen] = useState(false);
+
+  async function runAdministratorGate(actionLabel: string, onAuthorized: () => void) {
+    const password = window.prompt(`ADMINISTRATOR ACCESS REQUIRED\n\n${actionLabel}\n\nEnter administrator password:`);
+    if (password === null) return;
+
+    try {
+      const response = await fetch("/api/admin/authorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, action: actionLabel }),
+      });
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok || !json?.authorized) {
+        window.alert(json?.error || "Administrator authorization failed.");
+        return;
+      }
+
+      setAdministratorMenuOpen(false);
+      onAuthorized();
+    } catch (error: any) {
+      window.alert(error?.message || "Administrator authorization failed.");
+    }
+  }
+
   function openReferenceImportsAdmin() {
-    const confirmed = window.confirm(
-      "ADMIN ACCESS REQUIRED\n\nOpen Reference Data Import?\n\nThis area controls local Barsh Matters reference-data import, import history, cleanup previews, and deactivate-only cleanup tools.\n\nContinue?"
+    void runAdministratorGate(
+      "Open Reference Data Import",
+      () => {
+        window.location.href = "/admin/reference-data";
+      }
     );
+  }
 
-    if (!confirmed) return;
-
-    window.location.href = "/admin/reference-data";
+  function openDocumentTemplatesAdmin() {
+    void runAdministratorGate(
+      "Open Document Template Repository",
+      () => {
+        window.location.href = "/admin/document-templates";
+      }
+    );
   }
 
   function openMatterAuditHistoryTab() {
-    setMatterAuditHistoryPopupOpen(true);
-    void loadMatterAuditHistory();
+    void runAdministratorGate(
+      "Open Matter Audit / History",
+      () => {
+        setMatterAuditHistoryPopupOpen(true);
+        void loadMatterAuditHistory();
+      }
+    );
   }
 
   function closeMatterAuditHistoryPopup() {
@@ -5915,11 +5962,11 @@ const activeGroupKey =
           )}
 </div>
 <div style={bmGlobalRightWrapStyle}>
-          <div style={bmGlobalPrintButtonRowStyle}>
+          <div style={{ ...bmGlobalPrintButtonRowStyle, position: "relative" }}>
             <button
               type="button"
-              onClick={openReferenceImportsAdmin}
-              title="Admin access required. Open Reference Data Import."
+              onClick={() => setAdministratorMenuOpen((open) => !open)}
+              title="Administrator functions require password access."
               style={{
                 ...bmGlobalLockedPrintQueueStyle,
                 cursor: "pointer",
@@ -5927,22 +5974,32 @@ const activeGroupKey =
               }}
             >
               <span aria-hidden="true">🔐</span>
-              <span>Import</span>
+              <span>Administrator</span>
             </button>
 
-            <button
-              type="button"
-              onClick={openMatterAuditHistoryTab}
-              title="Open matter-specific Audit / History log."
-              style={{
-                ...bmGlobalLockedPrintQueueStyle,
-                cursor: "pointer",
-                opacity: 1,
-              }}
-            >
-              <span aria-hidden="true">📜</span>
-              <span>Audit / History</span>
-            </button>
+            {administratorMenuOpen && (
+              <div
+                data-barsh-administrator-menu="true"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 110,
+                  zIndex: 20000,
+                  minWidth: 230,
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 16,
+                  background: "#fff",
+                  boxShadow: "0 18px 42px rgba(15, 23, 42, 0.22)",
+                  padding: 8,
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                <button type="button" onClick={openReferenceImportsAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🔐 Import</button>
+                <button type="button" onClick={openMatterAuditHistoryTab} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📜 Audit / History</button>
+                <button type="button" onClick={openDocumentTemplatesAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📄 Templates</button>
+              </div>
+            )}
 
             <button
               type="button"
