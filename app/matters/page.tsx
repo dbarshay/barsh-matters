@@ -7760,7 +7760,8 @@ function masterSettlementDateFiledValue(): string {
                           !masterSettlementLocalPreview?.settlementRecordPayload
                             ? 0.78
                             : 1,
-                      }}
+                      
+                ...masterSettlementCommitButtonStyle(),}}
                     >
                       {masterSettlementRecordSaveLoading ? "Committing..." : "Commit Settlement"}
                     </button>

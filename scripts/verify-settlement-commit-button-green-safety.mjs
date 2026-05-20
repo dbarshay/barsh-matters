@@ -24,8 +24,27 @@ for (const marker of [
   "#16a34a",
   "#15803d",
   "#ffffff",
+  "...masterSettlementCommitButtonStyle()",
 ]) {
   if (!text.includes(marker)) fail(`${pagePath} missing marker: ${marker}`);
+}
+
+const labelAnchor = '{masterSettlementRecordSaveLoading ? "Committing..." : "Commit Settlement"}';
+const idx = text.indexOf(labelAnchor);
+if (idx < 0) {
+  fail("actual Commit Settlement button label expression not found");
+}
+
+const start = idx >= 0 ? text.lastIndexOf("<button", idx) : -1;
+const end = idx >= 0 ? text.indexOf("</button>", idx) : -1;
+const buttonBlock = start >= 0 && end >= 0 ? text.slice(start, end + "</button>".length) : "";
+
+if (!buttonBlock.includes("commitMasterSettlementAndLaunchDocuments")) {
+  fail("actual Commit Settlement button does not call commitMasterSettlementAndLaunchDocuments");
+}
+
+if (!buttonBlock.includes("...masterSettlementCommitButtonStyle()")) {
+  fail("actual Commit Settlement button does not spread masterSettlementCommitButtonStyle()");
 }
 
 if (text.includes("const masterSettlementCommitButtonStyle: React.CSSProperties =")) {
@@ -37,5 +56,5 @@ if (!pkg.includes("verify:settlement-commit-button-green-safety")) {
 }
 
 if (!process.exitCode) {
-  pass("Commit Settlement button has lazy solid green primary action style markers");
+  pass("actual Commit Settlement button uses solid green primary action styling");
 }
