@@ -633,6 +633,8 @@ export default function FilteredMattersPage() {
   const [masterDocumentTemplateQuery, setMasterDocumentTemplateQuery] = useState("");
   const [masterSelectedDocumentTemplateKey, setMasterSelectedDocumentTemplateKey] = useState("");
   const [masterDocumentWorkflowStage, setMasterDocumentWorkflowStage] = useState<"select" | "chooseAction" | "preview" | "edit" | "finalize" | "delivery">("select");
+  const [masterDocumentLaunchMode, setMasterDocumentLaunchMode] = useState<"lawsuit" | "settlement">("lawsuit");
+  const [masterDocumentSettlementRecordId, setMasterDocumentSettlementRecordId] = useState("");
 
   const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
   const [masterDocumentGenerationPopupOpen, setMasterDocumentGenerationPopupOpen] = useState(false);
@@ -1983,7 +1985,10 @@ function masterSettlementDateFiledValue(): string {
       setMasterSettlementFormOpen(false);
       resetMasterSettlementPreviewForm();
 
-      await launchMasterDocumentGenerationDialog();
+      await launchMasterDocumentGenerationDialog({
+        mode: "settlement",
+        settlementRecordId: savedSettlementRecordId,
+      });
     } catch (error: any) {
       setMasterSettlementRecordSave({
         ok: false,
@@ -2382,13 +2387,18 @@ function masterSettlementDateFiledValue(): string {
     return masterDocumentPreviewText(new URLSearchParams(window.location.search).get("master"));
   }
 
-  async function loadMasterDocumentDataPreview() {
+  async function loadMasterDocumentDataPreview(options?: { mode?: "lawsuit" | "settlement"; settlementRecordId?: string }) {
     const previewMasterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+    const mode = options?.mode || masterDocumentLaunchMode || "lawsuit";
+    const settlementRecordId = options?.settlementRecordId || masterDocumentSettlementRecordId || "";
 
-    if (!previewMasterLawsuitId) {
+    if (!previewMasterLawsuitId && !settlementRecordId) {
       setMasterDocumentDataPreview({
         ok: false,
-        error: "No Lawsuit ID is available for document data preview.",
+        mode,
+        error: mode === "settlement"
+          ? "No Lawsuit ID or settlement record is available for settlement document preview."
+          : "No Lawsuit ID is available for document data preview.",
         packet: null,
       });
       return;
@@ -2398,17 +2408,27 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentDataPreview(null);
 
     try {
-      const res = await fetch(`/api/documents/packet?masterLawsuitId=${encodeURIComponent(previewMasterLawsuitId)}`);
+      const url = mode === "settlement"
+        ? `/api/settlements/documents-preview?masterLawsuitId=${encodeURIComponent(previewMasterLawsuitId)}${settlementRecordId ? `&settlementRecordId=${encodeURIComponent(settlementRecordId)}` : ""}`
+        : `/api/documents/packet?masterLawsuitId=${encodeURIComponent(previewMasterLawsuitId)}`;
+
+      const res = await fetch(url);
       const json = await res.json();
-      setMasterDocumentDataPreview(json);
+      setMasterDocumentDataPreview({
+        ...(json || {}),
+        mode,
+        documentLaunchMode: mode,
+      });
 
       if (!res.ok) {
-        throw new Error(json?.error || "Master lawsuit document data preview failed.");
+        throw new Error(json?.error || (mode === "settlement" ? "Settlement document preview failed." : "Master lawsuit document data preview failed."));
       }
     } catch (err: any) {
       setMasterDocumentDataPreview({
         ok: false,
-        error: err?.message || "Master lawsuit document data preview failed.",
+        mode,
+        documentLaunchMode: mode,
+        error: err?.message || (mode === "settlement" ? "Settlement document preview failed." : "Master lawsuit document data preview failed."),
         packet: null,
       });
     } finally {
@@ -2416,7 +2436,12 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
-  async function launchMasterDocumentGenerationDialog() {
+  async function launchMasterDocumentGenerationDialog(options?: { mode?: "lawsuit" | "settlement"; settlementRecordId?: string }) {
+    const mode = options?.mode || "lawsuit";
+    const settlementRecordId = options?.settlementRecordId || "";
+
+    setMasterDocumentLaunchMode(mode);
+    setMasterDocumentSettlementRecordId(settlementRecordId);
     setMasterDocumentTemplateQuery("");
     setMasterSelectedDocumentTemplateKey("");
     setMasterDocumentWorkflowStage("select");
@@ -2426,11 +2451,15 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentDeliveryToOverride("");
     setMasterDocumentGenerationPopupOpen(true);
     setActiveMasterWorkspaceTab("documents");
-    await loadMasterDocumentDataPreview();
+    await loadMasterDocumentDataPreview({ mode, settlementRecordId });
   }
 
   function buildMasterDocumentDeliveryContext(selectedTemplate: { key: string; label: string; description: string } | null): DocumentDeliveryContext {
+    const isSettlementDocumentMode = masterDocumentLaunchMode === "settlement" || masterDocumentDataPreview?.documentLaunchMode === "settlement" || masterDocumentDataPreview?.action === "settlement-documents-preview";
     const documentData = masterDocumentDataPreview?.packet?.metadata?.documentData;
+    const settlementSummary = masterDocumentDataPreview?.settlementSummary || {};
+    const settlementRows = Array.isArray(masterDocumentDataPreview?.rows) ? masterDocumentDataPreview.rows : [];
+    const firstSettlementRow = settlementRows[0] || {};
     const templateFields = documentData?.templateFields || {};
     const uiFields = documentData?.uiFields || {};
     const claimIndexFields = documentData?.claimIndexFields || {};
@@ -2443,16 +2472,24 @@ function masterSettlementDateFiledValue(): string {
 
     const documentLabel = selectedTemplate?.label || "Document";
     const lawsuitId =
+      masterDocumentPreviewText(settlementSummary.masterLawsuitId) ||
+      masterDocumentPreviewText(masterDocumentDataPreview?.masterLawsuitId) ||
       masterDocumentPreviewText(templateFields.masterLawsuitId) ||
       currentMasterLawsuitIdForDocumentPreview();
 
-    const providerName = masterDocumentPreviewText(templateFields.providerName || claimIndexFields.providerName);
-    const patientName = masterDocumentPreviewText(templateFields.patientName || claimIndexFields.patientName);
-    const insurerName = masterDocumentPreviewText(templateFields.insurerName || claimIndexFields.insurerName);
+    const providerName = isSettlementDocumentMode
+      ? masterDocumentPreviewText(settlementSummary.provider || firstSettlementRow.provider)
+      : masterDocumentPreviewText(templateFields.providerName || claimIndexFields.providerName);
+    const patientName = isSettlementDocumentMode
+      ? masterDocumentPreviewText(settlementSummary.patient || firstSettlementRow.patient)
+      : masterDocumentPreviewText(templateFields.patientName || claimIndexFields.patientName);
+    const insurerName = isSettlementDocumentMode
+      ? masterDocumentPreviewText(settlementSummary.insurer || firstSettlementRow.insurer)
+      : masterDocumentPreviewText(templateFields.insurerName || claimIndexFields.insurerName);
 
     return {
       source: "master_lawsuit",
-      documentKey: selectedTemplate?.key || "master-lawsuit-document",
+      documentKey: selectedTemplate?.key || (isSettlementDocumentMode ? "settlement-document" : "master-lawsuit-document"),
       documentLabel,
       providerName,
       patientName,
@@ -2462,7 +2499,12 @@ function masterSettlementDateFiledValue(): string {
       suggestedRecipientName: insurerName || patientName || "",
       suggestedRecipientEmail: masterDocumentPreviewText(recipientEmail),
       masterLawsuitId: lawsuitId,
-    };
+      metadata: {
+        workflow: isSettlementDocumentMode ? "settlement" : "lawsuit",
+        settlementRecordId: masterDocumentPreviewText(masterDocumentDataPreview?.settlementRecordId || masterDocumentSettlementRecordId),
+        sourceOfTruth: isSettlementDocumentMode ? "barsh-matters-local" : "barsh-matters-document-packet",
+      },
+    } as any;
   }
 
   async function resolveMasterMaildropForDelivery(context: DocumentDeliveryContext): Promise<DocumentDeliveryContext> {
@@ -3345,8 +3387,28 @@ function masterSettlementDateFiledValue(): string {
       return !query || haystack.includes(query);
     });
 
+    const settlementDocumentOptions = Array.isArray(masterDocumentDataPreview?.plannedDocuments)
+      ? masterDocumentDataPreview.plannedDocuments.map((doc: any) => ({
+          key: String(doc?.key || ""),
+          label: String(doc?.label || doc?.key || "Settlement Document"),
+          description: [
+            doc?.filename ? `File: ${doc.filename}` : "",
+            doc?.sourceOfTruth ? `Source of truth: ${doc.sourceOfTruth}` : "Source of truth: Barsh Matters local settlement record",
+            doc?.availableNow === false ? "Currently blocked by settlement validation." : "Available from the active local settlement record.",
+          ].filter(Boolean).join("  "),
+          availableNow: doc?.availableNow !== false,
+          filename: doc?.filename || "",
+        })).filter((doc: any) => doc.key)
+      : [];
+
+    const isSettlementDocumentMode = masterDocumentLaunchMode === "settlement" || masterDocumentDataPreview?.documentLaunchMode === "settlement" || masterDocumentDataPreview?.action === "settlement-documents-preview";
+    const displayedTemplateOptions = isSettlementDocumentMode && settlementDocumentOptions.length > 0
+      ? settlementDocumentOptions
+      : sortedTemplateOptions;
+    const displayedSelectedTemplate = displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) || null;
+
     const selectedTemplate =
-      sortedTemplateOptions.find((option) => option.key === masterSelectedDocumentTemplateKey) || null;
+      displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) || null;
 
     const canFinalize =
       Boolean(selectedTemplate) &&
@@ -3483,9 +3545,13 @@ function masterSettlementDateFiledValue(): string {
             }}
           >
             <div>
-              <h2 style={{ margin: 0, fontSize: 22 }}>Document Generation</h2>
+              <h2 style={{ margin: 0, fontSize: 22 }}>
+                {isSettlementDocumentMode ? "Settlement Document Generation" : "Document Generation"}
+              </h2>
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                Select a document, preview or edit it, then finalize when the backend is safely wired.  No documents are generated from this popup.  This popup does not generate files, upload to Clio, email, print, or change the print queue.
+                {isSettlementDocumentMode
+                  ? "Select a settlement document, preview or edit it, then finalize.  This settlement path reads Barsh Matters local settlement records only.  It does not use Clio as the settlement source of truth."
+                  : "Select a document, preview or edit it, then finalize when the backend is safely wired.  No documents are generated from this popup.  This popup does not generate files, upload to Clio, email, print, or change the print queue."}
               </p>
             </div>
             <button
@@ -3542,7 +3608,9 @@ function masterSettlementDateFiledValue(): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Start typing to filter available document templates.  These are sample options until the real template source is wired.
+                  {isSettlementDocumentMode
+                    ? "Choose one of the settlement documents prepared from the active local settlement record: Settlement Summary, Provider Remittance Breakdown, or Attorney Fee Breakdown."
+                    : "Start typing to filter available document templates.  These are sample options until the real template source is wired."}
                 </p>
               </div>
 
@@ -3564,7 +3632,7 @@ function masterSettlementDateFiledValue(): string {
                       setMasterDocumentWorkflowStage("select");
                     }
                   }}
-                  placeholder="Start typing or choose a document..."
+                  placeholder={isSettlementDocumentMode ? "Choose Settlement Summary, Provider Remittance Breakdown, or Attorney Fee Breakdown." : "Start typing or choose a document..."}
                   style={{
                     width: "100%",
                     boxSizing: "border-box",
@@ -3576,12 +3644,12 @@ function masterSettlementDateFiledValue(): string {
                   }}
                 />
                 <datalist id="master-document-template-options">
-                  {sortedTemplateOptions.map((option) => (
+                  {displayedTemplateOptions.map((option: any) => (
                     <option key={option.key} value={option.label} />
                   ))}
                 </datalist>
 
-                {masterSelectedDocumentTemplateKey && selectedTemplate && (
+                {masterSelectedDocumentTemplateKey && displayedSelectedTemplate && (
                   <div
                     style={{
                       border: "1px solid #c7d2fe",
@@ -3592,12 +3660,12 @@ function masterSettlementDateFiledValue(): string {
                       lineHeight: 1.4,
                     }}
                   >
-                    <strong>Selected:</strong> {selectedTemplate.label}
-                    <div style={{ marginTop: 4, color: "#475569" }}>{selectedTemplate.description}</div>
+                    <strong>Selected:</strong> {displayedSelectedTemplate.label}
+                    <div style={{ marginTop: 4, color: "#475569" }}>{displayedSelectedTemplate.description}</div>
                   </div>
                 )}
 
-                {masterDocumentTemplateQuery.trim() && filteredTemplateOptions.length === 0 && (
+                {masterDocumentTemplateQuery.trim() && displayedTemplateOptions.length === 0 && (
                   <div style={{ color: "#64748b", fontWeight: 800 }}>
                     No matching document templates.
                   </div>
@@ -3618,8 +3686,8 @@ function masterSettlementDateFiledValue(): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview PDF or Edit</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  {selectedTemplate
-                    ? `Selected: ${selectedTemplate?.label || "Selected document"}`
+                  {displayedSelectedTemplate
+                    ? `Selected: ${displayedSelectedTemplate?.label || "Selected document"}`
                     : "Select a document before previewing the PDF or editing."}
                 </p>
               </div>
@@ -3628,18 +3696,18 @@ function masterSettlementDateFiledValue(): string {
                 {actionButton(
                   "Preview PDF",
                   () => setMasterDocumentWorkflowStage("preview"),
-                  !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : undefined
+                  !displayedSelectedTemplate,
+                  !displayedSelectedTemplate ? "Select a document first." : undefined
                 )}
                 {actionButton(
                   "Edit Document",
                   () => setMasterDocumentWorkflowStage("edit"),
-                  !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : undefined
+                  !displayedSelectedTemplate,
+                  !displayedSelectedTemplate ? "Select a document first." : undefined
                 )}
                 <button
                   type="button"
-                  onClick={loadMasterDocumentDataPreview}
+                  onClick={() => loadMasterDocumentDataPreview()}
                   style={{
                     border: "1px solid #cbd5e1",
                     background: "#fff",
@@ -3654,7 +3722,7 @@ function masterSettlementDateFiledValue(): string {
                 </button>
               </div>
 
-              {false && masterDocumentWorkflowStage === "preview" && selectedTemplate && (
+              {false && masterDocumentWorkflowStage === "preview" && displayedSelectedTemplate && (
                 <div
                   style={{
                     border: "1px solid #bfdbfe",
@@ -3665,7 +3733,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Preview shell:</strong> {selectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this is a local preview shell using the master lawsuit document packet; no PDF or final file is generated in this placeholder state.
+                  <strong>Preview shell:</strong> {displayedSelectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this is a local preview shell using the master lawsuit document packet; no PDF or final file is generated in this placeholder state.
                   <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                     <div><strong>Lawsuit ID:</strong> {masterDocumentPreviewText(templateFields.masterLawsuitId || uiFields.masterLawsuitId) || "—"}</div>
                     <div><strong>Provider:</strong> {masterDocumentPreviewText(templateFields.providerName || claimIndexFields.providerName) || "—"}</div>
@@ -3677,7 +3745,7 @@ function masterSettlementDateFiledValue(): string {
                 </div>
               )}
 
-              {false && masterDocumentWorkflowStage === "edit" && selectedTemplate && (
+              {false && masterDocumentWorkflowStage === "edit" && displayedSelectedTemplate && (
                 <div
                   style={{
                     border: "1px solid #ddd6fe",
@@ -3688,12 +3756,12 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Word editing placeholder:</strong> {selectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.  No Word integration is faked here.
+                  <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.  No Word integration is faked here.
                 </div>
               )}
             </section>
 
-            {(showPreviewStep || showEditStep) && selectedTemplate && (
+            {(showPreviewStep || showEditStep) && displayedSelectedTemplate && (
               <section
                 style={{
                   border: "1px solid #e5e7eb",
@@ -3726,14 +3794,14 @@ function masterSettlementDateFiledValue(): string {
                       lineHeight: 1.45,
                     }}
                   >
-                    <strong>PDF preview shell:</strong> {selectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this preview uses the local master lawsuit document packet.
+                    <strong>PDF preview shell:</strong> {displayedSelectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  {isSettlementDocumentMode ? "For now, this preview uses the local settlement document plan." : "For now, this preview uses the local master lawsuit document packet."}
                     <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-                      <div><strong>Lawsuit ID:</strong> {masterDocumentPreviewText(templateFields.masterLawsuitId || uiFields.masterLawsuitId) || "—"}</div>
-                      <div><strong>Provider:</strong> {masterDocumentPreviewText(templateFields.providerName || claimIndexFields.providerName) || "—"}</div>
-                      <div><strong>Patient:</strong> {masterDocumentPreviewText(templateFields.patientName || claimIndexFields.patientName) || "—"}</div>
-                      <div><strong>Insurer:</strong> {masterDocumentPreviewText(templateFields.insurerName || claimIndexFields.insurerName) || "—"}</div>
-                      <div><strong>Claim:</strong> {masterDocumentPreviewText(templateFields.claimNumber || claimIndexFields.claimNumber) || "—"}</div>
-                      <div><strong>Lawsuit Amount:</strong> {money(templateFields.lawsuitAmount || uiFields.lawsuitAmount)}</div>
+                      <div><strong>Lawsuit ID:</strong> {masterDocumentPreviewText(masterDocumentDataPreview?.masterLawsuitId || templateFields.masterLawsuitId || uiFields.masterLawsuitId) || "—"}</div>
+                      <div><strong>Provider:</strong> {masterDocumentPreviewText(masterDocumentDataPreview?.settlementSummary?.provider || templateFields.providerName || claimIndexFields.providerName) || "—"}</div>
+                      <div><strong>Patient:</strong> {masterDocumentPreviewText(masterDocumentDataPreview?.settlementSummary?.patient || templateFields.patientName || claimIndexFields.patientName) || "—"}</div>
+                      <div><strong>Insurer:</strong> {masterDocumentPreviewText(masterDocumentDataPreview?.settlementSummary?.insurer || templateFields.insurerName || claimIndexFields.insurerName) || "—"}</div>
+                      <div><strong>Claim:</strong> {masterDocumentPreviewText(masterDocumentDataPreview?.settlementSummary?.claimNumber || templateFields.claimNumber || claimIndexFields.claimNumber) || "—"}</div>
+                      <div><strong>{isSettlementDocumentMode ? "Gross Settlement" : "Lawsuit Amount"}:</strong> {isSettlementDocumentMode ? money(masterDocumentDataPreview?.settlementSummary?.grossSettlementAmount) : money(templateFields.lawsuitAmount || uiFields.lawsuitAmount)}</div>
                     </div>
                   </div>
                 )}
@@ -3749,7 +3817,7 @@ function masterSettlementDateFiledValue(): string {
                       lineHeight: 1.45,
                     }}
                   >
-                    <strong>Word editing placeholder:</strong> {selectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.
+                    <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.
                   </div>
                 )}
 
@@ -3787,7 +3855,7 @@ function masterSettlementDateFiledValue(): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Finalization will later create the final document, upload it to Clio as the document vault, and make it available in the Barsh Matters Documents section.
+                  Finalization will later create the final document, store the finalized file through the Clio document-vault layer only, and make it available in the Barsh Matters Documents section.  Settlement data remains local-first.
                 </p>
               </div>
 
@@ -3816,7 +3884,7 @@ function masterSettlementDateFiledValue(): string {
               )}
             </section>
 
-            {masterDocumentWorkflowStage === "finalize" && selectedTemplate && (
+            {masterDocumentWorkflowStage === "finalize" && displayedSelectedTemplate && (
               <section
                 style={{
                   border: "1px solid #e5e7eb",
@@ -3834,9 +3902,9 @@ function masterSettlementDateFiledValue(): string {
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {actionButton("Email Document", () => launchMasterDocumentEmail(selectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
-                  {actionButton("Print Document", () => launchMasterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                  {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
+                  {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
+                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
                 </div>
               </section>
             )}
@@ -3860,9 +3928,9 @@ function masterSettlementDateFiledValue(): string {
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {actionButton("Email Document", () => launchMasterDocumentEmail(selectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
-                  {actionButton("Print Document", () => launchMasterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                  {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
+                  {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
+                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
                 </div>
               </section>
             )}
@@ -4134,7 +4202,7 @@ function masterSettlementDateFiledValue(): string {
 
           <button
             type="button"
-            onClick={loadMasterDocumentDataPreview}
+            onClick={() => loadMasterDocumentDataPreview()}
             disabled={masterDocumentDataPreviewLoading || !previewMasterLawsuitId}
             style={{
               border: 0,
