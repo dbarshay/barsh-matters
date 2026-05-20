@@ -577,6 +577,8 @@ export default function FilteredMattersPage() {
   const [masterSettlementTicklersLoading, setMasterSettlementTicklersLoading] = useState(false);
   const [masterSettlementTicklerCreate, setMasterSettlementTicklerCreate] = useState<any>(null);
   const [masterSettlementTicklerCreateLoading, setMasterSettlementTicklerCreateLoading] = useState(false);
+  const [masterSettlementDocumentsPreview, setMasterSettlementDocumentsPreview] = useState<any>(null);
+  const [masterSettlementDocumentsPreviewLoading, setMasterSettlementDocumentsPreviewLoading] = useState(false);
   const [masterSettlementProviderFeeDefaults, setMasterSettlementProviderFeeDefaults] = useState<any>(null);
   const [masterSettlementProviderFeeDefaultsLoading, setMasterSettlementProviderFeeDefaultsLoading] = useState(false);
   const [masterSettlementPopupPosition, setMasterSettlementPopupPosition] = useState({ x: 0, y: 72 });
@@ -1459,6 +1461,53 @@ export default function FilteredMattersPage() {
 
   function masterSettlementCostsValue(): number {
     return masterSettlementMoneyValue(masterSettlementCostsInput);
+  }
+
+  async function loadMasterSettlementDocumentsPreview() {
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+    const settlementRecordId =
+      masterSettlementHistory?.activeRecordId ||
+      masterSettlementRecordSave?.record?.id ||
+      masterSettlementRecordSave?.settlementRecord?.id ||
+      masterSettlementRecordSave?.savedRecord?.id ||
+      "";
+
+    if (!masterLawsuitId && !settlementRecordId) {
+      setMasterSettlementDocumentsPreview({
+        ok: false,
+        action: "settlement-documents-preview",
+        localFirst: true,
+        sourceOfTruth: "barsh-matters-local",
+        error: "No lawsuit ID or local settlement record is available for settlement document preview.",
+      });
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (settlementRecordId) params.set("settlementRecordId", settlementRecordId);
+    if (masterLawsuitId) params.set("masterLawsuitId", masterLawsuitId);
+
+    setMasterSettlementDocumentsPreviewLoading(true);
+    setMasterSettlementDocumentsPreview(null);
+
+    try {
+      const response = await fetch(`/api/settlements/documents-preview?${params.toString()}`);
+      const json = await response.json().catch(() => ({}));
+      setMasterSettlementDocumentsPreview({
+        ...json,
+        httpStatus: response.status,
+      });
+    } catch (error: any) {
+      setMasterSettlementDocumentsPreview({
+        ok: false,
+        action: "settlement-documents-preview",
+        localFirst: true,
+        sourceOfTruth: "barsh-matters-local",
+        error: error?.message || "Settlement document preview failed.",
+      });
+    } finally {
+      setMasterSettlementDocumentsPreviewLoading(false);
+    }
   }
 
   function masterSettlementDateFiledValue(): string {
@@ -6710,6 +6759,92 @@ export default function FilteredMattersPage() {
             >
               {masterSettlementTicklerCreateLoading ? "Creating..." : "Create Payment Due Tickler"}
             </button>
+          </div>
+
+          <div
+            data-barsh-settlement-document-preview-strip="true"
+            style={{
+              marginTop: 14,
+              border: "1px solid #dcfce7",
+              background: "#f0fdf4",
+              borderRadius: 14,
+              padding: 12,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: "#166534" }}>Settlement Documents</div>
+                <div style={{ marginTop: 3, fontSize: 12, color: "#14532d" }}>
+                  Local-first settlement document plan.  This previews document options from the saved Barsh Matters settlement record.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadMasterSettlementDocumentsPreview()}
+                disabled={masterSettlementDocumentsPreviewLoading}
+                style={{
+                  border: "1px solid #22c55e",
+                  background: "#ffffff",
+                  color: "#166534",
+                  borderRadius: 999,
+                  padding: "8px 12px",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  cursor: masterSettlementDocumentsPreviewLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {masterSettlementDocumentsPreviewLoading ? "Previewing..." : "Preview Settlement Documents"}
+              </button>
+            </div>
+
+            {masterSettlementDocumentsPreviewLoading && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#475569" }}>
+                Loading settlement document plan...
+              </div>
+            )}
+
+            {!masterSettlementDocumentsPreviewLoading && masterSettlementDocumentsPreview?.error && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#991b1b", fontWeight: 800 }}>
+                {masterSettlementDocumentsPreview.error}
+              </div>
+            )}
+
+            {!masterSettlementDocumentsPreviewLoading && masterSettlementDocumentsPreview?.ok && (
+              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 12, color: "#334155" }}>
+                  Planned document folder: <strong>{masterSettlementDocumentsPreview.folderPath || "—"}</strong>
+                </div>
+                {Array.isArray(masterSettlementDocumentsPreview.plannedDocuments) && masterSettlementDocumentsPreview.plannedDocuments.length > 0 ? (
+                  <div style={{ display: "grid", gap: 6 }}>
+                    {masterSettlementDocumentsPreview.plannedDocuments.map((doc: any) => (
+                      <div
+                        key={doc.key || doc.filename}
+                        style={{
+                          border: "1px solid #bbf7d0",
+                          background: "#ffffff",
+                          borderRadius: 10,
+                          padding: 10,
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: 10,
+                          alignItems: "center",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0f172a" }}>{doc.label || doc.key || "Settlement Document"}</div>
+                          <div style={{ marginTop: 2, fontSize: 11, color: "#64748b" }}>{doc.filename || "—"}</div>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: doc.status === "blocked" ? "#991b1b" : "#166534" }}>
+                          {doc.status || "planned"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: "#64748b" }}>No settlement documents are planned yet.</div>
+                )}
+              </div>
+            )}
           </div>
 
           {masterSettlementHistoryLoading && !masterSettlementHistory ? (
