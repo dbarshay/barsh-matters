@@ -14,6 +14,19 @@ function numberOrUndefined(value: string | null): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+async function expectedMasterDisplayNumber(masterLawsuitId: string): Promise<string> {
+  if (!masterLawsuitId) return "";
+
+  const lawsuit = await prisma.lawsuit.findUnique({
+    where: { masterLawsuitId },
+    select: {
+      clioMasterDisplayNumber: true,
+    },
+  });
+
+  return clean(lawsuit?.clioMasterDisplayNumber);
+}
+
 export async function GET(req: NextRequest) {
   const url = req.nextUrl;
 
@@ -30,6 +43,20 @@ export async function GET(req: NextRequest) {
   if (graphMessageId) messageWhere.graphMessageId = graphMessageId;
   if (conversationId) messageWhere.conversationId = conversationId;
 
+  const mappedMasterDisplayNumber = masterLawsuitId
+    ? await expectedMasterDisplayNumber(masterLawsuitId)
+    : "";
+
+  const shouldStrictFilterMasterThreads = Boolean(
+    masterLawsuitId &&
+    mappedMasterDisplayNumber &&
+    !conversationId &&
+    !matterDisplayNumber &&
+    !clioDisplayNumber &&
+    matterId === undefined &&
+    clioMatterId === undefined
+  );
+
   const threadWhere: any = {};
   if (conversationId) threadWhere.conversationId = conversationId;
   if (masterLawsuitId) threadWhere.masterLawsuitId = masterLawsuitId;
@@ -37,6 +64,12 @@ export async function GET(req: NextRequest) {
   if (clioDisplayNumber) threadWhere.clioDisplayNumber = clioDisplayNumber;
   if (matterId !== undefined) threadWhere.matterId = matterId;
   if (clioMatterId !== undefined) threadWhere.clioMatterId = clioMatterId;
+  if (shouldStrictFilterMasterThreads) {
+    threadWhere.OR = [
+      { matterDisplayNumber: mappedMasterDisplayNumber },
+      { clioDisplayNumber: mappedMasterDisplayNumber },
+    ];
+  }
 
   const threads = await prisma.emailThread.findMany({
     where: Object.keys(threadWhere).length ? threadWhere : undefined,
@@ -103,6 +136,8 @@ export async function GET(req: NextRequest) {
       clioDisplayNumber: clioDisplayNumber || null,
       matterId: matterId ?? null,
       clioMatterId: clioMatterId ?? null,
+      mappedMasterDisplayNumber: mappedMasterDisplayNumber || null,
+      strictMasterDisplayFilterApplied: shouldStrictFilterMasterThreads,
       limit,
     },
     counts: {
