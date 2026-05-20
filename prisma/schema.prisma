@@ -204,10 +204,10 @@ model SettlementWriteback {
 }
 
 model LocalSettlementRecord {
-  id                          String   @id @default(cuid())
+  id                          String    @id @default(cuid())
   masterLawsuitId             String
-  status                      String   @default("recorded")
-  source                      String   @default("barsh-matters-local")
+  status                      String    @default("recorded")
+  source                      String    @default("barsh-matters-local")
   payloadKind                 String?
   recordIntent                String?
   settledWith                 String?
@@ -226,19 +226,19 @@ model LocalSettlementRecord {
   providerPrincipalNetTotal   Float?
   providerInterestNetTotal    Float?
   providerNetTotal            Float?
-  rowCount                    Int      @default(0)
+  rowCount                    Int       @default(0)
   previewSnapshot             Json?
   roundingAdjustmentsSnapshot Json?
   safetySnapshot              Json?
   recordedBy                  String?
-  recordedAt                  DateTime @default(now())
-  voided                      Boolean  @default(false)
+  recordedAt                  DateTime  @default(now())
+  voided                      Boolean   @default(false)
   voidedAt                    DateTime?
   voidedBy                    String?
   voidReason                  String?
   voidSnapshot                Json?
-  createdAt                   DateTime @default(now())
-  updatedAt                   DateTime @updatedAt
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 
   rows LocalSettlementRow[]
 
@@ -250,34 +250,34 @@ model LocalSettlementRecord {
 }
 
 model LocalSettlementRow {
-  id                       String   @id @default(cuid())
-  settlementRecordId       String
-  settlementRecord         LocalSettlementRecord @relation(fields: [settlementRecordId], references: [id], onDelete: Cascade)
-  masterLawsuitId          String
-  matterId                 Int
-  displayNumber            String?
-  provider                 String?
-  patient                  String?
-  insurer                  String?
-  claimNumber              String?
-  billNumber               String?
-  dosStart                 String?
-  dosEnd                   String?
-  denialReason             String?
-  claimAmount              Float?
-  principalBasis           Float?
-  allocatedSettlement      Float?
-  interestAmount           Float?
-  principalFee             Float?
-  interestFee              Float?
-  totalFee                 Float?
-  providerPrincipalNet     Float?
-  providerInterestNet      Float?
-  providerNet              Float?
-  settlementStatus         String?
-  rowSnapshot              Json?
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  id                   String                @id @default(cuid())
+  settlementRecordId   String
+  settlementRecord     LocalSettlementRecord @relation(fields: [settlementRecordId], references: [id], onDelete: Cascade)
+  masterLawsuitId      String
+  matterId             Int
+  displayNumber        String?
+  provider             String?
+  patient              String?
+  insurer              String?
+  claimNumber          String?
+  billNumber           String?
+  dosStart             String?
+  dosEnd               String?
+  denialReason         String?
+  claimAmount          Float?
+  principalBasis       Float?
+  allocatedSettlement  Float?
+  interestAmount       Float?
+  principalFee         Float?
+  interestFee          Float?
+  totalFee             Float?
+  providerPrincipalNet Float?
+  providerInterestNet  Float?
+  providerNet          Float?
+  settlementStatus     String?
+  rowSnapshot          Json?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([settlementRecordId])
   @@index([masterLawsuitId])
@@ -285,7 +285,6 @@ model LocalSettlementRow {
   @@index([displayNumber])
   @@index([settlementStatus])
 }
-
 
 model MatterPaymentReceipt {
   id                     Int       @id @default(autoincrement())
@@ -438,22 +437,21 @@ model ReferenceAlias {
   @@index([normalizedAlias])
 }
 
-
 model MaildropAddress {
-  id                  String   @id @default(cuid())
-  source              String   @default("local_registry")
+  id                  String    @id @default(cuid())
+  source              String    @default("local_registry")
   matterId            Int?
   matterDisplayNumber String?
   masterLawsuitId     String?
   clioMatterId        Int?
   clioDisplayNumber   String?
-  clioMaildropEmail   String   @unique
+  clioMaildropEmail   String    @unique
   clioMaildropLabel   String?
-  active              Boolean  @default(true)
+  active              Boolean   @default(true)
   lastResolvedAt      DateTime?
   metadata            Json?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([active])
   @@index([matterId])
@@ -655,11 +653,11 @@ model EmailFilingLog {
 }
 
 model LocalWorkflowTickler {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   kind               String
-  source             String   @default("barsh-matters-local")
-  status             String   @default("open")
-  priority           String   @default("normal")
+  source             String    @default("barsh-matters-local")
+  status             String    @default("open")
+  priority           String    @default("normal")
   title              String
   description        String?
   masterLawsuitId    String?
@@ -672,8 +670,8 @@ model LocalWorkflowTickler {
   completedNote      String?
   metadata           Json?
   createdBy          String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([kind])
   @@index([status])
@@ -686,3 +684,63 @@ model LocalWorkflowTickler {
   @@index([createdAt])
 }
 
+model DocumentTemplate {
+  id                    String                       @id @default(cuid())
+  key                   String                       @unique
+  label                 String
+  category              String
+  description           String?
+  defaultFilenameSuffix String?
+  generationEndpoint    String?
+  outputFormat          String                       @default("docx")
+  sourceOfTruth         String                       @default("barsh-matters-local")
+  enabled               Boolean                      @default(true)
+  editableInRepository  Boolean                      @default(true)
+  currentVersionId      String?
+  metadata              Json?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  versions              DocumentTemplateVersion[]
+  mergeFields           DocumentTemplateMergeField[]
+
+  @@index([category])
+  @@index([enabled])
+}
+
+model DocumentTemplateVersion {
+  id            String           @id @default(cuid())
+  templateId    String
+  versionNumber Int
+  status        String           @default("draft")
+  bodyFormat    String           @default("docx-template")
+  storageKind   String           @default("metadata-only")
+  contentText   String?
+  contentJson   Json?
+  mergeFieldSet String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  template      DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, versionNumber])
+  @@index([templateId])
+  @@index([status])
+}
+
+model DocumentTemplateMergeField {
+  id           String           @id @default(cuid())
+  templateId   String
+  key          String
+  label        String
+  description  String?
+  source       String
+  required     Boolean          @default(false)
+  exampleValue String?
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  template     DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, key])
+  @@index([templateId])
+  @@index([source])
+}

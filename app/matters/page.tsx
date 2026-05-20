@@ -635,6 +635,9 @@ export default function FilteredMattersPage() {
   const [masterDocumentWorkflowStage, setMasterDocumentWorkflowStage] = useState<"select" | "chooseAction" | "preview" | "edit" | "finalize" | "delivery">("select");
   const [masterDocumentLaunchMode, setMasterDocumentLaunchMode] = useState<"lawsuit" | "settlement">("lawsuit");
   const [masterDocumentSettlementRecordId, setMasterDocumentSettlementRecordId] = useState("");
+  const [masterDocumentRepositoryTemplates, setMasterDocumentRepositoryTemplates] = useState<any[]>([]);
+  const [masterDocumentRepositoryTemplatesLoading, setMasterDocumentRepositoryTemplatesLoading] = useState(false);
+  const [masterDocumentRepositoryTemplatesError, setMasterDocumentRepositoryTemplatesError] = useState("");
 
   const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
   const [masterDocumentGenerationPopupOpen, setMasterDocumentGenerationPopupOpen] = useState(false);
@@ -2436,6 +2439,30 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
+  async function loadMasterDocumentRepositoryTemplates(options?: { mode?: "lawsuit" | "settlement" }) {
+    const mode = options?.mode || masterDocumentLaunchMode || "lawsuit";
+    const category = mode === "settlement" ? "settlement" : "lawsuit";
+
+    setMasterDocumentRepositoryTemplatesLoading(true);
+    setMasterDocumentRepositoryTemplatesError("");
+
+    try {
+      const response = await fetch(`/api/documents/templates?category=${encodeURIComponent(category)}`);
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Document template repository preview failed.");
+      }
+
+      setMasterDocumentRepositoryTemplates(Array.isArray(json.templates) ? json.templates : []);
+    } catch (error: any) {
+      setMasterDocumentRepositoryTemplates([]);
+      setMasterDocumentRepositoryTemplatesError(error?.message || "Document template repository preview failed.");
+    } finally {
+      setMasterDocumentRepositoryTemplatesLoading(false);
+    }
+  }
+
   async function launchMasterDocumentGenerationDialog(options?: { mode?: "lawsuit" | "settlement"; settlementRecordId?: string }) {
     const mode = options?.mode || "lawsuit";
     const settlementRecordId = options?.settlementRecordId || "";
@@ -2451,7 +2478,10 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentDeliveryToOverride("");
     setMasterDocumentGenerationPopupOpen(true);
     setActiveMasterWorkspaceTab("documents");
-    await loadMasterDocumentDataPreview({ mode, settlementRecordId });
+    await Promise.all([
+      loadMasterDocumentDataPreview({ mode, settlementRecordId }),
+      loadMasterDocumentRepositoryTemplates({ mode }),
+    ]);
   }
 
   function buildMasterDocumentDeliveryContext(selectedTemplate: { key: string; label: string; description: string } | null): DocumentDeliveryContext {
@@ -3387,11 +3417,31 @@ function masterSettlementDateFiledValue(): string {
       return !query || haystack.includes(query);
     });
 
-    const settlementDocumentOptions = Array.isArray(masterDocumentDataPreview?.plannedDocuments)
+    const isSettlementDocumentMode = masterDocumentLaunchMode === "settlement" || masterDocumentDataPreview?.documentLaunchMode === "settlement" || masterDocumentDataPreview?.action === "settlement-documents-preview";
+
+    const repositoryDocumentOptions = Array.isArray(masterDocumentRepositoryTemplates)
+      ? masterDocumentRepositoryTemplates.map((template: any) => ({
+          key: String(template?.key || ""),
+          label: String(template?.label || template?.key || "Document"),
+          description: [
+            template?.description ? String(template.description) : "",
+            template?.mergeFieldSet ? `Merge fields: ${template.mergeFieldSet}` : "",
+            template?.repositorySource ? `Repository: ${template.repositorySource}` : "Repository: Barsh Matters template repository",
+            template?.editableLater ? "Editable/versioned repository support planned." : "",
+          ].filter(Boolean).join("  "),
+          availableNow: template?.enabled !== false,
+          filename: template?.defaultFilenameSuffix ? `${template.defaultFilenameSuffix}.docx` : "",
+          repositorySource: template?.repositorySource || "barsh-matters-template-repository-api",
+          mergeFields: Array.isArray(template?.mergeFields) ? template.mergeFields : [],
+        })).filter((template: any) => template.key)
+      : [];
+
+    const settlementPreviewDocumentOptions = Array.isArray(masterDocumentDataPreview?.plannedDocuments)
       ? masterDocumentDataPreview.plannedDocuments.map((doc: any) => ({
           key: String(doc?.key || ""),
           label: String(doc?.label || doc?.key || "Settlement Document"),
           description: [
+            doc?.description ? String(doc.description) : "",
             doc?.filename ? `File: ${doc.filename}` : "",
             doc?.sourceOfTruth ? `Source of truth: ${doc.sourceOfTruth}` : "Source of truth: Barsh Matters local settlement record",
             doc?.availableNow === false ? "Currently blocked by settlement validation." : "Available from the active local settlement record.",
@@ -3401,7 +3451,10 @@ function masterSettlementDateFiledValue(): string {
         })).filter((doc: any) => doc.key)
       : [];
 
-    const isSettlementDocumentMode = masterDocumentLaunchMode === "settlement" || masterDocumentDataPreview?.documentLaunchMode === "settlement" || masterDocumentDataPreview?.action === "settlement-documents-preview";
+    const settlementDocumentOptions = repositoryDocumentOptions.length > 0
+      ? repositoryDocumentOptions
+      : settlementPreviewDocumentOptions;
+
     const displayedTemplateOptions = isSettlementDocumentMode && settlementDocumentOptions.length > 0
       ? settlementDocumentOptions
       : sortedTemplateOptions;
@@ -3609,9 +3662,18 @@ function masterSettlementDateFiledValue(): string {
                 <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   {isSettlementDocumentMode
-                    ? "Choose one of the settlement documents prepared from the active local settlement record: Settlement Summary, Provider Remittance Breakdown, or Attorney Fee Breakdown."
+                    ? "Choose one of the settlement documents from the Barsh Matters document-template repository.  The current seeded settlement templates are Settlement Summary, Provider Remittance Breakdown, and Attorney Fee Breakdown."
                     : "Start typing to filter available document templates.  These are sample options until the real template source is wired."}
                 </p>
+                {isSettlementDocumentMode && (
+                  <p style={{ margin: "6px 0 0", color: masterDocumentRepositoryTemplatesError ? "#991b1b" : "#64748b", lineHeight: 1.45, fontWeight: masterDocumentRepositoryTemplatesError ? 900 : 700 }}>
+                    {masterDocumentRepositoryTemplatesLoading
+                      ? "Loading document-template repository..."
+                      : masterDocumentRepositoryTemplatesError
+                        ? `Template repository warning: ${masterDocumentRepositoryTemplatesError}.  Falling back to the settlement preview document plan.`
+                        : "Template source: /api/documents/templates?category=settlement."}
+                  </p>
+                )}
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
