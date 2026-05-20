@@ -79,7 +79,8 @@
     "verify:legacy-clio-settlement-routes-disabled-safety": "node scripts/verify-legacy-clio-settlement-routes-disabled-safety.mjs",
     "verify:settlement-popup-column-entry-safety": "node scripts/verify-settlement-popup-column-entry-safety.mjs",
     "verify:settlement-provider-fee-defaults-local-ui-safety": "node scripts/verify-settlement-provider-fee-defaults-local-ui-safety.mjs",
-    "verify:settlement-popup-draggable-safety": "node scripts/verify-settlement-popup-draggable-safety.mjs"
+    "verify:settlement-popup-draggable-safety": "node scripts/verify-settlement-popup-draggable-safety.mjs",
+    "verify:local-settlement-history-safety": "node scripts/verify-local-settlement-history-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
