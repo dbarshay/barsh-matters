@@ -83,7 +83,8 @@
     "verify:local-settlement-history-safety": "node scripts/verify-local-settlement-history-safety.mjs",
     "verify:local-settlement-history-ui-safety": "node scripts/verify-local-settlement-history-ui-safety.mjs",
     "verify:local-settlement-tickler-foundation-safety": "node scripts/verify-local-settlement-tickler-foundation-safety.mjs",
-    "verify:settlement-payment-due-tickler-ui-safety": "node scripts/verify-settlement-payment-due-tickler-ui-safety.mjs"
+    "verify:settlement-payment-due-tickler-ui-safety": "node scripts/verify-settlement-payment-due-tickler-ui-safety.mjs",
+    "verify:local-settlement-documents-preview-safety": "node scripts/verify-local-settlement-documents-preview-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
