@@ -1172,6 +1172,15 @@ export default function Home() {
     }
   }
 
+  function openAdminHome() {
+    void runAdministratorGate(
+      "Open Administrator Home",
+      () => {
+        window.location.href = "/admin";
+      }
+    );
+  }
+
   function openReferenceImportsAdmin() {
     void runAdministratorGate(
       "Open Reference Data Import",
@@ -2031,6 +2040,7 @@ export default function Home() {
                     gap: 6,
                   }}
                 >
+                  <button type="button" onClick={openAdminHome} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🛠️ Admin Home</button>
                   <button type="button" onClick={openReferenceImportsAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🔐 Import</button>
                   <button type="button" onClick={openAuditHistoryAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📜 Audit / History</button>
                   <button type="button" onClick={openDocumentTemplatesAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📄 Templates</button>
