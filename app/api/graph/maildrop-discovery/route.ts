@@ -263,6 +263,7 @@ async function runMaildropDiscovery(req: NextRequest) {
     return NextResponse.json({
       ...base,
       ok: true,
+      status: "no_known_maildrops",
       graphCallsMade: false,
       readsMailbox: false,
       counts: {
