@@ -559,7 +559,7 @@ export default function FilteredMattersPage() {
   const [masterSettlementGrossInput, setMasterSettlementGrossInput] = useState("");
   const [masterSettlementWithInput, setMasterSettlementWithInput] = useState("");
   const [masterSettlementDateInput, setMasterSettlementDateInput] = useState(() => masterPaymentTodayInput());
-  const [masterSettlementPaymentExpectedDateInput, setMasterSettlementPaymentExpectedDateInput] = useState("");
+  const [masterSettlementPaymentExpectedDateInput, setMasterSettlementPaymentExpectedDateInput] = useState(() => addDaysToDateInput(masterPaymentTodayInput(), 45));
   const [masterSettlementPrincipalFeePercentInput, setMasterSettlementPrincipalFeePercentInput] = useState("");
   const [masterSettlementInterestAmountInput, setMasterSettlementInterestAmountInput] = useState("");
   const [masterSettlementInterestFeePercentInput, setMasterSettlementInterestFeePercentInput] = useState("");
@@ -568,6 +568,8 @@ export default function FilteredMattersPage() {
   const [masterSettlementLocalPreviewLoading, setMasterSettlementLocalPreviewLoading] = useState(false);
   const [masterSettlementRecordSave, setMasterSettlementRecordSave] = useState<any>(null);
   const [masterSettlementRecordSaveLoading, setMasterSettlementRecordSaveLoading] = useState(false);
+  const [masterSettlementProviderFeeDefaults, setMasterSettlementProviderFeeDefaults] = useState<any>(null);
+  const [masterSettlementProviderFeeDefaultsLoading, setMasterSettlementProviderFeeDefaultsLoading] = useState(false);
 
   const [masterInfoEditDialog, setMasterInfoEditDialog] = useState<null | {
     field: string;
@@ -1362,11 +1364,11 @@ export default function FilteredMattersPage() {
   }
 
   function masterSettlementGrossValue(): number {
-    return masterSettlementMoneyValue(masterSettlementGrossInput);
+    return masterSettlementAmountOrPercentValue(masterSettlementGrossInput);
   }
 
   function masterSettlementInterestValue(): number {
-    return masterSettlementMoneyValue(masterSettlementInterestAmountInput);
+    return masterSettlementAmountOrPercentValue(masterSettlementInterestAmountInput);
   }
 
   function masterSettlementPercentValue(value: string): number {
@@ -1375,18 +1377,129 @@ export default function FilteredMattersPage() {
     return Number.isFinite(n) ? n : 0;
   }
 
+  function addDaysToDateInput(dateInput: string, days: number): string {
+    const cleanedDate = clean(dateInput);
+    if (!cleanedDate) return "";
+    const date = new Date(`${cleanedDate}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "";
+    date.setDate(date.getDate() + days);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function masterSettlementLawsuitAmountValue(): number {
+    return masterWorkspaceBillTotal(masterSettlementDetailRows);
+  }
+
+  function masterSettlementAmountOrPercentValue(value: string): number {
+    const raw = String(value || "").trim();
+    if (!raw) return 0;
+    if (raw.includes("%")) {
+      const percentage = masterSettlementPercentValue(raw);
+      return (masterSettlementLawsuitAmountValue() * percentage) / 100;
+    }
+    return masterSettlementMoneyValue(raw);
+  }
+
+  function formatMasterSettlementAmountOrPercentInput(value: string): string {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (raw.includes("%")) {
+      const percentage = masterSettlementPercentValue(raw);
+      return Number.isFinite(percentage) ? `${percentage.toFixed(2)}%` : value;
+    }
+    const formattedMoney = formatMasterSettlementMoneyInput(value);
+    return formattedMoney ? `$${formattedMoney}` : "";
+  }
+
+  function handleMasterSettlementEntryKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Enter") return;
+    const target = event.target as HTMLElement | null;
+    if (!target?.matches?.("[data-master-settlement-entry-field='true']")) return;
+
+    event.preventDefault();
+
+    const fields = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-master-settlement-entry-field='true']")
+    ).filter((field) => !field.hasAttribute("disabled"));
+
+    const currentIndex = fields.indexOf(target);
+    const nextField = currentIndex >= 0 ? fields[currentIndex + 1] : null;
+    nextField?.focus();
+  }
+
+  function masterSettlementProviderForFeeDefaults(): string {
+    const firstRow = masterWorkspaceBillRows(masterSettlementDetailRows)[0] as any;
+    return clean(firstRow?.provider || firstRow?.clientName || firstRow?.client_name || firstRow?.client || "");
+  }
+
+  async function loadMasterSettlementProviderFeeDefaults() {
+    const providerName = masterSettlementProviderForFeeDefaults();
+
+    setMasterSettlementProviderFeeDefaultsLoading(true);
+    setMasterSettlementProviderFeeDefaults(null);
+
+    if (!providerName) {
+      setMasterSettlementPrincipalFeePercentInput("");
+      setMasterSettlementInterestFeePercentInput("");
+      setMasterSettlementProviderFeeDefaultsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/settlements/local-provider-fee-defaults?provider=${encodeURIComponent(providerName)}`);
+      const json = await response.json().catch(() => null);
+      const principalFeePercent = json?.defaults?.principalFeePercent;
+      const interestFeePercent = json?.defaults?.interestFeePercent;
+
+      if (typeof principalFeePercent === "number" && Number.isFinite(principalFeePercent)) {
+        setMasterSettlementPrincipalFeePercentInput(principalFeePercent.toFixed(2));
+      } else {
+        setMasterSettlementPrincipalFeePercentInput("");
+      }
+
+      if (typeof interestFeePercent === "number" && Number.isFinite(interestFeePercent)) {
+        setMasterSettlementInterestFeePercentInput(interestFeePercent.toFixed(2));
+      } else {
+        setMasterSettlementInterestFeePercentInput("");
+      }
+
+      setMasterSettlementProviderFeeDefaults({
+        ...(json || {}),
+        ok: Boolean(response.ok && json?.ok),
+        responseStatus: response.status,
+      });
+    } catch (error: any) {
+      setMasterSettlementPrincipalFeePercentInput("");
+      setMasterSettlementInterestFeePercentInput("");
+      setMasterSettlementProviderFeeDefaults({
+        ok: false,
+        action: "local-provider-fee-defaults",
+        localFirst: true,
+        error: error?.message || "Local provider fee defaults lookup failed.",
+      });
+    } finally {
+      setMasterSettlementProviderFeeDefaultsLoading(false);
+    }
+  }
+
   function formatMasterSettlementMoneyInput(value: string): string {
     const cleaned = String(value || "").replace(/[$,\s]/g, "");
     if (!cleaned) return "";
     const n = Number(cleaned);
-    return Number.isFinite(n) ? n.toFixed(2) : value;
+    return Number.isFinite(n)
+      ? n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : value;
   }
 
   function resetMasterSettlementPreviewForm() {
     setMasterSettlementGrossInput("");
     setMasterSettlementWithInput("");
-    setMasterSettlementDateInput(masterPaymentTodayInput());
-    setMasterSettlementPaymentExpectedDateInput("");
+    const today = masterPaymentTodayInput();
+    setMasterSettlementDateInput(today);
+    setMasterSettlementPaymentExpectedDateInput(addDaysToDateInput(today, 45));
     setMasterSettlementPrincipalFeePercentInput("");
     setMasterSettlementInterestAmountInput("");
     setMasterSettlementInterestFeePercentInput("");
@@ -1395,6 +1508,8 @@ export default function FilteredMattersPage() {
     setMasterSettlementLocalPreviewLoading(false);
     setMasterSettlementRecordSave(null);
     setMasterSettlementRecordSaveLoading(false);
+    setMasterSettlementProviderFeeDefaults(null);
+    setMasterSettlementProviderFeeDefaultsLoading(false);
   }
 
   async function runMasterSettlementLocalPreview() {
@@ -1470,6 +1585,11 @@ export default function FilteredMattersPage() {
       setMasterSettlementRecordSaveLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!masterSettlementFormOpen || activeMasterWorkspaceTab !== "payments") return;
+    loadMasterSettlementProviderFeeDefaults();
+  }, [masterSettlementFormOpen, activeMasterWorkspaceTab]);
 
   const masterWorkspaceTabButtonStyle = (tab: MasterWorkspaceTab): React.CSSProperties =>
     activeMasterWorkspaceTab === tab ? masterWorkflowActiveButtonStyle : masterWorkflowButtonStyle;
@@ -6282,200 +6402,148 @@ export default function FilteredMattersPage() {
                   </div>
 
                   <div
+                    onKeyDown={handleMasterSettlementEntryKeyDown}
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1.15fr 1fr 1fr",
+                      gridTemplateColumns: "1fr 1fr 1fr",
                       gap: 16,
                       padding: 18,
+                      alignItems: "start",
                     }}
                   >
-                    <label className="barsh-direct-payment-field">
-                      <span>Gross Settlement Amount *</span>
-                      <div style={{ position: "relative", width: "100%" }}>
-                        <span
-                          style={{
-                            position: "absolute",
-                            left: 12,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            color: "#475569",
-                            fontWeight: 900,
-                            pointerEvents: "none",
-                          }}
-                        >
-                          $
-                        </span>
+                    <div style={{ display: "grid", gap: 14 }}>
+                      <label className="barsh-direct-payment-field">
+                        <span>Principal *</span>
                         <input
+                          data-master-settlement-entry-field="true"
                           value={masterSettlementGrossInput}
                           onChange={(event) => setMasterSettlementGrossInput(event.target.value)}
-                          onBlur={() => setMasterSettlementGrossInput((current) => formatMasterSettlementMoneyInput(current))}
-                          placeholder="0.00"
+                          onBlur={() => setMasterSettlementGrossInput((current) => formatMasterSettlementAmountOrPercentInput(current))}
+                          placeholder="$ amount or % of Lawsuit Amount"
                           inputMode="decimal"
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
                             borderRadius: 10,
-                            padding: "10px 12px 10px 28px",
+                            padding: "10px 12px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
                             outline: "none",
                           }}
                         />
-                      </div>
-                    </label>
+                      </label>
 
-                    <label className="barsh-direct-payment-field">
-                      <span>Settled With *</span>
-                      <input
-                        value={masterSettlementWithInput}
-                        onChange={(event) => setMasterSettlementWithInput(event.target.value)}
-                        placeholder="Search Local Contact"
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
-
-                    <label className="barsh-direct-payment-field">
-                      <span>Settlement Date *</span>
-                      <input
-                        type="date"
-                        value={masterSettlementDateInput}
-                        onChange={(event) => setMasterSettlementDateInput(event.target.value)}
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
-
-                    <label className="barsh-direct-payment-field">
-                      <span>Payment Expected Date</span>
-                      <input
-                        type="date"
-                        value={masterSettlementPaymentExpectedDateInput}
-                        onChange={(event) => setMasterSettlementPaymentExpectedDateInput(event.target.value)}
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
-
-                    <label className="barsh-direct-payment-field">
-                      <span>Principal Fee %</span>
-                      <input
-                        value={masterSettlementPrincipalFeePercentInput}
-                        onChange={(event) => setMasterSettlementPrincipalFeePercentInput(event.target.value)}
-                        placeholder="Provider default pending"
-                        inputMode="decimal"
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
-
-                    <label className="barsh-direct-payment-field">
-                      <span>Interest Amount</span>
-                      <div style={{ position: "relative", width: "100%" }}>
-                        <span
-                          style={{
-                            position: "absolute",
-                            left: 12,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            color: "#475569",
-                            fontWeight: 900,
-                            pointerEvents: "none",
-                          }}
-                        >
-                          $
-                        </span>
+                      <label className="barsh-direct-payment-field">
+                        <span>Interest</span>
                         <input
+                          data-master-settlement-entry-field="true"
                           value={masterSettlementInterestAmountInput}
                           onChange={(event) => setMasterSettlementInterestAmountInput(event.target.value)}
-                          onBlur={() => setMasterSettlementInterestAmountInput((current) => formatMasterSettlementMoneyInput(current))}
-                          placeholder="0.00"
+                          onBlur={() => setMasterSettlementInterestAmountInput((current) => formatMasterSettlementAmountOrPercentInput(current))}
+                          placeholder="$ amount or % of Lawsuit Amount"
                           inputMode="decimal"
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
                             borderRadius: 10,
-                            padding: "10px 12px 10px 28px",
+                            padding: "10px 12px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
                             outline: "none",
                           }}
                         />
-                      </div>
-                    </label>
+                      </label>
+                    </div>
 
-                    <label className="barsh-direct-payment-field">
-                      <span>Interest Fee %</span>
-                      <input
-                        value={masterSettlementInterestFeePercentInput}
-                        onChange={(event) => setMasterSettlementInterestFeePercentInput(event.target.value)}
-                        placeholder="Provider default pending"
-                        inputMode="decimal"
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
+                    <div style={{ display: "grid", gap: 14 }}>
+                      <label className="barsh-direct-payment-field">
+                        <span>Settled With *</span>
+                        <input
+                          data-master-settlement-entry-field="true"
+                          value={masterSettlementWithInput}
+                          onChange={(event) => setMasterSettlementWithInput(event.target.value)}
+                          placeholder="Search Local Contact"
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontWeight: 800,
+                            outline: "none",
+                          }}
+                        />
+                      </label>
 
-                    <label className="barsh-direct-payment-field" style={{ gridColumn: "2 / span 2" }}>
-                      <span>Notes</span>
-                      <input
-                        value={masterSettlementNotesInput}
-                        onChange={(event) => setMasterSettlementNotesInput(event.target.value)}
-                        placeholder="Optional settlement notes"
-                        style={{
-                          width: "100%",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          background: "#fff",
-                          color: "#0f172a",
-                          fontWeight: 800,
-                          outline: "none",
-                        }}
-                      />
-                    </label>
+                      <label className="barsh-direct-payment-field">
+                        <span>Settlement Date *</span>
+                        <input
+                          data-master-settlement-entry-field="true"
+                          type="date"
+                          value={masterSettlementDateInput}
+                          onChange={(event) => {
+                            const nextDate = event.target.value;
+                            setMasterSettlementDateInput(nextDate);
+                            setMasterSettlementPaymentExpectedDateInput(addDaysToDateInput(nextDate, 45));
+                          }}
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontWeight: 800,
+                            outline: "none",
+                          }}
+                        />
+                      </label>
+
+                      <label className="barsh-direct-payment-field">
+                        <span>Payment Due Date</span>
+                        <input
+                          data-master-settlement-entry-field="true"
+                          type="date"
+                          value={masterSettlementPaymentExpectedDateInput}
+                          onChange={(event) => setMasterSettlementPaymentExpectedDateInput(event.target.value)}
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontWeight: 800,
+                            outline: "none",
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div style={{ display: "grid", gap: 14 }}>
+                      <label className="barsh-direct-payment-field">
+                        <span>Notes</span>
+                        <input
+                          data-master-settlement-entry-field="true"
+                          value={masterSettlementNotesInput}
+                          onChange={(event) => setMasterSettlementNotesInput(event.target.value)}
+                          placeholder="Optional settlement notes"
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontWeight: 800,
+                            outline: "none",
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   <div
@@ -6483,14 +6551,25 @@ export default function FilteredMattersPage() {
                     style={{
                       margin: "0 18px 18px",
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                      gridTemplateColumns: "repeat(2, minmax(240px, 1fr))",
                       gap: 10,
                     }}
                   >
-                    <div>Gross Settlement: {money(masterSettlementGrossValue())}</div>
-                    <div>Interest: {money(masterSettlementInterestValue())}</div>
-                    <div>Principal Fee %: {masterSettlementPercentValue(masterSettlementPrincipalFeePercentInput).toFixed(2)}%</div>
-                    <div>Interest Fee %: {masterSettlementPercentValue(masterSettlementInterestFeePercentInput).toFixed(2)}%</div>
+                    <div>
+                      <div>Principal: {money(masterSettlementGrossValue())}</div>
+                      <div style={{ marginTop: 4, color: "#475569" }}>
+                        Retainer Principal: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : `${masterSettlementPercentValue(masterSettlementPrincipalFeePercentInput).toFixed(2)}%`}
+                      </div>
+                    </div>
+                    <div>
+                      <div>Interest: {money(masterSettlementInterestValue())}</div>
+                      <div style={{ marginTop: 4, color: "#475569" }}>
+                        Retainer Interest: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : `${masterSettlementPercentValue(masterSettlementInterestFeePercentInput).toFixed(2)}%`}
+                      </div>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", color: "#475569" }}>
+                      Fee defaults source: {masterSettlementProviderFeeDefaults?.matchedProvider?.displayName || masterSettlementProviderForFeeDefaults() || "—"}
+                    </div>
                     <div
                       style={{
                         gridColumn: "1 / -1",
