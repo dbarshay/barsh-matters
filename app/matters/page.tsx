@@ -562,7 +562,9 @@ export default function FilteredMattersPage() {
   const [masterSettlementPaymentExpectedDateInput, setMasterSettlementPaymentExpectedDateInput] = useState(() => addDaysToDateInput(masterPaymentTodayInput(), 45));
   const [masterSettlementPrincipalFeePercentInput, setMasterSettlementPrincipalFeePercentInput] = useState("");
   const [masterSettlementInterestAmountInput, setMasterSettlementInterestAmountInput] = useState("");
+  const [masterSettlementSettledInterestInput, setMasterSettlementSettledInterestInput] = useState("");
   const [masterSettlementCostsInput, setMasterSettlementCostsInput] = useState("");
+  const [masterSettlementAttorneyFeeOverrides, setMasterSettlementAttorneyFeeOverrides] = useState<Record<string, string>>({});
   const [masterSettlementInterestFeePercentInput, setMasterSettlementInterestFeePercentInput] = useState("");
   const [masterSettlementNotesInput, setMasterSettlementNotesInput] = useState("");
   const [masterSettlementLocalPreview, setMasterSettlementLocalPreview] = useState<any>(null);
@@ -1430,12 +1432,50 @@ export default function FilteredMattersPage() {
     return masterSettlementAmountOrPercentValue(masterSettlementGrossInput);
   }
 
+  function masterSettlementInterestSettlementPercentValue(): number {
+    const raw = clean(masterSettlementInterestAmountInput);
+    if (!raw) return 100;
+    const n = masterSettlementPercentValue(raw);
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 100;
+  }
+
+  function masterSettlementCalculatedSettledInterestValue(): number {
+    return masterSettlementSimpleInterestAmountValue() * (masterSettlementInterestSettlementPercentValue() / 100);
+  }
+
   function masterSettlementInterestValue(): number {
-    return masterSettlementAmountOrPercentValue(masterSettlementInterestAmountInput);
+    if (clean(masterSettlementSettledInterestInput)) {
+      return masterSettlementMoneyValue(masterSettlementSettledInterestInput);
+    }
+
+    return masterSettlementCalculatedSettledInterestValue();
   }
 
   function masterSettlementCostsValue(): number {
     return masterSettlementMoneyValue(masterSettlementCostsInput);
+  }
+
+  function masterSettlementDateFiledValue(): string {
+    return clean(masterInfoDisplayValue("dateFiled", clean(masterLocalMetadataValue("dateFiled"))));
+  }
+
+  function masterSettlementInterestDaysValue(): number {
+    const filed = masterSettlementDateFiledValue();
+    const settled = clean(masterSettlementDateInput);
+    if (!filed || !settled) return 0;
+
+    const filedDate = new Date(`${filed}T00:00:00`);
+    const settledDate = new Date(`${settled}T00:00:00`);
+    if (Number.isNaN(filedDate.getTime()) || Number.isNaN(settledDate.getTime())) return 0;
+
+    const days = Math.floor((settledDate.getTime() - filedDate.getTime()) / 86400000);
+    return Math.max(0, days);
+  }
+
+  function masterSettlementSimpleInterestAmountValue(): number {
+    const monthlyRate = 0.02;
+    const dailyRate = monthlyRate / 30;
+    return masterSettlementBasisAmountValue() * dailyRate * masterSettlementInterestDaysValue();
   }
 
   function formatMasterSettlementDollarInput(value: string): string {
@@ -1487,11 +1527,6 @@ export default function FilteredMattersPage() {
   }
 
   function applyMasterSettlementBasisAmount(nextMode: "lawsuit_amount" | "fee_schedule_amount" | "custom_amount", nextAmount?: string) {
-    const amountSource =
-      nextMode === "lawsuit_amount"
-        ? masterSettlementLawsuitAmountValue()
-        : masterSettlementMoneyValue(nextAmount || "");
-
     setMasterSettlementDraft((prev) => ({
       ...prev,
       settlementBasedOn: nextMode,
@@ -1499,7 +1534,6 @@ export default function FilteredMattersPage() {
       ...(nextMode === "custom_amount" ? { customAmount: nextAmount || "" } : {}),
     }));
 
-    setMasterSettlementGrossInput(amountSource > 0 ? formatMasterSettlementDollarInput(String(amountSource)) : "");
     setMasterSettlementLocalPreview(null);
     setMasterSettlementRecordSave(null);
   }
@@ -1509,9 +1543,16 @@ export default function FilteredMattersPage() {
     if (!raw) return 0;
     if (raw.includes("%")) {
       const percentage = masterSettlementPercentValue(raw);
-      return (masterSettlementLawsuitAmountValue() * percentage) / 100;
+      return (masterSettlementBasisAmountValue() * percentage) / 100;
     }
-    return masterSettlementMoneyValue(raw);
+
+    const numeric = masterSettlementMoneyValue(raw);
+    const explicitDollar = raw.includes("$") || raw.includes(",") || numeric > 100;
+    if (!explicitDollar && numeric > 0 && numeric <= 100) {
+      return (masterSettlementBasisAmountValue() * numeric) / 100;
+    }
+
+    return numeric;
   }
 
   function formatMasterSettlementAmountOrPercentInput(value: string): string {
@@ -1521,6 +1562,13 @@ export default function FilteredMattersPage() {
       const percentage = masterSettlementPercentValue(raw);
       return Number.isFinite(percentage) ? `${percentage.toFixed(2)}%` : value;
     }
+
+    const numeric = masterSettlementMoneyValue(raw);
+    const explicitDollar = raw.includes("$") || raw.includes(",") || numeric > 100;
+    if (!explicitDollar && numeric > 0 && numeric <= 100) {
+      return `${numeric.toFixed(2)}%`;
+    }
+
     const formattedMoney = formatMasterSettlementMoneyInput(value);
     return formattedMoney ? `$${formattedMoney}` : "";
   }
@@ -1613,6 +1661,7 @@ export default function FilteredMattersPage() {
     setMasterSettlementPaymentExpectedDateInput(addDaysToDateInput(today, 45));
     setMasterSettlementPrincipalFeePercentInput("");
     setMasterSettlementInterestAmountInput("");
+    setMasterSettlementSettledInterestInput("");
     setMasterSettlementCostsInput("");
     setMasterSettlementInterestFeePercentInput("");
     setMasterSettlementNotesInput("");
@@ -1628,6 +1677,7 @@ export default function FilteredMattersPage() {
     setMasterSettlementRecordSaveLoading(false);
     setMasterSettlementProviderFeeDefaults(null);
     setMasterSettlementProviderFeeDefaultsLoading(false);
+    setMasterSettlementAttorneyFeeOverrides({});
     resetMasterSettlementPopupPosition();
   }
 
@@ -1710,11 +1760,6 @@ export default function FilteredMattersPage() {
     if (!masterSettlementFormOpen || activeMasterWorkspaceTab !== "payments") return;
 
     loadMasterSettlementProviderFeeDefaults();
-
-    const lawsuitAmount = masterSettlementLawsuitAmountValue();
-    if (!clean(masterSettlementGrossInput) && lawsuitAmount > 0) {
-      setMasterSettlementGrossInput(formatMasterSettlementDollarInput(String(lawsuitAmount)));
-    }
 
     const costsAmount = masterSettlementCostDefaultValue();
     if (!clean(masterSettlementCostsInput) && costsAmount > 0) {
@@ -2680,7 +2725,7 @@ export default function FilteredMattersPage() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 10,
+            gap: 8,
             marginBottom: 14,
           }}
         >
@@ -3009,7 +3054,7 @@ export default function FilteredMattersPage() {
         {masterEmailThreadPreviewResult && (
           <details style={{ marginTop: 14 }}>
             <summary style={{ cursor: "pointer", fontWeight: 850 }}>Raw local master thread preview JSON</summary>
-            <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto", margin: "8px 0 0 0", padding: 10, background: "#0f172a", color: "#e5e7eb", borderRadius: 10, fontSize: 12 }}>
+            <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto", margin: "8px 0 0 0", padding: 10, background: "#0f172a", color: "#e5e7eb", borderRadius: 8, fontSize: 12 }}>
               {JSON.stringify(masterEmailThreadPreviewResult, null, 2)}
             </pre>
           </details>
@@ -3074,7 +3119,7 @@ export default function FilteredMattersPage() {
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "8px 10px",
+          padding: "6px 8px",
           borderRadius: 999,
           border: active ? "1px solid #4f46e5" : "1px solid #e5e7eb",
           background: active ? "#eef2ff" : complete ? "#f0fdf4" : "#f9fafb",
@@ -3240,7 +3285,7 @@ export default function FilteredMattersPage() {
               style={{
                 border: "1px solid #e5e7eb",
                 borderRadius: 18,
-                padding: 18,
+                padding: "12px 18px",
                 background: "#f8fafc",
                 display: showSelectStep ? "grid" : "none",
                 gap: 14,
@@ -3664,7 +3709,7 @@ export default function FilteredMattersPage() {
                             boxSizing: "border-box",
                             border: "1px solid #cbd5e1",
                             borderRadius: 12,
-                            padding: "10px 12px",
+                            padding: "6px 8px",
                             fontSize: 14,
                             background: "#fff",
                           }}
@@ -5660,7 +5705,7 @@ export default function FilteredMattersPage() {
               <div
                 style={{
                   margin: "0 0 14px",
-                  padding: "10px 12px",
+                  padding: "7px 10px",
                   border: masterPaymentPostResult.ok ? "1px solid #bbf7d0" : "1px solid #fecaca",
                   borderRadius: 14,
                   background: masterPaymentPostResult.ok ? "#f0fdf4" : "#fef2f2",
@@ -5923,7 +5968,7 @@ export default function FilteredMattersPage() {
 
                     <div
                       style={{
-                        padding: "10px 12px",
+                        padding: "7px 10px",
                         border: "1px solid #bae6fd",
                         borderRadius: 12,
                         background: "#e0f2fe",
@@ -6188,7 +6233,7 @@ export default function FilteredMattersPage() {
                           return (
                             <div
                               style={{
-                                padding: "10px 12px",
+                                padding: "7px 10px",
                                 border: "1px solid #dbe4f0",
                                 borderRadius: 12,
                                 background: "#f8fafc",
@@ -6380,7 +6425,7 @@ export default function FilteredMattersPage() {
 
                     <div
                       style={{
-                        padding: "10px 12px",
+                        padding: "7px 10px",
                         border: "1px solid #bae6fd",
                         borderRadius: 12,
                         background: "#e0f2fe",
@@ -6468,8 +6513,8 @@ export default function FilteredMattersPage() {
                     top: masterSettlementPopupPosition.y,
                     left: `calc(50% + ${masterSettlementPopupPosition.x}px)`,
                     transform: "translateX(-50%)",
-                    width: "min(1080px, 94vw)",
-                    minWidth: 720,
+                    width: "min(1480px, 98vw)",
+                    minWidth: 980,
                     minHeight: 420,
                     maxWidth: "98vw",
                     maxHeight: "calc(100vh - 24px)",
@@ -6511,17 +6556,7 @@ export default function FilteredMattersPage() {
                           color: "#1d4ed8",
                         }}
                       >
-                        Settlement Preview
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 3,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "#1e40af",
-                        }}
-                      >
-                        Master Lawsuit Settlement · Local-first workflow.  Drag this blue header to move the popup.
+                        Settlement of {currentMasterLawsuitIdForDocumentPreview() || "—"}
                       </div>
                     </div>
 
@@ -6529,8 +6564,8 @@ export default function FilteredMattersPage() {
 
                   <div
                     style={{
-                      margin: "18px 18px 0",
-                      padding: "12px",
+                      margin: "8px 18px 0",
+                      padding: "7px 10px",
                       border: "1px solid #dbe4f0",
                       borderRadius: 14,
                       background: "#f8fafc",
@@ -6541,15 +6576,30 @@ export default function FilteredMattersPage() {
                     <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569" }}>
                       Settlement Based on
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 900, color: "#0f172a" }}>
-                        <input
-                          type="radio"
-                          name="master-settlement-popup-based-on"
-                          checked={masterSettlementDraft.settlementBasedOn === "lawsuit_amount"}
-                          onChange={() => applyMasterSettlementBasisAmount("lawsuit_amount")}
-                        />
-                        <span>Lawsuit Amount ({money(masterSettlementLawsuitAmountValue())})</span>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, alignItems: "start" }}>
+                      <label style={{ display: "grid", gap: 6 }}>
+                        <span style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 900, color: "#0f172a" }}>
+                          <input
+                            type="radio"
+                            name="master-settlement-popup-based-on"
+                            checked={masterSettlementDraft.settlementBasedOn === "lawsuit_amount"}
+                            onChange={() => applyMasterSettlementBasisAmount("lawsuit_amount")}
+                          />
+                          <span>Lawsuit Amount</span>
+                        </span>
+                        <div
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 8,
+                            padding: "7px 10px",
+                            background: "#f8fafc",
+                            color: "#0f172a",
+                            fontWeight: 900,
+                          }}
+                        >
+                          {money(masterSettlementLawsuitAmountValue())}
+                        </div>
                       </label>
 
                       <label style={{ display: "grid", gap: 6 }}>
@@ -6569,15 +6619,14 @@ export default function FilteredMattersPage() {
                           onBlur={() => {
                             const formatted = formatMasterSettlementDollarInput(masterSettlementDraft.feeScheduleAmount);
                             setMasterSettlementDraft((prev) => ({ ...prev, feeScheduleAmount: formatted }));
-                            setMasterSettlementGrossInput(formatted);
                           }}
                           placeholder="$ amount"
                           inputMode="decimal"
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "7px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6603,15 +6652,14 @@ export default function FilteredMattersPage() {
                           onBlur={() => {
                             const formatted = formatMasterSettlementDollarInput(masterSettlementDraft.customAmount);
                             setMasterSettlementDraft((prev) => ({ ...prev, customAmount: formatted }));
-                            setMasterSettlementGrossInput(formatted);
                           }}
                           placeholder="$ amount"
                           inputMode="decimal"
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "7px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6628,11 +6676,11 @@ export default function FilteredMattersPage() {
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr 1fr",
                       gap: 16,
-                      padding: 18,
+                      padding: "12px 18px",
                       alignItems: "start",
                     }}
                   >
-                    <div style={{ display: "grid", gap: 14 }}>
+                    <div style={{ display: "grid", gap: 12 }}>
                       <label className="barsh-direct-payment-field">
                         <span>Principal *</span>
                         <input
@@ -6640,13 +6688,13 @@ export default function FilteredMattersPage() {
                           value={masterSettlementGrossInput}
                           onChange={(event) => setMasterSettlementGrossInput(event.target.value)}
                           onBlur={() => setMasterSettlementGrossInput((current) => formatMasterSettlementAmountOrPercentInput(current))}
-                          placeholder="$ amount or % of Lawsuit Amount"
+                          placeholder="$ amount or % of selected basis"
                           inputMode="decimal"
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6657,24 +6705,75 @@ export default function FilteredMattersPage() {
 
                       <label className="barsh-direct-payment-field">
                         <span>Interest</span>
-                        <input
-                          data-master-settlement-entry-field="true"
-                          value={masterSettlementInterestAmountInput}
-                          onChange={(event) => setMasterSettlementInterestAmountInput(event.target.value)}
-                          onBlur={() => setMasterSettlementInterestAmountInput((current) => formatMasterSettlementAmountOrPercentInput(current))}
-                          placeholder="$ amount or % of Lawsuit Amount"
-                          inputMode="decimal"
+                        <div
                           style={{
-                            width: "100%",
-                            border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
-                            background: "#fff",
-                            color: "#0f172a",
-                            fontWeight: 800,
-                            outline: "none",
+                            display: "grid",
+                            gridTemplateColumns: "0.65fr auto auto auto 0.85fr",
+                            gap: 8,
+                            alignItems: "center",
                           }}
-                        />
+                        >
+                          <input
+                            data-master-settlement-entry-field="true"
+                            value={masterSettlementInterestAmountInput}
+                            onChange={(event) => {
+                              setMasterSettlementInterestAmountInput(event.target.value);
+                              setMasterSettlementSettledInterestInput("");
+                            }}
+                            onBlur={() => {
+                              const n = masterSettlementInterestSettlementPercentValue();
+                              setMasterSettlementInterestAmountInput(`${Math.round(n)}%`);
+                              setMasterSettlementSettledInterestInput("");
+                            }}
+                            placeholder="%"
+                            inputMode="decimal"
+                            title="Enter the percentage of calculated interest being settled.  Example: 50 means 50%."
+                            style={{
+                              width: "100%",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: 8,
+                              padding: "8px 10px",
+                              background: "#fff",
+                              color: "#0f172a",
+                              fontWeight: 800,
+                              outline: "none",
+                            }}
+                          />
+                          <span style={{ color: "#475569", fontWeight: 900 }}>of</span>
+                          <span
+                            style={{
+                              color: "#0f172a",
+                              fontWeight: 950,
+                              fontSize: 18,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {money(masterSettlementSimpleInterestAmountValue())}
+                          </span>
+                          <span style={{ color: "#475569", fontWeight: 900 }}>=</span>
+                          <input
+                            data-master-settlement-entry-field="true"
+                            value={masterSettlementSettledInterestInput || money(masterSettlementCalculatedSettledInterestValue())}
+                            onChange={(event) => setMasterSettlementSettledInterestInput(event.target.value)}
+                            onBlur={() =>
+                              setMasterSettlementSettledInterestInput((current) =>
+                                formatMasterSettlementDollarInput(current || String(masterSettlementCalculatedSettledInterestValue()))
+                              )
+                            }
+                            title="Editable settled interest amount.  Defaults to the selected percentage of calculated interest."
+                            inputMode="decimal"
+                            style={{
+                              width: "100%",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: 8,
+                              padding: "8px 10px",
+                              background: "#fff",
+                              color: "#0f172a",
+                              fontWeight: 800,
+                              outline: "none",
+                            }}
+                          />
+                        </div>
                       </label>
 
                       <label className="barsh-direct-payment-field">
@@ -6689,8 +6788,8 @@ export default function FilteredMattersPage() {
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6700,7 +6799,7 @@ export default function FilteredMattersPage() {
                       </label>
                     </div>
 
-                    <div style={{ display: "grid", gap: 14 }}>
+                    <div style={{ display: "grid", gap: 12 }}>
                       <label className="barsh-direct-payment-field">
                         <span>Settled With *</span>
                         <input
@@ -6711,8 +6810,8 @@ export default function FilteredMattersPage() {
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6735,8 +6834,8 @@ export default function FilteredMattersPage() {
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6755,8 +6854,8 @@ export default function FilteredMattersPage() {
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
@@ -6766,23 +6865,25 @@ export default function FilteredMattersPage() {
                       </label>
                     </div>
 
-                    <div style={{ display: "grid", gap: 14 }}>
-                      <label className="barsh-direct-payment-field">
+                    <div style={{ display: "grid", gap: 12 }}>
+                      <label className="barsh-direct-payment-field" style={{ minHeight: "100%" }}>
                         <span>Notes</span>
-                        <input
+                        <textarea
                           data-master-settlement-entry-field="true"
                           value={masterSettlementNotesInput}
                           onChange={(event) => setMasterSettlementNotesInput(event.target.value)}
                           placeholder="Optional settlement notes"
                           style={{
                             width: "100%",
+                            minHeight: 132,
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
-                            padding: "10px 12px",
+                            borderRadius: 8,
+                            padding: "8px 10px",
                             background: "#fff",
                             color: "#0f172a",
                             fontWeight: 800,
                             outline: "none",
+                            resize: "vertical",
                           }}
                         />
                       </label>
@@ -6792,48 +6893,24 @@ export default function FilteredMattersPage() {
                   <div
                     className="barsh-direct-payment-preview"
                     style={{
-                      margin: "0 18px 18px",
+                      margin: "0 18px 10px",
                       display: "grid",
-                      gridTemplateColumns: "repeat(2, minmax(240px, 1fr))",
-                      gap: 10,
+                      gridTemplateColumns: "repeat(3, minmax(220px, 1fr))",
+                      gap: 6,
+                      fontSize: 12,
                     }}
                   >
-                    <div>
-                      <div>Principal: {money(masterSettlementGrossValue())}</div>
-                      <div style={{ marginTop: 4, color: "#475569" }}>
-                        Retainer Principal: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : masterSettlementWholePercentLabel(masterSettlementPrincipalFeePercentInput)}
-                      </div>
-                    </div>
-                    <div>
-                      <div>Interest: {money(masterSettlementInterestValue())}</div>
-                      <div style={{ marginTop: 4, color: "#475569" }}>
-                        Retainer Interest: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : masterSettlementWholePercentLabel(masterSettlementInterestFeePercentInput)}
-                      </div>
-                    </div>
-                    <div style={{ gridColumn: "1 / -1", color: "#475569" }}>
-                      Costs: {money(masterSettlementCostsValue())}
-                    </div>
-                    <div style={{ gridColumn: "1 / -1", color: "#475569" }}>
-                      Fee defaults source: {masterSettlementProviderFeeDefaults?.matchedProvider?.displayName || masterSettlementProviderForFeeDefaults() || "—"}
-                    </div>
-                    <div
-                      style={{
-                        gridColumn: "1 / -1",
-                        padding: "8px 10px",
-                        border: "1px solid #bae6fd",
-                        borderRadius: 10,
-                        background: "#e0f2fe",
-                        color: "#075985",
-                        fontWeight: 900,
-                      }}
-                    >
-                      This is a local settlement draft only.  It does not run external settlement posting, document generation, or Close Paid Settlements.
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+                      <span>Retainer Principal: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : masterSettlementWholePercentLabel(masterSettlementPrincipalFeePercentInput)}</span>
+                      <span>Retainer Interest: {masterSettlementProviderFeeDefaultsLoading ? "Loading..." : masterSettlementWholePercentLabel(masterSettlementInterestFeePercentInput)}</span>
+                      <span>Interest Days: {masterSettlementInterestDaysValue().toLocaleString("en-US")}</span>
+                      <span>Fee defaults source: {masterSettlementProviderFeeDefaults?.matchedProvider?.displayName || masterSettlementProviderForFeeDefaults() || "—"}</span>
                     </div>
                   </div>
 
                   <div
                     style={{
-                      margin: "0 18px 18px",
+                      margin: "0 18px 10px",
                       border: "1px solid #dbe4f0",
                       borderRadius: 14,
                       overflow: "hidden",
@@ -6842,7 +6919,7 @@ export default function FilteredMattersPage() {
                   >
                     <div
                       style={{
-                        padding: "10px 12px",
+                        padding: "7px 10px",
                         borderBottom: "1px solid #e2e8f0",
                         background: "#f8fafc",
                         fontSize: 12,
@@ -6859,7 +6936,7 @@ export default function FilteredMattersPage() {
                       <table
                         style={{
                           width: "100%",
-                          minWidth: 820,
+                          minWidth: 1180,
                           borderCollapse: "collapse",
                           fontSize: 12,
                           color: "#0f172a",
@@ -6867,13 +6944,15 @@ export default function FilteredMattersPage() {
                       >
                         <thead>
                           <tr style={{ background: "#e2e8f0" }}>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Matter</th>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Provider</th>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Patient</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Allocation %</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Settled Principal</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Expected Balance</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Matter</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Provider</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Patient</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Settled Principal</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Settled Interest</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Settled Costs</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Settled Attorney Fee</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Total Settlement</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -6881,39 +6960,119 @@ export default function FilteredMattersPage() {
                             const rowId = clean(row.id);
                             const billAmount = masterWorkspaceBillAmount(row);
                             const billTotal = masterWorkspaceBillTotal(masterSettlementDetailRows);
-                            const allocationPercent = billTotal > 0 ? (billAmount / billTotal) * 100 : 0;
+                            const allocationRatio = billTotal > 0 ? billAmount / billTotal : 0;
                             const settledPrincipal =
                               billTotal > 0
-                                ? Math.min(masterSettlementGrossValue() * (billAmount / billTotal), billAmount)
+                                ? Math.min(masterSettlementGrossValue() * allocationRatio, billAmount)
                                 : 0;
-                            const expectedBalance = Math.max(billAmount - settledPrincipal, 0);
+                            const settledInterest = billTotal > 0 ? masterSettlementInterestValue() * allocationRatio : 0;
+                            const settledCosts = rowId === clean(masterWorkspaceBillRows(masterSettlementDetailRows)[0]?.id) ? masterSettlementCostsValue() : 0;
+                            const defaultSettledAttorneyFee = Math.min((settledPrincipal + settledInterest) * 0.2, 1360 * allocationRatio);
+                            const settledAttorneyFee = masterSettlementAttorneyFeeOverrides[rowId] !== undefined
+                              ? masterSettlementMoneyValue(masterSettlementAttorneyFeeOverrides[rowId])
+                              : defaultSettledAttorneyFee;
+                            const totalSettlement = settledPrincipal + settledInterest + settledCosts + settledAttorneyFee;
 
                             return (
                               <tr key={`master-settlement-popup-${rowId}`}>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
                                   {clean(row.displayNumber) || rowId}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                   {clean(row.provider) || "—"}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                   {clean(row.patient) || "—"}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 900 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 900 }}>
                                   {money(billAmount)}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right" }}>
-                                  {allocationPercent.toFixed(2)}%
-                                </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#1d4ed8" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#1d4ed8" }}>
                                   {money(settledPrincipal)}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950 }}>
-                                  {money(expectedBalance)}
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#1d4ed8" }}>
+                                  {money(settledInterest)}
+                                </td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#1d4ed8" }}>
+                                  {money(settledCosts)}
+                                </td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right" }}>
+                                  <input
+                                    value={masterSettlementAttorneyFeeOverrides[rowId] ?? formatMasterSettlementDollarInput(String(defaultSettledAttorneyFee))}
+                                    onChange={(event) =>
+                                      setMasterSettlementAttorneyFeeOverrides((prev) => ({
+                                        ...prev,
+                                        [rowId]: event.target.value,
+                                      }))
+                                    }
+                                    onBlur={() =>
+                                      setMasterSettlementAttorneyFeeOverrides((prev) => ({
+                                        ...prev,
+                                        [rowId]: formatMasterSettlementDollarInput(prev[rowId] ?? String(defaultSettledAttorneyFee)),
+                                      }))
+                                    }
+                                    inputMode="decimal"
+                                    style={{
+                                      width: 108,
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: 8,
+                                      padding: "6px 8px",
+                                      textAlign: "right",
+                                      fontWeight: 900,
+                                      color: "#1d4ed8",
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950 }}>
+                                  {money(totalSettlement)}
                                 </td>
                               </tr>
                             );
                           })}
+                          {(() => {
+                            const billRows = masterWorkspaceBillRows(masterSettlementDetailRows);
+                            const billTotal = masterWorkspaceBillTotal(masterSettlementDetailRows);
+                            const firstRowId = clean((billRows[0] as any)?.id);
+
+                            const settledPrincipalTotal = billRows.reduce((sum: number, row: any) => {
+                              const billAmount = masterWorkspaceBillAmount(row);
+                              const allocationRatio = billTotal > 0 ? billAmount / billTotal : 0;
+                              return sum + Math.min(masterSettlementGrossValue() * allocationRatio, billAmount);
+                            }, 0);
+
+                            const settledInterestTotal = masterSettlementInterestValue();
+                            const settledCostsTotal = masterSettlementCostsValue();
+
+                            const attorneyFeeTotal = billRows.reduce((sum: number, row: any) => {
+                              const rowId = clean(row.id);
+                              const billAmount = masterWorkspaceBillAmount(row);
+                              const allocationRatio = billTotal > 0 ? billAmount / billTotal : 0;
+                              const settledPrincipal = Math.min(masterSettlementGrossValue() * allocationRatio, billAmount);
+                              const settledInterest = masterSettlementInterestValue() * allocationRatio;
+                              const defaultSettledAttorneyFee = Math.min((settledPrincipal + settledInterest) * 0.2, 1360 * allocationRatio);
+                              return sum + (
+                                masterSettlementAttorneyFeeOverrides[rowId] !== undefined
+                                  ? masterSettlementMoneyValue(masterSettlementAttorneyFeeOverrides[rowId])
+                                  : defaultSettledAttorneyFee
+                              );
+                            }, 0);
+
+                            const totalSettlementTotal = settledPrincipalTotal + settledInterestTotal + settledCostsTotal + attorneyFeeTotal;
+
+                            return (
+                              <tr style={{ background: "#f8fafc", fontWeight: 950 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1" }}>Total</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1" }}></td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1" }}></td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(billTotal)}</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(settledPrincipalTotal)}</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(settledInterestTotal)}</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(settledCostsTotal)}</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(attorneyFeeTotal)}</td>
+                                <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{money(totalSettlementTotal)}</td>
+                              </tr>
+                            );
+                          })()}
                         </tbody>
                       </table>
                     </div>
@@ -6964,7 +7123,7 @@ export default function FilteredMattersPage() {
                             border: "1px solid #86efac",
                             borderRadius: 12,
                             background: "#ffffff",
-                            padding: "10px 12px",
+                            padding: "7px 10px",
                             display: "grid",
                             gap: 6,
                           }}
@@ -6991,7 +7150,7 @@ export default function FilteredMattersPage() {
                             border: masterSettlementRecordSave.ok ? "1px solid #93c5fd" : "1px solid #fecaca",
                             borderRadius: 12,
                             background: masterSettlementRecordSave.ok ? "#eff6ff" : "#fef2f2",
-                            padding: "10px 12px",
+                            padding: "7px 10px",
                             display: "grid",
                             gap: 6,
                           }}
@@ -7519,8 +7678,8 @@ export default function FilteredMattersPage() {
                         style={{
                           width: "100%",
                           border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
+                          borderRadius: 8,
+                          padding: "7px 10px",
                           background: "#fff",
                           color: "#0f172a",
                           fontWeight: 700,
@@ -7549,8 +7708,8 @@ export default function FilteredMattersPage() {
                         style={{
                           width: "100%",
                           border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
+                          borderRadius: 8,
+                          padding: "7px 10px",
                           background: "#fff",
                           color: "#0f172a",
                           fontWeight: 700,
@@ -7571,8 +7730,8 @@ export default function FilteredMattersPage() {
                         style={{
                           width: "100%",
                           border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
+                          borderRadius: 8,
+                          padding: "7px 10px",
                           background: "#fff",
                           color: "#0f172a",
                           fontWeight: 800,
@@ -7606,7 +7765,7 @@ export default function FilteredMattersPage() {
                           style={{
                             width: "100%",
                             border: "1px solid #cbd5e1",
-                            borderRadius: 10,
+                            borderRadius: 8,
                             padding: "10px 12px 10px 28px",
                             background: "#fff",
                             color: "#0f172a",
@@ -7626,8 +7785,8 @@ export default function FilteredMattersPage() {
                         style={{
                           width: "100%",
                           border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
+                          borderRadius: 8,
+                          padding: "7px 10px",
                           background: "#fff",
                           color: "#0f172a",
                           fontWeight: 800,
@@ -7645,8 +7804,8 @@ export default function FilteredMattersPage() {
                         style={{
                           width: "100%",
                           border: "1px solid #cbd5e1",
-                          borderRadius: 10,
-                          padding: "10px 12px",
+                          borderRadius: 8,
+                          padding: "7px 10px",
                           background: "#fff",
                           color: "#0f172a",
                           fontWeight: 800,
@@ -7671,9 +7830,9 @@ export default function FilteredMattersPage() {
                     <div
                       style={{
                         gridColumn: "1 / -1",
-                        padding: "8px 10px",
+                        padding: "6px 8px",
                         border: "1px solid #bae6fd",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         background: "#e0f2fe",
                         color: "#075985",
                         fontWeight: 900,
@@ -7694,7 +7853,7 @@ export default function FilteredMattersPage() {
                   >
                     <div
                       style={{
-                        padding: "10px 12px",
+                        padding: "7px 10px",
                         borderBottom: "1px solid #e2e8f0",
                         background: "#f8fafc",
                         fontSize: 12,
@@ -7719,13 +7878,13 @@ export default function FilteredMattersPage() {
                       >
                         <thead>
                           <tr style={{ background: "#e2e8f0" }}>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Matter</th>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Provider</th>
-                            <th style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Patient</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Allocation %</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Payment To Post</th>
-                            <th style={{ textAlign: "right", padding: "8px 10px", border: "1px solid #cbd5e1" }}>Expected Balance</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Matter</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Provider</th>
+                            <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Patient</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Allocation %</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Payment To Post</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Expected Balance</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -7736,25 +7895,25 @@ export default function FilteredMattersPage() {
 
                             return (
                               <tr key={`master-payment-popup-${item.displayNumber || item.rowId}`}>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
                                   {item.displayNumber || item.rowId}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                   {clean(row.provider) || "—"}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                   {clean(row.patient) || "—"}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 900 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 900 }}>
                                   {money(item.billAmount)}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right" }}>
                                   {allocationPercent.toFixed(2)}%
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#166534" }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#166534" }}>
                                   {money(item.paymentToPost)}
                                 </td>
-                                <td style={{ padding: "8px 10px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950 }}>
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950 }}>
                                   {money(item.expectedBalance)}
                                 </td>
                               </tr>
@@ -8351,7 +8510,7 @@ const openLinkStyle: React.CSSProperties = {
   display: "inline-flex",
   padding: "8px 11px",
   border: "1px solid #b6c7e3",
-  borderRadius: 10,
+  borderRadius: 8,
   color: colors.blueDark,
   textDecoration: "none",
   fontWeight: 900,
@@ -8730,7 +8889,7 @@ const masterSettlementDetailsBoxStyle: React.CSSProperties = {
 const masterSettlementSummaryPanelStyle: React.CSSProperties = {
   border: "none",
   background: "#f8fafc",
-  borderRadius: 10,
+  borderRadius: 8,
   padding: 12,
   marginBottom: 14,
 };
@@ -8859,7 +9018,7 @@ const masterSettlementTableStyle: React.CSSProperties = {
 
 const masterSettlementThStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "8px 10px",
+  padding: "6px 8px",
   background: "#9aa6b2",
   color: "#203040",
   borderRight: "1px solid #d7dee9",
@@ -8874,7 +9033,7 @@ const masterSettlementRightThStyle: React.CSSProperties = {
 };
 
 const masterSettlementTdStyle: React.CSSProperties = {
-  padding: "8px 10px",
+  padding: "6px 8px",
   borderRight: "1px solid #e5e7eb",
   borderBottom: "1px solid #e5e7eb",
   color: "#334155",
