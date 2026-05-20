@@ -556,6 +556,19 @@ export default function FilteredMattersPage() {
   }
 
   const settlementRecordSettlementOpenerLabel = "Record Settlement";
+  const settlementCommitButtonGreenMarker = "data-barsh-settlement-commit-button-green-marker: Commit Settlement uses the same solid green action styling as other primary green buttons";
+  function masterSettlementCommitButtonStyle(): React.CSSProperties {
+    const canCommit = masterSettlementCanCommit();
+    return {
+      background: canCommit ? "#16a34a" : "#bbf7d0",
+      color: "#ffffff",
+      border: "1px solid #15803d",
+      boxShadow: canCommit ? "0 10px 20px rgba(22, 163, 74, 0.24)" : "none",
+      cursor: canCommit ? "pointer" : "not-allowed",
+    };
+  }
+  const settlementClearRetainersMarker = "data-barsh-settlement-clear-retainers-marker: Clear resets settlement entry fields but preserves/reloads provider retainer defaults";
+  const settlementCalculateCommitMarker = "data-barsh-settlement-calculate-commit-marker: Calculate Settlement prepares settlementRecordPayload; Commit Settlement requires a valid local preview";
   const settlementPopupBottomButtonsMarker = "data-barsh-settlement-popup-bottom-buttons-marker: Cancel | Clear | Commit Settlement";
   const settlementCommitFlowMarker = "data-barsh-settlement-commit-flow-marker: Cancel | Clear | Commit Settlement | tickler | document-dialog";
   const [masterSettlementFormOpen, setMasterSettlementFormOpen] = useState(false);
@@ -1661,6 +1674,44 @@ function masterSettlementDateFiledValue(): string {
       : value;
   }
 
+  function clearMasterSettlementEntryFields() {
+    const currentPrincipalRetainer = masterSettlementPrincipalFeePercentInput;
+    const currentInterestRetainer = masterSettlementInterestFeePercentInput;
+    const currentProviderDefaults = masterSettlementProviderFeeDefaults;
+
+    setMasterSettlementGrossInput("");
+    setMasterSettlementWithInput("");
+    const today = masterPaymentTodayInput();
+    setMasterSettlementDateInput(today);
+    setMasterSettlementPaymentExpectedDateInput(addDaysToDateInput(today, 45));
+    setMasterSettlementInterestAmountInput("");
+    setMasterSettlementSettledInterestInput("");
+    setMasterSettlementCostsInput("");
+    setMasterSettlementNotesInput("");
+    setMasterSettlementDraft((prev) => ({
+      ...prev,
+      settlementBasedOn: "lawsuit_amount",
+      feeScheduleAmount: "",
+      customAmount: "",
+    }));
+    setMasterSettlementLocalPreview(null);
+    setMasterSettlementLocalPreviewLoading(false);
+    setMasterSettlementRecordSave(null);
+    setMasterSettlementRecordSaveLoading(false);
+    setMasterSettlementAttorneyFeeOverrides({});
+
+    setMasterSettlementPrincipalFeePercentInput(currentPrincipalRetainer);
+    setMasterSettlementInterestFeePercentInput(currentInterestRetainer);
+    setMasterSettlementProviderFeeDefaults(currentProviderDefaults);
+
+    void loadMasterSettlementProviderFeeDefaults();
+
+    const costsAmount = masterSettlementCostDefaultValue();
+    if (costsAmount > 0) {
+      setMasterSettlementCostsInput(formatMasterSettlementDollarInput(String(costsAmount)));
+    }
+  }
+
   function resetMasterSettlementPreviewForm() {
     setMasterSettlementGrossInput("");
     setMasterSettlementWithInput("");
@@ -1875,6 +1926,14 @@ function masterSettlementDateFiledValue(): string {
     } finally {
       setMasterSettlementTicklerCreateLoading(false);
     }
+  }
+
+  function masterSettlementCanCommit(): boolean {
+    return Boolean(
+      masterSettlementLocalPreview?.ok &&
+      masterSettlementLocalPreview?.settlementRecordPayload &&
+      !masterSettlementRecordSaveLoading
+    );
   }
 
   async function commitMasterSettlementAndLaunchDocuments() {
@@ -2861,7 +2920,7 @@ function masterSettlementDateFiledValue(): string {
               whiteSpace: "nowrap",
             }}
           >
-            {masterGraphThreadSyncPreviewLoading ? "Previewing..." : "Preview Graph Updates"}
+            {masterGraphThreadSyncPreviewLoading ? "Calculating..." : "Preview Graph Updates"}
           </button>
 
           <button
@@ -3096,7 +3155,7 @@ function masterSettlementDateFiledValue(): string {
                           fontWeight: 800,
                         }}
                       >
-                        {masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "Previewing..." : "Preview This Thread"}
+                        {masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "Calculating..." : "Preview This Thread"}
                       </button>
 
                       <button
@@ -7619,7 +7678,7 @@ function masterSettlementDateFiledValue(): string {
 
                     <button
                       type="button"
-                      onClick={resetMasterSettlementPreviewForm}
+                      onClick={clearMasterSettlementEntryFields}
                       style={{
                         minWidth: 132,
                         height: 44,
@@ -7652,7 +7711,7 @@ function masterSettlementDateFiledValue(): string {
                         cursor: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "not-allowed" : "pointer",
                       }}
                     >
-                      {masterSettlementLocalPreviewLoading ? "Previewing..." : "Preview Local Settlement"}
+                      {masterSettlementLocalPreviewLoading ? "Calculating..." : "Calculate Settlement"}
                     </button>
 
                     <button
