@@ -185,6 +185,7 @@ export async function POST(req: NextRequest) {
     const masterLawsuitId = clean(body.masterLawsuitId);
     const grossSettlementAmount = cents(numberOrZero(body.grossSettlementAmount));
     const interestAmountTotal = cents(numberOrZero(body.interestAmount));
+    const costsAmount = cents(numberOrZero(body.costsAmount));
     const principalFeePercent = percent(body.principalFeePercent);
     const interestFeePercent = percent(body.interestFeePercent);
     const allocationMode = clean(body.allocationMode) || "pro_rata_by_principal_balance";
@@ -356,6 +357,7 @@ export async function POST(req: NextRequest) {
       masterLawsuitId,
       allocationMode: "pro_rata_by_principal_balance",
       grossSettlementAmount,
+      costsAmount,
       principalBasisTotal,
       expectedAllocatedSettlementTotal,
       allocatedSettlementTotal: fromCentsInteger(sumFieldCents(previewRows, "allocatedSettlement")),
@@ -394,6 +396,7 @@ export async function POST(req: NextRequest) {
         allocationMode: "pro_rata_by_principal_balance",
         grossSettlementAmount,
         interestAmount: summary.interestAmountTotal,
+        costsAmount,
         principalFeePercent,
         interestFeePercent,
       },
@@ -403,6 +406,7 @@ export async function POST(req: NextRequest) {
         principalFeeTotal: summary.principalFeeTotal,
         interestFeeTotal: summary.interestFeeTotal,
         totalFee: summary.totalFee,
+        costsAmount,
         providerPrincipalNetTotal: summary.providerPrincipalNetTotal,
         providerInterestNetTotal: summary.providerInterestNetTotal,
         providerNetTotal: summary.providerNetTotal,
