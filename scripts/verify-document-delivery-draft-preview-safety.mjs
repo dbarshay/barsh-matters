@@ -28,12 +28,47 @@ function mustNotContain(label, text, needle) {
 const routePath = "app/api/documents/delivery-draft-preview/route.ts";
 const helperPath = "lib/documents/delivery.ts";
 const packagePath = "package.json";
+const pagePath = "app/matters/page.tsx";
 
 const route = read(routePath);
 const helper = read(helperPath);
 const packageJson = read(packagePath);
+const page = read(pagePath);
 
 console.log("=== DOCUMENT DELIVERY DRAFT PREVIEW SAFETY VERIFICATION ===");
+
+const launchStart = page.indexOf("async function launchMasterDocumentEmail");
+const printStart = page.indexOf("function launchMasterDocumentPrint", launchStart);
+const launchFunction = launchStart >= 0 && printStart > launchStart ? page.slice(launchStart, printStart) : "";
+
+mustContain(pagePath, page, "masterDocumentDeliveryPreview");
+mustContain(pagePath, page, "data-barsh-document-delivery-preview-panel");
+mustContain(pagePath, page, "Document Delivery Preview");
+mustContain(pagePath, page, "Create Outlook Draft");
+mustContain(pagePath, page, "Open Outlook Draft in Web");
+mustContain(pagePath, page, "Outlook desktop app's Drafts folder");
+mustContain(pagePath, page, "masterDocumentDeliveryToOverride");
+mustContain(pagePath, page, "To recipient override");
+mustContain(pagePath, page, "buildDocumentDeliveryToOverrideRecipient");
+mustContain(pagePath, page, "isValidDocumentDeliveryEmail");
+mustContain(pagePath, page, "manualToOverrideIsValid");
+mustContain(pagePath, page, "displayedWarnings");
+mustContain(pagePath, page, "text.includes(\"No To recipient\")");
+mustContain(pagePath, page, "name@example.com");
+mustContain(pagePath, page, "Enter a valid email address before creating an Outlook draft.");
+mustContain(pagePath, page, "masterDocumentDeliveryToOverride.trim()\n            ? {}\n            : { graphDraftPayloadPreview: readDocumentDeliveryGraphPreview(previewState) }");
+mustContain(pagePath, page, "const maildropReady = Boolean(validation?.maildropInCcOnly || validation?.hasMaildropCc)");
+mustContain(pagePath, page, "maildropDisplay");
+mustContain(pagePath, page, "/api/documents/delivery-draft-preview");
+mustContain(pagePath, page, "/api/graph/create-draft?confirm=create-graph-draft");
+mustContain(pagePath, page, "allowMetadataOnlyDraft");
+mustContain(pagePath, page, "readDocumentDeliveryGraphPreview");
+mustContain(pagePath, page, "isDocumentDeliveryReadyForGraphDraft");
+mustContain(pagePath, page, "const readyForGraphDraftCreate = isDocumentDeliveryReadyForGraphDraft(previewState)");
+mustContain(pagePath, launchFunction, "setMasterDocumentDeliveryPreview");
+mustContain(pagePath, launchFunction, "/api/documents/delivery-draft-preview");
+mustNotContain(pagePath, launchFunction, "alert(");
+mustNotContain(pagePath, page, "Document Email Draft Preview Only");
 
 mustContain(routePath, route, "export async function POST");
 mustContain(routePath, route, 'action: "document-delivery-draft-preview"');

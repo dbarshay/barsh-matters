@@ -603,6 +603,10 @@ export default function FilteredMattersPage() {
 
   const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
   const [masterDocumentGenerationPopupOpen, setMasterDocumentGenerationPopupOpen] = useState(false);
+  const [masterDocumentDeliveryPreview, setMasterDocumentDeliveryPreview] = useState<any>(null);
+  const [masterDocumentDeliveryPreviewLoading, setMasterDocumentDeliveryPreviewLoading] = useState(false);
+  const [masterDocumentDraftCreateLoading, setMasterDocumentDraftCreateLoading] = useState(false);
+  const [masterDocumentDeliveryToOverride, setMasterDocumentDeliveryToOverride] = useState("");
   const [masterAuditHistoryEntries, setMasterAuditHistoryEntries] = useState<any[]>([]);
   const masterNoteTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const masterNoteDeleteConfirmButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1790,6 +1794,10 @@ export default function FilteredMattersPage() {
     setMasterDocumentTemplateQuery("");
     setMasterSelectedDocumentTemplateKey("");
     setMasterDocumentWorkflowStage("select");
+    setMasterDocumentDeliveryPreview(null);
+    setMasterDocumentDeliveryPreviewLoading(false);
+    setMasterDocumentDraftCreateLoading(false);
+    setMasterDocumentDeliveryToOverride("");
     setMasterDocumentGenerationPopupOpen(true);
     setActiveMasterWorkspaceTab("documents");
     await loadMasterDocumentDataPreview();
@@ -1837,8 +1845,7 @@ export default function FilteredMattersPage() {
     const json = await response.json().catch(() => ({}));
 
     if (!response.ok || !json?.ok) {
-      alert(json?.error || "Could not resolve the master lawsuit Clio Maildrop address.");
-      return context;
+      throw new Error(json?.error || "Could not resolve the master lawsuit Clio Maildrop address.");
     }
 
     return {
@@ -1848,10 +1855,68 @@ export default function FilteredMattersPage() {
     };
   }
 
+  function formatDocumentDeliveryRecipientList(value: any): string {
+    if (!value) return "";
+
+    const rows = Array.isArray(value) ? value : [value];
+
+    return rows
+      .map((row) => {
+        if (!row) return "";
+
+        if (typeof row === "string") return row.trim();
+
+        const address =
+          row?.emailAddress?.address ||
+          row?.email ||
+          row?.address ||
+          row?.mail ||
+          row?.value ||
+          "";
+        const name =
+          row?.emailAddress?.name ||
+          row?.name ||
+          row?.label ||
+          row?.displayName ||
+          "";
+
+        if (name && address) return `${name} <${address}>`;
+        return String(address || name || "").trim();
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  function readDocumentDeliveryGraphPreview(previewState: any): any {
+    const graphPreview = previewState?.graphDraftPayloadPreview || {};
+    return graphPreview?.payload || graphPreview;
+  }
+
+  function isValidDocumentDeliveryEmail(value: string): boolean {
+    return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value.trim());
+  }
+
+  function isDocumentDeliveryReadyForGraphDraft(previewState: any): boolean {
+    const graphPayloadPreview = readDocumentDeliveryGraphPreview(previewState);
+    const validation = graphPayloadPreview?.validation || graphPayloadPreview?.readiness || {};
+    const manualToOverrideIsValid = isValidDocumentDeliveryEmail(masterDocumentDeliveryToOverride);
+    const maildropReady = Boolean(validation?.maildropInCcOnly || validation?.hasMaildropCc);
+    return Boolean(validation?.readyForGraphDraftCreate || (manualToOverrideIsValid && maildropReady));
+  }
+
+  function buildDocumentDeliveryToOverrideRecipient(): any[] {
+    const email = masterDocumentDeliveryToOverride.trim();
+    return isValidDocumentDeliveryEmail(email) ? [{ email, name: email }] : [];
+  }
+
   async function launchMasterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = await resolveMasterMaildropForDelivery(buildMasterDocumentDeliveryContext(selectedTemplate));
+    setMasterDocumentDeliveryPreview(null);
+    setMasterDocumentDeliveryPreviewLoading(true);
+    setMasterDocumentDraftCreateLoading(false);
 
     try {
+      const context = await resolveMasterMaildropForDelivery(buildMasterDocumentDeliveryContext(selectedTemplate));
+
       const response = await fetch("/api/documents/delivery-draft-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1863,33 +1928,89 @@ export default function FilteredMattersPage() {
 
       const preview = await response.json().catch(() => null);
 
+      const nextPreview = {
+        ...(preview || {}),
+        ok: Boolean(response.ok && preview?.ok),
+        responseStatus: response.status,
+        context,
+        documentLabel: context.documentLabel || selectedTemplate?.label || "Document",
+        draft: preview?.draft || {},
+        graphDraftPayloadPreview: preview?.graphDraftPayloadPreview || {},
+      };
+
       if (!response.ok || !preview?.ok) {
-        alert(preview?.error || "Document delivery draft preview failed.");
+        setMasterDocumentDeliveryPreview({
+          ...nextPreview,
+          ok: false,
+          error: preview?.error || "Document delivery draft preview failed.",
+        });
         return;
       }
 
-      const draft = preview.draft || {};
-      const graphPreview = preview.graphDraftPayloadPreview || {};
-      const readiness = graphPreview.readiness || {};
-      const attachmentPlan = Array.isArray(graphPreview.attachmentPlan)
-        ? graphPreview.attachmentPlan
-        : Array.isArray(draft.attachments)
-          ? draft.attachments
-          : [];
-
-      alert(
-        "Document Email Draft Preview Only\n\n" +
-          "No Outlook draft was created.  No email was sent.  No Clio record, database record, document, or print-queue record was changed.\n\n" +
-          `Document: ${context.documentLabel || selectedTemplate?.label || "Document"}\n` +
-          `To: ${draft.to || "not resolved"}\n` +
-          `Cc / MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
-          `Subject: ${draft.subject || "not resolved"}\n` +
-          `Attachments planned: ${attachmentPlan.length}\n` +
-          `Ready for future Graph draft creation: ${readiness.readyForGraphDraftCreate ? "Yes" : "No"}\n\n` +
-          "This is the preview-first bridge for the later Graph draft-with-PDF-attachment workflow."
-      );
+      setMasterDocumentDeliveryPreview(nextPreview);
     } catch (error: any) {
-      alert(error?.message || "Document delivery draft preview failed.");
+      setMasterDocumentDeliveryPreview({
+        ok: false,
+        error: error?.message || "Document delivery draft preview failed.",
+        context: buildMasterDocumentDeliveryContext(selectedTemplate),
+        documentLabel: selectedTemplate?.label || "Document",
+        draft: {},
+        graphDraftPayloadPreview: {},
+      });
+    } finally {
+      setMasterDocumentDeliveryPreviewLoading(false);
+    }
+  }
+
+  async function createMasterDocumentOutlookDraft() {
+    const previewState = masterDocumentDeliveryPreview;
+
+    if (!previewState || !isDocumentDeliveryReadyForGraphDraft(previewState)) {
+      setMasterDocumentDeliveryPreview({
+        ...(previewState || {}),
+        ok: false,
+        createError:
+          "Graph draft creation is blocked until the preview has a To recipient, MailDrop in Cc, and no MailDrop in Bcc.",
+      });
+      return;
+    }
+
+    setMasterDocumentDraftCreateLoading(true);
+
+    try {
+      const response = await fetch("/api/graph/create-draft?confirm=create-graph-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "master_lawsuit",
+          context: previewState.context,
+          draft: {
+            ...(previewState.draft || {}),
+            ...(masterDocumentDeliveryToOverride.trim() ? { to: buildDocumentDeliveryToOverrideRecipient() } : {}),
+          },
+          ...(masterDocumentDeliveryToOverride.trim()
+            ? {}
+            : { graphDraftPayloadPreview: readDocumentDeliveryGraphPreview(previewState) }),
+          to: masterDocumentDeliveryToOverride.trim() ? buildDocumentDeliveryToOverrideRecipient() : undefined,
+          allowMetadataOnlyDraft: "true",
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      setMasterDocumentDeliveryPreview({
+        ...previewState,
+        createResult: result,
+        draftCreated: Boolean(response.ok && result?.createsOutlookDraft),
+        createError: response.ok ? "" : result?.error || "Graph draft creation failed.",
+      });
+    } catch (error: any) {
+      setMasterDocumentDeliveryPreview({
+        ...previewState,
+        createError: error?.message || "Graph draft creation failed.",
+      });
+    } finally {
+      setMasterDocumentDraftCreateLoading(false);
     }
   }
 
@@ -3119,6 +3240,196 @@ export default function FilteredMattersPage() {
                 </div>
               </section>
             )}
+
+            {(masterDocumentDeliveryPreviewLoading || masterDocumentDeliveryPreview) && (() => {
+              const previewState = masterDocumentDeliveryPreview || {};
+              const graphPayloadPreview = readDocumentDeliveryGraphPreview(previewState);
+              const validation = graphPayloadPreview?.validation || graphPayloadPreview?.readiness || {};
+              const draft = previewState?.draft || {};
+              const graphMessagePayload = graphPayloadPreview?.graphMessagePayload || {};
+              const attachmentPlan = Array.isArray(graphPayloadPreview?.attachmentPlan)
+                ? graphPayloadPreview.attachmentPlan
+                : Array.isArray(draft?.attachments)
+                  ? draft.attachments
+                  : [];
+              const context = previewState?.context || {};
+              const readyForGraphDraftCreate = isDocumentDeliveryReadyForGraphDraft(previewState);
+              const manualToOverrideIsValid = isValidDocumentDeliveryEmail(masterDocumentDeliveryToOverride);
+              const displayedWarnings = Array.isArray(validation?.warnings)
+                ? validation.warnings.filter((warning: any) => {
+                    const text = String(warning || "");
+                    return !(manualToOverrideIsValid && text.includes("No To recipient"));
+                  })
+                : [];
+              const toDisplay =
+                masterDocumentDeliveryToOverride.trim() ||
+                formatDocumentDeliveryRecipientList(draft?.to) ||
+                formatDocumentDeliveryRecipientList(graphMessagePayload?.toRecipients) ||
+                "not resolved";
+              const maildropDisplay = context?.clioMaildropEmail
+                ? `${context?.clioMaildropLabel || "MailDrop"} <${context.clioMaildropEmail}>`
+                : "";
+              const ccDisplay =
+                maildropDisplay ||
+                formatDocumentDeliveryRecipientList(draft?.cc) ||
+                formatDocumentDeliveryRecipientList(graphMessagePayload?.ccRecipients) ||
+                "not resolved";
+              const subjectDisplay = draft?.subject || graphMessagePayload?.subject || "not resolved";
+
+              return (
+                <section
+                  data-barsh-document-delivery-preview-panel="true"
+                  style={{
+                    border: previewState?.error || previewState?.createError ? "1px solid #fecaca" : "1px solid #bfdbfe",
+                    borderRadius: 18,
+                    padding: 18,
+                    background: previewState?.error || previewState?.createError ? "#fef2f2" : "#eff6ff",
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery Preview</h3>
+                    <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                      Preview only.  No Outlook draft is created unless Create Outlook Draft is clicked.  This does not send email, write Clio, upload documents, print, or queue anything.
+                    </p>
+                  </div>
+
+                  {masterDocumentDeliveryPreviewLoading && (
+                    <div style={{ fontWeight: 900, color: "#1e3a8a" }}>
+                      Building delivery preview...
+                    </div>
+                  )}
+
+                  {!masterDocumentDeliveryPreviewLoading && (
+                    <>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                          gap: 10,
+                        }}
+                      >
+                        <div><strong>Document:</strong> {previewState?.documentLabel || context?.documentLabel || selectedTemplate?.label || "Document"}</div>
+                        <div><strong>To:</strong> {toDisplay}</div>
+                        <div><strong>Cc / MailDrop:</strong> {ccDisplay}</div>
+                        <div><strong>Subject:</strong> {subjectDisplay}</div>
+                        <div><strong>Attachments planned:</strong> {attachmentPlan.length}</div>
+                        <div><strong>Graph draft creation available:</strong> {readyForGraphDraftCreate ? "Yes" : "No"}</div>
+                      </div>
+
+                      <div style={{ display: "grid", gap: 6 }}>
+                        <label style={{ fontWeight: 950, color: "#334155" }}>
+                          To recipient override
+                        </label>
+                        <input
+                          value={masterDocumentDeliveryToOverride}
+                          onChange={(event) => setMasterDocumentDeliveryToOverride(event.target.value)}
+                          placeholder="Enter recipient email, e.g., name@example.com..."
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 12,
+                            padding: "10px 12px",
+                            fontSize: 14,
+                            background: "#fff",
+                          }}
+                        />
+                        <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.4 }}>
+                          Use this only when local contact/reference data has not supplied a recipient.  Enter a valid email address such as name@example.com.  It affects the draft creation request only; it does not write Clio or update reference data.
+                        </div>
+                        {masterDocumentDeliveryToOverride.trim() && !isValidDocumentDeliveryEmail(masterDocumentDeliveryToOverride) && (
+                          <div style={{ color: "#991b1b", fontSize: 12, fontWeight: 900 }}>
+                            Enter a valid email address before creating an Outlook draft.
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          border: "1px solid #dbeafe",
+                          borderRadius: 14,
+                          background: "#fff",
+                          padding: 12,
+                          display: "grid",
+                          gap: 6,
+                          color: "#334155",
+                        }}
+                      >
+                        <div><strong>Safety flags</strong></div>
+                        <div>Creates Outlook draft from preview alone: No</div>
+                        <div>Sends email: No</div>
+                        <div>Writes Clio: No</div>
+                        <div>Uploads document: No</div>
+                        <div>Prints or queues document: No</div>
+                        <div>MailDrop in Cc only: {validation?.maildropInCcOnly ? "Yes" : "No"}</div>
+                      </div>
+
+                      {displayedWarnings.length > 0 && (
+                        <div style={{ color: "#92400e", fontWeight: 850 }}>
+                          Warnings: {displayedWarnings.join(" ")}
+                        </div>
+                      )}
+
+                      {(previewState?.error || previewState?.createError) && (
+                        <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                          Error: {previewState.error || previewState.createError}
+                        </div>
+                      )}
+
+                      {previewState?.draftCreated && (
+                        <div style={{ color: "#166534", fontWeight: 950 }}>
+                          Outlook draft created through Microsoft Graph.  Local email metadata was persisted.  No email was sent.  This draft is saved to Outlook/Exchange and should also appear in the Outlook desktop app's Drafts folder.
+                        </div>
+                      )}
+
+                      {previewState?.createResult?.draft?.webLink && (
+                        <a
+                          href={previewState.createResult.draft.webLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontWeight: 950,
+                            color: "#1d4ed8",
+                          }}
+                        >
+                          Open Outlook Draft in Web
+                        </a>
+                      )}
+
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          onClick={createMasterDocumentOutlookDraft}
+                          disabled={!readyForGraphDraftCreate || masterDocumentDraftCreateLoading || Boolean(previewState?.draftCreated)}
+                          title={!readyForGraphDraftCreate ? "Requires To recipient, MailDrop in Cc, and no MailDrop in Bcc." : undefined}
+                          style={{
+                            border: !readyForGraphDraftCreate || masterDocumentDraftCreateLoading || previewState?.draftCreated
+                              ? "1px solid #d1d5db"
+                              : "1px solid #2563eb",
+                            background: !readyForGraphDraftCreate || masterDocumentDraftCreateLoading || previewState?.draftCreated
+                              ? "#f3f4f6"
+                              : "#2563eb",
+                            color: !readyForGraphDraftCreate || masterDocumentDraftCreateLoading || previewState?.draftCreated
+                              ? "#6b7280"
+                              : "#fff",
+                            borderRadius: 12,
+                            padding: "10px 14px",
+                            fontWeight: 950,
+                            cursor: !readyForGraphDraftCreate || masterDocumentDraftCreateLoading || previewState?.draftCreated
+                              ? "not-allowed"
+                              : "pointer",
+                          }}
+                        >
+                          {masterDocumentDraftCreateLoading ? "Creating Draft..." : previewState?.draftCreated ? "Draft Created" : "Create Outlook Draft"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </section>
+              );
+            })()}
 
             {masterDocumentDataPreview?.error && (
               <div style={{ color: "#991b1b", fontWeight: 900 }}>
