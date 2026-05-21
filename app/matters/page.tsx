@@ -5830,7 +5830,7 @@ function masterSettlementDateFiledValue(): string {
                   <div>
                     <div style={masterWorkspacePanelEyebrowStyle}>Active Workspace</div>
                     <h2 style={masterWorkspacePanelTitleStyle}>
-                      {activeMasterWorkspaceTab === "documents" ? "Documents" : "Close Paid Settlements"}
+                      "Close Paid Settlements"
                     </h2>
                   </div>
                   <div style={masterWorkspacePanelPillStyle}>Read-only preview shell</div>
@@ -5840,18 +5840,14 @@ function masterSettlementDateFiledValue(): string {
                   <div style={masterWorkspaceCardStyle}>
                     <div style={masterWorkspaceCardLabelStyle}>Purpose</div>
                     <div style={masterWorkspaceCardTextStyle}>
-                      {activeMasterWorkspaceTab === "documents"
-                        ? "Centralize Master Lawsuit packet preview, finalization, Clio upload, and print-queue controls."
-                        : "Review paid settlement eligibility and close only confirmed paid settlement matters from the Master Lawsuit screen."}
+                      "Review paid settlement eligibility and close only confirmed paid settlement matters from the Master Lawsuit screen."
                     </div>
                   </div>
 
                   <div style={masterWorkspaceCardStyle}>
                     <div style={masterWorkspaceCardLabelStyle}>Safety</div>
                     <div style={masterWorkspaceCardTextStyle}>
-                      {activeMasterWorkspaceTab === "documents"
-                        ? "Document controls will stay separated between preview, finalization, Clio upload, and print queue."
-                        : "Close actions will remain payment-confirmed only, preview-first, and limited to eligible child/bill matters."}
+                      "Close actions will remain payment-confirmed only, preview-first, and limited to eligible child/bill matters."
                     </div>
                   </div>
 
@@ -5860,17 +5856,7 @@ function masterSettlementDateFiledValue(): string {
                     <div style={masterWorkspaceCardTextStyle}>
                       
       
-              {activeMasterWorkspaceTab === "documents" ? (
-                        <>
-                          <div>
-                            Move the existing read-only packet preview shell into this Documents workspace.
-                          </div>
-                          {renderMasterDocumentDataPreviewPanel()}
-                          {renderMasterClioDocumentsPanel()}
-                        </>
-                      ) : (
-                        "Move settlement close preview into this Close Paid Settlements workspace."
-                      )}
+              "Move settlement close preview into this Close Paid Settlements workspace."
                     </div>
                   </div>
                 </div>
