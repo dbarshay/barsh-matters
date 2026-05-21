@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { clioFetch } from "@/lib/clio";
 import { listClioMatterDocuments } from "@/lib/clioDocumentUpload";
 
 function clean(value: unknown): string {
@@ -23,6 +24,78 @@ function normalizeBrl(value: unknown): string {
 function inferDisplayNumber(value: unknown): string {
   const n = numberOrNull(value);
   return n ? `BRL${n}` : "";
+}
+
+async function readClioJson(res: Response, fallback: string): Promise<any> {
+  const text = await res.text();
+  let json: any = null;
+
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      `${fallback}: ${res.status} ${res.statusText}${json ? ` ${JSON.stringify(json)}` : text ? ` ${text}` : ""}`
+    );
+  }
+
+  return json;
+}
+
+async function resolveClioMatterByDisplayNumber(displayNumberInput: string) {
+  const displayNumber = normalizeBrl(displayNumberInput);
+
+  if (!displayNumber) {
+    return {
+      ok: false,
+      displayNumber: "",
+      clioMatterId: null,
+      clioDisplayNumber: "",
+      candidates: [],
+      error: "Missing Clio display number for direct matter document lookup.",
+    };
+  }
+
+  const fields = "id,display_number,description";
+  const params = new URLSearchParams();
+  params.set("query", displayNumber);
+  params.set("limit", "20");
+  params.set("fields", fields);
+
+  const res = await clioFetch(`/matters.json?${params.toString()}`);
+  const json = await readClioJson(res, `Clio matter lookup failed for ${displayNumber}`);
+  const rows = Array.isArray(json?.data) ? json.data : [];
+
+  const candidates = rows.map((row: any) => ({
+    id: numberOrNull(row?.id),
+    displayNumber: normalizeBrl(row?.display_number),
+    description: clean(row?.description),
+  }));
+
+  const exact = candidates.find((row: any) => row.displayNumber === displayNumber && row.id);
+
+  if (!exact?.id) {
+    return {
+      ok: false,
+      displayNumber,
+      clioMatterId: null,
+      clioDisplayNumber: "",
+      candidates,
+      error: `Could not resolve Clio matter id for ${displayNumber}.`,
+    };
+  }
+
+  return {
+    ok: true,
+    displayNumber,
+    clioMatterId: exact.id,
+    clioDisplayNumber: exact.displayNumber,
+    candidates,
+    error: "",
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -93,13 +166,50 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      clioMatterId = matterId;
-      clioDisplayNumber = normalizeBrl(claimIndexRow?.display_number) || inferDisplayNumber(matterId);
+      const localDisplayNumber = normalizeBrl(claimIndexRow?.display_number) || inferDisplayNumber(matterId);
+      const clioResolution = await resolveClioMatterByDisplayNumber(localDisplayNumber);
+
+      if (!clioResolution.ok || !clioResolution.clioMatterId) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "clio-matter-documents-list",
+            readOnly: true,
+            failClosed: true,
+            clioRecordsChanged: false,
+            databaseRecordsChanged: false,
+            documentsUploaded: false,
+            documentsDownloaded: false,
+            documentsGenerated: false,
+            emailSent: false,
+            printQueued: false,
+            targetType,
+            matterId,
+            localMatterId: matterId,
+            clioDisplayNumber: localDisplayNumber,
+            error:
+              clioResolution.error ||
+              `Could not resolve real Clio matter id for ${localDisplayNumber}.`,
+            localSource: {
+              source: "claim-index + clio-display-number-resolution",
+              mappingRequired: true,
+              rowFound: Boolean(claimIndexRow),
+              claimIndexRow,
+              clioResolution,
+            },
+          },
+          { status: 409 }
+        );
+      }
+
+      clioMatterId = clioResolution.clioMatterId;
+      clioDisplayNumber = clioResolution.clioDisplayNumber || localDisplayNumber;
       localSource = {
-        source: "claim-index",
-        mappingRequired: false,
+        source: "claim-index + clio-display-number-resolution",
+        mappingRequired: true,
         rowFound: Boolean(claimIndexRow),
         claimIndexRow,
+        clioResolution,
       };
     }
 
@@ -231,6 +341,7 @@ export async function GET(req: NextRequest) {
       printQueued: false,
       targetType,
       matterId: matterId || null,
+      localMatterId: matterId || null,
       masterLawsuitId: masterLawsuitId || null,
       clioMatterId,
       clioDisplayNumber,

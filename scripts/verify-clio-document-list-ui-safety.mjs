@@ -44,6 +44,13 @@ const checks = [
       direct.includes('cache: "no-store"'),
   },
   {
+    label: "Direct Matter View Documents normalizes BRL display numbers before route call",
+    pass:
+      direct.includes("function directMatterNumericIdForDocuments") &&
+      direct.includes("BRL\\s*(\\d+)") &&
+      direct.includes("const numericMatterId = directMatterNumericIdForDocuments()"),
+  },
+  {
     label: "Direct Matter has separate View Documents action above Document Generation",
     pass:
       directActionChunk.includes("Open the Direct Matter Clio document picker.") &&

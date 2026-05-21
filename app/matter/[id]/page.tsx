@@ -615,8 +615,41 @@ const activeGroupKey =
     void loadMatterEmailThreadPreview();
   }, [activeWorkspaceTab, emailThreadPreviewLoading, emailThreadPreviewResult]);
 
+  function directMatterNumericIdForDocuments(): number {
+    const candidates = [
+      matterId,
+      matter?.matterId,
+      matter?.matter_id,
+      matter?.id,
+      matter?.displayNumber,
+      matter?.display_number,
+    ];
+
+    for (const candidate of candidates) {
+      const raw = textValue(candidate);
+      if (!raw) continue;
+
+      const direct = Number(raw);
+      if (Number.isFinite(direct) && direct > 0) return direct;
+
+      const brlMatch = raw.toUpperCase().match(/^BRL\s*(\d+)$/);
+      if (brlMatch?.[1]) {
+        const parsed = Number(brlMatch[1]);
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      }
+
+      const digitMatch = raw.match(/(\d{5,})/);
+      if (digitMatch?.[1]) {
+        const parsed = Number(digitMatch[1]);
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      }
+    }
+
+    return 0;
+  }
+
   async function loadMatterClioDocuments() {
-    const numericMatterId = Number(matterId);
+    const numericMatterId = directMatterNumericIdForDocuments();
 
     if (!Number.isFinite(numericMatterId) || numericMatterId <= 0) {
       setMatterClioDocumentsResult({
@@ -768,7 +801,7 @@ const activeGroupKey =
                   Matter: {textValue(matter?.displayNumber || matter?.display_number) || matterId || "—"}
                 </span>
                 <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: 12, fontWeight: 850 }}>
-                  Clio Matter ID: {textValue(matterClioDocumentsResult?.clioMatterId) || matterId || "—"}
+                  Clio Matter ID: {textValue(matterClioDocumentsResult?.clioMatterId) || textValue(directMatterNumericIdForDocuments()) || "—"}
                 </span>
                 <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: 12, fontWeight: 850 }}>
                   Documents: {matterClioDocumentsResult?.summary?.documentCount ?? docs.length}

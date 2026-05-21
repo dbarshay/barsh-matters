@@ -74,6 +74,21 @@ const checks = [
       route.includes('url.searchParams.get("masterLawsuitId")') &&
       route.includes('targetType: "direct-matter" | "master-lawsuit"'),
   },
+  {
+    label: "direct matter path resolves real Clio matter id by BRL display number",
+    pass:
+      route.includes("resolveClioMatterByDisplayNumber") &&
+      route.includes("claim-index + clio-display-number-resolution") &&
+      route.includes("clioResolution.clioMatterId") &&
+      route.includes("localMatterId"),
+  },
+  {
+    label: "direct matter path fails closed when BRL display number cannot resolve",
+    pass:
+      route.includes("Could not resolve real Clio matter id") &&
+      route.includes("failClosed: true") &&
+      route.includes("{ status: 409 }"),
+  },
 ];
 
 let failed = 0;
