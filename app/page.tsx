@@ -1146,8 +1146,6 @@ export default function Home() {
     }
   }, []);
 
-  const [administratorMenuOpen, setAdministratorMenuOpen] = useState(false);
-
   async function runAdministratorGate(actionLabel: string, onAuthorized: () => void) {
     const password = window.prompt(`ADMINISTRATOR ACCESS REQUIRED\n\n${actionLabel}\n\nEnter administrator password:`);
     if (password === null) return;
@@ -1165,7 +1163,6 @@ export default function Home() {
         return;
       }
 
-      setAdministratorMenuOpen(false);
       onAuthorized();
     } catch (error: any) {
       window.alert(error?.message || "Administrator authorization failed.");
@@ -1173,54 +1170,16 @@ export default function Home() {
   }
 
   function openAdministratorMenu() {
-    if (administratorMenuOpen) {
-      setAdministratorMenuOpen(false);
-      return;
-    }
-
-    void runAdministratorGate(
-      "Open Administrator Menu",
-      () => {
-        setAdministratorMenuOpen(true);
-      }
-    );
-  }
-
-  function openAdminHome() {
     void runAdministratorGate(
       "Open Administrator Home",
       () => {
         window.location.href = "/admin";
-      }
+      },
     );
   }
 
-  function openReferenceImportsAdmin() {
-    void runAdministratorGate(
-      "Open Reference Data Import",
-      () => {
-        window.location.href = "/admin/reference-data";
-      }
-    );
-  }
 
-  function openDocumentTemplatesAdmin() {
-    void runAdministratorGate(
-      "Open Document Template Repository",
-      () => {
-        window.location.href = "/admin/document-templates";
-      }
-    );
-  }
 
-  function openAuditHistoryAdmin() {
-    void runAdministratorGate(
-      "Open Audit / History",
-      () => {
-        window.location.href = "/admin/audit-history";
-      }
-    );
-  }
 
   async function loadPatientSuggestions(value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) {
     const q = clean(value);
@@ -2035,31 +1994,6 @@ export default function Home() {
                 <span aria-hidden="true">🔐</span>
                 <span>Administrator</span>
               </button>
-
-              {administratorMenuOpen && (
-                <div
-                  data-barsh-administrator-menu="true"
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 8px)",
-                    right: 110,
-                    zIndex: 20000,
-                    minWidth: 230,
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 16,
-                    background: "#fff",
-                    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.22)",
-                    padding: 8,
-                    display: "grid",
-                    gap: 6,
-                  }}
-                >
-                  <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🛠️ Admin Home</button>
-                  <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin/reference-data"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🔐 Import</button>
-                  <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin/audit-history"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📜 Audit / History</button>
-                  <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin/document-templates"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📄 Templates</button>
-                </div>
-              )}
 
               <button
                 type="button"
