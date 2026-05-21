@@ -3427,7 +3427,7 @@ function masterSettlementDateFiledValue(): string {
       const json = await response.json().catch(() => null);
 
       if (!response.ok || !json?.ok) {
-        const message = json?.error || "Local settlement document finalization failed.";
+        const message = json?.error || "Master document finalization failed.";
         setMasterDocumentFinalizationResult(json || { ok: false, error: message });
         alert(message);
         return;
@@ -3439,7 +3439,7 @@ function masterSettlementDateFiledValue(): string {
       const fallback = {
         ok: false,
         action: "settlement-document-finalize-local",
-        error: err?.message || "Local settlement document finalization failed.",
+        error: err?.message || "Master document finalization failed.",
       };
       setMasterDocumentFinalizationResult(fallback);
       alert(fallback.error);
@@ -4369,7 +4369,7 @@ function masterSettlementDateFiledValue(): string {
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
                 {isSettlementDocumentMode
                   ? "Select a settlement document, preview or edit it, then finalize.  This settlement path reads Barsh Matters local settlement records only.  It does not use Clio as the settlement source of truth."
-                  : "Select a document, preview it, run a finalization preview, and explicitly upload final documents to the mapped master Clio matter when ready.  Email, print, and queue actions remain hidden until finalized-document delivery is wired."}
+                  : "Select a document, preview it, run the finalization preview, and explicitly upload final documents to the mapped master Clio matter when ready.  Email, print, and queue actions remain pending until finalized-document delivery is wired."}
               </p>
             </div>
             <button
@@ -4408,9 +4408,9 @@ function masterSettlementDateFiledValue(): string {
                 step2Complete
               )}
               {stepArrow(step2Complete)}
-              {stepBadge(3, "Finalization Preview", masterDocumentWorkflowStage === "finalize", step3Complete)}
+              {stepBadge(3, "Finalize / Upload", masterDocumentWorkflowStage === "finalize", step3Complete)}
               {stepArrow(step3Complete)}
-              {stepBadge(4, "Delivery Pending", masterDocumentWorkflowStage === "delivery", false)}
+              {stepBadge(4, "Email / Print / Queue Pending", masterDocumentWorkflowStage === "delivery", false)}
             </div>
 
             <section
@@ -4675,7 +4675,7 @@ function masterSettlementDateFiledValue(): string {
                   >
                     Back
                   </button>
-                  {actionButton("Prepare Finalization Preview", () => setMasterDocumentWorkflowStage("finalize"), false)}
+                  {actionButton("Continue to Finalize / Upload", () => setMasterDocumentWorkflowStage("finalize"), false)}
                 </div>
               </section>
             )}
@@ -4691,9 +4691,9 @@ function masterSettlementDateFiledValue(): string {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalization Preview</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize / Upload</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Run the finalization preview first.  If the mapped master Clio matter is resolved and the document plan is generation-ready, the final upload button will become available.
+                  Run the finalization preview first.  If the mapped master Clio matter is resolved and the document plan is generation-ready, Upload Final Documents to Clio becomes available.
                 </p>
               </div>
 
@@ -4859,12 +4859,12 @@ function masterSettlementDateFiledValue(): string {
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 18 }}>
-                  {masterDocumentFinalizationResult.ok ? "Local Finalization Record Created" : "Local Finalization Failed"}
+                  {masterDocumentFinalizationResult.ok ? "Finalization Record Created" : "Local Finalization Failed"}
                 </h3>
                 <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
                   {masterDocumentFinalizationResult.ok
-                    ? `DocumentFinalization ID ${masterDocumentFinalizationResult.finalizationRecord?.id || "created"} was saved locally.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no print queue record was written.`
-                    : masterDocumentFinalizationResult.error || "Local settlement document finalization failed."}
+                    ? `DocumentFinalization ID ${masterDocumentFinalizationResult.finalizationRecord?.id || "created"} was saved locally for this finalization/upload attempt.  Uploaded and skipped document results are shown above.  No Outlook draft was created, no email was sent, and no print queue record was written.`
+                    : masterDocumentFinalizationResult.error || "Master document finalization failed."}
                 </p>
                 {masterDocumentFinalizationResult?.selectedDocument?.filename && (
                   <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
@@ -4891,10 +4891,10 @@ function masterSettlementDateFiledValue(): string {
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Delivery Pending</h3>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue Pending</h3>
                   <span style={{ display: "none" }}>Step 4: Email / Print / Queue — Delivery Standalone</span>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                    Delivery actions will be enabled after Master/Lawsuit finalization produces a real finalized document.  For now, this Master/Lawsuit path remains preview-only unless a dedicated backend action says otherwise.
+                    Delivery actions will be enabled after the finalized-document email, print, and queue workflows are wired.  Master/Lawsuit final upload to Clio is now handled in Step 3.
                   </p>
                 </div>
                 <div
@@ -4908,7 +4908,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  Delivery actions remain hidden until finalized-document email, print, and queue workflows are wired.  The current production action is explicit upload to the mapped master Clio matter.
+                  Email, print, and queue actions remain hidden until finalized-document delivery is wired.  The current production action is explicit upload to the mapped master Clio matter.
                 </div>
               </section>
             )}
