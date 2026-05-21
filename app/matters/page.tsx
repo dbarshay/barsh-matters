@@ -4233,7 +4233,7 @@ function masterSettlementDateFiledValue(): string {
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
                 {isSettlementDocumentMode
                   ? "Select a settlement document, preview or edit it, then finalize.  This settlement path reads Barsh Matters local settlement records only.  It does not use Clio as the settlement source of truth."
-                  : "Select a document, preview it, finalize it, and then explicitly upload the final document set to Clio.  The workflow uses the existing backend target-routing safeguards."}
+                  : "Select a document, preview it, and prepare a finalization preview.  Master/Lawsuit final upload, email, print, and queue actions remain hidden until a real finalized-document backend is wired."}
               </p>
             </div>
             <button
@@ -4272,9 +4272,9 @@ function masterSettlementDateFiledValue(): string {
                 step2Complete
               )}
               {stepArrow(step2Complete)}
-              {stepBadge(3, "Finalize", masterDocumentWorkflowStage === "finalize", step3Complete)}
+              {stepBadge(3, "Finalization Preview", masterDocumentWorkflowStage === "finalize", step3Complete)}
               {stepArrow(step3Complete)}
-              {stepBadge(4, "Email / Print / Queue", masterDocumentWorkflowStage === "delivery", false)}
+              {stepBadge(4, "Delivery Pending", masterDocumentWorkflowStage === "delivery", false)}
             </div>
 
             <section
@@ -4539,7 +4539,7 @@ function masterSettlementDateFiledValue(): string {
                   >
                     Back
                   </button>
-                  {actionButton("Finalize Document", () => setMasterDocumentWorkflowStage("finalize"), false)}
+                  {actionButton("Prepare Finalization Preview", () => setMasterDocumentWorkflowStage("finalize"), false)}
                 </div>
               </section>
             )}
@@ -4555,19 +4555,19 @@ function masterSettlementDateFiledValue(): string {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalization Preview</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Finalization will later create the final document, store the finalized file through the Clio document-vault layer only, and make it available in the Barsh Matters Documents section.  Settlement data remains local-first.
+                  This is a preview-only placeholder for Master/Lawsuit finalization.  It does not generate a production PDF, upload to Clio, email, print, or write a print queue record.  Direct Matter final upload remains the currently wired production upload path.
                 </p>
               </div>
 
               <div>
                 {actionButton(
-                  masterDocumentFinalizing ? "Finalizing..." : "Finalize Document",
+                  masterDocumentFinalizing ? "Preparing..." : "Prepare Finalization Preview",
                   () => finalizeMasterSettlementDocumentPlaceholder(displayedSelectedTemplate),
                   !canFinalize || masterDocumentFinalizing,
                   isSettlementDocumentMode
-                    ? "Create a persistent local Barsh Matters finalized-document placeholder record.  This does not create a PDF, upload to Clio, email, or print."
+                    ? "Preview-only placeholder.  This does not create a production PDF, upload to Clio, email, print, or queue anything."
                     : "Preview the PDF or edit the selected document before finalizing."
                 )}
               </div>
@@ -4588,31 +4588,7 @@ function masterSettlementDateFiledValue(): string {
               )}
             </section>
 
-            {masterDocumentWorkflowStage === "finalize" && displayedSelectedTemplate && (
-              <section
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 18,
-                  padding: 18,
-                  background: "#f9fafb",
-                  display: "none",
-                  gap: 14,
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
-                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
-                  </p>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
-                  {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton(masterDocumentPrintQueueLoading ? "Sending..." : "Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), masterDocumentPrintQueueLoading, "Send this local finalized-document placeholder to the shared Barsh Matters print queue. PDF generation is not yet wired.")}
-                </div>
-              </section>
-            )}
-
+            
             {masterDocumentFinalizationResult && (
               <section
                 style={{
@@ -4657,16 +4633,24 @@ function masterSettlementDateFiledValue(): string {
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Delivery Pending</h3>
                   <span style={{ display: "none" }}>Step 4: Email / Print / Queue — Delivery Standalone</span>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
+                    Delivery actions will be enabled after Master/Lawsuit finalization produces a real finalized document.  For now, this Master/Lawsuit path remains preview-only unless a dedicated backend action says otherwise.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
-                  {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton(masterDocumentPrintQueueLoading ? "Sending..." : "Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), masterDocumentPrintQueueLoading, "Send this local finalized-document placeholder to the shared Barsh Matters print queue. PDF generation is not yet wired.")}
+                <div
+                  style={{
+                    border: "1px solid #fed7aa",
+                    background: "#fff7ed",
+                    color: "#9a3412",
+                    borderRadius: 14,
+                    padding: 14,
+                    fontWeight: 850,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Delivery actions are hidden until this Master/Lawsuit workflow has a real finalized document to email, print, or queue.
                 </div>
               </section>
             )}
@@ -4778,7 +4762,7 @@ function masterSettlementDateFiledValue(): string {
                   }}
                 >
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery Preview</h3>
+                    <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery Preview / Admin Diagnostic</h3>
                     <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
                       Preview only.  No Outlook draft is created unless Create Outlook Draft is clicked.  This does not send email, write Clio, upload documents, print, or queue anything.
                     </p>
