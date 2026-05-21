@@ -19,7 +19,7 @@ const finalizeRoute = read("app/api/settlements/documents-finalize-local/route.t
 const queueRoute = read("app/api/settlements/documents-print-queue-local/route.ts");
 const page = read("app/matters/page.tsx");
 
-check("finalize route labels generated route as placeholder-seeded", finalizeRoute.includes('artifactKind: "placeholder-seeded-generated-docx-route"'));
+check("finalize route labels generated route as placeholder-seeded", finalizeRoute.includes("buildPlaceholderSeededDocxRouteArtifact") && fs.readFileSync("lib/documents/artifactContract.ts", "utf8").includes('artifactKind: "placeholder-seeded-generated-docx-route"'));
 check("finalize route marks productionTemplateReady false", finalizeRoute.includes("productionTemplateReady: false"));
 check("finalize route marks finalProductionDocument false", finalizeRoute.includes("finalProductionDocument: false"));
 check("finalize route note says not final production", finalizeRoute.includes("not a final production template/document"));

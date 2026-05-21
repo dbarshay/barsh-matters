@@ -22,10 +22,13 @@ const pagePath = "app/matters/page.tsx";
 
 mustInclude(finalizeRoute, "settlementDocxRouteForTemplate");
 mustInclude(finalizeRoute, "buildGeneratedDocxReference");
+mustInclude(finalizeRoute, "buildPlaceholderSeededDocxRouteArtifact");
+mustInclude(finalizeRoute, "@/lib/documents/artifactContract");
 mustInclude(finalizeRoute, "/api/settlements/settlement-summary");
 mustInclude(finalizeRoute, "/api/settlements/provider-remittance-breakdown");
 mustInclude(finalizeRoute, "/api/settlements/attorney-fee-breakdown");
-mustInclude(finalizeRoute, 'artifactKind: "placeholder-seeded-generated-docx-route"');
+mustInclude(finalizeRoute, "buildPlaceholderSeededDocxRouteArtifact");
+mustInclude("lib/documents/artifactContract.ts", 'artifactKind: "placeholder-seeded-generated-docx-route"');
 mustInclude(finalizeRoute, 'templateSource: "placeholder-seeded"');
 mustInclude(finalizeRoute, "productionTemplateReady: false");
 mustInclude(finalizeRoute, "finalProductionDocument: false");

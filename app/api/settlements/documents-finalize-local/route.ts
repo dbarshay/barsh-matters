@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildSettlementPlannedDocuments } from "@/lib/documents/templateRegistry";
+import { buildPlaceholderSeededDocxRouteArtifact } from "@/lib/documents/artifactContract";
 
 export const runtime = "nodejs";
 
@@ -51,25 +52,18 @@ function buildGeneratedDocxReference(params: {
 
   const downloadUrl = endpoint ? `${endpoint}?${query.toString()}` : "";
 
-  return {
-    artifactKind: "placeholder-seeded-generated-docx-route",
-    templateSource: "placeholder-seeded",
-    productionTemplateReady: false,
-    finalProductionDocument: false,
-    outputFormat: "docx",
-    contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    filename: clean(params.filename) || null,
+  return buildPlaceholderSeededDocxRouteArtifact({
+    workflowSource: "settlement",
+    templateKey: params.templateKey,
+    templateLabel: params.templateKey,
+    filename: params.filename || null,
     generationEndpoint: endpoint || null,
     downloadUrl: downloadUrl || null,
-    routeBackedArtifact: Boolean(downloadUrl),
-    persistentFileCreated: false,
-    finalizedPdfGenerated: false,
-    pdfDownloadUrl: null,
-    clioUploaded: false,
-    emailAttachmentReady: false,
-    printableFileReady: false,
-    note: "This is a placeholder-seeded Barsh Matters DOCX generation route reference for testing the delivery workflow. It is not a final production template/document. It does not create a persistent file, PDF, Clio upload, email attachment, or print-ready PDF.",
-  };
+    metadata: {
+      settlementRecordId: params.settlementRecordId || null,
+      masterLawsuitId: params.masterLawsuitId,
+    },
+  });
 }
 
 function firstOrMultiple(values: unknown[], fallback: string) {
@@ -273,12 +267,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const generatedDocx = buildGeneratedDocxReference({
-      templateKey,
-      masterLawsuitId: effectiveMasterLawsuitId,
-      settlementRecordId: settlementRecord.id,
-      filename: selectedDocument.filename || null,
-    });
+    const generatedDocx = {
+      ...buildGeneratedDocxReference({
+        templateKey,
+        masterLawsuitId: effectiveMasterLawsuitId,
+        settlementRecordId: settlementRecord.id,
+        filename: selectedDocument.filename || null,
+      }),
+      templateLabel: templateLabelInput || selectedDocument.label || templateKey,
+    };
 
     const selectedSnapshot = {
       ...selectedDocument,
