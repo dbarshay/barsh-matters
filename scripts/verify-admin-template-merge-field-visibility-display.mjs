@@ -26,7 +26,7 @@ check("admin displays System count", page.includes("System:"));
 check("admin displays per-field visibility label", page.includes("display(mergeFieldVisibility(field))"));
 check("package script registered", pkg.includes("verify:admin-template-merge-field-visibility-display"));
 
-check("admin display does not upload files", !page.includes("uploadDocumentToClio") && !page.includes('type="file"'));
+check("admin display does not upload files", !page.includes("uploadDocumentToClio") && !page.includes("FormData") && !page.includes("readAsArrayBuffer"));
 check("admin display does not generate documents", !page.includes("Packer.toBuffer") && !page.includes("new Document("));
 check("admin display does not send email", !page.includes("sendMail(") && !page.includes("graphFetchJson"));
 check("admin display does not write print queue", !page.includes("documentPrintQueueItem.create"));

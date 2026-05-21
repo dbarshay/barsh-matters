@@ -172,6 +172,8 @@ export default function AdminDocumentTemplatesPage() {
   const [customTemplateConfirmResult, setCustomTemplateConfirmResult] = useState<any>(null);
   const [customTemplateLoading, setCustomTemplateLoading] = useState(false);
   const [customTemplateError, setCustomTemplateError] = useState("");
+  const [templateFilePlaceholder, setTemplateFilePlaceholder] = useState<any>(null);
+  const [templateFilePlaceholderError, setTemplateFilePlaceholderError] = useState("");
 
   async function loadTemplates(nextCategory = category) {
     setLoading(true);
@@ -265,6 +267,77 @@ export default function AdminDocumentTemplatesPage() {
     } finally {
       setImportLoading(false);
     }
+  }
+
+  function applyTemplateFilePlaceholderToCustomJson(fileInfo: any) {
+    const rows = parseCustomTemplateRows();
+    const firstRow = rows[0] || {};
+
+    const nextRow = {
+      ...firstRow,
+      key: firstRow.key || "uploaded-template-placeholder",
+      label: firstRow.label || fileInfo.baseName || fileInfo.name || "Uploaded Template Placeholder",
+      category: firstRow.category || "general",
+      defaultFilenameSuffix: firstRow.defaultFilenameSuffix || fileInfo.baseName || "Uploaded Template Placeholder",
+      outputFormat: firstRow.outputFormat || "docx",
+      sourceOfTruth: firstRow.sourceOfTruth || "barsh-matters-local",
+      enabled: firstRow.enabled ?? true,
+      editableInRepository: firstRow.editableInRepository ?? true,
+      repositorySource: "barsh-matters-template-upload-placeholder",
+      repositoryStatus: "upload-placeholder",
+      productionTemplateReady: false,
+      finalProductionDocument: false,
+      metadata: {
+        ...(firstRow.metadata || {}),
+        templateSource: "uploaded-production-template",
+        storageKind: "upload-placeholder",
+        actualFileStored: false,
+        productionTemplateReady: false,
+        finalProductionDocument: false,
+        uploadedTemplateFile: fileInfo,
+        note: "File metadata captured only. Actual file storage is not wired yet.",
+      },
+      mergeFields: Array.isArray(firstRow.mergeFields) ? firstRow.mergeFields : [],
+    };
+
+    setCustomTemplateRowsText(JSON.stringify([nextRow], null, 2));
+    setCustomTemplatePreview(null);
+    setCustomTemplateConfirmResult(null);
+  }
+
+  async function handleTemplateFilePlaceholderChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setTemplateFilePlaceholderError("");
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      setTemplateFilePlaceholder(null);
+      return;
+    }
+
+    const lowerName = file.name.toLowerCase();
+
+    if (!lowerName.endsWith(".docx")) {
+      setTemplateFilePlaceholder(null);
+      setTemplateFilePlaceholderError("Use a .docx Word template file for this placeholder workflow.");
+      return;
+    }
+
+    const baseName = file.name.replace(/\.docx$/i, "");
+    const fileInfo = {
+      name: file.name,
+      baseName,
+      size: file.size,
+      type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      lastModified: file.lastModified,
+      lastModifiedIso: new Date(file.lastModified).toISOString(),
+      storageKind: "upload-placeholder",
+      actualFileStored: false,
+      contentRead: false,
+      uploadPerformed: false,
+    };
+
+    setTemplateFilePlaceholder(fileInfo);
+    applyTemplateFilePlaceholderToCustomJson(fileInfo);
   }
 
   function parseCustomTemplateRows() {
@@ -652,6 +725,41 @@ export default function AdminDocumentTemplatesPage() {
               merge fields.  This does not upload Word files, generate documents, send email, print, queue documents,
               or write to Clio.
             </p>
+
+            <div
+              style={{
+                border: "1px solid #c7d2fe",
+                background: "#eef2ff",
+                color: "#312e81",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Template File Placeholder:</strong> Select a .docx file to capture metadata into the custom
+              template JSON.  This does not upload, store, parse, or generate from the file yet; it only records
+              the intended file metadata for the future template file-storage layer.
+              <div style={{ marginTop: 10 }}>
+                <input
+                  type="file"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleTemplateFilePlaceholderChange}
+                />
+              </div>
+              {templateFilePlaceholderError && (
+                <div style={{ marginTop: 8, color: "#991b1b", fontWeight: 900 }}>
+                  {templateFilePlaceholderError}
+                </div>
+              )}
+              {templateFilePlaceholder && (
+                <div style={{ marginTop: 8, fontSize: 13 }}>
+                  <div><strong>File:</strong> {templateFilePlaceholder.name}</div>
+                  <div><strong>Size:</strong> {templateFilePlaceholder.size} bytes</div>
+                  <div><strong>Actual file stored:</strong> {String(Boolean(templateFilePlaceholder.actualFileStored))}</div>
+                </div>
+              )}
+            </div>
 
             <textarea
               value={customTemplateRowsText}

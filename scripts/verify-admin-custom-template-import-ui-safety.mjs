@@ -31,7 +31,7 @@ check("custom import displays no Clio/email/print safety", page.includes("custom
 check("example includes hidden internal field", page.includes('"visibility": "hidden_internal"'));
 check("package script registered", pkg.includes("verify:admin-custom-template-import-ui-safety"));
 
-check("custom UI does not upload files", !page.includes("uploadDocumentToClio") && !page.includes('type="file"'));
+check("custom UI does not upload files", !page.includes("uploadDocumentToClio") && !page.includes("FormData") && !page.includes("readAsArrayBuffer"));
 check("custom UI does not generate documents", !page.includes("Packer.toBuffer") && !page.includes("new Document("));
 check("custom UI does not send email", !page.includes("sendMail(") && !page.includes("graphFetchJson"));
 check("custom UI does not write print queue", !page.includes("documentPrintQueueItem.create"));

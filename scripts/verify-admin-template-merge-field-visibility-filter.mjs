@@ -25,7 +25,7 @@ check("empty filtered state exists", page.includes("No merge fields match the se
 check("summary shows displayed count", page.includes("Showing: {displayedMergeFields.length}"));
 check("package script registered", pkg.includes("verify:admin-template-merge-field-visibility-filter"));
 
-check("filter does not upload files", !page.includes("uploadDocumentToClio") && !page.includes('type="file"'));
+check("filter does not upload files", !page.includes("uploadDocumentToClio") && !page.includes("FormData") && !page.includes("readAsArrayBuffer"));
 check("filter does not generate documents", !page.includes("Packer.toBuffer") && !page.includes("new Document("));
 check("filter does not send email", !page.includes("sendMail(") && !page.includes("graphFetchJson"));
 check("filter does not write print queue", !page.includes("documentPrintQueueItem.create"));
