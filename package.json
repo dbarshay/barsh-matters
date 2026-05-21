@@ -93,7 +93,8 @@
     "verify:settlement-commit-button-green-safety": "node scripts/verify-settlement-commit-button-green-safety.mjs",
     "verify:administrator-header-opens-admin-home-only": "node scripts/verify-administrator-header-opens-admin-home-only.mjs",
     "verify:settlement-document-workflow-ui-safety": "node scripts/verify-settlement-document-workflow-ui-safety.mjs",
-    "verify:settlement-document-local-finalization-safety": "node scripts/verify-settlement-document-local-finalization-safety.mjs"
+    "verify:settlement-document-local-finalization-safety": "node scripts/verify-settlement-document-local-finalization-safety.mjs",
+    "verify:settlement-document-local-print-queue-safety": "node scripts/verify-settlement-document-local-print-queue-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

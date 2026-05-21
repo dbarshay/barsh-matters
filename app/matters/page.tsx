@@ -640,6 +640,8 @@ export default function FilteredMattersPage() {
   const [masterDocumentRepositoryTemplatesError, setMasterDocumentRepositoryTemplatesError] = useState("");
   const [masterDocumentFinalizing, setMasterDocumentFinalizing] = useState(false);
   const [masterDocumentFinalizationResult, setMasterDocumentFinalizationResult] = useState<any>(null);
+  const [masterDocumentPrintQueueLoading, setMasterDocumentPrintQueueLoading] = useState(false);
+  const [masterDocumentPrintQueueResult, setMasterDocumentPrintQueueResult] = useState<any>(null);
 
   const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
   const [masterDocumentGenerationPopupOpen, setMasterDocumentGenerationPopupOpen] = useState(false);
@@ -2440,6 +2442,7 @@ function masterSettlementDateFiledValue(): string {
 
     setMasterDocumentDataPreviewLoading(true);
     setMasterDocumentFinalizationResult(null);
+    setMasterDocumentPrintQueueResult(null);
     setMasterDocumentDataPreview(null);
 
     try {
@@ -2838,9 +2841,59 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
-  function sendMasterDocumentToPrintQueue(selectedTemplate: { key: string; label: string; description: string } | null) {
+  async function sendMasterDocumentToPrintQueue(selectedTemplate: { key: string; label: string; description: string } | null) {
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
-    alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue is reserved for the generalized finalized-document queue backend and is not yet writing queue records.\n\nDocument: ${context.documentLabel}`);
+    const isSettlementDocumentMode =
+      masterDocumentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.documentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.action === "settlement-documents-preview";
+
+    if (!isSettlementDocumentMode) {
+      alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue is reserved for the generalized finalized-document queue backend and is not yet writing queue records.\n\nDocument: ${context.documentLabel}`);
+      return;
+    }
+
+    const finalizationId = Number(masterDocumentFinalizationResult?.finalizationRecord?.id || 0);
+
+    if (!finalizationId) {
+      alert("Finalize the settlement document before sending it to the print queue.");
+      return;
+    }
+
+    setMasterDocumentPrintQueueLoading(true);
+    setMasterDocumentPrintQueueResult(null);
+
+    try {
+      const response = await fetch("/api/settlements/documents-print-queue-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          finalizationId,
+          confirmAdd: true,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok) {
+        const message = json?.error || "Could not send the finalized settlement document placeholder to the print queue.";
+        setMasterDocumentPrintQueueResult(json || { ok: false, error: message });
+        alert(message);
+        return;
+      }
+
+      setMasterDocumentPrintQueueResult(json);
+    } catch (err: any) {
+      const fallback = {
+        ok: false,
+        action: "settlement-document-print-queue-local",
+        error: err?.message || "Could not send the finalized settlement document placeholder to the print queue.",
+      };
+      setMasterDocumentPrintQueueResult(fallback);
+      alert(fallback.error);
+    } finally {
+      setMasterDocumentPrintQueueLoading(false);
+    }
   }
 
   function formatMasterEmailThreadTimestamp(value: any): string {
@@ -4084,7 +4137,7 @@ function masterSettlementDateFiledValue(): string {
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
                   {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this document to the shared Barsh Matters print queue after the print-queue backend is connected.")}
+                  {actionButton(masterDocumentPrintQueueLoading ? "Sending..." : "Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), masterDocumentPrintQueueLoading, "Send this local finalized-document placeholder to the shared Barsh Matters print queue. PDF generation is not yet wired.")}
                 </div>
               </section>
             )}
@@ -4137,8 +4190,35 @@ function masterSettlementDateFiledValue(): string {
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
                   {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this document to the shared Barsh Matters print queue after the print-queue backend is connected.")}
+                  {actionButton(masterDocumentPrintQueueLoading ? "Sending..." : "Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), masterDocumentPrintQueueLoading, "Send this local finalized-document placeholder to the shared Barsh Matters print queue. PDF generation is not yet wired.")}
                 </div>
+              </section>
+            )}
+
+            {masterDocumentPrintQueueResult && (
+              <section
+                style={{
+                  border: masterDocumentPrintQueueResult.ok ? "1px solid #bfdbfe" : "1px solid #fecaca",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: masterDocumentPrintQueueResult.ok ? "#eff6ff" : "#fef2f2",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 18 }}>
+                  {masterDocumentPrintQueueResult.ok ? "Sent to Print Queue" : "Print Queue Failed"}
+                </h3>
+                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                  {masterDocumentPrintQueueResult.ok
+                    ? `Print queue item ID ${masterDocumentPrintQueueResult.printQueueItem?.id || "created"} was saved locally.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no email was sent.`
+                    : masterDocumentPrintQueueResult.error || "Could not send this settlement document placeholder to the print queue."}
+                </p>
+                {masterDocumentPrintQueueResult?.printQueueItem?.filename && (
+                  <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                    Queue filename: <strong>{masterDocumentPrintQueueResult.printQueueItem.filename}</strong>
+                  </p>
+                )}
               </section>
             )}
 

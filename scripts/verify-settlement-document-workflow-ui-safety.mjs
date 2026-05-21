@@ -27,7 +27,11 @@ check("preview copy no longer says placeholder state", !page.includes("no PDF or
 check("edit copy no longer says no Word integration is faked", !page.includes("No Word integration is faked here"));
 check("delivery still exposes Email Document", page.includes('actionButton("Email Document"'));
 check("delivery still exposes Print Document", page.includes('actionButton("Print Document"'));
-check("delivery still exposes Send to Print Queue", page.includes('actionButton("Send to Print Queue"'));
+check(
+  "delivery still exposes Send to Print Queue",
+  page.includes('"Send to Print Queue"') &&
+    page.includes("sendMasterDocumentToPrintQueue")
+);
 check("print queue copy accurately says backend not yet writing records", page.includes("not yet writing queue records"));
 
 check("document picker matches displayed settlement options", page.includes("const match = displayedTemplateOptions.find"));
