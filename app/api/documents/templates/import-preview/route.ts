@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      ok: preview.ok,
       action: "document-template-import-preview",
       localFirst: true,
       previewOnly: true,

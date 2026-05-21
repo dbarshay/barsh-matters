@@ -602,6 +602,10 @@ const activeGroupKey =
   const [graphThreadSyncConversationId, setGraphThreadSyncConversationId] = useState<string>("");
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
+  const [matterClioDocumentsLoading, setMatterClioDocumentsLoading] = useState(false);
+  const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
+  const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
+  const [matterSelectedViewDocumentId, setMatterSelectedViewDocumentId] = useState("");
 
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
     useState<MatterWorkspaceTab>("overview");
@@ -610,6 +614,412 @@ const activeGroupKey =
     if (emailThreadPreviewLoading || emailThreadPreviewResult) return;
     void loadMatterEmailThreadPreview();
   }, [activeWorkspaceTab, emailThreadPreviewLoading, emailThreadPreviewResult]);
+
+  async function loadMatterClioDocuments() {
+    const numericMatterId = Number(matterId);
+
+    if (!Number.isFinite(numericMatterId) || numericMatterId <= 0) {
+      setMatterClioDocumentsResult({
+        ok: false,
+        error: "No valid direct matter ID is available for Clio document lookup.",
+        documents: [],
+      });
+      return;
+    }
+
+    try {
+      setMatterClioDocumentsLoading(true);
+
+      const response = await fetch(
+        `/api/documents/clio-matter-documents?matterId=${encodeURIComponent(String(numericMatterId))}`,
+        { cache: "no-store" }
+      );
+      const json = await response.json().catch(() => null);
+
+      setMatterClioDocumentsResult(
+        json || {
+          ok: false,
+          error: "Could not parse Clio document list response.",
+          documents: [],
+        }
+      );
+    } catch (error: any) {
+      setMatterClioDocumentsResult({
+        ok: false,
+        error: error?.message || String(error),
+        documents: [],
+      });
+    } finally {
+      setMatterClioDocumentsLoading(false);
+    }
+  }
+
+  function matterClioDocumentsArray(): any[] {
+    return Array.isArray(matterClioDocumentsResult?.documents)
+      ? matterClioDocumentsResult.documents
+      : [];
+  }
+
+  function selectedMatterViewDocument(): any {
+    return matterClioDocumentsArray().find((doc: any) => textValue(doc.clioDocumentId) === matterSelectedViewDocumentId) || null;
+  }
+
+  async function openMatterViewDocumentsPopup() {
+    setMatterViewDocumentsPopupOpen(true);
+    setMatterSelectedViewDocumentId("");
+
+    if (!matterClioDocumentsResult && !matterClioDocumentsLoading) {
+      await loadMatterClioDocuments();
+    }
+  }
+
+  function closeMatterViewDocumentsPopup() {
+    setMatterViewDocumentsPopupOpen(false);
+    setMatterSelectedViewDocumentId("");
+  }
+
+  function renderMatterViewDocumentsPopup() {
+    if (!matterViewDocumentsPopupOpen) return null;
+
+    const docs = matterClioDocumentsArray();
+    const selectedDoc = selectedMatterViewDocument();
+
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="View Documents"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 10000,
+          background: "rgba(15, 23, 42, 0.45)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            width: "min(920px, 96vw)",
+            maxHeight: "88vh",
+            overflow: "auto",
+            border: "1px solid #cbd5e1",
+            borderRadius: 22,
+            background: "#ffffff",
+            boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+          }}
+        >
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 14,
+              padding: "18px 20px",
+              borderBottom: "1px solid #e5e7eb",
+              background: "#ffffff",
+              borderTopLeftRadius: 22,
+              borderTopRightRadius: 22,
+            }}
+          >
+            <div>
+              <h2 style={{ margin: 0, fontSize: 22 }}>View Documents</h2>
+              <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
+                Pick a document from this matter's Clio Documents tab.  This popup is read-only and does not upload, download, generate, email, print, queue, or write anything.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={closeMatterViewDocumentsPopup}
+              disabled={matterClioDocumentsLoading}
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: 999,
+                background: "#f8fafc",
+                color: "#0f172a",
+                padding: "8px 12px",
+                fontWeight: 900,
+                cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              Close
+            </button>
+          </div>
+
+          <div style={{ padding: 20, display: "grid", gap: 14 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: 12, fontWeight: 850 }}>
+                  Matter: {textValue(matter?.displayNumber || matter?.display_number) || matterId || "—"}
+                </span>
+                <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: 12, fontWeight: 850 }}>
+                  Clio Matter ID: {textValue(matterClioDocumentsResult?.clioMatterId) || matterId || "—"}
+                </span>
+                <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: 12, fontWeight: 850 }}>
+                  Documents: {matterClioDocumentsResult?.summary?.documentCount ?? docs.length}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void loadMatterClioDocuments()}
+                disabled={matterClioDocumentsLoading}
+                style={{
+                  border: "1px solid #1d4ed8",
+                  background: matterClioDocumentsLoading ? "#dbeafe" : "#2563eb",
+                  color: "#ffffff",
+                  borderRadius: 999,
+                  padding: "8px 12px",
+                  fontWeight: 900,
+                  cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {matterClioDocumentsLoading ? "Refreshing..." : "Refresh Documents"}
+              </button>
+            </div>
+
+            {matterClioDocumentsResult && !matterClioDocumentsResult.ok && (
+              <div
+                style={{
+                  padding: 12,
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  background: "#fef2f2",
+                  color: "#991b1b",
+                  fontWeight: 850,
+                }}
+              >
+                {textValue(matterClioDocumentsResult.error) || "Could not load Clio documents."}
+              </div>
+            )}
+
+            {matterClioDocumentsLoading && (
+              <div style={{ padding: 12, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#475569", fontWeight: 800 }}>
+                Loading documents from Clio...
+              </div>
+            )}
+
+            {matterClioDocumentsResult?.ok && docs.length === 0 && (
+              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>
+                No documents are currently listed in this Clio matter Documents tab.
+              </div>
+            )}
+
+            {docs.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 0.9fr) minmax(300px, 1.1fr)", gap: 12, alignItems: "start" }}>
+                <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
+                  {docs.map((doc: any) => {
+                    const id = textValue(doc.clioDocumentId);
+                    const selected = id && id === matterSelectedViewDocumentId;
+
+                    return (
+                      <button
+                        key={id || textValue(doc.clioDocumentName)}
+                        type="button"
+                        onClick={() => setMatterSelectedViewDocumentId(id)}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          border: 0,
+                          borderBottom: "1px solid #e5e7eb",
+                          background: selected ? "#eff6ff" : "#ffffff",
+                          color: "#0f172a",
+                          padding: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontWeight: 950 }}>{textValue(doc.clioDocumentName) || textValue(doc.clioDocumentFilename) || "Untitled"}</div>
+                        <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+                          {textValue(doc.latestDocumentVersion?.filename) || textValue(doc.clioDocumentFilename) || "No filename"}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 12, padding: 12, background: "#f8fafc", minHeight: 180 }}>
+                  {selectedDoc ? (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569" }}>
+                        Selected Document
+                      </div>
+                      <h3 style={{ margin: "6px 0 10px", fontSize: 18 }}>
+                        {textValue(selectedDoc.clioDocumentName) || textValue(selectedDoc.clioDocumentFilename) || "Untitled"}
+                      </h3>
+                      <div style={{ display: "grid", gap: 8, fontSize: 13 }}>
+                        <div><strong>Clio Document ID:</strong> {textValue(selectedDoc.clioDocumentId) || "—"}</div>
+                        <div><strong>Filename:</strong> {textValue(selectedDoc.latestDocumentVersion?.filename) || textValue(selectedDoc.clioDocumentFilename) || "—"}</div>
+                        <div><strong>Version UUID:</strong> <span style={{ fontFamily: "monospace" }}>{textValue(selectedDoc.latestDocumentVersion?.uuid) || "—"}</span></div>
+                        <div><strong>Content Type:</strong> {textValue(selectedDoc.latestDocumentVersion?.contentType) || "—"}</div>
+                        <div><strong>Size:</strong> {selectedDoc.latestDocumentVersion?.size ?? "—"}</div>
+                        <div><strong>Fully Uploaded:</strong> {selectedDoc.latestDocumentVersion?.fullyUploaded ? "Yes" : "No"}</div>
+                        <div><strong>Updated:</strong> {textValue(selectedDoc.updatedAt || selectedDoc.latestDocumentVersion?.updatedAt) || "—"}</div>
+                      </div>
+                      <div style={{ marginTop: 12, padding: 10, border: "1px solid #fde68a", borderRadius: 10, background: "#fffbeb", color: "#92400e", fontSize: 12, fontWeight: 800 }}>
+                        Document opening/viewing will be wired to a safe Clio retrieval route next.  This step only lists and selects document metadata.
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ color: "#64748b", fontWeight: 800 }}>
+                      Select a document to view its stored Clio metadata.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderMatterClioDocumentsPanel() {
+    const docs = matterClioDocumentsArray();
+
+    return (
+      <div
+        style={{
+          marginTop: 14,
+          padding: 12,
+          border: "1px solid #cbd5e1",
+          borderRadius: 10,
+          background: "#f8fafc",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569" }}>
+              Clio Documents Tab
+            </div>
+            <div style={{ marginTop: 4, fontWeight: 900, color: "#0f172a" }}>
+              Read-only document vault listing
+            </div>
+            <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>
+              Lists the current Clio Documents tab contents for this direct matter.  This does not upload, download, generate, email, print, queue, or write anything.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadMatterClioDocuments()}
+            disabled={matterClioDocumentsLoading}
+            style={{
+              border: "1px solid #1d4ed8",
+              background: matterClioDocumentsLoading ? "#dbeafe" : "#2563eb",
+              color: "#ffffff",
+              borderRadius: 999,
+              padding: "8px 12px",
+              fontWeight: 900,
+              cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {matterClioDocumentsLoading ? "Refreshing..." : "Refresh Clio Documents"}
+          </button>
+        </div>
+
+        {matterClioDocumentsResult && (
+          <div style={{ marginTop: 12 }}>
+            {!matterClioDocumentsResult.ok && (
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #fecaca",
+                  borderRadius: 8,
+                  background: "#fef2f2",
+                  color: "#991b1b",
+                  fontWeight: 800,
+                }}
+              >
+                {textValue(matterClioDocumentsResult.error) || "Could not load Clio documents."}
+              </div>
+            )}
+
+            {matterClioDocumentsResult.ok && (
+              <>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 12, fontWeight: 850 }}>
+                    Clio Matter ID: {textValue(matterClioDocumentsResult.clioMatterId) || "—"}
+                  </span>
+                  <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 12, fontWeight: 850 }}>
+                    Documents: {matterClioDocumentsResult.summary?.documentCount ?? docs.length}
+                  </span>
+                  <span style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 12, fontWeight: 850 }}>
+                    Fully Uploaded: {matterClioDocumentsResult.summary?.fullyUploadedCount ?? "—"}
+                  </span>
+                </div>
+
+                {docs.length === 0 ? (
+                  <div style={{ padding: 10, border: "1px dashed #cbd5e1", borderRadius: 8, background: "#ffffff", color: "#64748b", fontWeight: 750 }}>
+                    No documents are currently listed in this Clio matter Documents tab.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>Document</th>
+                          <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>Version UUID</th>
+                          <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>Type</th>
+                          <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #cbd5e1" }}>Size</th>
+                          <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>Uploaded</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {docs.map((doc: any) => (
+                          <tr key={textValue(doc.clioDocumentId) || textValue(doc.clioDocumentName)}>
+                            <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 800 }}>
+                              {textValue(doc.clioDocumentName) || textValue(doc.clioDocumentFilename) || "Untitled"}
+                              <div style={{ color: "#64748b", fontWeight: 650 }}>{textValue(doc.clioDocumentFilename) || "—"}</div>
+                            </td>
+                            <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>
+                              {textValue(doc.latestDocumentVersion?.uuid) || "—"}
+                            </td>
+                            <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
+                              {textValue(doc.latestDocumentVersion?.contentType) || "—"}
+                            </td>
+                            <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", textAlign: "right" }}>
+                              {doc.latestDocumentVersion?.size ?? "—"}
+                            </td>
+                            <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
+                              {doc.latestDocumentVersion?.fullyUploaded ? "Yes" : "No"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [metadataSaving, setMetadataSaving] = useState(false);
@@ -3422,6 +3832,7 @@ const activeGroupKey =
   }
 
   async function launchMatterDocumentGenerationDialog() {
+    setActiveWorkspaceTab("documents");
     setMatterDocumentTemplateQuery("");
     setMatterSelectedDocumentTemplateKey("");
     setMatterDocumentWorkflowStage("select");
@@ -7244,6 +7655,28 @@ const activeGroupKey =
                     </button>
 
                     <button
+                      type="button"
+                      title="Open the Direct Matter Clio document picker."
+                      onClick={() => void openMatterViewDocumentsPopup()}
+                      style={{
+                        boxShadow: "0 10px 22px rgba(14, 116, 144, 0.20)",
+                        width: "100%",
+                        minWidth: 0,
+                        height: 44,
+                        border: "1px solid #0e7490",
+                        borderRadius: 999,
+                        background: "#ecfeff",
+                        color: "#0e7490",
+                        fontSize: 12,
+                        fontWeight: 950,
+                        cursor: "pointer",
+                        opacity: 0.95,
+                      }}
+                    >
+                      View Documents
+                    </button>
+
+                    <button
                         title="Open the Direct Matter document generation preview popup."
                         onClick={launchMatterDocumentGenerationDialog}
                       type="button"
@@ -8535,11 +8968,13 @@ const activeGroupKey =
         </section>
       )}
 
+      {renderMatterViewDocumentsPopup()}
       {renderMatterDocumentGenerationPopup()}
       {activeWorkspaceTab === "documents" && !alreadyAggregated && (
         <section style={tabPlaceholderPanelStyle}>
           <h2 style={{ marginTop: 0 }}>Documents</h2>
           {renderMatterDocumentDataPreviewPanel()}
+          {renderMatterClioDocumentsPanel()}
           <p style={tabPlaceholderTextStyle}>
             Document generation becomes available after a lawsuit is generated or the matter is connected to a
             MASTER_LAWSUIT_ID.  Preview and download actions remain non-persistent; final upload to Clio remains explicit only.
@@ -11392,6 +11827,7 @@ const activeGroupKey =
           <hr style={{ margin: "18px 0 20px 0", border: 0, borderTop: "1px solid #999"  }} />
 
           {activeWorkspaceTab === "documents" && alreadyAggregated && renderMatterDocumentDataPreviewPanel()}
+          {activeWorkspaceTab === "documents" && alreadyAggregated && renderMatterClioDocumentsPanel()}
       {activeWorkspaceTab === "documents" && alreadyAggregated && (
         <section
           style={{

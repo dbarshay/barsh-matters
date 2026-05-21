@@ -109,7 +109,10 @@
     "verify:admin-template-merge-field-visibility-display": "node scripts/verify-admin-template-merge-field-visibility-display.mjs",
     "verify:admin-template-merge-field-visibility-filter": "node scripts/verify-admin-template-merge-field-visibility-filter.mjs",
     "verify:admin-custom-template-import-ui-safety": "node scripts/verify-admin-custom-template-import-ui-safety.mjs",
-    "verify:admin-template-file-placeholder-ui-safety": "node scripts/verify-admin-template-file-placeholder-ui-safety.mjs"
+    "verify:admin-template-file-placeholder-ui-safety": "node scripts/verify-admin-template-file-placeholder-ui-safety.mjs",
+    "verify:clio-document-list-readonly-safety": "node scripts/verify-clio-document-list-readonly-safety.mjs",
+    "verify:clio-document-list-ui-safety": "node scripts/verify-clio-document-list-ui-safety.mjs",
+    "verify:master-view-documents-button-separation": "node scripts/verify-master-view-documents-button-separation.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
