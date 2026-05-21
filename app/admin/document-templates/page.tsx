@@ -98,6 +98,10 @@ export default function AdminDocumentTemplatesPage() {
   const [data, setData] = useState<TemplateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [importPreview, setImportPreview] = useState<any>(null);
+  const [importConfirmResult, setImportConfirmResult] = useState<any>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState("");
 
   async function loadTemplates(nextCategory = category) {
     setLoading(true);
@@ -126,6 +130,72 @@ export default function AdminDocumentTemplatesPage() {
     loadTemplates(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
+
+  async function previewSeededTemplateImport() {
+    setImportLoading(true);
+    setImportError("");
+    setImportPreview(null);
+    setImportConfirmResult(null);
+
+    try {
+      const response = await fetch("/api/documents/templates/import-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "seeded",
+          category,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.error || "Could not preview seeded template import.");
+      }
+
+      setImportPreview(json);
+    } catch (err: any) {
+      setImportError(err?.message || "Could not preview seeded template import.");
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
+  async function confirmSeededTemplateImport() {
+    if (!importPreview?.ok) {
+      setImportError("Preview a valid seeded template import before confirming.");
+      return;
+    }
+
+    setImportLoading(true);
+    setImportError("");
+    setImportConfirmResult(null);
+
+    try {
+      const response = await fetch("/api/documents/templates/import-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "seeded",
+          category,
+          confirm: true,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Could not confirm seeded template import.");
+      }
+
+      setImportConfirmResult(json);
+      await loadTemplates(category);
+    } catch (err: any) {
+      setImportError(err?.message || "Could not confirm seeded template import.");
+    } finally {
+      setImportLoading(false);
+    }
+  }
 
   const templates = useMemo(() => (Array.isArray(data?.templates) ? data.templates : []), [data]);
 
@@ -308,6 +378,110 @@ export default function AdminDocumentTemplatesPage() {
               Loading document-template repository...
             </div>
           )}
+
+          <section
+            style={{
+              border: "1px solid #dbe4f0",
+              borderRadius: 18,
+              padding: 18,
+              background: "#fff",
+              marginTop: 18,
+            }}
+          >
+            <h2 style={{ margin: "0 0 12px 0", fontSize: 20 }}>Seeded Template Import</h2>
+            <p style={{ margin: "0 0 12px 0", color: "#475569", lineHeight: 1.55 }}>
+              Preview and confirm importing the current seeded document-template definitions into the local
+              Barsh Matters template repository.  Seeded definitions are placeholder/test templates only;
+              they are not final production templates and should later be replaced by user-provided production
+              templates.
+            </p>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={previewSeededTemplateImport}
+                disabled={importLoading}
+                style={{
+                  border: "1px solid #2563eb",
+                  background: importLoading ? "#dbeafe" : "#eff6ff",
+                  color: "#1d4ed8",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontWeight: 900,
+                  cursor: importLoading ? "default" : "pointer",
+                }}
+              >
+                {importLoading ? "Working..." : "Preview Seeded Import"}
+              </button>
+              <button
+                type="button"
+                onClick={confirmSeededTemplateImport}
+                disabled={importLoading || !importPreview?.ok}
+                style={{
+                  border: importLoading || !importPreview?.ok ? "1px solid #cbd5e1" : "1px solid #16a34a",
+                  background: importLoading || !importPreview?.ok ? "#f1f5f9" : "#f0fdf4",
+                  color: importLoading || !importPreview?.ok ? "#64748b" : "#166534",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontWeight: 900,
+                  cursor: importLoading || !importPreview?.ok ? "not-allowed" : "pointer",
+                }}
+              >
+                Confirm Seeded Import
+              </button>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #fed7aa",
+                background: "#fff7ed",
+                color: "#9a3412",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Placeholder warning:</strong> Current seeded templates are only workflow/testing
+              placeholders.  Confirming this import creates local DB template records, versions, and merge
+              fields, but it does not make them final production templates, generate documents, upload to
+              Clio, create email drafts, print, or queue documents.
+            </div>
+
+            {importError && (
+              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 14, padding: 12, marginBottom: 12, fontWeight: 800 }}>
+                {importError}
+              </div>
+            )}
+
+            {importPreview && (
+              <div style={{ border: importPreview.ok ? "1px solid #bfdbfe" : "1px solid #fecaca", background: importPreview.ok ? "#eff6ff" : "#fef2f2", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: 16 }}>Import Preview</h3>
+                <div style={{ display: "grid", gap: 4, color: "#334155", fontSize: 14 }}>
+                  <div><strong>Rows:</strong> {importPreview.summary?.totalRows ?? 0}</div>
+                  <div><strong>Valid:</strong> {importPreview.summary?.validRows ?? 0}</div>
+                  <div><strong>Create:</strong> {importPreview.summary?.rowsToCreate ?? 0}</div>
+                  <div><strong>Update:</strong> {importPreview.summary?.rowsToUpdate ?? 0}</div>
+                  <div><strong>Production-ready rows:</strong> {importPreview.summary?.productionReadyRows ?? 0}</div>
+                  <div><strong>Final production rows:</strong> {importPreview.summary?.finalProductionRows ?? 0}</div>
+                  <div><strong>Database changed:</strong> {String(Boolean(importPreview.safety?.databaseRecordsChanged))}</div>
+                </div>
+              </div>
+            )}
+
+            {importConfirmResult && (
+              <div style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: 16 }}>Import Confirmed</h3>
+                <div style={{ display: "grid", gap: 4, fontSize: 14 }}>
+                  <div><strong>Templates processed:</strong> {importConfirmResult.results?.length ?? 0}</div>
+                  <div><strong>Rows created:</strong> {importConfirmResult.summary?.rowsToCreate ?? 0}</div>
+                  <div><strong>Rows updated:</strong> {importConfirmResult.summary?.rowsToUpdate ?? 0}</div>
+                  <div><strong>Database changed:</strong> {String(Boolean(importConfirmResult.safety?.databaseRecordsChanged))}</div>
+                  <div><strong>No Clio / email / print:</strong> {String(!importConfirmResult.safety?.clioRecordsChanged && !importConfirmResult.safety?.emailsSent && !importConfirmResult.safety?.printQueueChanged)}</div>
+                </div>
+              </div>
+            )}
+          </section>
 
           {!loading && templates.length === 0 && (
             <div style={{ padding: 18, color: "#64748b", fontWeight: 900 }}>

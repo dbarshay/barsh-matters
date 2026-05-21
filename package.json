@@ -102,7 +102,9 @@
     "verify:document-template-repository-api-foundation": "node scripts/verify-document-template-repository-api-foundation.mjs",
     "verify:document-template-db-schema-foundation": "node scripts/verify-document-template-db-schema-foundation.mjs",
     "verify:settlement-document-artifact-contract-usage-safety": "node scripts/verify-settlement-document-artifact-contract-usage-safety.mjs",
-    "verify:document-template-import-routes-safety": "node scripts/verify-document-template-import-routes-safety.mjs"
+    "verify:document-template-import-routes-safety": "node scripts/verify-document-template-import-routes-safety.mjs",
+    "verify:admin-document-template-import-ui-safety": "node scripts/verify-admin-document-template-import-ui-safety.mjs",
+    "verify:admin-document-template-repository-page": "node scripts/verify-admin-document-template-repository-page.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
