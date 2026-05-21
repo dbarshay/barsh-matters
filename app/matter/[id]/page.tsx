@@ -6018,10 +6018,10 @@ const activeGroupKey =
                   gap: 6,
                 }}
               >
-                <button type="button" onClick={openAdminHome} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🛠️ Admin Home</button>
-                  <button type="button" onClick={openReferenceImportsAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🔐 Import</button>
-                <button type="button" onClick={openMatterAuditHistoryTab} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📜 Audit / History</button>
-                <button type="button" onClick={openDocumentTemplatesAdmin} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📄 Templates</button>
+                <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🛠️ Admin Home</button>
+                  <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin/reference-data"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>🔐 Import</button>
+                <button type="button" onClick={() => { setAdministratorMenuOpen(false); setMatterAuditHistoryPopupOpen(true); void loadMatterAuditHistory(); }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📜 Audit / History</button>
+                <button type="button" onClick={() => { setAdministratorMenuOpen(false); window.location.href = "/admin/document-templates"; }} style={{ border: 0, background: "#fff", textAlign: "left", padding: "10px 12px", borderRadius: 10, fontWeight: 900, cursor: "pointer" }}>📄 Templates</button>
               </div>
             )}
 
