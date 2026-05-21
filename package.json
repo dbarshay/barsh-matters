@@ -97,7 +97,10 @@
     "verify:settlement-document-local-print-queue-safety": "node scripts/verify-settlement-document-local-print-queue-safety.mjs",
     "verify:settlement-document-generated-docx-reference-safety": "node scripts/verify-settlement-document-generated-docx-reference-safety.mjs",
     "verify:settlement-document-print-docx-route-ui-safety": "node scripts/verify-settlement-document-print-docx-route-ui-safety.mjs",
-    "verify:placeholder-document-template-labels-safety": "node scripts/verify-placeholder-document-template-labels-safety.mjs"
+    "verify:placeholder-document-template-labels-safety": "node scripts/verify-placeholder-document-template-labels-safety.mjs",
+    "verify:document-artifact-contract-safety": "node scripts/verify-document-artifact-contract-safety.mjs",
+    "verify:document-template-repository-api-foundation": "node scripts/verify-document-template-repository-api-foundation.mjs",
+    "verify:document-template-db-schema-foundation": "node scripts/verify-document-template-db-schema-foundation.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
