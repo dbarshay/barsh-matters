@@ -73,6 +73,8 @@ export async function GET(req: NextRequest) {
         versionUuid: metadata.versionUuid,
         fullyUploaded: metadata.fullyUploaded,
         downloadPath: `/api/documents/clio-document-open?documentId=${encodeURIComponent(documentId)}&filename=${encodeURIComponent(metadata.filename)}`,
+        inlinePath: `/api/documents/clio-document-open?documentId=${encodeURIComponent(documentId)}&filename=${encodeURIComponent(metadata.filename)}&mode=inline`,
+        editPath: `/api/documents/clio-document-open?documentId=${encodeURIComponent(documentId)}&filename=${encodeURIComponent(metadata.filename)}&mode=edit`,
         safety: {
           readOnly: true,
           noClioRecordsChanged: true,
@@ -92,10 +94,10 @@ export async function GET(req: NextRequest) {
     }
 
     const contentType = downloadRes.headers.get("content-type") || metadata.contentType || "application/octet-stream";
-    const contentDisposition =
-      mode === "inline"
-        ? `inline; filename="${metadata.filename}"`
-        : `attachment; filename="${metadata.filename}"`;
+    const inlineMode = mode === "inline" || mode === "edit";
+    const contentDisposition = inlineMode
+      ? `inline; filename="${metadata.filename}"`
+      : `attachment; filename="${metadata.filename}"`;
 
     return new NextResponse(downloadRes.body, {
       status: 200,

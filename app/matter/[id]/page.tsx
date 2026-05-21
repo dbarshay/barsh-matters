@@ -3366,6 +3366,93 @@ const activeGroupKey =
     }
   }
 
+  async function finalizeMatterDocumentFromStep2(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (documentPreviewLoading || finalizeUploadLoading) return;
+
+    if (!selectedTemplate?.key) {
+      alert("Select a document before finalizing.");
+      return;
+    }
+
+    const masterLawsuitId = usableMasterLawsuitIdForDocuments();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for finalization.  Load or connect a lawsuit first.");
+      return;
+    }
+
+    const directMatterId = directMatterNumericIdForDocuments();
+    const directMatterDisplayNumber =
+      textValue(matter?.displayNumber || matter?.display_number) ||
+      (directMatterId ? `BRL${directMatterId}` : "");
+
+    const confirmed = confirm(
+      "FINALIZE DOCUMENT TO CLIO\n\n" +
+        "Document: " + (selectedTemplate.label || selectedTemplate.key) + "\n" +
+        "Matter: " + (directMatterDisplayNumber || directMatterId || "Direct Matter") + "\n\n" +
+        "Barsh Matters will generate the final document and upload it to this direct bill matter's Clio Documents tab.  Exact duplicate filenames are skipped.\n\n" +
+        "Continue?"
+    );
+
+    if (!confirmed) return;
+
+    setDocumentPreviewLoading(true);
+    setFinalizeUploadLoading(true);
+    setFinalizeUploadResult(null);
+    setDocumentPreview(null);
+
+    try {
+      const res = await fetch("/api/documents/finalize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          masterLawsuitId,
+          uploadTargetMode: "direct-matter",
+          directMatterId,
+          directMatterDisplayNumber,
+          confirmUpload: true,
+          documentKeys: [selectedTemplate.key],
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        const result = json || { ok: false, error: "Document finalization failed." };
+        setFinalizeUploadResult(result);
+        alert(result.error || "Document finalization failed.");
+        return;
+      }
+
+      setFinalizeUploadResult(json);
+      setMatterDocumentWorkflowStage("delivery");
+      await loadFinalizationHistory(masterLawsuitId);
+      await loadPrintQueuePreview(masterLawsuitId);
+      await loadMatterClioDocuments();
+
+      const uploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
+      const skippedCount = Array.isArray(json.skipped) ? json.skipped.length : 0;
+
+      alert(
+        "Document finalization complete.\n\n" +
+          "Uploaded to Clio: " + uploadedCount + " document(s).\n" +
+          "Skipped duplicates: " + skippedCount + " document(s)."
+      );
+    } catch (err: any) {
+      const result = {
+        ok: false,
+        error: err?.message || "Document finalization failed.",
+      };
+      setFinalizeUploadResult(result);
+      alert(result.error);
+    } finally {
+      setDocumentPreviewLoading(false);
+      setFinalizeUploadLoading(false);
+    }
+  }
+
   function downloadBillScheduleDocx() {
     const masterLawsuitId = usableMasterLawsuitIdForDocuments();
 
@@ -5050,7 +5137,7 @@ const activeGroupKey =
             <div>
               <h2 style={{ margin: 0, fontSize: 22 }}>Document Generation</h2>
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                Select a document, preview it, finalize it, and then explicitly upload the final document set to Clio.  The workflow uses the existing backend target-routing safeguards.
+                Select a document, preview the PDF, edit in Word if needed, or finalize directly to this matter's Clio Documents tab.  Delivery options are available after finalization.
               </p>
             </div>
             <button
@@ -5082,16 +5169,16 @@ const activeGroupKey =
               {stepArrow(step1Complete)}
               {stepBadge(
                 2,
-                "Preview or Edit Document",
+                "Preview PDF / Edit / Finalize",
                 matterDocumentWorkflowStage === "chooseAction" ||
                   matterDocumentWorkflowStage === "preview" ||
                   matterDocumentWorkflowStage === "edit",
                 step2Complete
               )}
               {stepArrow(step2Complete)}
-              {stepBadge(3, "Finalize", matterDocumentWorkflowStage === "finalize", step3Complete)}
+              {stepBadge(3, "Document Delivery", matterDocumentWorkflowStage === "delivery", false)}
               {stepArrow(step3Complete)}
-              {stepBadge(4, "Email / Print / Queue", matterDocumentWorkflowStage === "delivery", false)}
+              {/* Step 4 removed: delivery is now Step 3. */}
             </div>
 
             <section
@@ -5181,17 +5268,17 @@ const activeGroupKey =
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview or Edit Document</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview PDF / Edit / Finalize</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   {selectedTemplate
                     ? `Selected: ${selectedTemplate?.label || "Selected document"}`
-                    : "Select a document before previewing the PDF or editing."}
+                    : "Select a document before previewing, editing, or finalizing."}
                 </p>
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {actionButton(
-                  "Preview Document",
+                  "Preview PDF",
                   () => {
                     setMatterDocumentWorkflowStage("preview");
                     void loadDocumentGenerationPreview();
@@ -5205,21 +5292,12 @@ const activeGroupKey =
                   !selectedTemplate,
                   !selectedTemplate ? "Select a document first." : undefined
                 )}
-                <button
-                  type="button"
-                  onClick={loadMatterDocumentDataPreview}
-                  style={{
-                    border: "1px solid #cbd5e1",
-                    background: "#fff",
-                    color: "#334155",
-                    borderRadius: 12,
-                    padding: "10px 14px",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                  }}
-                >
-                  {matterDocumentDataPreview?.loading ? "Refreshing..." : "Refresh Data"}
-                </button>
+                {actionButton(
+                  documentPreviewLoading || finalizeUploadLoading ? "Finalizing..." : "Finalize Document",
+                  () => finalizeMatterDocumentFromStep2(selectedTemplate),
+                  !selectedTemplate || documentPreviewLoading || finalizeUploadLoading,
+                  !selectedTemplate ? "Select a document first." : "Finalize and upload the selected document to Clio."
+                )}
               </div>
 
               {false && matterDocumentWorkflowStage === "preview" && selectedTemplate && (
@@ -5274,7 +5352,7 @@ const activeGroupKey =
               >
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18 }}>
-                    {showPreviewStep ? "PDF Preview" : "Edit Document"}
+                    {showPreviewStep ? "Preview PDF" : "Edit Document"}
                   </h3>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                     {showPreviewStep
@@ -5338,13 +5416,10 @@ const activeGroupKey =
                     Back
                   </button>
                   {actionButton(
-                    documentPreviewLoading ? "Checking..." : "Finalize Document",
-                    () => {
-                      setMatterDocumentWorkflowStage("finalize");
-                      void loadFinalizePreview();
-                    },
+                    documentPreviewLoading || finalizeUploadLoading ? "Finalizing..." : "Finalize Document",
+                    () => finalizeMatterDocumentFromStep2(selectedTemplate),
                     documentPreviewLoading || finalizeUploadLoading,
-                    "Run finalization preview before uploading the final document set to Clio."
+                    "Finalize and upload the selected document to Clio."
                   )}
                 </div>
               </section>
@@ -5356,12 +5431,12 @@ const activeGroupKey =
                 borderRadius: 18,
                 padding: 18,
                 background: "#fff",
-                display: showFinalizeStep ? "grid" : "none",
+                display: "none",
                 gap: 14,
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Finalization Details</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   Finalization will later create the final document, upload it to Clio as the document vault, and make it available in the Barsh Matters Documents section.
                 </p>
@@ -5407,7 +5482,7 @@ const activeGroupKey =
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                     These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
                   </p>
@@ -5432,8 +5507,8 @@ const activeGroupKey =
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue</h3>
-                  <span style={{ display: "none" }}>Step 4: Email / Print / Queue — Delivery Standalone</span>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
+                  <span style={{ display: "none" }}>Document Delivery — Standalone</span>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                     These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
                   </p>

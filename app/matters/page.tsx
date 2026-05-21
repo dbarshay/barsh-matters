@@ -3127,6 +3127,161 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
+  function appendDocumentOpenMode(rawUrl: string, mode: "download" | "inline" | "edit"): string {
+    const value = String(rawUrl || "").trim();
+    if (!value) return "";
+
+    try {
+      const url = new URL(value, window.location.origin);
+      url.searchParams.set("mode", mode);
+      return url.toString();
+    } catch {
+      const separator = value.includes("?") ? "&" : "?";
+      return `${value}${separator}mode=${encodeURIComponent(mode)}`;
+    }
+  }
+
+  function selectedFinalizedDocumentUrl(candidate: any, mode: "download" | "inline" | "edit"): string {
+    const raw =
+      candidate?.documentUrl ||
+      candidate?.downloadUrl ||
+      candidate?.pdfUrl ||
+      candidate?.docxUrl ||
+      candidate?.url ||
+      candidate?.webUrl ||
+      candidate?.clioDocumentUrl ||
+      candidate?.previewUrl ||
+      "";
+
+    return appendDocumentOpenMode(raw, mode);
+  }
+
+  function finalizedDocumentLooksLikePdf(candidate: any): boolean {
+    const filename = String(candidate?.filename || candidate?.clioDocumentName || "").toLowerCase();
+    const contentType = String(candidate?.contentType || candidate?.mimeType || "").toLowerCase();
+    return filename.endsWith(".pdf") || contentType.includes("pdf");
+  }
+
+  function finalizedDocumentLooksLikeDocx(candidate: any): boolean {
+    const filename = String(candidate?.filename || candidate?.clioDocumentName || "").toLowerCase();
+    const contentType = String(candidate?.contentType || candidate?.mimeType || "").toLowerCase();
+    return filename.endsWith(".docx") || contentType.includes("wordprocessingml");
+  }
+
+  async function loadSelectedMasterFinalizedDocumentCandidate(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!masterLawsuitId) {
+      throw new Error("No Lawsuit ID is available for finalized-document lookup.");
+    }
+
+    const params = new URLSearchParams();
+    params.set("masterLawsuitId", masterLawsuitId);
+    params.set("limit", "25");
+
+    const response = await fetch("/api/documents/print-queue-preview?" + params.toString(), {
+      cache: "no-store",
+    });
+    const json = await response.json().catch(() => null);
+
+    if (!response.ok || !json?.ok) {
+      throw new Error(json?.error || "Could not load finalized document candidates.");
+    }
+
+    const candidates = Array.isArray(json?.candidateDocuments) ? json.candidateDocuments : [];
+
+    if (candidates.length === 0) {
+      throw new Error("No finalized Clio-verified documents are available.  Upload final documents to Clio first.");
+    }
+
+    const selectedKey = String(selectedTemplate?.key || "").trim().toLowerCase();
+    const selectedLabel = String(selectedTemplate?.label || "").trim().toLowerCase();
+
+    const selectedCandidate =
+      candidates.find((candidate: any) => String(candidate?.key || "").trim().toLowerCase() === selectedKey) ||
+      candidates.find((candidate: any) => String(candidate?.documentKey || "").trim().toLowerCase() === selectedKey) ||
+      candidates.find((candidate: any) => String(candidate?.label || "").trim().toLowerCase() === selectedLabel) ||
+      candidates.find((candidate: any) => String(candidate?.documentLabel || "").trim().toLowerCase() === selectedLabel) ||
+      candidates.find((candidate: any) => selectedKey && String(candidate?.filename || "").trim().toLowerCase().includes(selectedKey)) ||
+      candidates[0];
+
+    return {
+      json,
+      candidates,
+      selectedCandidate,
+      masterLawsuitId,
+    };
+  }
+
+  async function launchMasterDocumentEdit(selectedTemplate: { key: string; label: string; description: string } | null) {
+    try {
+      const { json, candidates, selectedCandidate, masterLawsuitId } =
+        await loadSelectedMasterFinalizedDocumentCandidate(selectedTemplate);
+
+      const editUrl = selectedFinalizedDocumentUrl(selectedCandidate, "edit");
+      const inlineUrl = selectedFinalizedDocumentUrl(selectedCandidate, "inline");
+
+      if (!editUrl && !inlineUrl) {
+        throw new Error("Barsh Matters found a finalized document, but the preview contract did not expose an openable file URL.");
+      }
+
+      const filename = String(selectedCandidate?.filename || selectedCandidate?.clioDocumentName || selectedTemplate?.label || "Document");
+      const isPdf = finalizedDocumentLooksLikePdf(selectedCandidate);
+      const isDocx = finalizedDocumentLooksLikeDocx(selectedCandidate);
+
+      let openedWindow: Window | null = null;
+      let launchUrl = inlineUrl || editUrl;
+      let action = "master-document-edit-open";
+      let note = "Opened the finalized document for editing/viewing.";
+
+      if (isDocx && editUrl) {
+        const absoluteEditUrl = new URL(editUrl, window.location.origin).toString();
+        launchUrl = `ms-word:ofe|u|${absoluteEditUrl}`;
+        action = "master-document-edit-word";
+        note = "Requested Microsoft Word desktop edit/open for the finalized DOCX.  If Word does not launch, use the browser download/open prompt.";
+      } else if (isPdf && inlineUrl) {
+        launchUrl = inlineUrl;
+        action = "master-document-edit-pdf-inline";
+        note = "Opened the finalized PDF inline so the workstation/browser can hand it to Adobe if configured.";
+      }
+
+      openedWindow = window.open(launchUrl, "_blank", "noopener,noreferrer");
+
+      if (!openedWindow) {
+        throw new Error("The browser blocked the document edit/open window.  Please allow popups for Barsh Matters and try again.");
+      }
+
+      setMasterDocumentPrintResult({
+        ok: true,
+        action,
+        masterLawsuitId,
+        documentLabel:
+          selectedCandidate?.label ||
+          selectedCandidate?.documentLabel ||
+          selectedTemplate?.label ||
+          "Document",
+        filename,
+        editUrl,
+        inlineUrl,
+        selectedCandidate,
+        candidateDocumentCount: candidates.length,
+        currentClioExistenceVerified: json?.verification?.currentClioExistenceVerified === true,
+        opensInWordRequested: isDocx,
+        opensInlineForAdobe: isPdf,
+        clioDocumentsTabRemainsSourceOfTruth: true,
+        note,
+      });
+    } catch (err: any) {
+      const fallback = {
+        ok: false,
+        action: "master-document-edit-open",
+        error: err?.message || "Could not open the finalized document for editing.",
+      };
+      setMasterDocumentPrintResult(fallback);
+      alert(fallback.error);
+    }
+  }
+
   async function createMasterDocumentOutlookDraft() {
     const previewState = masterDocumentDeliveryPreview;
 
@@ -3233,70 +3388,15 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentPrintResult(null);
 
     try {
-      const params = new URLSearchParams();
-      params.set("masterLawsuitId", masterLawsuitId);
-      params.set("limit", "25");
+      const { json, candidates, selectedCandidate } =
+        await loadSelectedMasterFinalizedDocumentCandidate(selectedTemplate);
 
-      const response = await fetch("/api/documents/print-queue-preview?" + params.toString(), {
-        cache: "no-store",
-      });
-      const json = await response.json().catch(() => null);
-
-      if (!response.ok || !json?.ok) {
-        const message = json?.error || "Could not load finalized document print candidates.";
-        setMasterDocumentPrintResult(json || { ok: false, error: message });
-        alert(message);
-        return;
-      }
-
-      const candidates = Array.isArray(json?.candidateDocuments) ? json.candidateDocuments : [];
-
-      if (candidates.length === 0) {
-        const message = "No finalized Clio-verified documents are available to print yet.  Upload final documents to Clio first.";
-        setMasterDocumentPrintResult({
-          ...json,
-          ok: false,
-          action: "master-document-print-preview",
-          error: message,
-        });
-        alert(message);
-        return;
-      }
-
-      const selectedKey = String(selectedTemplate?.key || "").trim().toLowerCase();
-      const selectedLabel = String(selectedTemplate?.label || "").trim().toLowerCase();
-
-      const selectedCandidate =
-        candidates.find((candidate: any) => String(candidate?.key || "").trim().toLowerCase() === selectedKey) ||
-        candidates.find((candidate: any) => String(candidate?.documentKey || "").trim().toLowerCase() === selectedKey) ||
-        candidates.find((candidate: any) => String(candidate?.label || "").trim().toLowerCase() === selectedLabel) ||
-        candidates.find((candidate: any) => String(candidate?.documentLabel || "").trim().toLowerCase() === selectedLabel) ||
-        candidates.find((candidate: any) => selectedKey && String(candidate?.filename || "").trim().toLowerCase().includes(selectedKey)) ||
-        candidates[0];
-
-      const printableUrl =
-        selectedCandidate?.pdfUrl ||
-        selectedCandidate?.downloadUrl ||
-        selectedCandidate?.documentUrl ||
-        selectedCandidate?.docxUrl ||
-        selectedCandidate?.url ||
-        selectedCandidate?.webUrl ||
-        selectedCandidate?.clioDocumentUrl ||
-        selectedCandidate?.previewUrl ||
-        "";
+      const printableUrl = finalizedDocumentLooksLikePdf(selectedCandidate)
+        ? selectedFinalizedDocumentUrl(selectedCandidate, "inline")
+        : selectedFinalizedDocumentUrl(selectedCandidate, "download");
 
       if (!printableUrl) {
-        const message =
-          "Barsh Matters found a current Clio-verified finalized document, but the preview contract did not expose an openable file URL.  The candidate details are shown below.";
-        setMasterDocumentPrintResult({
-          ...json,
-          ok: false,
-          action: "master-document-print-preview",
-          error: message,
-          selectedCandidate,
-        });
-        alert(message);
-        return;
+        throw new Error("Barsh Matters found a current Clio-verified finalized document, but the preview contract did not expose an openable file URL.");
       }
 
       const printWindow = window.open(printableUrl, "_blank", "noopener,noreferrer");
@@ -3329,8 +3429,11 @@ function masterSettlementDateFiledValue(): string {
         selectedCandidate,
         candidateDocumentCount: candidates.length,
         currentClioExistenceVerified: json?.verification?.currentClioExistenceVerified === true,
+        opensInlineForAdobe: finalizedDocumentLooksLikePdf(selectedCandidate),
         clioDocumentsTabRemainsSourceOfTruth: true,
-        note: "Opened a current Clio-verified finalized document for browser printing.",
+        note: finalizedDocumentLooksLikePdf(selectedCandidate)
+          ? "Opened the finalized PDF inline for browser/Adobe printing."
+          : "Opened/downloaded the finalized DOCX.  True DOCX printing requires Word or PDF conversion.",
       });
     } catch (err: any) {
       const fallback = {
@@ -3472,6 +3575,98 @@ function masterSettlementDateFiledValue(): string {
       setMasterFinalizeUploadResult(result);
       alert(result.error);
     } finally {
+      setMasterFinalizeUploadLoading(false);
+    }
+  }
+
+  async function finalizeMasterDocumentFromStep2(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (masterDocumentFinalizing || masterFinalizeUploadLoading) return;
+
+    if (!selectedTemplate?.key) {
+      alert("Select a document before finalizing.");
+      return;
+    }
+
+    const isSettlementDocumentMode =
+      masterDocumentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.documentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.action === "settlement-documents-preview";
+
+    if (isSettlementDocumentMode) {
+      await finalizeMasterSettlementDocumentPlaceholder(selectedTemplate);
+      return;
+    }
+
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for final upload.");
+      return;
+    }
+
+    const confirmed = confirm(
+      "FINALIZE DOCUMENT TO CLIO\n\n" +
+        "Document: " + (selectedTemplate.label || selectedTemplate.key) + "\n" +
+        "Lawsuit ID: " + masterLawsuitId + "\n\n" +
+        "Barsh Matters will generate the final document and upload it to the mapped master Clio matter Documents tab.  Exact duplicate filenames are skipped.\n\n" +
+        "Continue?"
+    );
+
+    if (!confirmed) return;
+
+    setMasterDocumentFinalizing(true);
+    setMasterFinalizeUploadLoading(true);
+    setMasterFinalizePreview(null);
+    setMasterFinalizeUploadResult(null);
+    setMasterDocumentFinalizationResult(null);
+
+    try {
+      const res = await fetch("/api/documents/finalize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          masterLawsuitId,
+          uploadTargetMode: "master-lawsuit",
+          confirmUpload: true,
+          documentKeys: [selectedTemplate.key],
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        const result = json || { ok: false, error: "Document finalization failed." };
+        setMasterFinalizeUploadResult(result);
+        setMasterDocumentFinalizationResult(result);
+        alert(result.error || "Document finalization failed.");
+        return;
+      }
+
+      setMasterFinalizeUploadResult(json);
+      setMasterDocumentFinalizationResult(json);
+      setMasterDocumentWorkflowStage("delivery");
+      await loadMasterClioDocuments();
+
+      const uploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
+      const skippedCount = Array.isArray(json.skipped) ? json.skipped.length : 0;
+
+      alert(
+        "Document finalization complete.\n\n" +
+          "Uploaded to Clio: " + uploadedCount + " document(s).\n" +
+          "Skipped duplicates: " + skippedCount + " document(s)."
+      );
+    } catch (err: any) {
+      const result = {
+        ok: false,
+        error: err?.message || "Document finalization failed.",
+      };
+      setMasterFinalizeUploadResult(result);
+      setMasterDocumentFinalizationResult(result);
+      alert(result.error);
+    } finally {
+      setMasterDocumentFinalizing(false);
       setMasterFinalizeUploadLoading(false);
     }
   }
@@ -4517,7 +4712,7 @@ function masterSettlementDateFiledValue(): string {
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
                 {isSettlementDocumentMode
                   ? "Select a settlement document, preview or edit it, then finalize.  This settlement path reads Barsh Matters local settlement records only.  It does not use Clio as the settlement source of truth."
-                  : "Select a document, preview it, run the finalization preview, and explicitly upload final documents to the mapped master Clio matter when ready.  Email, print, and queue actions use finalized-document delivery records."}
+                  : "Select a document, preview the PDF, edit in Word if needed, or finalize directly to the mapped master Clio matter.  Delivery options are available after finalization."}
               </p>
             </div>
             <button
@@ -4549,16 +4744,16 @@ function masterSettlementDateFiledValue(): string {
               {stepArrow(step1Complete)}
               {stepBadge(
                 2,
-                "Preview or Edit Document",
+                "Preview PDF / Edit / Finalize",
                 masterDocumentWorkflowStage === "chooseAction" ||
                   masterDocumentWorkflowStage === "preview" ||
                   masterDocumentWorkflowStage === "edit",
                 step2Complete
               )}
               {stepArrow(step2Complete)}
-              {stepBadge(3, "Finalize / Upload", masterDocumentWorkflowStage === "finalize", step3Complete)}
+              {stepBadge(3, "Document Delivery", masterDocumentWorkflowStage === "delivery", false)}
               {stepArrow(step3Complete)}
-              {stepBadge(4, "Email / Print / Queue Pending", masterDocumentWorkflowStage === "delivery", false)}
+              {/* Step 4 removed: delivery is now Step 3. */}
             </div>
 
             <section
@@ -4670,17 +4865,17 @@ function masterSettlementDateFiledValue(): string {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview or Edit Document</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview PDF / Edit / Finalize</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   {displayedSelectedTemplate
                     ? `Selected: ${displayedSelectedTemplate?.label || "Selected document"}`
-                    : "Select a document before previewing the PDF or editing."}
+                    : "Select a document before previewing, editing, or finalizing."}
                 </p>
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {actionButton(
-                  "Preview Document",
+                  "Preview PDF",
                   () => setMasterDocumentWorkflowStage("preview"),
                   !displayedSelectedTemplate,
                   !displayedSelectedTemplate ? "Select a document first." : undefined
@@ -4691,21 +4886,12 @@ function masterSettlementDateFiledValue(): string {
                   !displayedSelectedTemplate,
                   !displayedSelectedTemplate ? "Select a document first." : undefined
                 )}
-                <button
-                  type="button"
-                  onClick={() => loadMasterDocumentDataPreview()}
-                  style={{
-                    border: "1px solid #cbd5e1",
-                    background: "#fff",
-                    color: "#334155",
-                    borderRadius: 12,
-                    padding: "10px 14px",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                  }}
-                >
-                  {masterDocumentDataPreview?.loading ? "Refreshing..." : "Refresh Data"}
-                </button>
+                {actionButton(
+                  masterFinalizeUploadLoading || masterDocumentFinalizing ? "Finalizing..." : "Finalize Document",
+                  () => finalizeMasterDocumentFromStep2(displayedSelectedTemplate),
+                  !displayedSelectedTemplate || masterFinalizeUploadLoading || masterDocumentFinalizing,
+                  !displayedSelectedTemplate ? "Select a document first." : "Finalize and upload the selected document to Clio."
+                )}
               </div>
 
               {masterDocumentWorkflowStage === "preview" && displayedSelectedTemplate && (
@@ -4760,7 +4946,7 @@ function masterSettlementDateFiledValue(): string {
               >
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18 }}>
-                    {showPreviewStep ? "Document Preview" : "Edit Document"}
+                    {showPreviewStep ? "Preview PDF" : "Edit Document"}
                   </h3>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                     {showPreviewStep
@@ -4823,7 +5009,7 @@ function masterSettlementDateFiledValue(): string {
                   >
                     Back
                   </button>
-                  {actionButton("Continue to Finalize / Upload", () => setMasterDocumentWorkflowStage("finalize"), false)}
+                  {actionButton(masterFinalizeUploadLoading || masterDocumentFinalizing ? "Finalizing..." : "Finalize Document", () => finalizeMasterDocumentFromStep2(displayedSelectedTemplate), masterFinalizeUploadLoading || masterDocumentFinalizing)}
                 </div>
               </section>
             )}
@@ -4834,12 +5020,12 @@ function masterSettlementDateFiledValue(): string {
                 borderRadius: 18,
                 padding: 18,
                 background: "#fff",
-                display: showFinalizeStep ? "grid" : "none",
+                display: "none",
                 gap: 14,
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalize / Upload</h3>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Finalization Details</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   Run the finalization preview first.  If the mapped master Clio matter is resolved and the document plan is generation-ready, Upload Final Documents to Clio becomes available.
                 </p>
@@ -5059,8 +5245,8 @@ function masterSettlementDateFiledValue(): string {
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 4: Email / Print / Queue Pending</h3>
-                  <span style={{ display: "none" }}>Step 4: Email / Print / Queue — Delivery Standalone</span>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
+                  <span style={{ display: "none" }}>Document Delivery — Standalone</span>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                     Delivery actions will be enabled after the finalized-document email, print, and queue workflows are wired.  Master/Lawsuit final upload to Clio is now handled in Step 3.
                   </p>
@@ -5358,7 +5544,7 @@ function masterSettlementDateFiledValue(): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Delivery Options</h3>
                 <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                  Choose how to deliver the finalized document.  Email prepares an Outlook draft preview first; print opens the finalized file; queue adds finalized Clio-verified files to the Barsh Matters print queue.
+                  Choose how to deliver the finalized document.  Email prepares an Outlook draft preview; Edit opens DOCX files through Word when available; Print opens PDFs inline and DOCX files as a browser-controlled file; Queue adds finalized Clio-verified files to the Barsh Matters print queue.
                 </p>
               </div>
 
@@ -5371,6 +5557,16 @@ function masterSettlementDateFiledValue(): string {
                   style={displayedSelectedTemplate ? deliveryButtonStyle : pendingButtonStyle}
                 >
                   Email Document
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => launchMasterDocumentEdit(displayedSelectedTemplate)}
+                  disabled={!displayedSelectedTemplate}
+                  title={!displayedSelectedTemplate ? "Select a finalized document before editing." : undefined}
+                  style={displayedSelectedTemplate ? secondaryDeliveryButtonStyle : pendingButtonStyle}
+                >
+                  Edit Document
                 </button>
 
                 <button
