@@ -640,6 +640,9 @@ export default function FilteredMattersPage() {
   const [masterDocumentRepositoryTemplatesError, setMasterDocumentRepositoryTemplatesError] = useState("");
   const [masterDocumentFinalizing, setMasterDocumentFinalizing] = useState(false);
   const [masterDocumentFinalizationResult, setMasterDocumentFinalizationResult] = useState<any>(null);
+  const [masterFinalizePreview, setMasterFinalizePreview] = useState<any>(null);
+  const [masterFinalizeUploadLoading, setMasterFinalizeUploadLoading] = useState(false);
+  const [masterFinalizeUploadResult, setMasterFinalizeUploadResult] = useState<any>(null);
   const [masterDocumentPrintQueueLoading, setMasterDocumentPrintQueueLoading] = useState(false);
   const [masterDocumentPrintQueueResult, setMasterDocumentPrintQueueResult] = useState<any>(null);
   const [masterDocumentPrintResult, setMasterDocumentPrintResult] = useState<any>(null);
@@ -3242,6 +3245,139 @@ function masterSettlementDateFiledValue(): string {
     }, 750);
   }
 
+  async function loadMasterFinalizePreview() {
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for finalization preview.");
+      return;
+    }
+
+    setMasterDocumentFinalizing(true);
+    setMasterFinalizePreview(null);
+    setMasterFinalizeUploadResult(null);
+    setMasterDocumentFinalizationResult(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.set("masterLawsuitId", masterLawsuitId);
+      params.set("uploadTarget", "master-lawsuit");
+
+      const res = await fetch(`/api/documents/finalize-preview?${params.toString()}`);
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json) {
+        const result = json || { ok: false, error: "Master finalization preview failed." };
+        setMasterFinalizePreview(result);
+        alert(result.error || "Master finalization preview failed.");
+        return;
+      }
+
+      setMasterFinalizePreview(json);
+      setMasterDocumentWorkflowStage("finalize");
+
+      if (!json.ok && Array.isArray(json?.validation?.blockingErrors) && json.validation.blockingErrors.length > 0) {
+        alert(`Master finalization is blocked:\n\n${json.validation.blockingErrors.join("\n")}`);
+      }
+    } catch (err: any) {
+      const result = { ok: false, error: err?.message || "Master finalization preview failed." };
+      setMasterFinalizePreview(result);
+      alert(result.error);
+    } finally {
+      setMasterDocumentFinalizing(false);
+    }
+  }
+
+  async function uploadMasterFinalDocumentsToClio() {
+    if (masterFinalizeUploadLoading) return;
+
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for final upload.");
+      return;
+    }
+
+    if (masterFinalizePreview?.action !== "finalize-preview" || !masterFinalizePreview?.ok) {
+      alert("Run Master Finalization Preview successfully before uploading final documents to Clio.");
+      return;
+    }
+
+    const plannedDocuments = Array.isArray(masterFinalizePreview?.plannedDocuments)
+      ? masterFinalizePreview.plannedDocuments
+      : [];
+
+    const uploadableDocuments = plannedDocuments.filter((doc: any) => doc?.wouldGenerate && doc?.wouldUploadToClio);
+
+    if (uploadableDocuments.length === 0) {
+      alert("No final Master/Lawsuit documents are ready for upload.");
+      return;
+    }
+
+    const targetDisplay =
+      masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "the mapped master Clio matter";
+    const targetMatterId = masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.matterId);
+
+    const documentList = uploadableDocuments
+      .map((doc: any) => `- ${masterDocumentPreviewText(doc?.label) || masterDocumentPreviewText(doc?.key)}: ${masterDocumentPreviewText(doc?.filename)}`)
+      .join("\n");
+
+    const confirmed = confirm(
+      `FINALIZE AND UPLOAD MASTER/LAWSUIT DOCUMENTS TO CLIO\n\n` +
+        `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
+        `This will upload the following final document copy/copies to the mapped master Clio matter Documents tab:\n\n` +
+        `${documentList}\n\n` +
+        `This is an explicit finalization action. Preview actions remain non-persistent.\n\n` +
+        `WARNING: Running this again may create duplicate uploaded documents in Clio.\n\n` +
+        `Continue?`
+    );
+
+    if (!confirmed) return;
+
+    setMasterFinalizeUploadLoading(true);
+    setMasterFinalizeUploadResult(null);
+
+    try {
+      const res = await fetch("/api/documents/finalize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          masterLawsuitId,
+          uploadTargetMode: "master-lawsuit",
+          confirmUpload: true,
+          documentKeys: uploadableDocuments.map((doc: any) => masterDocumentPreviewText(doc?.key)).filter(Boolean),
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        const result = json || { ok: false, error: "Master final upload failed." };
+        setMasterFinalizeUploadResult(result);
+        alert(result.error || "Master final upload failed.");
+        return;
+      }
+
+      setMasterFinalizeUploadResult(json);
+      setMasterDocumentFinalizationResult(json);
+      await loadMasterClioDocuments();
+
+      const uploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
+      alert(`Master final upload complete.\n\nUploaded to Clio: ${uploadedCount} document(s).`);
+    } catch (err: any) {
+      const result = {
+        ok: false,
+        error: err?.message || "Master final upload failed.",
+      };
+      setMasterFinalizeUploadResult(result);
+      alert(result.error);
+    } finally {
+      setMasterFinalizeUploadLoading(false);
+    }
+  }
+
   async function finalizeMasterSettlementDocumentPlaceholder(selectedTemplate: { key: string; label: string; description: string } | null) {
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
     const isSettlementDocumentMode =
@@ -4233,7 +4369,7 @@ function masterSettlementDateFiledValue(): string {
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
                 {isSettlementDocumentMode
                   ? "Select a settlement document, preview or edit it, then finalize.  This settlement path reads Barsh Matters local settlement records only.  It does not use Clio as the settlement source of truth."
-                  : "Select a document, preview it, and prepare a finalization preview.  Master/Lawsuit final upload, email, print, and queue actions remain hidden until a real finalized-document backend is wired."}
+                  : "Select a document, preview it, run a finalization preview, and explicitly upload final documents to the mapped master Clio matter when ready.  Email, print, and queue actions remain hidden until finalized-document delivery is wired."}
               </p>
             </div>
             <button
@@ -4557,18 +4693,26 @@ function masterSettlementDateFiledValue(): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Finalization Preview</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  This is a preview-only placeholder for Master/Lawsuit finalization.  It does not generate a production PDF, upload to Clio, email, print, or write a print queue record.  Direct Matter final upload remains the currently wired production upload path.
+                  Run the finalization preview first.  If the mapped master Clio matter is resolved and the document plan is generation-ready, the final upload button will become available.
                 </p>
               </div>
 
               <div>
                 {actionButton(
-                  masterDocumentFinalizing ? "Preparing..." : "Prepare Finalization Preview",
-                  () => finalizeMasterSettlementDocumentPlaceholder(displayedSelectedTemplate),
+                  masterDocumentFinalizing ? "Checking..." : "Run Finalization Preview",
+                  loadMasterFinalizePreview,
                   !canFinalize || masterDocumentFinalizing,
-                  isSettlementDocumentMode
-                    ? "Preview-only placeholder.  This does not create a production PDF, upload to Clio, email, print, or queue anything."
-                    : "Preview the PDF or edit the selected document before finalizing."
+                  "Preview the mapped master Clio upload target and planned final documents before uploading."
+                )}
+
+                {actionButton(
+                  masterFinalizeUploadLoading ? "Uploading..." : "Upload Final Documents to Clio",
+                  uploadMasterFinalDocumentsToClio,
+                  masterDocumentFinalizing ||
+                    masterFinalizeUploadLoading ||
+                    masterFinalizePreview?.action !== "finalize-preview" ||
+                    !masterFinalizePreview?.ok,
+                  "Requires a successful Master Finalization Preview first."
                 )}
               </div>
 
@@ -4589,6 +4733,120 @@ function masterSettlementDateFiledValue(): string {
             </section>
 
             
+            {masterFinalizePreview && (
+              <section
+                style={{
+                  border: masterFinalizePreview.ok ? "1px solid #86efac" : "1px solid #fecaca",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: masterFinalizePreview.ok ? "#f0fdf4" : "#fef2f2",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 18 }}>
+                  {masterFinalizePreview.ok ? "Master Finalization Preview Ready" : "Master Finalization Preview Blocked"}
+                </h3>
+
+                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                  Preview only.  No files were persisted, no documents were uploaded to Clio, no Clio records were changed, and no database records were changed.
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                  <div>
+                    <strong>Clio Upload Target:</strong><br />
+                    {masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "—"}
+                    {masterFinalizePreview?.clioUploadTarget?.matterId
+                      ? ` / Matter ID ${masterFinalizePreview.clioUploadTarget.matterId}`
+                      : ""}
+                  </div>
+                  <div>
+                    <strong>Upload Destination:</strong><br />
+                    {masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.type) || "—"}
+                  </div>
+                  <div>
+                    <strong>Status:</strong><br />
+                    {masterFinalizePreview.ok ? "Ready" : "Blocked"}
+                  </div>
+                </div>
+
+                {Array.isArray(masterFinalizePreview?.plannedDocuments) && masterFinalizePreview.plannedDocuments.length > 0 && (
+                  <div>
+                    <strong>Planned Documents:</strong>{" "}
+                    {masterFinalizePreview.plannedDocuments
+                      .map((doc: any) => masterDocumentPreviewText(doc?.label) || masterDocumentPreviewText(doc?.filename) || masterDocumentPreviewText(doc?.key))
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                )}
+
+                {Array.isArray(masterFinalizePreview?.validation?.blockingErrors) &&
+                  masterFinalizePreview.validation.blockingErrors.length > 0 && (
+                    <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                      Blocking errors: {masterFinalizePreview.validation.blockingErrors.join(" ")}
+                    </div>
+                  )}
+
+                {masterFinalizePreview?.existingDocumentCheck?.matchCount > 0 && (
+                  <div
+                    style={{
+                      padding: 8,
+                      borderRadius: 10,
+                      background: "#fef2f2",
+                      border: "1px solid #dc2626",
+                      color: "#991b1b",
+                      fontWeight: 850,
+                    }}
+                  >
+                    Existing Clio document warning: one or more planned final documents already exists in the mapped master Clio matter Documents tab.  The upload endpoint skips exact filename matches by default to prevent duplicates.
+                  </div>
+                )}
+              </section>
+            )}
+
+            {masterFinalizeUploadResult && (
+              <section
+                style={{
+                  border: masterFinalizeUploadResult.ok ? "1px solid #86efac" : "1px solid #fecaca",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: masterFinalizeUploadResult.ok ? "#f0fdf4" : "#fef2f2",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 18 }}>
+                  {masterFinalizeUploadResult.ok ? "Master Final Upload Complete" : "Master Final Upload Failed"}
+                </h3>
+
+                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                  {masterFinalizeUploadResult.ok
+                    ? `Uploaded ${Array.isArray(masterFinalizeUploadResult.uploaded) ? masterFinalizeUploadResult.uploaded.length : 0} document(s) to the mapped master Clio matter.`
+                    : masterFinalizeUploadResult.error || "Master final upload failed."}
+                </p>
+
+                {Array.isArray(masterFinalizeUploadResult.uploaded) && masterFinalizeUploadResult.uploaded.length > 0 && (
+                  <div>
+                    <strong>Uploaded:</strong>{" "}
+                    {masterFinalizeUploadResult.uploaded
+                      .map((doc: any) => masterDocumentPreviewText(doc?.label) || masterDocumentPreviewText(doc?.filename) || masterDocumentPreviewText(doc?.clioDocumentId))
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                )}
+
+                {Array.isArray(masterFinalizeUploadResult.skipped) && masterFinalizeUploadResult.skipped.length > 0 && (
+                  <div>
+                    <strong>Skipped:</strong>{" "}
+                    {masterFinalizeUploadResult.skipped
+                      .map((doc: any) => masterDocumentPreviewText(doc?.label) || masterDocumentPreviewText(doc?.filename) || masterDocumentPreviewText(doc?.reason))
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                )}
+              </section>
+            )}
+
             {masterDocumentFinalizationResult && (
               <section
                 style={{
@@ -4650,7 +4908,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  Delivery actions are hidden until this Master/Lawsuit workflow has a real finalized document to email, print, or queue.
+                  Delivery actions remain hidden until finalized-document email, print, and queue workflows are wired.  The current production action is explicit upload to the mapped master Clio matter.
                 </div>
               </section>
             )}
