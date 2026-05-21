@@ -126,6 +126,52 @@ export default function AdminDocumentTemplatesPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState("");
   const [mergeFieldVisibilityFilter, setMergeFieldVisibilityFilter] = useState<"all" | "visible_ui" | "hidden_internal" | "computed" | "system">("all");
+  const [customTemplateRowsText, setCustomTemplateRowsText] = useState(`[
+  {
+    "key": "example-production-template",
+    "label": "Example Production Template",
+    "category": "general",
+    "description": "Example production-template metadata import with visible and hidden merge fields.",
+    "defaultFilenameSuffix": "Example Production Template",
+    "generationEndpoint": "",
+    "outputFormat": "docx",
+    "sourceOfTruth": "barsh-matters-local",
+    "enabled": true,
+    "editableInRepository": true,
+    "mergeFieldSet": "example-production",
+    "repositorySource": "barsh-matters-template-import",
+    "repositoryStatus": "draft-template-import",
+    "productionTemplateReady": false,
+    "finalProductionDocument": false,
+    "metadata": {
+      "templateSource": "template-repository-db",
+      "notes": "Replace this example with user-provided production template metadata."
+    },
+    "mergeFields": [
+      {
+        "key": "visiblePatientName",
+        "label": "Visible Patient Name",
+        "source": "visible-ui",
+        "visibility": "visible_ui",
+        "required": true
+      },
+      {
+        "key": "hiddenInsurerAddress",
+        "label": "Hidden Insurer Address",
+        "source": "reference-data-hidden",
+        "visibility": "hidden_internal",
+        "required": false,
+        "metadata": {
+          "path": "referenceData.insurer.details.hidden_address"
+        }
+      }
+    ]
+  }
+]`);
+  const [customTemplatePreview, setCustomTemplatePreview] = useState<any>(null);
+  const [customTemplateConfirmResult, setCustomTemplateConfirmResult] = useState<any>(null);
+  const [customTemplateLoading, setCustomTemplateLoading] = useState(false);
+  const [customTemplateError, setCustomTemplateError] = useState("");
 
   async function loadTemplates(nextCategory = category) {
     setLoading(true);
@@ -218,6 +264,84 @@ export default function AdminDocumentTemplatesPage() {
       setImportError(err?.message || "Could not confirm seeded template import.");
     } finally {
       setImportLoading(false);
+    }
+  }
+
+  function parseCustomTemplateRows() {
+    const parsed = JSON.parse(customTemplateRowsText || "[]");
+    if (!Array.isArray(parsed)) {
+      throw new Error("Template import JSON must be an array of template row objects.");
+    }
+    return parsed;
+  }
+
+  async function previewCustomTemplateRowsImport() {
+    setCustomTemplateLoading(true);
+    setCustomTemplateError("");
+    setCustomTemplatePreview(null);
+    setCustomTemplateConfirmResult(null);
+
+    try {
+      const rows = parseCustomTemplateRows();
+
+      const response = await fetch("/api/documents/templates/import-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "rows",
+          rows,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.error || "Could not preview custom template import.");
+      }
+
+      setCustomTemplatePreview(json);
+    } catch (err: any) {
+      setCustomTemplateError(err?.message || "Could not preview custom template import.");
+    } finally {
+      setCustomTemplateLoading(false);
+    }
+  }
+
+  async function confirmCustomTemplateRowsImport() {
+    if (!customTemplatePreview?.ok) {
+      setCustomTemplateError("Preview a valid custom template import before confirming.");
+      return;
+    }
+
+    setCustomTemplateLoading(true);
+    setCustomTemplateError("");
+    setCustomTemplateConfirmResult(null);
+
+    try {
+      const rows = parseCustomTemplateRows();
+
+      const response = await fetch("/api/documents/templates/import-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "rows",
+          rows,
+          confirm: true,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Could not confirm custom template import.");
+      }
+
+      setCustomTemplateConfirmResult(json);
+      await loadTemplates(category);
+    } catch (err: any) {
+      setCustomTemplateError(err?.message || "Could not confirm custom template import.");
+    } finally {
+      setCustomTemplateLoading(false);
     }
   }
 
@@ -507,6 +631,119 @@ export default function AdminDocumentTemplatesPage() {
                   <div><strong>Rows updated:</strong> {importConfirmResult.summary?.rowsToUpdate ?? 0}</div>
                   <div><strong>Database changed:</strong> {String(Boolean(importConfirmResult.safety?.databaseRecordsChanged))}</div>
                   <div><strong>No Clio / email / print:</strong> {String(!importConfirmResult.safety?.clioRecordsChanged && !importConfirmResult.safety?.emailsSent && !importConfirmResult.safety?.printQueueChanged)}</div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section
+            style={{
+              border: "1px solid #dbe4f0",
+              borderRadius: 18,
+              padding: 18,
+              background: "#fff",
+              marginTop: 18,
+            }}
+          >
+            <h2 style={{ margin: "0 0 12px 0", fontSize: 20 }}>Custom Template Row Import</h2>
+            <p style={{ margin: "0 0 12px 0", color: "#475569", lineHeight: 1.55 }}>
+              Paste JSON template rows to preview and confirm local DocumentTemplate, DocumentTemplateVersion,
+              and DocumentTemplateMergeField records.  This supports both visible UI merge fields and hidden/internal
+              merge fields.  This does not upload Word files, generate documents, send email, print, queue documents,
+              or write to Clio.
+            </p>
+
+            <textarea
+              value={customTemplateRowsText}
+              onChange={(event) => {
+                setCustomTemplateRowsText(event.target.value);
+                setCustomTemplatePreview(null);
+                setCustomTemplateConfirmResult(null);
+                setCustomTemplateError("");
+              }}
+              rows={14}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                border: "1px solid #cbd5e1",
+                borderRadius: 14,
+                padding: 12,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: 12,
+                lineHeight: 1.45,
+                marginBottom: 12,
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={previewCustomTemplateRowsImport}
+                disabled={customTemplateLoading}
+                style={{
+                  border: "1px solid #2563eb",
+                  background: customTemplateLoading ? "#dbeafe" : "#eff6ff",
+                  color: "#1d4ed8",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontWeight: 900,
+                  cursor: customTemplateLoading ? "default" : "pointer",
+                }}
+              >
+                {customTemplateLoading ? "Working..." : "Preview Custom Import"}
+              </button>
+              <button
+                type="button"
+                onClick={confirmCustomTemplateRowsImport}
+                disabled={customTemplateLoading || !customTemplatePreview?.ok}
+                style={{
+                  border: customTemplateLoading || !customTemplatePreview?.ok ? "1px solid #cbd5e1" : "1px solid #16a34a",
+                  background: customTemplateLoading || !customTemplatePreview?.ok ? "#f1f5f9" : "#f0fdf4",
+                  color: customTemplateLoading || !customTemplatePreview?.ok ? "#64748b" : "#166534",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontWeight: 900,
+                  cursor: customTemplateLoading || !customTemplatePreview?.ok ? "not-allowed" : "pointer",
+                }}
+              >
+                Confirm Custom Import
+              </button>
+            </div>
+
+            {customTemplateError && (
+              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 14, padding: 12, marginBottom: 12, fontWeight: 800 }}>
+                {customTemplateError}
+              </div>
+            )}
+
+            {customTemplatePreview && (
+              <div style={{ border: customTemplatePreview.ok ? "1px solid #bfdbfe" : "1px solid #fecaca", background: customTemplatePreview.ok ? "#eff6ff" : "#fef2f2", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: 16 }}>Custom Import Preview</h3>
+                <div style={{ display: "grid", gap: 4, color: "#334155", fontSize: 14 }}>
+                  <div><strong>Rows:</strong> {customTemplatePreview.summary?.totalRows ?? 0}</div>
+                  <div><strong>Valid:</strong> {customTemplatePreview.summary?.validRows ?? 0}</div>
+                  <div><strong>Create:</strong> {customTemplatePreview.summary?.rowsToCreate ?? 0}</div>
+                  <div><strong>Update:</strong> {customTemplatePreview.summary?.rowsToUpdate ?? 0}</div>
+                  <div><strong>Production-ready rows:</strong> {customTemplatePreview.summary?.productionReadyRows ?? 0}</div>
+                  <div><strong>Final production rows:</strong> {customTemplatePreview.summary?.finalProductionRows ?? 0}</div>
+                  <div><strong>Visible UI merge fields:</strong> {customTemplatePreview.summary?.visibleMergeFields ?? 0}</div>
+                  <div><strong>Hidden/internal merge fields:</strong> {customTemplatePreview.summary?.hiddenInternalMergeFields ?? 0}</div>
+                  <div><strong>Computed merge fields:</strong> {customTemplatePreview.summary?.computedMergeFields ?? 0}</div>
+                  <div><strong>System merge fields:</strong> {customTemplatePreview.summary?.systemMergeFields ?? 0}</div>
+                  <div><strong>Database changed:</strong> {String(Boolean(customTemplatePreview.safety?.databaseRecordsChanged))}</div>
+                </div>
+              </div>
+            )}
+
+            {customTemplateConfirmResult && (
+              <div style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: 16 }}>Custom Import Confirmed</h3>
+                <div style={{ display: "grid", gap: 4, fontSize: 14 }}>
+                  <div><strong>Templates processed:</strong> {customTemplateConfirmResult.results?.length ?? 0}</div>
+                  <div><strong>Rows created:</strong> {customTemplateConfirmResult.summary?.rowsToCreate ?? 0}</div>
+                  <div><strong>Rows updated:</strong> {customTemplateConfirmResult.summary?.rowsToUpdate ?? 0}</div>
+                  <div><strong>Database changed:</strong> {String(Boolean(customTemplateConfirmResult.safety?.databaseRecordsChanged))}</div>
+                  <div><strong>No Clio / email / print:</strong> {String(!customTemplateConfirmResult.safety?.clioRecordsChanged && !customTemplateConfirmResult.safety?.emailsSent && !customTemplateConfirmResult.safety?.printQueueChanged)}</div>
                 </div>
               </div>
             )}
