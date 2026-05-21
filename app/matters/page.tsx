@@ -6549,8 +6549,11 @@ function masterSettlementDateFiledValue(): string {
                         Close Lawsuit
                       </button>
 
-                    {renderMasterViewDocumentsPopup()}
-                    {renderMasterDocumentGenerationPopup()}
+                      {renderMasterViewDocumentsPopup()}
+                      {renderMasterDocumentGenerationPopup()}
+
+                    
+                    
                     </div>
                   </div>
 

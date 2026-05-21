@@ -24,12 +24,12 @@ const viewTitle = "Open the Master Lawsuit Clio document picker.";
 const genTitle = "Open the Master Lawsuit document generation preview popup.";
 const closeTitle = "Close Lawsuit workflow will be wired after payment/settlement safety checks.";
 
-const actionChunk = chunkAround(closeTitle, 3200, 1400);
+const actionChunk = chunkAround(closeTitle, 3600, 1400);
+const workspaceChunk = chunkAround("Read-only preview shell", 0, 2600);
 const viewButtonChunk = chunkAround(viewTitle, 200, 900);
 const genButtonChunk = chunkAround(genTitle, 200, 900);
 const openChunk = functionChunk("openMasterViewDocumentsPopup");
 const launchChunk = functionChunk("launchMasterDocumentGenerationDialog");
-const workspaceChunk = chunkAround("Read-only preview shell", 0, 2200);
 
 const checks = [
   {
