@@ -2767,7 +2767,7 @@ function masterSettlementDateFiledValue(): string {
 
   function sendMasterDocumentToPrintQueue(selectedTemplate: { key: string; label: string; description: string } | null) {
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
-    alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue will be connected to the generalized finalized-document queue backend.\n\nDocument: ${context.documentLabel}`);
+    alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue is reserved for the generalized finalized-document queue backend and is not yet writing queue records.\n\nDocument: ${context.documentLabel}`);
   }
 
   function formatMasterEmailThreadTimestamp(value: any): string {
@@ -3487,10 +3487,13 @@ function masterSettlementDateFiledValue(): string {
     const displayedTemplateOptions = isSettlementDocumentMode && settlementDocumentOptions.length > 0
       ? settlementDocumentOptions
       : sortedTemplateOptions;
-    const displayedSelectedTemplate = displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) || null;
+    const displayedSelectedTemplate =
+      displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) ||
+      displayedTemplateOptions.find((option: any) => option.label.toLowerCase() === masterDocumentTemplateQuery.trim().toLowerCase()) ||
+      null;
 
     const selectedTemplate =
-      displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) || null;
+      displayedSelectedTemplate || null;
 
     const canFinalize =
       Boolean(selectedTemplate) &&
@@ -3712,8 +3715,8 @@ function masterSettlementDateFiledValue(): string {
                   onChange={(event) => {
                     const value = event.target.value;
                     setMasterDocumentTemplateQuery(value);
-                    const match = sortedTemplateOptions.find(
-                      (option) => option.label.toLowerCase() === value.trim().toLowerCase()
+                    const match = displayedTemplateOptions.find(
+                      (option: any) => option.label.toLowerCase() === value.trim().toLowerCase()
                     );
                     if (match) {
                       setMasterSelectedDocumentTemplateKey(match.key);
@@ -3740,7 +3743,7 @@ function masterSettlementDateFiledValue(): string {
                   ))}
                 </datalist>
 
-                {masterSelectedDocumentTemplateKey && displayedSelectedTemplate && (
+                {displayedSelectedTemplate && (
                   <div
                     style={{
                       border: "1px solid #c7d2fe",
@@ -3753,6 +3756,17 @@ function masterSettlementDateFiledValue(): string {
                   >
                     <strong>Selected:</strong> {displayedSelectedTemplate.label}
                     <div style={{ marginTop: 4, color: "#475569" }}>{displayedSelectedTemplate.description}</div>
+                  </div>
+                )}
+
+                {displayedSelectedTemplate && masterDocumentWorkflowStage === "select" && (
+                  <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+                    {actionButton(
+                      "Continue",
+                      () => setMasterDocumentWorkflowStage("chooseAction"),
+                      false,
+                      "Continue to preview or edit the selected document.",
+                    )}
                   </div>
                 )}
 
@@ -3813,7 +3827,7 @@ function masterSettlementDateFiledValue(): string {
                 </button>
               </div>
 
-              {false && masterDocumentWorkflowStage === "preview" && displayedSelectedTemplate && (
+              {masterDocumentWorkflowStage === "preview" && displayedSelectedTemplate && (
                 <div
                   style={{
                     border: "1px solid #bfdbfe",
@@ -3824,7 +3838,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Preview shell:</strong> {displayedSelectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this is a local preview shell using the master lawsuit document packet; no PDF or final file is generated in this placeholder state.
+                  <strong>Preview shell:</strong> {displayedSelectedTemplate?.label || "Selected document"} opens in the Barsh Matters preview shell using the current master lawsuit or settlement document packet.  No final file is created until the workflow is finalized.
                   <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                     <div><strong>Lawsuit ID:</strong> {masterDocumentPreviewText(templateFields.masterLawsuitId || uiFields.masterLawsuitId) || "—"}</div>
                     <div><strong>Provider:</strong> {masterDocumentPreviewText(templateFields.providerName || claimIndexFields.providerName) || "—"}</div>
@@ -3836,7 +3850,7 @@ function masterSettlementDateFiledValue(): string {
                 </div>
               )}
 
-              {false && masterDocumentWorkflowStage === "edit" && displayedSelectedTemplate && (
+              {masterDocumentWorkflowStage === "edit" && displayedSelectedTemplate && (
                 <div
                   style={{
                     border: "1px solid #ddd6fe",
@@ -3847,7 +3861,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.  No Word integration is faked here.
+                  <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} opens in the Barsh Matters edit shell using the current document data.  Full Word editing will be connected in the later template-generation phase.
                 </div>
               )}
             </section>
@@ -3908,7 +3922,7 @@ function masterSettlementDateFiledValue(): string {
                       lineHeight: 1.45,
                     }}
                   >
-                    <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.
+                    <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} opens in the Barsh Matters edit shell using the current document data.  Full Word editing will be connected in the later template-generation phase.
                   </div>
                 )}
 
@@ -3970,7 +3984,7 @@ function masterSettlementDateFiledValue(): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Finalize placeholder:</strong> This is the final review step.  When safe finalization is wired, this button will finalize the reviewed PDF, upload it to Clio as the document vault, and create the Barsh Matters document record.
+                  <strong>Finalize step:</strong> This is the final review step.  Use the delivery buttons below after reviewing the selected document data.  PDF finalization, Clio document-vault upload, and persistent Barsh Matters document records will be wired in the backend finalization phase.
                 </div>
               )}
             </section>
@@ -3995,7 +4009,7 @@ function masterSettlementDateFiledValue(): string {
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
                   {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this document to the shared Barsh Matters print queue after the print-queue backend is connected.")}
                 </div>
               </section>
             )}
@@ -4021,7 +4035,7 @@ function masterSettlementDateFiledValue(): string {
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {actionButton("Email Document", () => launchMasterDocumentEmail(displayedSelectedTemplate), false, "Open Outlook/mail compose with recipient and subject prefilled where available.")}
                   {actionButton("Print Document", () => launchMasterDocumentPrint(displayedSelectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
+                  {actionButton("Send to Print Queue", () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate), false, "Send this document to the shared Barsh Matters print queue after the print-queue backend is connected.")}
                 </div>
               </section>
             )}
