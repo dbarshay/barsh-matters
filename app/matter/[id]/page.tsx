@@ -576,6 +576,7 @@ const activeGroupKey =
   const [matterDocumentGenerationPopupOpen, setMatterDocumentGenerationPopupOpen] = useState(false);
   const [finalizeUploadLoading, setFinalizeUploadLoading] = useState(false);
   const [finalizeUploadResult, setFinalizeUploadResult] = useState<any>(null);
+  const [matterDocumentFinalizationResult, setMatterDocumentFinalizationResult] = useState<any>(null);
   const [finalizationHistory, setFinalizationHistory] = useState<any>(null);
   const [finalizationHistoryLoading, setFinalizationHistoryLoading] = useState(false);
   const [expandedFinalizationId, setExpandedFinalizationId] = useState<string | null>(null);
@@ -3366,6 +3367,168 @@ const activeGroupKey =
     }
   }
 
+  async function launchMatterStep2GeneratedDocumentEdit(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const masterLawsuitId = usableMasterLawsuitIdForDocuments();
+
+    if (!masterLawsuitId || !selectedTemplate?.key) {
+      alert("Select a document before editing.");
+      return;
+    }
+
+    const directMatterId = directMatterNumericIdForDocuments();
+    const directMatterDisplayNumber =
+      textValue(matter?.displayNumber || matter?.display_number) ||
+      (directMatterId ? `BRL${directMatterId}` : "");
+
+    if (!directMatterId) {
+      alert("No valid direct matter ID is available for working-document creation.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/documents/working-docx", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          confirmCreate: true,
+          masterLawsuitId,
+          uploadTargetMode: "direct-matter",
+          directMatterId,
+          directMatterDisplayNumber,
+          documentKeys: [selectedTemplate.key],
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.ok) {
+        alert(json?.error || "Could not create the working Word document.");
+        return;
+      }
+
+      const working = json.workingDocument || {};
+      const desktopWordUrl = working.msWordEditUrl || "";
+      const wordWebUrl = working.webUrl || "";
+
+      if (!desktopWordUrl && !wordWebUrl) {
+        alert("The working document was created, but Graph did not return an editable URL.");
+        return;
+      }
+
+      setMatterDocumentFinalizationResult({
+        ok: true,
+        action: "working-docx-create",
+        selectedDocument: json.selectedDocument,
+        workingDocument: working,
+        note: "Working DOCX created in Microsoft Graph/OneDrive. Edit and save in Word Web, then finalize to create the PDF delivery document.",
+      });
+      setMatterDocumentWorkflowStage("edit");
+    } catch (err: any) {
+      alert(err?.message || "Could not create the working Word document.");
+    }
+  }
+
+  async function launchMatterStep2PdfPreview(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (!selectedTemplate?.key) {
+      alert("Select a document before previewing.");
+      return;
+    }
+
+    const masterLawsuitId = usableMasterLawsuitIdForDocuments();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for PDF preview.  Load or connect a lawsuit first.");
+      return;
+    }
+
+    const directMatterId = directMatterNumericIdForDocuments();
+    const directMatterDisplayNumber =
+      textValue(matter?.displayNumber || matter?.display_number) ||
+      (directMatterId ? `BRL${directMatterId}` : "");
+
+    if (!directMatterId) {
+      alert("No valid direct matter ID is available for PDF preview.");
+      return;
+    }
+
+    const previewWindow = window.open("", "_blank");
+
+    if (previewWindow) {
+      previewWindow.document.write("<!doctype html><title>Preparing PDF Preview</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Preparing PDF preview...</body>");
+      previewWindow.document.close();
+    }
+
+    try {
+      setMatterDocumentWorkflowStage("preview");
+
+      let workingDocumentForPreview = matterDocumentFinalizationResult?.workingDocument || null;
+
+      if (!workingDocumentForPreview?.driveItemId) {
+        const workingResponse = await fetch("/api/documents/working-docx", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            confirmCreate: true,
+            masterLawsuitId,
+            uploadTargetMode: "direct-matter",
+            directMatterId,
+            directMatterDisplayNumber,
+            documentKeys: [selectedTemplate.key],
+          }),
+        });
+
+        const workingJson = await workingResponse.json().catch(() => null);
+
+        if (!workingResponse.ok || !workingJson?.ok || !workingJson?.workingDocument?.driveItemId) {
+          alert(workingJson?.error || "Could not create a working Word document for PDF preview.");
+          return;
+        }
+
+        workingDocumentForPreview = workingJson.workingDocument;
+        setMatterDocumentFinalizationResult({
+          ok: true,
+          action: "working-docx-create",
+          selectedDocument: workingJson.selectedDocument,
+          workingDocument: workingDocumentForPreview,
+          note: "Working DOCX created in Microsoft Graph/OneDrive for temporary PDF preview.",
+        });
+      }
+
+      const previewResponse = await fetch("/api/documents/preview-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workingDocumentDriveItemId: workingDocumentForPreview.driveItemId,
+          workingDocumentName: workingDocumentForPreview.name || selectedTemplate.label,
+          filename: workingDocumentForPreview.originalFilename || workingDocumentForPreview.name || selectedTemplate.label,
+        }),
+      });
+
+      if (!previewResponse.ok) {
+        const errorJson = await previewResponse.json().catch(() => null);
+        alert(errorJson?.error || "Could not generate the PDF preview.");
+        return;
+      }
+
+      const pdfBlob = await previewResponse.blob();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+
+      if (previewWindow) {
+        previewWindow.location.href = pdfUrl;
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120000);
+    } catch (err: any) {
+      alert(err?.message || "Could not generate the PDF preview.");
+    }
+  }
+
   async function finalizeMatterDocumentFromStep2(selectedTemplate: { key: string; label: string; description: string } | null) {
     if (documentPreviewLoading || finalizeUploadLoading) return;
 
@@ -3386,11 +3549,18 @@ const activeGroupKey =
       textValue(matter?.displayNumber || matter?.display_number) ||
       (directMatterId ? `BRL${directMatterId}` : "");
 
+    const workingDocumentForFinalization = matterDocumentFinalizationResult?.workingDocument || null;
+
+    if (!workingDocumentForFinalization?.driveItemId) {
+      alert("Barsh Matters could not find the working Word document.  Click Edit Document first, save in Word Web, then Finalize Document.");
+      return;
+    }
+
     const confirmed = confirm(
-      "FINALIZE DOCUMENT TO CLIO\n\n" +
+      "FINALIZE PDF TO CLIO\n\n" +
         "Document: " + (selectedTemplate.label || selectedTemplate.key) + "\n" +
         "Matter: " + (directMatterDisplayNumber || directMatterId || "Direct Matter") + "\n\n" +
-        "Barsh Matters will generate the final document and upload it to this direct bill matter's Clio Documents tab.  Exact duplicate filenames are skipped.\n\n" +
+        "Barsh Matters will convert the latest saved working Word document to PDF and upload the PDF to this direct bill matter's Clio Documents tab.  Exact duplicate filenames are skipped.\n\n" +
         "Continue?"
     );
 
@@ -3414,6 +3584,8 @@ const activeGroupKey =
           directMatterDisplayNumber,
           confirmUpload: true,
           documentKeys: [selectedTemplate.key],
+          workingDocumentDriveItemId: workingDocumentForFinalization?.driveItemId || "",
+          workingDocumentKey: matterDocumentFinalizationResult?.selectedDocument?.key || selectedTemplate.key,
         }),
       });
 
@@ -4974,19 +5146,19 @@ const activeGroupKey =
 
     const templateOptions = [
       {
-        key: "direct-matter-demand-letter",
-        label: "No-Fault Demand Letter",
-        description: "Draft demand package for this individual bill/matter.",
+        key: "bill-schedule",
+        label: "Bill Schedule",
+        description: "Schedule of lawsuit bills and balances for this direct matter.",
       },
       {
-        key: "direct-matter-bill-packet",
-        label: "Bill Packet",
-        description: "Bill-focused packet using the local matter fields.",
+        key: "packet-summary",
+        label: "Packet Summary",
+        description: "Internal filing and packet summary for this direct matter.",
       },
       {
-        key: "direct-matter-cover-letter",
-        label: "Cover Letter",
-        description: "General cover letter shell for this matter.",
+        key: "summons-complaint",
+        label: "Summons and Complaint",
+        description: "Summons and complaint packet for this direct matter.",
       },
     ];
 
@@ -5279,18 +5451,15 @@ const activeGroupKey =
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {actionButton(
                   "Preview PDF",
-                  () => {
-                    setMatterDocumentWorkflowStage("preview");
-                    void loadDocumentGenerationPreview();
-                  },
+                  () => launchMatterStep2PdfPreview(selectedTemplate),
                   !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : undefined
+                  !selectedTemplate ? "Select a document first." : "Open a temporary PDF preview without uploading to Clio."
                 )}
                 {actionButton(
                   "Edit Document",
-                  () => setMatterDocumentWorkflowStage("edit"),
+                  () => launchMatterStep2GeneratedDocumentEdit(selectedTemplate),
                   !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : undefined
+                  !selectedTemplate ? "Select a document first." : "Create a working DOCX and edit it in Word Web."
                 )}
                 {actionButton(
                   documentPreviewLoading || finalizeUploadLoading ? "Finalizing..." : "Finalize Document",
@@ -5372,7 +5541,7 @@ const activeGroupKey =
                       lineHeight: 1.45,
                     }}
                   >
-                    <strong>PDF preview shell:</strong> {selectedTemplate?.label || "Selected document"} will launch as a PDF preview after the PDF preview route is safely wired.  For now, this preview uses the local matter document packet.
+                    <strong>PDF preview:</strong> {selectedTemplate?.label || "Selected document"} opened as a temporary browser PDF preview.  This preview does not upload to Clio, create a finalization record, or affect the print queue.
                     <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                       <div><strong>Matter:</strong> {textValue(templateFields.displayNumber) || "—"}</div>
                       <div><strong>Provider:</strong> {textValue(templateFields.providerName) || "—"}</div>
@@ -5393,9 +5562,101 @@ const activeGroupKey =
                       padding: 14,
                       color: "#4c1d95",
                       lineHeight: 1.45,
+                      display: "grid",
+                      gap: 12,
                     }}
                   >
-                    <strong>Word editing placeholder:</strong> {selectedTemplate?.label || "Selected document"} will open for Word editing after safe document creation/editing infrastructure is added.
+                    <div>
+                      <strong>Working Word document:</strong> {matterDocumentFinalizationResult?.workingDocument?.name || selectedTemplate?.label || "Selected document"} was created in the Barsh Matters working-docs folder.  Use Word Web for editing.  Desktop Word remains available as an experimental option, but Word Web is the reliable editing path for this SharePoint/OneDrive working document.  Save your edits in Word Web, then return here and click Finalize Document.
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl || "";
+                          if (!url) {
+                            alert("No desktop Word link is available for this working document.");
+                            return;
+                          }
+                          const link = document.createElement("a");
+                          link.href = url;
+                          link.style.display = "none";
+                          link.rel = "noopener noreferrer";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        disabled={!matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl}
+                        style={{
+                          border: "1px solid #7c3aed",
+                          background: "#fff",
+                          color: "#4c1d95",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "pointer" : "not-allowed",
+                          opacity: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Try Desktop Word
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                          if (!url) {
+                            alert("No Word web link is available for this working document.");
+                            return;
+                          }
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }}
+                        disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
+                        style={{
+                          border: "1px solid #7c3aed",
+                          background: "#4f46e5",
+                          color: "#fff",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                          opacity: matterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Open in Word Web
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                          if (!url) {
+                            alert("No Word web link is available to copy.");
+                            return;
+                          }
+                          try {
+                            await navigator.clipboard.writeText(url);
+                            alert("Word web link copied.");
+                          } catch {
+                            alert("Could not copy the Word web link automatically.");
+                          }
+                        }}
+                        disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
+                        style={{
+                          border: "1px solid #c4b5fd",
+                          background: "#fff",
+                          color: "#4c1d95",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                          opacity: matterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Copy Word Web Link
+                      </button>
+                    </div>
                   </div>
                 )}
 

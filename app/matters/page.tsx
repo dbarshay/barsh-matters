@@ -3672,6 +3672,13 @@ function masterSettlementDateFiledValue(): string {
       return;
     }
 
+    const previewWindow = window.open("", "_blank");
+
+    if (previewWindow) {
+      previewWindow.document.write("<!doctype html><title>Preparing PDF Preview</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Preparing PDF preview...</body>");
+      previewWindow.document.close();
+    }
+
     try {
       setMasterDocumentWorkflowStage("preview");
 
@@ -3728,12 +3735,9 @@ function masterSettlementDateFiledValue(): string {
 
       const pdfBlob = await previewResponse.blob();
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const opened = window.open(pdfUrl, "_blank", "noopener,noreferrer");
 
-      if (!opened) {
-        alert("The browser blocked the PDF preview window.  Allow popups for Barsh Matters and try again.");
-        URL.revokeObjectURL(pdfUrl);
-        return;
+      if (previewWindow) {
+        previewWindow.location.href = pdfUrl;
       }
 
       window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120000);
@@ -5181,10 +5185,7 @@ function masterSettlementDateFiledValue(): string {
                           alert("No Word web link is available for this working document.");
                           return;
                         }
-                        const opened = window.open(url, "_blank", "noopener,noreferrer");
-                        if (!opened) {
-                          navigator.clipboard?.writeText(url).catch(() => undefined);
-                        }
+                        window.open(url, "_blank", "noopener,noreferrer");
                       }}
                       disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
                       style={{
@@ -5337,10 +5338,7 @@ function masterSettlementDateFiledValue(): string {
                             alert("No Word web link is available for this working document.");
                             return;
                           }
-                          const opened = window.open(url, "_blank", "noopener,noreferrer");
-                          if (!opened) {
-                            navigator.clipboard?.writeText(url).catch(() => undefined);
-                          }
+                          window.open(url, "_blank", "noopener,noreferrer");
                         }}
                         disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
                         style={{
