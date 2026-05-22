@@ -46,6 +46,53 @@ function clioMatterUrl(matterId: any): string {
   return id ? `https://app.clio.com/nc/#/matters/${id}` : "";
 }
 
+function clioDocumentOpenUrl(row: any, mode: "inline" | "download" = "inline"): string {
+  const documentId = textValue(row?.clioDocumentId);
+  const filename = textValue(row?.filename) || textValue(row?.clioDocumentName) || "document.pdf";
+
+  if (!documentId) return "";
+
+  const params = new URLSearchParams();
+  params.set("documentId", documentId);
+  params.set("filename", filename);
+  params.set("mode", mode);
+
+  return "/api/documents/clio-document-open?" + params.toString();
+}
+
+function rowSnapshot(row: any): any {
+  return row?.documentSnapshot && typeof row.documentSnapshot === "object" ? row.documentSnapshot : {};
+}
+
+function queueSourceLabel(row: any): string {
+  const snap = rowSnapshot(row);
+  const source = textValue(snap.source).toLowerCase();
+  const display = textValue(row?.masterDisplayNumber || snap.masterDisplayNumber || snap.directMatterDisplayNumber);
+
+  if (source === "direct_matter") return display ? `${display} - Direct Matter` : "Direct Matter";
+  if (display && display.startsWith("BRL")) {
+    if (display === "BRL30148") return `${display} - Lawsuit`;
+    return `${display} - Matter`;
+  }
+  if (textValue(row?.documentKey).toLowerCase().includes("settlement")) return "Settlement / Local";
+  return display || "Document";
+}
+
+function barshMatterHref(row: any): string {
+  const snap = rowSnapshot(row);
+  const display = textValue(row?.masterDisplayNumber || snap.directMatterDisplayNumber || snap.masterDisplayNumber);
+
+  if (display.startsWith("BRL30148")) {
+    return `/matters?master=${encodeURIComponent(textValue(row?.masterLawsuitId))}`;
+  }
+
+  if (display.startsWith("BRL")) {
+    return `/matter/${encodeURIComponent(display)}`;
+  }
+
+  return "";
+}
+
 const statusOptions: Array<{ value: PrintQueueStatus; label: string; countKey: string }> = [
   { value: "", label: "All", countKey: "all" },
   { value: "queued", label: "Queued", countKey: "queued" },
@@ -59,6 +106,8 @@ export default function PrintQueuePage() {
   const [masterLawsuitId, setMasterLawsuitId] = useState("");
   const [limit, setLimit] = useState(100);
   const [queue, setQueue] = useState<any>(null);
+  const [finalizedPdfOnly, setFinalizedPdfOnly] = useState(true);
+  const [dedupeClioDocumentId, setDedupeClioDocumentId] = useState(true);
   const [loading, setLoading] = useState(false);
   const [statusLoadingId, setStatusLoadingId] = useState<number | null>(null);
   const [statusResult, setStatusResult] = useState<any>(null);
@@ -75,6 +124,8 @@ export default function PrintQueuePage() {
     try {
       const url = new URL("/api/documents/print-queue", window.location.origin);
       url.searchParams.set("limit", String(limit));
+      url.searchParams.set("finalizedPdfOnly", finalizedPdfOnly ? "true" : "false");
+      url.searchParams.set("dedupeClioDocumentId", dedupeClioDocumentId ? "true" : "false");
 
       const cleanMaster = masterLawsuitId.trim();
       if (cleanMaster) {
@@ -169,6 +220,45 @@ export default function PrintQueuePage() {
     } finally {
       setStatusLoadingId(null);
     }
+  }
+
+  function openQueuedDocument(row: any, mode: "inline" | "download" = "inline") {
+    const url = clioDocumentOpenUrl(row, mode);
+
+    if (!url) {
+      alert("This print queue row does not have a Clio document ID available to open.");
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function printQueuedDocument(row: any) {
+    const url = clioDocumentOpenUrl(row, "inline");
+
+    if (!url) {
+      alert("This print queue row does not have a Clio document ID available to print.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) return;
+
+    printWindow.document.write("<!doctype html><title>Preparing Print Document</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Preparing queued document for printing...</body>");
+    printWindow.document.close();
+    printWindow.location.href = url;
+
+    [2000, 4000, 6500].forEach((delay) => {
+      window.setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch {
+          // Browser-controlled print behavior; the opened PDF can still be printed manually.
+        }
+      }, delay);
+    });
   }
 
   useEffect(() => {
@@ -333,6 +423,25 @@ export default function PrintQueuePage() {
           </button>
         </div>
 
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginTop: 10 }}>
+          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={finalizedPdfOnly}
+              onChange={(event) => setFinalizedPdfOnly(event.target.checked)}
+            />
+            Finalized PDFs only
+          </label>
+          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={dedupeClioDocumentId}
+              onChange={(event) => setDedupeClioDocumentId(event.target.checked)}
+            />
+            Hide duplicate Clio documents
+          </label>
+        </div>
+
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 10 }}>
           {statusOptions.map((option) => {
             const active = statusFilter === option.value;
@@ -413,7 +522,10 @@ export default function PrintQueuePage() {
           </div>
           <div style={{ color: "#475569", fontSize: 12 }}>
             Showing {num(queue?.count)} row(s)
+            {typeof queue?.rawCount === "number" && queue.rawCount !== queue.count ? ` from ${queue.rawCount} raw row(s)` : ""}
             {queue?.status ? ` with status "${queue.status}"` : ""}
+            {queue?.finalizedPdfOnly ? " · finalized PDFs only" : ""}
+            {queue?.dedupeClioDocumentId ? " · duplicates hidden" : ""}
             {queue?.masterLawsuitId ? ` for ${queue.masterLawsuitId}` : ""}
           </div>
         </div>
@@ -434,87 +546,145 @@ export default function PrintQueuePage() {
               <thead>
                 <tr>
                   <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Master Lawsuit</th>
-                  <th style={thStyle}>Master Matter</th>
+                  <th style={thStyle}>Source</th>
+                  <th style={thStyle}>Lawsuit ID</th>
+                  <th style={thStyle}>Matter / Clio</th>
                   <th style={thStyle}>Document</th>
                   <th style={thStyle}>Filename</th>
                   <th style={thStyle}>Queued At</th>
                   <th style={thStyle}>Printed At</th>
                   <th style={thStyle}>Clio Document ID</th>
-                  <th style={thStyle}>Actions</th>
+                  <th style={thStyle}>Open / Print</th>
+                  <th style={thStyle}>Status Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row: any) => (
-                  <tr key={textValue(row.id)}>
-                    <td style={tdStyle}>{textValue(row.status) || "—"}</td>
-                    <td style={tdStyle}>{textValue(row.masterLawsuitId) || "—"}</td>
-                    <td style={tdStyle}>
-                      {row.masterMatterId ? (
+                {rows.map((row: any) => {
+                  const appHref = barshMatterHref(row);
+                  const clioDocUrl = clioDocumentOpenUrl(row, "inline");
+                  const sourceLabel = queueSourceLabel(row);
+
+                  return (
+                    <tr key={textValue(row.id)}>
+                      <td style={tdStyle}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            padding: "3px 8px",
+                            borderRadius: 999,
+                            border: "1px solid #cbd5e1",
+                            background:
+                              textValue(row.status).toLowerCase() === "queued"
+                                ? "#eff6ff"
+                                : textValue(row.status).toLowerCase() === "printed"
+                                  ? "#dcfce7"
+                                  : textValue(row.status).toLowerCase() === "hold"
+                                    ? "#fef3c7"
+                                    : "#f1f5f9",
+                            fontWeight: 850,
+                          }}
+                        >
+                          {textValue(row.status) || "—"}
+                        </span>
+                      </td>
+                      <td style={tdStyle}>{sourceLabel}</td>
+                      <td style={tdStyle}>{textValue(row.masterLawsuitId) || "—"}</td>
+                      <td style={tdStyle}>
                         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <a href={`/matter/${row.masterMatterId}`}>
-                            {textValue(row.masterDisplayNumber) || textValue(row.masterMatterId)}
-                          </a>
-                          <a
-                            href={clioMatterUrl(row.masterMatterId)}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ color: "#475569", fontSize: 11 }}
-                          >
-                            Open in Clio
-                          </a>
+                          {appHref ? (
+                            <a href={appHref}>
+                              {textValue(row.masterDisplayNumber) || textValue(row.masterMatterId) || "Open"}
+                            </a>
+                          ) : (
+                            <span>{textValue(row.masterDisplayNumber) || textValue(row.masterMatterId) || "—"}</span>
+                          )}
+                          {row.masterMatterId ? (
+                            <a
+                              href={clioMatterUrl(row.masterMatterId)}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: "#475569", fontSize: 11 }}
+                            >
+                              Open in Clio
+                            </a>
+                          ) : null}
                         </div>
-                      ) : (
-                        textValue(row.masterDisplayNumber) || "—"
-                      )}
-                    </td>
-                    <td style={tdStyle}>{textValue(row.documentLabel) || textValue(row.documentKey) || "—"}</td>
-                    <td style={{ ...tdStyle, minWidth: 360 }}>{textValue(row.filename) || "—"}</td>
-                    <td style={tdStyle}>{shortDateTime(row.queuedAt)}</td>
-                    <td style={tdStyle}>{shortDateTime(row.printedAt)}</td>
-                    <td style={tdStyle}>{textValue(row.clioDocumentId) || "—"}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                        {(["printed", "hold", "skipped", "queued"] as const).map((statusOption) => (
+                      </td>
+                      <td style={tdStyle}>{textValue(row.documentLabel) || textValue(row.documentKey) || "—"}</td>
+                      <td style={{ ...tdStyle, minWidth: 360 }}>
+                        <div style={{ fontWeight: 750 }}>{textValue(row.filename) || "—"}</div>
+                        {textValue(row.documentSnapshot?.printCandidateReason) && (
+                          <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                            {textValue(row.documentSnapshot.printCandidateReason)}
+                          </div>
+                        )}
+                      </td>
+                      <td style={tdStyle}>{shortDateTime(row.queuedAt)}</td>
+                      <td style={tdStyle}>{shortDateTime(row.printedAt)}</td>
+                      <td style={tdStyle}>{textValue(row.clioDocumentId) || "—"}</td>
+                      <td style={tdStyle}>
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                           <button
-                            key={`${textValue(row.id)}-${statusOption}`}
                             type="button"
-                            onClick={() => updatePrintQueueStatus(row, statusOption)}
-                            disabled={
-                              statusLoadingId === Number(row.id) ||
-                              textValue(row.status).toLowerCase() === statusOption
-                            }
-                            style={{
-                              fontSize: 11,
-                              padding: "2px 6px",
-                              border: "1px solid #94a3b8",
-                              borderRadius: 4,
-                              background:
-                                textValue(row.status).toLowerCase() === statusOption
-                                  ? "#e2e8f0"
-                                  : "#fff",
-                              cursor:
+                            onClick={() => openQueuedDocument(row, "inline")}
+                            disabled={!clioDocUrl}
+                            style={smallActionButtonStyle}
+                          >
+                            Open PDF
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => printQueuedDocument(row)}
+                            disabled={!clioDocUrl}
+                            style={smallActionButtonStyle}
+                          >
+                            Print
+                          </button>
+                        </div>
+                      </td>
+                      <td style={tdStyle}>
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                          {(["printed", "hold", "skipped", "queued"] as const).map((statusOption) => (
+                            <button
+                              key={`${textValue(row.id)}-${statusOption}`}
+                              type="button"
+                              onClick={() => updatePrintQueueStatus(row, statusOption)}
+                              disabled={
                                 statusLoadingId === Number(row.id) ||
                                 textValue(row.status).toLowerCase() === statusOption
-                                  ? "not-allowed"
-                                  : "pointer",
-                            }}
-                          >
-                            {statusLoadingId === Number(row.id)
-                              ? "Updating..."
-                              : statusOption === "printed"
-                                ? "Printed"
-                                : statusOption === "hold"
-                                  ? "Hold"
-                                  : statusOption === "skipped"
-                                    ? "Skipped"
-                                    : "Re-Queue"}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                              }
+                              style={{
+                                fontSize: 11,
+                                padding: "2px 6px",
+                                border: "1px solid #94a3b8",
+                                borderRadius: 4,
+                                background:
+                                  textValue(row.status).toLowerCase() === statusOption
+                                    ? "#e2e8f0"
+                                    : "#fff",
+                                cursor:
+                                  statusLoadingId === Number(row.id) ||
+                                  textValue(row.status).toLowerCase() === statusOption
+                                    ? "not-allowed"
+                                    : "pointer",
+                              }}
+                            >
+                              {statusLoadingId === Number(row.id)
+                                ? "Updating..."
+                                : statusOption === "printed"
+                                  ? "Printed"
+                                  : statusOption === "hold"
+                                    ? "Hold"
+                                    : statusOption === "skipped"
+                                      ? "Skipped"
+                                      : "Re-Queue"}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -530,6 +700,17 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
   borderRadius: 6,
   background: "#fff",
+};
+
+const smallActionButtonStyle: React.CSSProperties = {
+  fontSize: 11,
+  padding: "3px 7px",
+  border: "1px solid #2563eb",
+  borderRadius: 5,
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  fontWeight: 800,
+  cursor: "pointer",
 };
 
 const primaryButtonStyle: React.CSSProperties = {

@@ -152,6 +152,8 @@ export async function GET(req: NextRequest) {
     const masterLawsuitId = clean(req.nextUrl.searchParams.get("masterLawsuitId"));
     const status = clean(req.nextUrl.searchParams.get("status"));
     const limit = positiveInt(req.nextUrl.searchParams.get("limit"), 50, 200);
+    const finalizedPdfOnly = clean(req.nextUrl.searchParams.get("finalizedPdfOnly")) === "true";
+    const dedupeClioDocumentId = clean(req.nextUrl.searchParams.get("dedupeClioDocumentId")) !== "false";
 
     const whereBase = {
       ...(masterLawsuitId ? { masterLawsuitId } : {}),
@@ -190,15 +192,39 @@ export async function GET(req: NextRequest) {
       }
     );
 
+    let displayRows = rows;
+
+    if (finalizedPdfOnly) {
+      displayRows = displayRows.filter((row: any) =>
+        clean(row?.filename).toLowerCase().endsWith(".pdf") && clean(row?.clioDocumentId)
+      );
+    }
+
+    if (dedupeClioDocumentId) {
+      const seen = new Set<string>();
+      displayRows = displayRows.filter((row: any) => {
+        const clioDocumentId = clean(row?.clioDocumentId);
+        const documentKey = clean(row?.documentKey).toLowerCase();
+        const dedupeKey = clioDocumentId ? `${clioDocumentId}|${documentKey}` : "";
+        if (!dedupeKey) return true;
+        if (seen.has(dedupeKey)) return false;
+        seen.add(dedupeKey);
+        return true;
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       action: "print-queue-list",
       generatedAt: new Date().toISOString(),
       masterLawsuitId: masterLawsuitId || null,
       status: status || null,
-      count: rows.length,
+      count: displayRows.length,
+      rawCount: rows.length,
+      finalizedPdfOnly,
+      dedupeClioDocumentId,
       statusCounts,
-      rows,
+      rows: displayRows,
       safety: {
         readOnly: true,
         noClioRecordsChanged: true,
@@ -419,6 +445,21 @@ export async function POST(req: NextRequest) {
 
       if (prior) {
         existing.push(prior);
+        continue;
+      }
+
+      const existingByClioDocument = clean(candidate.clioDocumentId)
+        ? await prisma.documentPrintQueueItem.findFirst({
+            where: {
+              clioDocumentId: clean(candidate.clioDocumentId),
+              documentKey: clean(candidate.key) || clean(candidate.filename),
+            },
+            orderBy: { queuedAt: "desc" },
+          })
+        : null;
+
+      if (existingByClioDocument) {
+        existing.push(existingByClioDocument);
         continue;
       }
 
