@@ -3659,9 +3659,87 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
-  function launchMasterStep2PdfPreview(selectedTemplate: { key: string; label: string; description: string } | null) {
-    alert("PDF preview is not wired yet because the current document-generation routes produce DOCX files only.  The next backend step is PDF conversion/generation, then this button can open the PDF inline for Adobe/browser handling.");
-    setMasterDocumentWorkflowStage("preview");
+  async function launchMasterStep2PdfPreview(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (!selectedTemplate?.key) {
+      alert("Select a document before previewing.");
+      return;
+    }
+
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+
+    if (!masterLawsuitId) {
+      alert("No valid Master Lawsuit ID is available for PDF preview.");
+      return;
+    }
+
+    try {
+      setMasterDocumentWorkflowStage("preview");
+
+      let workingDocumentForPreview = masterDocumentFinalizationResult?.workingDocument || null;
+
+      if (!workingDocumentForPreview?.driveItemId) {
+        const workingResponse = await fetch("/api/documents/working-docx", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            confirmCreate: true,
+            masterLawsuitId,
+            uploadTargetMode: "master",
+            documentKeys: [selectedTemplate.key],
+          }),
+        });
+
+        const workingJson = await workingResponse.json().catch(() => null);
+
+        if (!workingResponse.ok || !workingJson?.ok || !workingJson?.workingDocument?.driveItemId) {
+          alert(workingJson?.error || "Could not create a working Word document for PDF preview.");
+          return;
+        }
+
+        workingDocumentForPreview = workingJson.workingDocument;
+        setMasterDocumentFinalizationResult({
+          ok: true,
+          action: "working-docx-create",
+          selectedDocument: workingJson.selectedDocument,
+          workingDocument: workingDocumentForPreview,
+          note: "Working DOCX created in Microsoft Graph/OneDrive for temporary PDF preview.",
+        });
+      }
+
+      const previewResponse = await fetch("/api/documents/preview-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workingDocumentDriveItemId: workingDocumentForPreview.driveItemId,
+          workingDocumentName: workingDocumentForPreview.name || selectedTemplate.label,
+          filename: workingDocumentForPreview.originalFilename || workingDocumentForPreview.name || selectedTemplate.label,
+        }),
+      });
+
+      if (!previewResponse.ok) {
+        const errorJson = await previewResponse.json().catch(() => null);
+        alert(errorJson?.error || "Could not generate the PDF preview.");
+        return;
+      }
+
+      const pdfBlob = await previewResponse.blob();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const opened = window.open(pdfUrl, "_blank", "noopener,noreferrer");
+
+      if (!opened) {
+        alert("The browser blocked the PDF preview window.  Allow popups for Barsh Matters and try again.");
+        URL.revokeObjectURL(pdfUrl);
+        return;
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120000);
+    } catch (err: any) {
+      alert(err?.message || "Could not generate the PDF preview.");
+    }
   }
 
   async function finalizeMasterDocumentFromStep2(selectedTemplate: { key: string; label: string; description: string } | null) {
