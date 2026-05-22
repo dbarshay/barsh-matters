@@ -3633,23 +3633,18 @@ function masterSettlementDateFiledValue(): string {
       }
 
       const working = json.workingDocument || {};
-      const wordUrl = working.msWordEditUrl || "";
-      const fallbackUrl = working.webUrl || "";
+      const desktopWordUrl = working.msWordEditUrl || "";
+      const wordWebUrl = working.webUrl || "";
 
-      if (!wordUrl && !fallbackUrl) {
+      if (!desktopWordUrl && !wordWebUrl) {
         alert("The working document was created, but Graph did not return an editable URL.");
         return;
       }
 
-      const opened = window.open(wordUrl || fallbackUrl, "_blank", "noopener,noreferrer");
-
-      if (!opened && fallbackUrl) {
-        const fallback = window.open(fallbackUrl, "_blank", "noopener,noreferrer");
-        if (!fallback) {
-          alert("The browser blocked the Word edit window.  Please allow popups for Barsh Matters and try again.");
-          return;
-        }
-      }
+      // Do not auto-launch desktop Word here.  Desktop Word may show an OS-level
+      // "Can't Open File" dialog for SharePoint/OneDrive business URLs.  Instead,
+      // create the working DOCX and show explicit Desktop Word / Word Web choices
+      // in the edit panel below.
 
       setMasterDocumentFinalizationResult({
         ok: true,
@@ -5060,9 +5055,104 @@ function masterSettlementDateFiledValue(): string {
                     padding: 14,
                     color: "#4c1d95",
                     lineHeight: 1.45,
+                    display: "grid",
+                    gap: 12,
                   }}
                 >
-                  <strong>Word editing placeholder:</strong> {displayedSelectedTemplate?.label || "Selected document"} opens in the Barsh Matters edit shell using the current document data.  Full Word editing will be connected in the later template-generation phase.
+                  <div>
+                    <strong>Working Word document:</strong> {masterDocumentFinalizationResult?.workingDocument?.name || displayedSelectedTemplate?.label || "Selected document"} was created in the Barsh Matters working-docs folder.  Use Word Web for editing.  Desktop Word remains available as an experimental option, but Word Web is the reliable editing path for this SharePoint/OneDrive working document.  Save your edits in Word Web, then return here and click Finalize Document.
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl || "";
+                        if (!url) {
+                          alert("No desktop Word link is available for this working document.");
+                          return;
+                        }
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.style.display = "none";
+                        link.rel = "noopener noreferrer";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      disabled={!masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl}
+                      style={{
+                        border: "1px solid #7c3aed",
+                        background: "#4f46e5",
+                        color: "#fff",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "pointer" : "not-allowed",
+                        opacity: masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? 1 : 0.55,
+                      }}
+                    >
+                      Try Desktop Word
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = masterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                        if (!url) {
+                          alert("No Word web link is available for this working document.");
+                          return;
+                        }
+                        const opened = window.open(url, "_blank", "noopener,noreferrer");
+                        if (!opened) {
+                          navigator.clipboard?.writeText(url).catch(() => undefined);
+                        }
+                      }}
+                      disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
+                      style={{
+                        border: "1px solid #c4b5fd",
+                        background: "#fff",
+                        color: "#4c1d95",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: masterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                        opacity: masterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                      }}
+                    >
+                      Open in Word Web
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const url = masterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                        if (!url) {
+                          alert("No Word web link is available to copy.");
+                          return;
+                        }
+                        try {
+                          await navigator.clipboard.writeText(url);
+                          alert("Word web link copied.");
+                        } catch {
+                          alert("Could not copy the Word web link automatically.");
+                        }
+                      }}
+                      disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
+                      style={{
+                        border: "1px solid #c4b5fd",
+                        background: "#fff",
+                        color: "#4c1d95",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: masterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                        opacity: masterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                      }}
+                    >
+                      Copy Word Web Link
+                    </button>
+                  </div>
                 </div>
               )}
             </section>
@@ -5121,9 +5211,104 @@ function masterSettlementDateFiledValue(): string {
                       padding: 14,
                       color: "#4c1d95",
                       lineHeight: 1.45,
+                      display: "grid",
+                      gap: 12,
                     }}
                   >
-                    <strong>Working Word document:</strong> {displayedSelectedTemplate?.label || "Selected document"} opens from the Barsh Matters working-docs folder in Microsoft Graph/OneDrive. Save changes in Word, then use Finalize Document to create the PDF delivery version.
+                    <div>
+                      <strong>Working Word document:</strong> {masterDocumentFinalizationResult?.workingDocument?.name || displayedSelectedTemplate?.label || "Selected document"} was created in the Barsh Matters working-docs folder.  Use Word Web for editing.  Desktop Word remains available as an experimental option, but Word Web is the reliable editing path for this SharePoint/OneDrive working document.  Save your edits in Word Web, then return here and click Finalize Document.
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl || "";
+                          if (!url) {
+                            alert("No desktop Word link is available for this working document.");
+                            return;
+                          }
+                          const link = document.createElement("a");
+                          link.href = url;
+                          link.style.display = "none";
+                          link.rel = "noopener noreferrer";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        disabled={!masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl}
+                        style={{
+                          border: "1px solid #7c3aed",
+                          background: "#4f46e5",
+                          color: "#fff",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "pointer" : "not-allowed",
+                          opacity: masterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Try Desktop Word
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = masterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                          if (!url) {
+                            alert("No Word web link is available for this working document.");
+                            return;
+                          }
+                          const opened = window.open(url, "_blank", "noopener,noreferrer");
+                          if (!opened) {
+                            navigator.clipboard?.writeText(url).catch(() => undefined);
+                          }
+                        }}
+                        disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
+                        style={{
+                          border: "1px solid #7c3aed",
+                          background: "#4f46e5",
+                          color: "#fff",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: masterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                          opacity: masterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Open in Word Web
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const url = masterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                          if (!url) {
+                            alert("No Word web link is available to copy.");
+                            return;
+                          }
+                          try {
+                            await navigator.clipboard.writeText(url);
+                            alert("Word web link copied.");
+                          } catch {
+                            alert("Could not copy the Word web link automatically.");
+                          }
+                        }}
+                        disabled={!masterDocumentFinalizationResult?.workingDocument?.webUrl}
+                        style={{
+                          border: "1px solid #7c3aed",
+                          background: "#4f46e5",
+                          color: "#fff",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: masterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                          opacity: masterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
+                        }}
+                      >
+                        Copy Word Web Link
+                      </button>
+                    </div>
                   </div>
                 )}
 

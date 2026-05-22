@@ -20,6 +20,70 @@ function safeGraphFilename(value: unknown): string {
     .slice(0, 180);
 }
 
+function encodeSharePointPathSegment(value: string): string {
+  return encodeURIComponent(value).replace(/%20/g, "%20");
+}
+
+function buildDesktopWordFileUrl(params: {
+  parentFolderWebUrl: string;
+  webUrl: string;
+  filename: string;
+}): string {
+  const parentFolderWebUrl = clean(params.parentFolderWebUrl);
+  const webUrl = clean(params.webUrl);
+  const filename = clean(params.filename);
+
+  if (parentFolderWebUrl && filename) {
+    return `${parentFolderWebUrl.replace(/\/$/, "")}/${encodeSharePointPathSegment(filename)}`;
+  }
+
+  if (!webUrl || !filename) return "";
+
+  try {
+    const parsed = new URL(webUrl);
+    const marker = "/_layouts/15/Doc.aspx";
+    const markerIndex = parsed.pathname.toLowerCase().indexOf(marker.toLowerCase());
+
+    if (markerIndex < 0) {
+      return webUrl;
+    }
+
+    const siteRootPath = parsed.pathname.slice(0, markerIndex).replace(/\/$/, "");
+    return `${parsed.origin}${siteRootPath}/Documents/${encodeSharePointPathSegment(filename)}`;
+  } catch {
+    return webUrl;
+  }
+}
+
+async function getDriveItemWebUrl(params: {
+  mailboxUserId: string;
+  driveItemId: string;
+}): Promise<string> {
+  const mailboxUserId = clean(params.mailboxUserId);
+  const driveItemId = clean(params.driveItemId);
+
+  if (!mailboxUserId || !driveItemId) return "";
+
+  const url =
+    `${graphApiBase()}/users/${encodeURIComponent(mailboxUserId)}` +
+    `/drive/items/${encodeURIComponent(driveItemId)}?$select=webUrl`;
+
+  const res = await graphRawFetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const json = await readGraphJson(res);
+
+  if (!res.ok) {
+    return "";
+  }
+
+  return clean(json?.webUrl);
+}
+
 async function graphRawFetch(url: string, init: RequestInit = {}) {
   const tokenResult = await requestMicrosoftGraphAppToken();
 
@@ -63,11 +127,9 @@ export async function uploadWorkingDocxToGraph(params: {
     throw new Error("Missing MICROSOFT_GRAPH_MAILBOX_USER_ID for working document upload.");
   }
 
-  const safeFilename = safeGraphFilename(params.filename);
+  const originalFilename = safeGraphFilename(params.filename);
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const uniqueFilename = safeFilename.toLowerCase().endsWith(".docx")
-    ? `${safeFilename.slice(0, -5)} - Working ${timestamp}.docx`
-    : `${safeFilename} - Working ${timestamp}.docx`;
+  const uniqueFilename = `BM-Working-${timestamp}.docx`;
   const folder = clean(params.folder) || "BarshMattersWorkingDocs";
   const uploadUrl =
     `${graphApiBase()}/users/${encodeURIComponent(mailboxUserId)}` +
@@ -93,6 +155,7 @@ export async function uploadWorkingDocxToGraph(params: {
 
   const driveItemId = clean(uploadJson?.id);
   const webUrl = clean(uploadJson?.webUrl);
+  const parentReference = uploadJson?.parentReference || null;
   const name = clean(uploadJson?.name) || uniqueFilename;
 
   if (!driveItemId) {
@@ -103,16 +166,30 @@ export async function uploadWorkingDocxToGraph(params: {
     `${graphApiBase()}/users/${encodeURIComponent(mailboxUserId)}` +
     `/drive/items/${encodeURIComponent(driveItemId)}/content`;
 
+  const parentFolderWebUrl = await getDriveItemWebUrl({
+    mailboxUserId,
+    driveItemId: clean(parentReference?.id),
+  });
+
+  const desktopWordFileUrl = buildDesktopWordFileUrl({
+    parentFolderWebUrl,
+    webUrl,
+    filename: name,
+  });
+
   return {
     ok: true,
     mailboxUserId,
     driveItemId,
     name,
+    originalFilename,
     webUrl,
+    parentFolderWebUrl,
+    desktopWordFileUrl,
     downloadUrl,
     size: Number(uploadJson?.size || params.docxBuffer.byteLength),
     contentType: DOCX_CONTENT_TYPE,
-    msWordEditUrl: webUrl ? `ms-word:ofe|u|${webUrl}` : "",
+    msWordEditUrl: desktopWordFileUrl ? `ms-word:ofe|u|${desktopWordFileUrl}` : "",
     graphSource: "users-drive-working-docx",
   };
 }
@@ -285,18 +362,32 @@ export async function findLatestWorkingDocxInGraph(params: {
   const driveItemId = clean(row.id);
   const webUrl = clean(row.webUrl);
 
+  const name = clean(row.name);
+  const parentFolderWebUrl = await getDriveItemWebUrl({
+    mailboxUserId,
+    driveItemId: clean(row?.parentReference?.id),
+  });
+
+  const desktopWordFileUrl = buildDesktopWordFileUrl({
+    parentFolderWebUrl,
+    webUrl,
+    filename: name,
+  });
+
   return {
     ok: true,
     found: true,
     folder,
     filenameIncludes: wanted,
     driveItemId,
-    name: clean(row.name),
+    name,
     webUrl,
+    parentFolderWebUrl,
+    desktopWordFileUrl,
     lastModifiedDateTime: clean(row.lastModifiedDateTime),
     createdDateTime: clean(row.createdDateTime),
     size: Number(row.size || 0),
-    msWordEditUrl: webUrl ? `ms-word:ofe|u|${webUrl}` : "",
+    msWordEditUrl: desktopWordFileUrl ? `ms-word:ofe|u|${desktopWordFileUrl}` : "",
     graphSource: "users-drive-working-docx-latest",
   };
 }
