@@ -3775,15 +3775,21 @@ function masterSettlementDateFiledValue(): string {
       setMasterFinalizeUploadResult(json);
       setMasterDocumentFinalizationResult(json);
       setMasterDocumentWorkflowStage("delivery");
+      setMasterDocumentDeliveryPopupOpen(true);
       await loadMasterClioDocuments();
 
       const uploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
       const skippedCount = Array.isArray(json.skipped) ? json.skipped.length : 0;
+      const uploadedNames = Array.isArray(json.uploaded)
+        ? json.uploaded.map((doc: any) => clean(doc?.filename)).filter(Boolean)
+        : [];
 
       alert(
         "Document finalization complete.\n\n" +
           "Uploaded to Clio: " + uploadedCount + " document(s).\n" +
-          "Skipped duplicates: " + skippedCount + " document(s)."
+          "Skipped duplicates: " + skippedCount + " document(s).\n\n" +
+          (uploadedNames.length ? "Final PDF: " + uploadedNames.join(", ") + "\n\n" : "") +
+          "Opening Document Delivery."
       );
     } catch (err: any) {
       const result = {
