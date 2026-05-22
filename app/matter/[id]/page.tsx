@@ -4211,8 +4211,101 @@ const activeGroupKey =
     };
   }
 
+  function finalizedMatterDocumentLooksLikePdf(candidate: any): boolean {
+    const filename = textValue(candidate?.filename || candidate?.clioDocumentName || candidate?.name).toLowerCase();
+    const contentType = textValue(candidate?.contentType || candidate?.mimeType).toLowerCase();
+    return filename.endsWith(".pdf") || contentType.includes("pdf");
+  }
+
+  function clioOpenPathForFinalizedMatterDocument(candidate: any, mode: "inline" | "download" = "inline"): string {
+    const documentId = textValue(candidate?.clioDocumentId || candidate?.documentId || candidate?.id);
+    const filename = textValue(candidate?.filename || candidate?.clioDocumentName || candidate?.name || "document.pdf");
+
+    if (!documentId) return "";
+
+    const params = new URLSearchParams();
+    params.set("documentId", documentId);
+    params.set("filename", filename);
+    params.set("mode", mode);
+
+    return "/api/documents/clio-document-open?" + params.toString();
+  }
+
+  function selectedFinalizedMatterDocumentCandidate(selectedTemplate: { key: string; label: string; description: string } | null): any {
+    const selectedKey = textValue(selectedTemplate?.key).toLowerCase();
+    const selectedLabel = textValue(selectedTemplate?.label).toLowerCase();
+    const uploaded = Array.isArray(finalizeUploadResult?.uploaded) ? finalizeUploadResult.uploaded : [];
+    const skipped = Array.isArray(finalizeUploadResult?.skipped) ? finalizeUploadResult.skipped : [];
+
+    const uploadedCandidate =
+      uploaded.find((doc: any) => textValue(doc?.key).toLowerCase() === selectedKey) ||
+      uploaded.find((doc: any) => textValue(doc?.label).toLowerCase() === selectedLabel) ||
+      uploaded[0];
+
+    if (uploadedCandidate?.clioDocumentId) {
+      return {
+        ...uploadedCandidate,
+        id: uploadedCandidate.clioDocumentId,
+        clioDocumentId: uploadedCandidate.clioDocumentId,
+        clioDocumentName: uploadedCandidate.clioDocumentName || uploadedCandidate.filename,
+        filename: uploadedCandidate.filename || uploadedCandidate.clioDocumentName,
+        contentType: uploadedCandidate.contentType || "application/pdf",
+      };
+    }
+
+    const skippedCandidate =
+      skipped.find((doc: any) => textValue(doc?.key).toLowerCase() === selectedKey) ||
+      skipped.find((doc: any) => textValue(doc?.label).toLowerCase() === selectedLabel) ||
+      skipped[0];
+
+    const existing = Array.isArray(skippedCandidate?.existingClioDocuments)
+      ? skippedCandidate.existingClioDocuments[0]
+      : null;
+
+    if (existing?.id) {
+      return {
+        ...skippedCandidate,
+        ...existing,
+        id: existing.id,
+        clioDocumentId: existing.id,
+        clioDocumentName: existing.name || skippedCandidate?.filename,
+        filename:
+          textValue(existing?.latestDocumentVersion?.filename) ||
+          textValue(existing?.filename) ||
+          textValue(existing?.name) ||
+          textValue(skippedCandidate?.filename),
+        contentType:
+          textValue(existing?.latestDocumentVersion?.content_type) ||
+          textValue(existing?.latestDocumentVersion?.contentType) ||
+          "application/pdf",
+      };
+    }
+
+    return null;
+  }
+
+  function buildMatterFinalizedPdfDeliveryContext(selectedTemplate: { key: string; label: string; description: string } | null): DocumentDeliveryContext {
+    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
+    const candidate = selectedFinalizedMatterDocumentCandidate(selectedTemplate);
+    const pdfUrl = candidate && finalizedMatterDocumentLooksLikePdf(candidate)
+      ? clioOpenPathForFinalizedMatterDocument(candidate, "download")
+      : "";
+    const documentUrl = candidate ? clioOpenPathForFinalizedMatterDocument(candidate, "download") : "";
+
+    return {
+      ...context,
+      documentUrl: documentUrl || context.documentUrl,
+      pdfUrl: pdfUrl || context.pdfUrl,
+    };
+  }
+
   async function launchMatterDocumentEmail(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = await resolveMatterMaildropForDelivery(buildMatterDocumentDeliveryContext(selectedTemplate));
+    const context = await resolveMatterMaildropForDelivery(buildMatterFinalizedPdfDeliveryContext(selectedTemplate));
+
+    if (!context.pdfUrl) {
+      alert("Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from this matter's Clio Documents tab.");
+      return;
+    }
 
     try {
       const response = await fetch("/api/documents/delivery-draft-preview", {
@@ -4257,32 +4350,53 @@ const activeGroupKey =
   }
 
   function launchMatterDocumentPrint(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
-    const printableUrl = resolvePrintableUrl(context);
+    const candidate = selectedFinalizedMatterDocumentCandidate(selectedTemplate);
+
+    if (!candidate) {
+      alert("Finalize the document before printing.  Barsh Matters could not find a finalized Clio document from the latest finalization result.");
+      return;
+    }
+
+    const printableUrl = finalizedMatterDocumentLooksLikePdf(candidate)
+      ? clioOpenPathForFinalizedMatterDocument(candidate, "inline")
+      : clioOpenPathForFinalizedMatterDocument(candidate, "download");
 
     if (!printableUrl) {
-      alert("A finalized PDF/printable document is required before printing.  The shared print action is wired, but the PDF generation route is not ready yet.");
+      alert("Barsh Matters found a finalized document, but it could not build an openable Clio document URL.");
       return;
     }
 
-    const printWindow = window.open(printableUrl, "_blank", "noopener,noreferrer");
+    const printWindow = window.open("", "_blank");
+
     if (!printWindow) {
-      alert("The browser blocked the print window.  Please allow popups for Barsh Matters and try again.");
       return;
     }
 
-    window.setTimeout(() => {
-      try {
-        printWindow.print();
-      } catch {
-        // Browser-controlled print behavior; the opened PDF can still be printed manually.
-      }
-    }, 750);
+    printWindow.document.write("<!doctype html><title>Preparing Print Document</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Preparing finalized PDF for printing...</body>");
+    printWindow.document.close();
+    printWindow.location.href = printableUrl;
+
+    [2000, 4000, 6500].forEach((delay) => {
+      window.setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch {
+          // Browser-controlled print behavior; the opened PDF can still be printed manually.
+        }
+      }, delay);
+    });
   }
 
   function sendMatterDocumentToPrintQueue(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const context = buildMatterDocumentDeliveryContext(selectedTemplate);
-    alert(`${documentDeliverySafetyNote()}\n\nSend to Print Queue will be connected to the generalized finalized-document queue backend.\n\nDocument: ${context.documentLabel}`);
+    const context = buildMatterFinalizedPdfDeliveryContext(selectedTemplate);
+
+    if (!context.pdfUrl) {
+      alert("Finalize the document before sending it to the print queue.  The queue workflow requires a finalized PDF from this matter's Clio Documents tab.");
+      return;
+    }
+
+    alert(`${documentDeliverySafetyNote()}\n\nDirect Matter Send to Print Queue still needs backend support for direct-matter finalized PDF queue records.\n\nDocument: ${context.documentLabel}`);
   }
 
   function formatEmailThreadTimestamp(value: any): string {
@@ -5745,7 +5859,7 @@ const activeGroupKey =
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
+                    These delivery actions use the finalized PDF from this direct matter's Clio Documents tab.  Email prepares a draft preview with the finalized PDF attached.  Print opens the finalized PDF.  Send to Print Queue still requires direct-matter queue backend support.
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -5771,7 +5885,7 @@ const activeGroupKey =
                   <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
                   <span style={{ display: "none" }}>Document Delivery — Standalone</span>
                   <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                    These delivery actions use the shared Barsh Matters document-delivery workflow.  Email opens Outlook/mail compose with recipient and subject prefilled where local contact data is available.  Print and queue actions require the finalized PDF/print-queue backend.
+                    These delivery actions use the finalized PDF from this direct matter's Clio Documents tab.  Email prepares a draft preview with the finalized PDF attached.  Print opens the finalized PDF.  Send to Print Queue still requires direct-matter queue backend support.
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
