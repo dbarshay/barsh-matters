@@ -3080,7 +3080,33 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentDraftCreateLoading(false);
 
     try {
-      const context = await resolveMasterMaildropForDelivery(buildMasterDocumentDeliveryContext(selectedTemplate));
+      const baseContext = buildMasterDocumentDeliveryContext(selectedTemplate);
+      const { selectedCandidate } = await loadSelectedMasterFinalizedDocumentCandidate(selectedTemplate);
+      const finalizedPdfUrl = finalizedDocumentLooksLikePdf(selectedCandidate)
+        ? selectedFinalizedDocumentUrl(selectedCandidate, "download")
+        : "";
+      const finalizedDocumentUrl = selectedFinalizedDocumentUrl(selectedCandidate, "download");
+
+      const context = await resolveMasterMaildropForDelivery({
+        ...baseContext,
+        documentUrl: finalizedDocumentUrl || baseContext.documentUrl,
+        pdfUrl: finalizedPdfUrl || baseContext.pdfUrl,
+        pdfFilename: selectedCandidate?.filename || selectedCandidate?.clioDocumentName || baseContext.documentLabel,
+        clioDocumentId: selectedCandidate?.clioDocumentId || selectedCandidate?.id || "",
+        clioDocumentVersionUuid: selectedCandidate?.clioDocumentVersionUuid || selectedCandidate?.latestDocumentVersion?.uuid || "",
+      } as any);
+
+      if (!context.pdfUrl) {
+        setMasterDocumentDeliveryPreview({
+          ok: false,
+          error: "Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from the mapped master Clio matter Documents tab.",
+          context,
+          documentLabel: selectedTemplate?.label || "Document",
+          draft: {},
+          graphDraftPayloadPreview: {},
+        });
+        return;
+      }
 
       const response = await fetch("/api/documents/delivery-draft-preview", {
         method: "POST",
@@ -3197,12 +3223,50 @@ function masterSettlementDateFiledValue(): string {
     const selectedKey = String(selectedTemplate?.key || "").trim().toLowerCase();
     const selectedLabel = String(selectedTemplate?.label || "").trim().toLowerCase();
 
+    const masterDisplay =
+      String(json?.clioUploadTarget?.displayNumber || json?.masterDisplayNumber || "").trim().toLowerCase();
+
+    const candidateMatchesSelection = (candidate: any) => {
+      const key = String(candidate?.key || "").trim().toLowerCase();
+      const documentKey = String(candidate?.documentKey || "").trim().toLowerCase();
+      const label = String(candidate?.label || "").trim().toLowerCase();
+      const documentLabel = String(candidate?.documentLabel || "").trim().toLowerCase();
+      const filename = String(candidate?.filename || "").trim().toLowerCase();
+
+      return (
+        (selectedKey && key === selectedKey) ||
+        (selectedKey && documentKey === selectedKey) ||
+        (selectedLabel && label === selectedLabel) ||
+        (selectedLabel && documentLabel === selectedLabel) ||
+        (selectedKey && filename.includes(selectedKey))
+      );
+    };
+
+    const candidateLooksLikeMaster = (candidate: any) => {
+      const filename = String(candidate?.filename || candidate?.clioDocumentName || "").trim().toLowerCase();
+      const displayNumber =
+        String(candidate?.masterDisplayNumber || candidate?.clioDisplayNumber || candidate?.displayNumber || "").trim().toLowerCase();
+
+      return Boolean(
+        (masterDisplay && displayNumber === masterDisplay) ||
+        (masterDisplay && filename.includes(masterDisplay))
+      );
+    };
+
+    const matchingPdfCandidates = candidates
+      .filter((candidate: any) => candidateMatchesSelection(candidate) && finalizedDocumentLooksLikePdf(candidate))
+      .sort((a: any, b: any) => Number(b?.masterMatterId || 0) - Number(a?.masterMatterId || 0));
+
+    const matchingCandidates = candidates
+      .filter((candidate: any) => candidateMatchesSelection(candidate))
+      .sort((a: any, b: any) => Number(b?.masterMatterId || 0) - Number(a?.masterMatterId || 0));
+
     const selectedCandidate =
-      candidates.find((candidate: any) => String(candidate?.key || "").trim().toLowerCase() === selectedKey) ||
-      candidates.find((candidate: any) => String(candidate?.documentKey || "").trim().toLowerCase() === selectedKey) ||
-      candidates.find((candidate: any) => String(candidate?.label || "").trim().toLowerCase() === selectedLabel) ||
-      candidates.find((candidate: any) => String(candidate?.documentLabel || "").trim().toLowerCase() === selectedLabel) ||
-      candidates.find((candidate: any) => selectedKey && String(candidate?.filename || "").trim().toLowerCase().includes(selectedKey)) ||
+      candidates.find((candidate: any) => candidateLooksLikeMaster(candidate) && candidateMatchesSelection(candidate) && finalizedDocumentLooksLikePdf(candidate)) ||
+      candidates.find((candidate: any) => candidateLooksLikeMaster(candidate) && candidateMatchesSelection(candidate)) ||
+      matchingPdfCandidates[0] ||
+      matchingCandidates[0] ||
+      candidates.find((candidate: any) => finalizedDocumentLooksLikePdf(candidate)) ||
       candidates[0];
 
     return {
@@ -3312,7 +3376,6 @@ function masterSettlementDateFiledValue(): string {
             ? {}
             : { graphDraftPayloadPreview: readDocumentDeliveryGraphPreview(previewState) }),
           to: masterDocumentDeliveryToOverride.trim() ? buildDocumentDeliveryToOverrideRecipient() : undefined,
-          allowMetadataOnlyDraft: "true",
         }),
       });
 
@@ -3322,6 +3385,8 @@ function masterSettlementDateFiledValue(): string {
         ...previewState,
         createResult: result,
         draftCreated: Boolean(response.ok && result?.createsOutlookDraft),
+        attachmentUploads: Array.isArray(result?.attachmentUploads) ? result.attachmentUploads : [],
+        attachmentErrors: Array.isArray(result?.attachmentErrors) ? result.attachmentErrors : [],
         createError: response.ok ? "" : result?.error || "Graph draft creation failed.",
       });
     } catch (error: any) {
@@ -3399,20 +3464,26 @@ function masterSettlementDateFiledValue(): string {
         throw new Error("Barsh Matters found a current Clio-verified finalized document, but the preview contract did not expose an openable file URL.");
       }
 
-      const printWindow = window.open(printableUrl, "_blank", "noopener,noreferrer");
+      const printWindow = window.open("", "_blank");
 
       if (!printWindow) {
-        alert("The browser blocked the print window.  Please allow popups for Barsh Matters and try again.");
         return;
       }
 
-      window.setTimeout(() => {
-        try {
-          printWindow.print();
-        } catch {
-          // Browser-controlled print behavior; the opened document can still be printed manually.
-        }
-      }, 750);
+      printWindow.document.write("<!doctype html><title>Preparing Print Document</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Preparing finalized PDF for printing...</body>");
+      printWindow.document.close();
+      printWindow.location.href = printableUrl;
+
+      [2000, 4000, 6500].forEach((delay) => {
+        window.setTimeout(() => {
+          try {
+            printWindow.focus();
+            printWindow.print();
+          } catch {
+            // Browser-controlled print behavior; the opened document can still be printed manually.
+          }
+        }, delay);
+      });
 
       setMasterDocumentPrintResult({
         ok: true,
@@ -4044,6 +4115,11 @@ function masterSettlementDateFiledValue(): string {
       }
 
       setMasterDocumentPrintQueueResult(json);
+      alert(
+        "Print queue updated.\n\n" +
+          "Created: " + Number(json.createdCount || 0) + "\n" +
+          "Already queued: " + Number(json.existingCount || 0)
+      );
     } catch (err: any) {
       const fallback = {
         ok: false,
@@ -6060,6 +6136,7 @@ function masterSettlementDateFiledValue(): string {
                         <div><strong>Cc / MailDrop:</strong> {ccDisplay}</div>
                         <div><strong>Subject:</strong> {subjectDisplay}</div>
                         <div><strong>Attachments planned:</strong> {attachmentPlan.length}</div>
+                        <div><strong>Finalized PDF attachments uploaded:</strong> {Array.isArray(previewState?.attachmentUploads) ? previewState.attachmentUploads.length : 0}</div>
                         <div><strong>Graph draft creation available:</strong> {readyForGraphDraftCreate ? "Yes" : "No"}</div>
                       </div>
 
