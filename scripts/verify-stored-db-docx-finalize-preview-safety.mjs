@@ -16,6 +16,7 @@ const required = [
   "const plannedDocuments = await buildDocumentPlan",
   "...storedDbTemplateDocuments",
   "...placeholderDocuments",
+  "document is NonNullable<typeof document>",
 ];
 
 const forbidden = [

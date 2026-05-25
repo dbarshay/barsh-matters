@@ -210,7 +210,7 @@ async function buildStoredDbDocxTemplateDocuments(baseName: string, canGenerate:
         })),
       };
     })
-    .filter(Boolean);
+    .filter((document): document is NonNullable<typeof document> => Boolean(document));
 }
 
 async function buildDocumentPlan(masterLawsuitId: string, baseName: string, canGenerate: boolean) {
