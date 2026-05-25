@@ -53,8 +53,9 @@ export async function POST(req: NextRequest) {
     });
 
     const filename = pdfFilename(body?.filename || body?.workingDocumentName || "Barsh-Matters-Preview.pdf");
+    const pdfBody = new Uint8Array(conversion.pdfBuffer);
 
-    return new NextResponse(conversion.pdfBuffer, {
+    return new NextResponse(pdfBody, {
       status: 200,
       headers: {
         "Content-Type": conversion.pdfContentType || PDF_CONTENT_TYPE,
