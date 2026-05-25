@@ -10955,11 +10955,9 @@ function masterSettlementDateFiledValue(): string {
 
             <div style={masterWorkspaceBillListStyle}>
               <div style={masterSettlementDetailsTitleStyle}>
-                {activeMasterWorkspaceTab === "documents"
+                {activeMasterWorkspaceTab === "payments"
                   ? "Lawsuit Bills"
-                  : activeMasterWorkspaceTab === "payments"
-                    ? "Lawsuit Bills"
-                    : "Close Review Bills"}
+                  : "Close Review Bills"}
               </div>
 
               <div style={masterSettlementTableWrapStyle}>
