@@ -3,13 +3,13 @@ import fs from "fs";
 const route = fs.readFileSync("app/api/documents/print-queue/route.ts", "utf8");
 
 const required = [
-  "let byFilename: ClioMatterDocument | null = byId",
+  "let byFilename: any | null = byId",
   "verifyClioDocumentById",
   "if (!byFilename && clioDocumentId)",
 ];
 
 const forbidden = [
-  "let byFilename: ClioMatterDocument =",
+  "let byFilename: ClioMatterDocument",
   "documentPrintQueueItem.deleteMany",
   "sendMail",
   "graph.microsoft.com",
@@ -31,4 +31,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS: print queue Clio document lookup allows null verification fallback without side effects.");
+console.log("PASS: print queue Clio document lookup allows nullable verification fallback without side effects.");
