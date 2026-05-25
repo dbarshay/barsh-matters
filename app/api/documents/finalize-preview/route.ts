@@ -343,7 +343,9 @@ export async function GET(req: NextRequest) {
       },
       masterLawsuitId
     );
-    const plannedDocuments = await buildDocumentPlan(masterLawsuitId, baseName, canGenerate);
+    const plannedDocuments = (await buildDocumentPlan(masterLawsuitId, baseName, canGenerate)).filter(
+      (document): document is NonNullable<typeof document> => Boolean(document)
+    );
 
     let existingClioDocuments: any[] = [];
     let existingDocumentLookupError = "";

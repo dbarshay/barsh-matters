@@ -13,7 +13,7 @@ const required = [
   'repositoryStatus: "stored-db-docx-template"',
   "storedTemplateVersionId",
   "hasStoredDocx: true",
-  "const plannedDocuments = await buildDocumentPlan",
+  "const plannedDocuments = (await buildDocumentPlan",
   "...storedDbTemplateDocuments",
   "...placeholderDocuments",
   "document is NonNullable<typeof document>",
