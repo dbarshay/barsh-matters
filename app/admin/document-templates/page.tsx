@@ -34,6 +34,9 @@ type TemplateRecord = {
     status: string;
     bodyFormat: string;
     storageKind: string;
+    hasStoredDocx?: boolean;
+    storedDocxBytes?: number;
+    uploadedTemplateFile?: any;
     mergeFieldSet?: string;
   } | null;
 };
@@ -443,6 +446,12 @@ export default function AdminDocumentTemplatesPage() {
 
   const templates = useMemo(() => (Array.isArray(data?.templates) ? data.templates : []), [data]);
 
+  function openStoredTemplateDocx(template: TemplateRecord) {
+    const versionId = template.currentVersion?.id;
+    if (!versionId || !template.currentVersion?.hasStoredDocx) return;
+    window.open(`/api/documents/templates/stored-docx?versionId=${encodeURIComponent(versionId)}`, "_blank", "noopener,noreferrer");
+  }
+
   const repositorySourceKind = data?.repositorySource === "barsh-matters-db" ? "ok" : "warn";
   const repositorySourceLabel =
     data?.repositorySource === "barsh-matters-db"
@@ -763,11 +772,46 @@ export default function AdminDocumentTemplatesPage() {
               <strong>Template DOCX Storage:</strong> Select a .docx file to capture the file content into the custom
               template JSON.  On confirmed import, the DOCX is stored locally in DocumentTemplateVersion.contentText
               as base64.  This does not generate documents, upload to Clio, create drafts, send email, print, or queue documents.
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <label
+                  htmlFor="template-docx-storage-file-input"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #4f46e5",
+                    background: "#4f46e5",
+                    color: "#ffffff",
+                    borderRadius: 999,
+                    padding: "9px 14px",
+                    fontSize: 13,
+                    fontWeight: 950,
+                    cursor: "pointer",
+                    boxShadow: "0 10px 22px rgba(79, 70, 229, 0.22)",
+                    userSelect: "none",
+                  }}
+                >
+                  Choose DOCX Template
+                </label>
+                <span style={{ fontSize: 13, color: "#475569", fontWeight: 800 }}>
+                  {templateFilePlaceholder?.name || "No DOCX selected"}
+                </span>
                 <input
+                  id="template-docx-storage-file-input"
                   type="file"
                   accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={handleTemplateFilePlaceholderChange}
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    padding: 0,
+                    margin: -1,
+                    overflow: "hidden",
+                    clip: "rect(0, 0, 0, 0)",
+                    whiteSpace: "nowrap",
+                    border: 0,
+                  }}
                 />
               </div>
               {templateFilePlaceholderError && (
@@ -989,6 +1033,30 @@ export default function AdminDocumentTemplatesPage() {
                               <div style={{ fontWeight: 900 }}>v{template.currentVersion.versionNumber}</div>
                               <div style={{ color: "#64748b", fontSize: 13 }}>{template.currentVersion.status}</div>
                               <div style={{ color: "#64748b", fontSize: 13 }}>{template.currentVersion.storageKind}</div>
+                              {template.currentVersion.hasStoredDocx && (
+                                <div style={{ marginTop: 6, display: "grid", gap: 6 }}>
+                                  <div style={{ color: "#166534", fontSize: 12, fontWeight: 900 }}>
+                                    Stored DOCX · {template.currentVersion.storedDocxBytes || 0} bytes
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => openStoredTemplateDocx(template)}
+                                    style={{
+                                      border: "1px solid #16a34a",
+                                      background: "#f0fdf4",
+                                      color: "#166534",
+                                      borderRadius: 999,
+                                      padding: "6px 10px",
+                                      fontSize: 12,
+                                      fontWeight: 900,
+                                      cursor: "pointer",
+                                      width: "fit-content",
+                                    }}
+                                  >
+                                    Download Stored DOCX
+                                  </button>
+                                </div>
+                              )}
                             </>
                           ) : (
                             <span style={{ color: "#64748b" }}>No DB version yet</span>
