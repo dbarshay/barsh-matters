@@ -68,6 +68,7 @@ function buildDesktopWordFileUrl(params: {
 async function getDriveItemWebUrl(params: {
   mailboxUserId: string;
   driveItemId: string;
+  accessToken?: string;
 }): Promise<string> {
   const mailboxUserId = clean(params.mailboxUserId);
   const driveItemId = clean(params.driveItemId);
@@ -83,7 +84,7 @@ async function getDriveItemWebUrl(params: {
     headers: {
       Accept: "application/json",
     },
-  });
+  }, params.accessToken);
 
   const json = await readGraphJson(res);
 
@@ -94,7 +95,20 @@ async function getDriveItemWebUrl(params: {
   return clean(json?.webUrl);
 }
 
-async function graphRawFetch(url: string, init: RequestInit = {}) {
+async function graphRawFetch(url: string, init: RequestInit = {}, accessTokenOverride = "") {
+  const accessToken = clean(accessTokenOverride);
+
+  if (accessToken) {
+    return fetch(url, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(init.headers || {}),
+      },
+      cache: "no-store",
+    });
+  }
+
   const tokenResult = await requestMicrosoftGraphAppToken();
 
   if (!tokenResult.ok || !tokenResult.token?.accessToken) {
@@ -125,6 +139,7 @@ export async function uploadWorkingDocxToGraph(params: {
   docxBuffer: Buffer;
   filename: string;
   folder?: string;
+  accessToken?: string;
 }) {
   if (!Buffer.isBuffer(params.docxBuffer) || params.docxBuffer.byteLength <= 0) {
     throw new Error("Cannot upload an empty DOCX working document.");
@@ -154,7 +169,7 @@ export async function uploadWorkingDocxToGraph(params: {
       "Content-Type": DOCX_CONTENT_TYPE,
     },
     body: docxBody,
-  });
+  }, params.accessToken);
 
   const uploadJson = await readGraphJson(uploadRes);
 
@@ -182,6 +197,7 @@ export async function uploadWorkingDocxToGraph(params: {
   const parentFolderWebUrl = await getDriveItemWebUrl({
     mailboxUserId,
     driveItemId: clean(parentReference?.id),
+    accessToken: params.accessToken,
   });
 
   const desktopWordFileUrl = buildDesktopWordFileUrl({

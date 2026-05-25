@@ -673,6 +673,53 @@ export default function FilteredMattersPage() {
     editedAt?: string;
   }>>([]);
 
+  useEffect(() => {
+    if (!masterDocumentGenerationPopupOpen) return;
+
+    let cancelled = false;
+
+    async function loadMasterDocumentRepositoryTemplates() {
+      setMasterDocumentRepositoryTemplatesLoading(true);
+      setMasterDocumentRepositoryTemplatesError("");
+
+      try {
+        const response = await fetch(`/api/documents/templates?ts=${Date.now()}`, { cache: "no-store" });
+        const json = await response.json().catch(() => null);
+
+        if (!response.ok || !json) {
+          throw new Error(json?.error || "Document-template repository lookup failed.");
+        }
+
+        const templates =
+          Array.isArray(json.templates) ? json.templates :
+          Array.isArray(json.documentTemplates) ? json.documentTemplates :
+          Array.isArray(json.items) ? json.items :
+          Array.isArray(json.results) ? json.results :
+          Array.isArray(json) ? json :
+          [];
+
+        if (!cancelled) {
+          setMasterDocumentRepositoryTemplates(templates);
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          setMasterDocumentRepositoryTemplates([]);
+          setMasterDocumentRepositoryTemplatesError(error?.message || String(error));
+        }
+      } finally {
+        if (!cancelled) {
+          setMasterDocumentRepositoryTemplatesLoading(false);
+        }
+      }
+    }
+
+    loadMasterDocumentRepositoryTemplates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [masterDocumentGenerationPopupOpen]);
+
   async function loadMasterClioDocuments() {
     const masterId = currentMasterLawsuitIdForDocumentPreview();
 
@@ -5102,23 +5149,22 @@ function masterSettlementDateFiledValue(): string {
 
     const sortedTemplateOptions = [...templateOptions].sort((a, b) => a.label.localeCompare(b.label));
 
-    const filteredTemplateOptions = sortedTemplateOptions.filter((option) => {
-      const haystack = `${option.label} ${option.description}`.toLowerCase();
-      return !query || haystack.includes(query);
-    });
-
     const isSettlementDocumentMode = masterDocumentLaunchMode === "settlement" || masterDocumentDataPreview?.documentLaunchMode === "settlement" || masterDocumentDataPreview?.action === "settlement-documents-preview";
 
     const repositoryDocumentOptions = Array.isArray(masterDocumentRepositoryTemplates)
       ? masterDocumentRepositoryTemplates.map((template: any) => {
           const currentVersion = template?.currentVersion || null;
-          const hasStoredDocx = Boolean(currentVersion?.hasStoredDocx);
+          const hasStoredDocx = Boolean(
+            currentVersion?.hasStoredDocx ||
+            currentVersion?.storageKind === "db-docx-base64" ||
+            template?.storageKind === "db-docx-base64"
+          );
           return {
             key: String(template?.key || ""),
             label: String(template?.label || template?.key || "Document"),
             description: [
               template?.description ? String(template.description) : "",
-              hasStoredDocx ? `Stored DOCX: ${currentVersion?.storedDocxBytes || 0} bytes` : "",
+              hasStoredDocx ? `Stored DOCX: ${currentVersion?.storedDocxBytes || currentVersion?.sizeBytes || currentVersion?.fileSize || currentVersion?.contentLength || template?.storedDocxBytes || 0} bytes` : "",
               template?.mergeFieldSet ? `Merge fields: ${template.mergeFieldSet}` : "",
               template?.repositorySource ? `Repository: ${template.repositorySource}` : "Repository: Barsh Matters template repository",
               template?.editableLater ? "Editable/versioned repository support planned." : "",
@@ -5129,7 +5175,7 @@ function masterSettlementDateFiledValue(): string {
             repositoryStatus: template?.repositoryStatus || "",
             currentVersionId: currentVersion?.id || "",
             hasStoredDocx,
-            storedDocxBytes: currentVersion?.storedDocxBytes || 0,
+            storedDocxBytes: currentVersion?.storedDocxBytes || currentVersion?.sizeBytes || currentVersion?.fileSize || currentVersion?.contentLength || template?.storedDocxBytes || 0,
             templateSource: hasStoredDocx ? "barsh-matters-db-template-repository" : "barsh-matters-template-repository",
             mergeFields: Array.isArray(template?.mergeFields) ? template.mergeFields : [],
           };
@@ -5163,6 +5209,11 @@ function masterSettlementDateFiledValue(): string {
           ...storedRepositoryDocumentOptions,
           ...sortedTemplateOptions,
         ];
+    const filteredDisplayedTemplateOptions = displayedTemplateOptions.filter((option: any) => {
+      const haystack = `${option.label || ""} ${option.description || ""}`.toLowerCase();
+      return !query || haystack.includes(query);
+    });
+
     const displayedSelectedTemplate =
       displayedTemplateOptions.find((option: any) => option.key === masterSelectedDocumentTemplateKey) ||
       displayedTemplateOptions.find((option: any) => option.label.toLowerCase() === masterDocumentTemplateQuery.trim().toLowerCase()) ||

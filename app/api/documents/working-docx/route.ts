@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadWorkingDocxToGraph } from "@/lib/documents/graphWorkingDocuments";
+import { requestMicrosoftGraphAppToken } from "@/lib/graph/token";
 
 export const runtime = "nodejs";
 
@@ -156,12 +157,46 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = await generateDocumentBuffer(req, selectedDocument);
+    const graphTokenResult = await requestMicrosoftGraphAppToken();
+
+    if (!graphTokenResult.ok || !graphTokenResult.token?.accessToken) {
+      return NextResponse.json(
+        {
+          ok: false,
+          action: "working-docx-create",
+          error: graphTokenResult.error || "Could not acquire Microsoft Graph token for working DOCX upload.",
+          graphTokenPreflight: {
+            ok: graphTokenResult.ok,
+            status: graphTokenResult.status,
+            statusText: graphTokenResult.statusText,
+            tokenReceived: false,
+          },
+          selectedDocument: {
+            key: clean(selectedDocument.key),
+            label: clean(selectedDocument.label),
+            filename: clean(selectedDocument.filename),
+            sourceEndpoint: clean(selectedDocument.sourceEndpoint),
+          },
+          sourceDocxByteLength: buffer.byteLength,
+          safety: {
+            graphFileCreated: false,
+            clioRecordsChanged: false,
+            databaseRecordsChanged: false,
+            finalPdfCreated: false,
+            deliveryArtifactCreated: false,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
     const working = await uploadWorkingDocxToGraph({
       docxBuffer: buffer,
       filename: clean(selectedDocument.filename).toLowerCase().endsWith(".pdf")
         ? `${clean(selectedDocument.filename).slice(0, -4)}.docx`
         : clean(selectedDocument.filename),
       folder: "BarshMattersWorkingDocs",
+      accessToken: graphTokenResult.token.accessToken,
     });
 
     return NextResponse.json({
@@ -177,6 +212,12 @@ export async function POST(req: NextRequest) {
       },
       workingDocument: working,
       sourceDocxByteLength: buffer.byteLength,
+      graphTokenPreflight: {
+        ok: graphTokenResult.ok,
+        status: graphTokenResult.status,
+        statusText: graphTokenResult.statusText,
+        tokenReceived: true,
+      },
       safety: {
         graphFileCreated: true,
         clioRecordsChanged: false,
