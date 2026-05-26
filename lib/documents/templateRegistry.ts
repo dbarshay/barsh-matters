@@ -213,9 +213,11 @@ export function enabledSettlementDocumentTemplates() {
 export function buildSettlementPlannedDocuments(params: {
   baseName: string;
   blockingErrors: string[];
+  masterLawsuitId: string;
 }) {
-  const { baseName, blockingErrors } = params;
+  const { baseName, blockingErrors, masterLawsuitId } = params;
   const ready = blockingErrors.length === 0;
+  const encodedMasterLawsuitId = encodeURIComponent(masterLawsuitId);
 
   return enabledSettlementDocumentTemplates().map((template) => ({
     key: template.key,
@@ -224,6 +226,8 @@ export function buildSettlementPlannedDocuments(params: {
     filename: `${baseName} - ${template.defaultFilenameSuffix}.docx`,
     status: ready ? "ready-local-settlement-template-docx" : "blocked",
     availableNow: ready,
+    wouldGenerate: ready,
+    sourceEndpoint: `${template.generationEndpoint}?masterLawsuitId=${encodedMasterLawsuitId}`,
     generationEndpoint: template.generationEndpoint,
     routeOnly: true,
     category: template.category,

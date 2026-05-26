@@ -21,19 +21,29 @@ async function loadFinalizePreview(req: NextRequest, params: {
   uploadTargetMode?: string;
   directMatterId?: string | number | null;
   directMatterDisplayNumber?: string | null;
+  documentLaunchMode?: string | null;
+  settlementRecordId?: string | null;
 }) {
-  const previewUrl = new URL("/api/documents/finalize-preview", req.nextUrl.origin);
+  const settlementMode = clean(params.documentLaunchMode) === "settlement";
+  const previewUrl = new URL(
+    settlementMode ? "/api/settlements/documents-preview" : "/api/documents/finalize-preview",
+    req.nextUrl.origin
+  );
   previewUrl.searchParams.set("masterLawsuitId", params.masterLawsuitId);
 
-  if (clean(params.uploadTargetMode)) {
+  if (settlementMode && clean(params.settlementRecordId)) {
+    previewUrl.searchParams.set("settlementRecordId", clean(params.settlementRecordId));
+  }
+
+  if (!settlementMode && clean(params.uploadTargetMode)) {
     previewUrl.searchParams.set("uploadTarget", clean(params.uploadTargetMode));
   }
 
-  if (clean(params.directMatterId)) {
+  if (!settlementMode && clean(params.directMatterId)) {
     previewUrl.searchParams.set("directMatterId", clean(params.directMatterId));
   }
 
-  if (clean(params.directMatterDisplayNumber)) {
+  if (!settlementMode && clean(params.directMatterDisplayNumber)) {
     previewUrl.searchParams.set("directMatterDisplayNumber", clean(params.directMatterDisplayNumber));
   }
 
@@ -92,6 +102,8 @@ export async function POST(req: NextRequest) {
     const uploadTargetMode = clean(body?.uploadTargetMode || body?.uploadTarget || "master-lawsuit");
     const directMatterId = clean(body?.directMatterId);
     const directMatterDisplayNumber = clean(body?.directMatterDisplayNumber);
+    const documentLaunchMode = clean(body?.documentLaunchMode);
+    const settlementRecordId = clean(body?.settlementRecordId);
     const requestedKeys = asStringArray(body?.documentKeys);
     const confirmCreate = body?.confirmCreate === true;
 
@@ -123,6 +135,8 @@ export async function POST(req: NextRequest) {
       uploadTargetMode,
       directMatterId,
       directMatterDisplayNumber,
+      documentLaunchMode,
+      settlementRecordId,
     });
 
     const plannedDocuments = Array.isArray(preview?.plannedDocuments) ? preview.plannedDocuments : [];

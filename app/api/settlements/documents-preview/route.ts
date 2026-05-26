@@ -132,6 +132,7 @@ export async function GET(req: NextRequest) {
     const plannedDocuments = buildSettlementPlannedDocuments({
       baseName,
       blockingErrors,
+      masterLawsuitId: effectiveMasterLawsuitId,
     });
 
     return NextResponse.json({

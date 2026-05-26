@@ -239,6 +239,7 @@ export async function POST(req: NextRequest) {
     const plannedDocuments = buildSettlementPlannedDocuments({
       baseName,
       blockingErrors: [],
+      masterLawsuitId: masterLawsuitIdInput,
     });
 
     const selectedDocument = plannedDocuments.find((doc: any) => clean(doc?.key) === templateKey);

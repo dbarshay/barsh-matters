@@ -4210,8 +4210,33 @@ function masterSettlementDateFiledValue(): string {
       previewWindow.document.close();
     }
 
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>"']/g, (ch) => (
+        {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[ch] || ch
+      ));
+
+    const showPreviewWindowError = (message: string) => {
+      if (!previewWindow || previewWindow.closed) return;
+      previewWindow.document.open();
+      previewWindow.document.write(
+        `<!doctype html><title>PDF Preview Failed</title><body style="font-family: system-ui, sans-serif; padding: 24px; color: #7f1d1d;"><h1 style="font-size: 20px; margin: 0 0 12px;">PDF preview could not be prepared.</h1><p style="line-height: 1.5; white-space: pre-wrap;">${escapeHtml(message)}</p></body>`
+      );
+      previewWindow.document.close();
+    };
+
     try {
       setMasterDocumentWorkflowStage("preview");
+
+      const isSettlementDocumentMode =
+        masterDocumentLaunchMode === "settlement" ||
+        masterDocumentDataPreview?.documentLaunchMode === "settlement" ||
+        masterDocumentDataPreview?.action === "settlement-documents-preview";
 
       let workingDocumentForPreview = masterDocumentFinalizationResult?.workingDocument || null;
 
@@ -4225,6 +4250,10 @@ function masterSettlementDateFiledValue(): string {
             confirmCreate: true,
             masterLawsuitId,
             uploadTargetMode: "master",
+            documentLaunchMode: isSettlementDocumentMode ? "settlement" : "lawsuit",
+            settlementRecordId: isSettlementDocumentMode
+              ? masterDocumentPreviewText(masterDocumentDataPreview?.settlementRecordId || masterDocumentSettlementRecordId)
+              : "",
             documentKeys: [selectedTemplate.key],
           }),
         });
@@ -4232,7 +4261,9 @@ function masterSettlementDateFiledValue(): string {
         const workingJson = await workingResponse.json().catch(() => null);
 
         if (!workingResponse.ok || !workingJson?.ok || !workingJson?.workingDocument?.driveItemId) {
-          alert(workingJson?.error || "Could not create a working Word document for PDF preview.");
+          const message = workingJson?.error || "Could not create a working Word document for PDF preview.";
+          showPreviewWindowError(message);
+          alert(message);
           return;
         }
 
@@ -4260,7 +4291,9 @@ function masterSettlementDateFiledValue(): string {
 
       if (!previewResponse.ok) {
         const errorJson = await previewResponse.json().catch(() => null);
-        alert(errorJson?.error || "Could not generate the PDF preview.");
+        const message = errorJson?.error || "Could not generate the PDF preview.";
+        showPreviewWindowError(message);
+        alert(message);
         return;
       }
 
@@ -4273,7 +4306,9 @@ function masterSettlementDateFiledValue(): string {
 
       window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120000);
     } catch (err: any) {
-      alert(err?.message || "Could not generate the PDF preview.");
+      const message = err?.message || "Could not generate the PDF preview.";
+      showPreviewWindowError(message);
+      alert(message);
     }
   }
 
