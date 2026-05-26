@@ -98,6 +98,25 @@ function mergeFieldVisibilityCounts(fields: any[]) {
   return counts;
 }
 
+const ADVANCED_CUSTOM_IMPORT_CONFIRM_MAX_BYTES = 900_000;
+
+function byteLengthForText(value: string): number {
+  if (typeof Blob !== "undefined") {
+    return new Blob([value || ""]).size;
+  }
+
+  return value?.length || 0;
+}
+
+function customImportContainsStoredDocxBase64(value: string): boolean {
+  return (
+    value.includes("\"contentBase64\"") ||
+    value.includes('"contentBase64"') ||
+    value.includes("db-docx-base64")
+  );
+}
+
+
 function statusBadgeStyle(kind: "ok" | "warn" | "neutral"): React.CSSProperties {
   const colors = {
     ok: { background: "#dcfce7", color: "#166534", border: "#bbf7d0" },
@@ -452,6 +471,11 @@ export default function AdminDocumentTemplatesPage() {
       return;
     }
 
+    if (customTemplateConfirmBlocked) {
+      setCustomTemplateError(customTemplateConfirmBlockReason || "Custom import confirm is blocked for this payload. Use the Template Detail replacement workflow instead.");
+      return;
+    }
+
     setCustomTemplateLoading(true);
     setCustomTemplateError("");
     setCustomTemplateConfirmResult(null);
@@ -501,6 +525,27 @@ export default function AdminDocumentTemplatesPage() {
       setCustomTemplateLoading(false);
     }
   }
+
+  const customTemplateConfirmPayloadBytes = byteLengthForText(JSON.stringify({
+    mode: "rows",
+    rows: (() => {
+      try {
+        return parseCustomTemplateRows();
+      } catch {
+        return [];
+      }
+    })(),
+    confirm: true,
+  }));
+  const customTemplateContainsStoredDocxBase64 = customImportContainsStoredDocxBase64(customTemplateRowsText);
+  const customTemplateConfirmBlocked =
+    customTemplateContainsStoredDocxBase64 ||
+    customTemplateConfirmPayloadBytes > ADVANCED_CUSTOM_IMPORT_CONFIRM_MAX_BYTES;
+  const customTemplateConfirmBlockReason = customTemplateContainsStoredDocxBase64
+    ? "Confirming base64-stored DOCX payloads through this legacy JSON importer is blocked. Use Open Template Detail → Replace Current DOCX Template instead."
+    : customTemplateConfirmPayloadBytes > ADVANCED_CUSTOM_IMPORT_CONFIRM_MAX_BYTES
+      ? `This legacy JSON import payload is too large (${customTemplateConfirmPayloadBytes} bytes). Use Open Template Detail → Replace Current DOCX Template instead.`
+      : "";
 
   const templates = useMemo(() => (Array.isArray(data?.templates) ? data.templates : []), [data]);
 
@@ -848,7 +893,7 @@ export default function AdminDocumentTemplatesPage() {
             >
               Recommended production path: use <strong>Open Template Detail</strong> in the table below, then
               <strong> Replace Current DOCX Template</strong>.  That creates a new version, preserves old versions,
-              and avoids moving large base64 DOCX payloads through the JSON textbox.
+              and avoids moving large base64 DOCX payloads through the JSON textbox.  Production blocks large JSON/base64 confirms to avoid Request Entity Too Large errors.
             </div>
 
             {advancedCustomImportOpen && (
@@ -974,20 +1019,29 @@ export default function AdminDocumentTemplatesPage() {
               <button
                 type="button"
                 onClick={confirmCustomTemplateRowsImport}
-                disabled={customTemplateLoading || !customTemplatePreview?.ok}
+                disabled={customTemplateLoading || !customTemplatePreview?.ok || customTemplateConfirmBlocked}
                 style={{
-                  border: customTemplateLoading || !customTemplatePreview?.ok ? "1px solid #cbd5e1" : "1px solid #16a34a",
-                  background: customTemplateLoading || !customTemplatePreview?.ok ? "#f1f5f9" : "#f0fdf4",
-                  color: customTemplateLoading || !customTemplatePreview?.ok ? "#64748b" : "#166534",
+                  border: customTemplateLoading || !customTemplatePreview?.ok || customTemplateConfirmBlocked ? "1px solid #cbd5e1" : "1px solid #16a34a",
+                  background: customTemplateLoading || !customTemplatePreview?.ok || customTemplateConfirmBlocked ? "#f1f5f9" : "#f0fdf4",
+                  color: customTemplateLoading || !customTemplatePreview?.ok || customTemplateConfirmBlocked ? "#64748b" : "#166534",
                   borderRadius: 12,
                   padding: "10px 14px",
                   fontWeight: 900,
-                  cursor: customTemplateLoading || !customTemplatePreview?.ok ? "not-allowed" : "pointer",
+                  cursor: customTemplateLoading || !customTemplatePreview?.ok || customTemplateConfirmBlocked ? "not-allowed" : "pointer",
                 }}
               >
                 Confirm Custom Import
               </button>
             </div>
+
+            {customTemplateConfirmBlocked && (
+              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 14, padding: 12, marginBottom: 12, fontWeight: 850, lineHeight: 1.5 }}>
+                <strong>Advanced import confirm blocked:</strong> {customTemplateConfirmBlockReason}
+                <div style={{ marginTop: 6 }}>
+                  Current estimated confirm payload: {customTemplateConfirmPayloadBytes} bytes.
+                </div>
+              </div>
+            )}
 
             {customTemplateError && (
               <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 14, padding: 12, marginBottom: 12, fontWeight: 800 }}>

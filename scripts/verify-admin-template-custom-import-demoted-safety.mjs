@@ -27,6 +27,11 @@ assert(page.includes("legacy JSON/base64 import tool is retained for diagnostics
 assert(page.includes("Open Template Detail"), "admin page directs users to template detail");
 assert(page.includes("Replace Current DOCX Template"), "admin page directs users to replacement workflow");
 assert(page.includes("avoids moving large base64 DOCX payloads through the JSON textbox"), "admin page warns against large base64 JSON textbox path");
+assert(page.includes("ADVANCED_CUSTOM_IMPORT_CONFIRM_MAX_BYTES"), "advanced custom import has explicit confirm size limit");
+assert(page.includes("customTemplateConfirmBlocked"), "advanced custom import blocks unsafe confirms");
+assert(page.includes("Request Entity Too Large"), "advanced custom import warning mentions Request Entity Too Large");
+assert(page.includes("Confirming base64-stored DOCX payloads through this legacy JSON importer is blocked"), "advanced custom import blocks base64 DOCX confirms");
+assert(page.includes("Current estimated confirm payload"), "advanced custom import displays estimated confirm payload");
 
 assert(page.includes("Preview Custom Import"), "advanced panel preserves Preview Custom Import");
 assert(page.includes("Confirm Custom Import"), "advanced panel preserves Confirm Custom Import");

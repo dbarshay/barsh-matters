@@ -33,6 +33,8 @@ check("custom import mentions hidden/internal fields", page.includes("hidden/int
 check("custom preview displays hidden/internal count", page.includes("customTemplatePreview.summary?.hiddenInternalMergeFields"));
 check("custom preview displays visible UI count", page.includes("customTemplatePreview.summary?.visibleMergeFields"));
 check("custom import displays no Clio/email/print safety", page.includes("customTemplateConfirmResult.safety?.clioRecordsChanged"));
+check("custom confirm blocks base64 DOCX payloads", page.includes("customTemplateConfirmBlocked") && page.includes("Confirming base64-stored DOCX payloads through this legacy JSON importer is blocked"));
+check("custom confirm has explicit payload size limit", page.includes("ADVANCED_CUSTOM_IMPORT_CONFIRM_MAX_BYTES"));
 check("example includes hidden internal field", page.includes('"visibility": "hidden_internal"'));
 check("package script registered", pkg.includes("verify:admin-custom-template-import-ui-safety"));
 
