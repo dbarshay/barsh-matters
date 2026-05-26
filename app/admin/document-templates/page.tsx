@@ -177,6 +177,7 @@ export default function AdminDocumentTemplatesPage() {
   const [customTemplateError, setCustomTemplateError] = useState("");
   const [templateFilePlaceholder, setTemplateFilePlaceholder] = useState<any>(null);
   const [templateFilePlaceholderError, setTemplateFilePlaceholderError] = useState("");
+  const [advancedCustomImportOpen, setAdvancedCustomImportOpen] = useState(false);
 
   async function loadTemplates(nextCategory = category) {
     setLoading(true);
@@ -799,21 +800,65 @@ export default function AdminDocumentTemplatesPage() {
           </section>
 
           <section
+            data-barsh-advanced-custom-template-import="true"
             style={{
-              border: "1px solid #dbe4f0",
+              border: "1px solid #fed7aa",
               borderRadius: 18,
               padding: 18,
-              background: "#fff",
+              background: "#fff7ed",
               marginTop: 18,
             }}
           >
-            <h2 style={{ margin: "0 0 12px 0", fontSize: 20 }}>Custom Template Row Import</h2>
-            <p style={{ margin: "0 0 12px 0", color: "#475569", lineHeight: 1.55 }}>
-              Paste JSON template rows to preview and confirm local DocumentTemplate, DocumentTemplateVersion,
-              and DocumentTemplateMergeField records.  This supports both visible UI merge fields and hidden/internal
-              merge fields.  This does not upload Word files, generate documents, send email, print, queue documents,
-              or write to Clio.
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+              <div>
+                <h2 style={{ margin: "0 0 8px 0", fontSize: 20 }}>Advanced / Debug Template Row Import</h2>
+                <p style={{ margin: 0, color: "#9a3412", lineHeight: 1.55, maxWidth: 900 }}>
+                  This legacy JSON/base64 import tool is retained for diagnostics and emergency metadata imports only.
+                  For normal template replacement, open a template detail page and use <strong>Replace Current DOCX Template</strong>.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAdvancedCustomImportOpen((value) => !value)}
+                style={{
+                  border: "1px solid #fb923c",
+                  background: advancedCustomImportOpen ? "#ffedd5" : "#fff",
+                  color: "#9a3412",
+                  borderRadius: 999,
+                  padding: "9px 14px",
+                  fontWeight: 950,
+                  cursor: "pointer",
+                }}
+              >
+                {advancedCustomImportOpen ? "Hide Advanced Import" : "Show Advanced Import"}
+              </button>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #fdba74",
+                background: "#fff",
+                color: "#9a3412",
+                borderRadius: 14,
+                padding: 12,
+                marginTop: 12,
+                lineHeight: 1.5,
+                fontWeight: 800,
+              }}
+            >
+              Recommended production path: use <strong>Open Template Detail</strong> in the table below, then
+              <strong> Replace Current DOCX Template</strong>.  That creates a new version, preserves old versions,
+              and avoids moving large base64 DOCX payloads through the JSON textbox.
+            </div>
+
+            {advancedCustomImportOpen && (
+              <div data-barsh-advanced-custom-template-import-panel="true" style={{ marginTop: 14 }}>
+                <p style={{ margin: "0 0 12px 0", color: "#475569", lineHeight: 1.55 }}>
+                  Paste JSON template rows to preview and confirm local DocumentTemplate, DocumentTemplateVersion,
+                  and DocumentTemplateMergeField records.  This supports both visible UI merge fields and hidden/internal
+                  merge fields.  This does not upload Word files, generate documents, send email, print, queue documents,
+                  or write to Clio.  This section is advanced/debug-only.
+                </p>
 
             <div
               style={{
@@ -983,6 +1028,8 @@ export default function AdminDocumentTemplatesPage() {
                   <div><strong>Confirm payload bytes:</strong> {customTemplateConfirmResult.clientConfirmDiagnostics?.confirmPayloadBytes ?? "—"}</div>
                   <div><strong>Includes base64 payload:</strong> {String(Boolean(customTemplateConfirmResult.clientConfirmDiagnostics?.includesBase64Payload))}</div>
                 </div>
+              </div>
+            )}
               </div>
             )}
           </section>

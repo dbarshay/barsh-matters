@@ -17,9 +17,14 @@ check("custom template rows state exists", page.includes("customTemplateRowsText
 check("custom preview function exists", page.includes("previewCustomTemplateRowsImport"));
 check("custom confirm function exists", page.includes("confirmCustomTemplateRowsImport"));
 check("custom parser requires JSON array", page.includes("Template import JSON must be an array"));
-check("custom import panel exists", page.includes("Custom Template Row Import"));
-check("custom preview button exists", page.includes("Preview Custom Import"));
-check("custom confirm button exists", page.includes("Confirm Custom Import"));
+check(
+  "custom import panel exists as advanced/debug section",
+  page.includes("Advanced / Debug Template Row Import") &&
+    page.includes('data-barsh-advanced-custom-template-import="true"') &&
+    page.includes('data-barsh-advanced-custom-template-import-panel="true"')
+);
+check("custom preview button exists inside advanced/debug import panel", page.includes("Preview Custom Import"));
+check("custom confirm button exists inside advanced/debug import panel", page.includes("Confirm Custom Import"));
 check("custom import calls preview route", page.includes("/api/documents/templates/import-preview"));
 check("custom import calls confirm route", page.includes("/api/documents/templates/import-confirm"));
 check("custom import uses rows mode", page.includes('mode: "rows"'));
