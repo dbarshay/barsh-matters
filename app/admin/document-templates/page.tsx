@@ -131,24 +131,24 @@ export default function AdminDocumentTemplatesPage() {
   const [mergeFieldVisibilityFilter, setMergeFieldVisibilityFilter] = useState<"all" | "visible_ui" | "hidden_internal" | "computed" | "system">("all");
   const [customTemplateRowsText, setCustomTemplateRowsText] = useState(`[
   {
-    "key": "example-production-template",
+    "key": "harmless-stored-docx-test-template",
     "label": "Example Production Template",
     "category": "general",
-    "description": "Example production-template metadata import with visible and hidden merge fields.",
+    "description": "Harmless stored DOCX test-template metadata import with visible and hidden merge fields.",
     "defaultFilenameSuffix": "Example Production Template",
     "generationEndpoint": "",
     "outputFormat": "docx",
     "sourceOfTruth": "barsh-matters-local",
     "enabled": true,
     "editableInRepository": true,
-    "mergeFieldSet": "example-production",
+    "mergeFieldSet": "harmless-stored-docx-test",
     "repositorySource": "barsh-matters-template-import",
     "repositoryStatus": "draft-template-import",
     "productionTemplateReady": false,
     "finalProductionDocument": false,
     "metadata": {
       "templateSource": "template-repository-db",
-      "notes": "Replace this example with user-provided production template metadata."
+      "notes": "Replace this harmless test template with user-provided production template metadata."
     },
     "mergeFields": [
       {
@@ -1001,6 +1001,14 @@ export default function AdminDocumentTemplatesPage() {
                         <td style={{ padding: 12, verticalAlign: "top" }}>
                           <div style={{ fontWeight: 950 }}>{display(template.label)}</div>
                           <div style={{ color: "#64748b", fontSize: 13, marginTop: 3 }}>{display(template.key)}</div>
+                          <div style={{ marginTop: 6 }}>
+                            <a
+                              href={`/admin/document-templates/${encodeURIComponent(template.key)}`}
+                              style={{ color: "#4f46e5", fontSize: 13, fontWeight: 900, textDecoration: "none" }}
+                            >
+                              Open Template Detail
+                            </a>
+                          </div>
                           {template.description && (
                             <div style={{ color: "#475569", fontSize: 13, marginTop: 6, lineHeight: 1.35 }}>
                               {template.description}

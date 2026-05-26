@@ -60,6 +60,56 @@ function includesLoose(haystack: unknown, needle: string): boolean {
   }
 }
 
+
+function countJsonItems(value: any): number {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function cleanActivityText(value: unknown): string {
+  return String(value || "").trim();
+}
+
+function activityTargetLabel(row: any): string {
+  const target = row?.clioUploadTarget && typeof row.clioUploadTarget === "object" ? row.clioUploadTarget : {};
+  return (
+    cleanActivityText(target.displayNumber) ||
+    cleanActivityText(target.matterDisplayNumber) ||
+    cleanActivityText(target.matterId) ||
+    cleanActivityText(row?.masterDisplayNumber) ||
+    cleanActivityText(row?.masterMatterId)
+  );
+}
+
+function finalizationActivityLabel(row: any): string {
+  const uploaded = countJsonItems(row?.uploaded);
+  const skipped = countJsonItems(row?.skipped);
+  const target = activityTargetLabel(row);
+  const status = cleanActivityText(row?.status);
+
+  const uploadPart = uploaded > 0 ? `Uploaded ${uploaded}` : "No new upload";
+  const skippedPart = skipped > 0 ? ` · Skipped ${skipped} duplicate${skipped === 1 ? "" : "s"}` : "";
+  const targetPart = target ? ` · Target ${target}` : "";
+  const statusPart = status && status !== "success" ? ` · ${status}` : "";
+
+  return `Finalized document packet · ${uploadPart}${skippedPart}${targetPart}${statusPart}`;
+}
+
+function finalizationActivityTrace(row: any) {
+  return {
+    finalizationId: row?.id || null,
+    status: cleanActivityText(row?.status),
+    masterLawsuitId: cleanActivityText(row?.masterLawsuitId),
+    masterMatterId: row?.masterMatterId || null,
+    masterDisplayNumber: cleanActivityText(row?.masterDisplayNumber),
+    uploadedCount: countJsonItems(row?.uploaded),
+    skippedCount: countJsonItems(row?.skipped),
+    requestedKeys: Array.isArray(row?.requestedKeys) ? row.requestedKeys : [],
+    clioUploadTarget: row?.clioUploadTarget || null,
+    noUploadPerformed: Boolean(row?.noUploadPerformed),
+    allowDuplicateUploads: Boolean(row?.allowDuplicateUploads),
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const masterLawsuitId = clean(req.nextUrl.searchParams.get("masterLawsuitId"));
@@ -364,7 +414,8 @@ export async function GET(req: NextRequest) {
     const events = [
       ...finalizationRows.map((row) => ({
         type: "finalization",
-        label: row.status === "success" ? "Finalized document" : "Document finalization",
+        label: finalizationActivityLabel(row),
+        trace: finalizationActivityTrace(row),
         status: safeString(row.status),
         occurredAt: row.finalizedAt,
         sortTime: eventTime(row.finalizedAt),

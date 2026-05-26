@@ -116,7 +116,10 @@
     "verify:direct-finalize-master-id-resolution-safety": "node scripts/verify-direct-finalize-master-id-resolution-safety.mjs",
     "verify:packet-clio-master-mapping-safety": "node scripts/verify-packet-clio-master-mapping-safety.mjs",
     "verify:master-view-documents-source-labels-safety": "node scripts/verify-master-view-documents-source-labels-safety.mjs",
-    "verify:document-finalization-target-routing-safety": "node scripts/verify-document-finalization-target-routing-safety.mjs"
+    "verify:document-finalization-target-routing-safety": "node scripts/verify-document-finalization-target-routing-safety.mjs",
+    "verify:document-template-detail-workflow-safety": "node scripts/verify-document-template-detail-workflow-safety.mjs",
+    "verify:stored-db-docx-workflow-safety": "node scripts/verify-stored-db-docx-workflow-safety.mjs",
+    "verify:document-activity-trace-ui-safety": "node scripts/verify-document-activity-trace-ui-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
