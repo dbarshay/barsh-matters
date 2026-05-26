@@ -64,6 +64,132 @@ export default function AdminDocumentTemplateDetailPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [replacementFile, setReplacementFile] = useState<any>(null);
+  const [replacementError, setReplacementError] = useState("");
+  const [replacementPreview, setReplacementPreview] = useState<any>(null);
+  const [replacementConfirmResult, setReplacementConfirmResult] = useState<any>(null);
+  const [replacementLoading, setReplacementLoading] = useState(false);
+
+  function readReplacementFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read the selected replacement DOCX file."));
+      reader.onload = () => {
+        const value = String(reader.result || "");
+        const marker = "base64,";
+        const idx = value.indexOf(marker);
+        resolve(idx >= 0 ? value.slice(idx + marker.length) : value);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleReplacementFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setReplacementError("");
+    setReplacementPreview(null);
+    setReplacementConfirmResult(null);
+
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      setReplacementFile(null);
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      setReplacementFile(null);
+      setReplacementError("Use a .docx Word template file for replacement versioning.");
+      return;
+    }
+
+    try {
+      const contentBase64 = await readReplacementFileAsBase64(file);
+      setReplacementFile({
+        name: file.name,
+        size: file.size,
+        type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        lastModified: file.lastModified,
+        lastModifiedIso: new Date(file.lastModified).toISOString(),
+        storageKind: "db-docx-base64",
+        actualFileStored: true,
+        contentRead: true,
+        contentBase64,
+        contentBase64Length: contentBase64.length,
+        contentByteLength: file.size,
+      });
+    } catch (err: any) {
+      setReplacementFile(null);
+      setReplacementError(err?.message || "Could not read the selected replacement DOCX file.");
+    }
+  }
+
+  async function submitReplacementVersion(confirm: boolean) {
+    if (!replacementFile?.contentBase64) {
+      setReplacementError("Select a replacement .docx file first.");
+      return;
+    }
+
+    if (confirm && !replacementPreview?.ok) {
+      setReplacementError("Preview the replacement before confirming.");
+      return;
+    }
+
+    const action = confirm ? "confirm" : "preview";
+    if (confirm) {
+      const ok = window.confirm(
+        "This will create a new template version and make it the current version. Prior versions will be preserved. Continue?"
+      );
+      if (!ok) return;
+    }
+
+    setReplacementLoading(true);
+    setReplacementError("");
+    if (!confirm) {
+      setReplacementPreview(null);
+      setReplacementConfirmResult(null);
+    }
+
+    try {
+      const response = await fetch("/api/documents/templates/replace-version", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateKey: key,
+          confirm,
+          replacementLabel: replacementFile.name.replace(/\.docx$/i, ""),
+          note: confirm ? "Confirmed from template detail page." : "Preview from template detail page.",
+          file: replacementFile,
+        }),
+      });
+
+      const responseText = await response.text();
+      let json: any = null;
+      try {
+        json = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        json = null;
+      }
+
+      if (!response.ok || !json?.ok) {
+        const bodyPreview = responseText ? responseText.slice(0, 300) : "";
+        throw new Error(
+          json?.error ||
+            `Template replacement ${action} failed. Status ${response.status}. Response: ${bodyPreview || "empty response"}`
+        );
+      }
+
+      if (confirm) {
+        setReplacementConfirmResult(json);
+        setReplacementPreview(null);
+        await loadTemplateDetail();
+      } else {
+        setReplacementPreview(json);
+      }
+    } catch (err: any) {
+      setReplacementError(err?.message || `Template replacement ${action} failed.`);
+    } finally {
+      setReplacementLoading(false);
+    }
+  }
 
   async function loadTemplateDetail() {
     if (!key) return;
@@ -205,6 +331,105 @@ export default function AdminDocumentTemplateDetailPage() {
               ) : (
                 <div style={{ color: "#64748b", fontWeight: 800 }}>No DB version exists for this fallback template.</div>
               )}
+            </section>
+
+            <section data-barsh-template-replacement-workflow="true" style={cardStyle()}>
+              <h2 style={{ margin: "0 0 10px", fontSize: 22 }}>Replace Current DOCX Template</h2>
+              <p style={{ margin: "0 0 12px", color: "#475569", lineHeight: 1.55 }}>
+                Upload a replacement Word DOCX from this detail page.  Preview validates the replacement without
+                changing the database.  Confirm creates a new DocumentTemplateVersion, preserves prior versions,
+                and makes the new version current.
+              </p>
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
+                  Replacement DOCX
+                  <input
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleReplacementFileChange}
+                    style={{
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 12,
+                      padding: 10,
+                      background: "#fff",
+                      fontWeight: 700,
+                    }}
+                  />
+                </label>
+
+                {replacementFile && (
+                  <div style={{ border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 14, padding: 12, display: "grid", gap: 4 }}>
+                    <div><strong>File:</strong> {display(replacementFile.name)}</div>
+                    <div><strong>Size:</strong> {replacementFile.size || replacementFile.contentByteLength || 0} bytes</div>
+                    <div><strong>Storage kind:</strong> {display(replacementFile.storageKind)}</div>
+                    <div><strong>Base64 length:</strong> {replacementFile.contentBase64Length || 0}</div>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => submitReplacementVersion(false)}
+                    disabled={replacementLoading || !replacementFile}
+                    style={{
+                      border: "1px solid #bfdbfe",
+                      background: replacementLoading || !replacementFile ? "#f1f5f9" : "#eff6ff",
+                      color: replacementLoading || !replacementFile ? "#64748b" : "#1d4ed8",
+                      borderRadius: 999,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: replacementLoading || !replacementFile ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {replacementLoading ? "Working..." : "Preview Replacement"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => submitReplacementVersion(true)}
+                    disabled={replacementLoading || !replacementPreview?.ok}
+                    style={{
+                      border: replacementLoading || !replacementPreview?.ok ? "1px solid #cbd5e1" : "1px solid #16a34a",
+                      background: replacementLoading || !replacementPreview?.ok ? "#f1f5f9" : "#f0fdf4",
+                      color: replacementLoading || !replacementPreview?.ok ? "#64748b" : "#166534",
+                      borderRadius: 999,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: replacementLoading || !replacementPreview?.ok ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Confirm Replacement Version
+                  </button>
+                </div>
+
+                {replacementError && (
+                  <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 14, padding: 12, fontWeight: 850 }}>
+                    {replacementError}
+                  </div>
+                )}
+
+                {replacementPreview?.ok && (
+                  <div style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: 12, display: "grid", gap: 4 }}>
+                    <strong>Replacement Preview Ready</strong>
+                    <div>Current version: {display(replacementPreview.preview?.currentVersionNumber)}</div>
+                    <div>Next version: {display(replacementPreview.preview?.nextVersionNumber)}</div>
+                    <div>Replacement bytes: {display(replacementPreview.preview?.replacementByteLength)}</div>
+                    <div>Merge fields preserved: {display(replacementPreview.preview?.mergeFieldCount)}</div>
+                    <div>Database changed: {String(Boolean(replacementPreview.safety?.databaseRecordsChanged))}</div>
+                  </div>
+                )}
+
+                {replacementConfirmResult?.ok && (
+                  <div style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 14, padding: 12, display: "grid", gap: 4 }}>
+                    <strong>Replacement Confirmed</strong>
+                    <div>New current version: v{display(replacementConfirmResult.version?.versionNumber)}</div>
+                    <div>Stored DOCX bytes: {display(replacementConfirmResult.version?.storedDocxBytes)}</div>
+                    <div>Prior versions preserved: {String(Boolean(replacementConfirmResult.safety?.preservesPriorVersions))}</div>
+                    <div>Database changed: {String(Boolean(replacementConfirmResult.safety?.databaseRecordsChanged))}</div>
+                  </div>
+                )}
+              </div>
             </section>
 
             <section style={cardStyle()}>
