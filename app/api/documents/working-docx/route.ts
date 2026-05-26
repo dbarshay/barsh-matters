@@ -176,6 +176,13 @@ export async function POST(req: NextRequest) {
             label: clean(selectedDocument.label),
             filename: clean(selectedDocument.filename),
             sourceEndpoint: clean(selectedDocument.sourceEndpoint),
+            repositorySource: clean(selectedDocument.repositorySource),
+            repositoryStatus: clean(selectedDocument.repositoryStatus),
+            storageKind: clean(selectedDocument.storageKind),
+            storedTemplateVersionId: clean(selectedDocument.storedTemplateVersionId),
+            storedTemplateVersionNumber: selectedDocument.storedTemplateVersionNumber || null,
+            hasStoredDocx: Boolean(selectedDocument.hasStoredDocx),
+            generatedFromStoredDbDocx: clean(selectedDocument.repositorySource) === "barsh-matters-db" && clean(selectedDocument.storageKind) === "db-docx-base64",
           },
           sourceDocxByteLength: buffer.byteLength,
           safety: {
@@ -209,6 +216,13 @@ export async function POST(req: NextRequest) {
         label: clean(selectedDocument.label),
         filename: clean(selectedDocument.filename),
         sourceEndpoint: clean(selectedDocument.sourceEndpoint),
+        repositorySource: clean(selectedDocument.repositorySource),
+        repositoryStatus: clean(selectedDocument.repositoryStatus),
+        storageKind: clean(selectedDocument.storageKind),
+        storedTemplateVersionId: clean(selectedDocument.storedTemplateVersionId),
+        storedTemplateVersionNumber: selectedDocument.storedTemplateVersionNumber || null,
+        hasStoredDocx: Boolean(selectedDocument.hasStoredDocx),
+        generatedFromStoredDbDocx: clean(selectedDocument.repositorySource) === "barsh-matters-db" && clean(selectedDocument.storageKind) === "db-docx-base64",
       },
       workingDocument: working,
       sourceDocxByteLength: buffer.byteLength,
@@ -218,12 +232,27 @@ export async function POST(req: NextRequest) {
         statusText: graphTokenResult.statusText,
         tokenReceived: true,
       },
+      sourceTemplateContract: {
+        usesStoredDbDocx:
+          clean(selectedDocument.repositorySource) === "barsh-matters-db" &&
+          clean(selectedDocument.storageKind) === "db-docx-base64" &&
+          Boolean(selectedDocument.hasStoredDocx),
+        repositorySource: clean(selectedDocument.repositorySource),
+        repositoryStatus: clean(selectedDocument.repositoryStatus),
+        storageKind: clean(selectedDocument.storageKind),
+        storedTemplateVersionId: clean(selectedDocument.storedTemplateVersionId),
+        storedTemplateVersionNumber: selectedDocument.storedTemplateVersionNumber || null,
+        sourceEndpoint: clean(selectedDocument.sourceEndpoint),
+      },
       safety: {
         graphFileCreated: true,
         clioRecordsChanged: false,
         databaseRecordsChanged: false,
         finalPdfCreated: false,
         deliveryArtifactCreated: false,
+        storedDbDocxSourcePreserved:
+          clean(selectedDocument.repositorySource) === "barsh-matters-db" &&
+          clean(selectedDocument.storageKind) === "db-docx-base64",
       },
       note:
         "Working DOCX was created in Microsoft Graph/OneDrive for editing. Final delivery must still convert the latest edited DOCX to PDF before delivery.",

@@ -410,6 +410,18 @@ export async function POST(req: NextRequest) {
         contentType: PDF_CONTENT_TYPE,
         sourceDocxContentType: DOCX_CONTENT_TYPE,
         workingDocumentDriveItemId: shouldUseWorkingDocument ? workingDocumentDriveItemId : null,
+        sourceTemplateContract: {
+          usesStoredDbDocx:
+            clean((document as any).repositorySource) === "barsh-matters-db" &&
+            clean((document as any).storageKind) === "db-docx-base64" &&
+            Boolean((document as any).hasStoredDocx),
+          repositorySource: clean((document as any).repositorySource),
+          repositoryStatus: clean((document as any).repositoryStatus),
+          storageKind: clean((document as any).storageKind),
+          storedTemplateVersionId: clean((document as any).storedTemplateVersionId),
+          storedTemplateVersionNumber: (document as any).storedTemplateVersionNumber || null,
+          sourceEndpoint: clean((document as any).sourceEndpoint),
+        },
         pdfFinalization: {
           provider: "microsoft_graph_driveitem_content_format_pdf",
           source: shouldUseWorkingDocument ? "working-docx-drive-item" : "generated-docx",

@@ -120,7 +120,8 @@
     "verify:document-template-detail-workflow-safety": "node scripts/verify-document-template-detail-workflow-safety.mjs",
     "verify:stored-db-docx-workflow-safety": "node scripts/verify-stored-db-docx-workflow-safety.mjs",
     "verify:document-activity-trace-ui-safety": "node scripts/verify-document-activity-trace-ui-safety.mjs",
-    "verify:document-template-replacement-versioning-safety": "node scripts/verify-document-template-replacement-versioning-safety.mjs"
+    "verify:document-template-replacement-versioning-safety": "node scripts/verify-document-template-replacement-versioning-safety.mjs",
+    "verify:stored-db-docx-generation-path-safety": "node scripts/verify-stored-db-docx-generation-path-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
