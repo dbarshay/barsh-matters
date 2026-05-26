@@ -5347,13 +5347,11 @@ function masterSettlementDateFiledValue(): string {
         })).filter((doc: any) => doc.key)
       : [];
 
-    const settlementDocumentOptions = repositoryDocumentOptions.length > 0
-      ? repositoryDocumentOptions
-      : settlementPreviewDocumentOptions;
+    const settlementDocumentOptions = settlementPreviewDocumentOptions;
 
     const storedRepositoryDocumentOptions = repositoryDocumentOptions.filter((option: any) => option.hasStoredDocx);
 
-    const displayedTemplateOptions = isSettlementDocumentMode && settlementDocumentOptions.length > 0
+    const displayedTemplateOptions = isSettlementDocumentMode
       ? settlementDocumentOptions
       : [
           ...storedRepositoryDocumentOptions,
@@ -6429,7 +6427,7 @@ function masterSettlementDateFiledValue(): string {
       ? repositoryDocumentOptions
       : settlementPreviewDocumentOptions;
     const storedRepositoryDocumentOptions = repositoryDocumentOptions.filter((option: any) => option.hasStoredDocx);
-    const displayedTemplateOptions = isSettlementDocumentMode && settlementDocumentOptions.length > 0
+    const displayedTemplateOptions = isSettlementDocumentMode
       ? settlementDocumentOptions
       : [
           ...storedRepositoryDocumentOptions,
