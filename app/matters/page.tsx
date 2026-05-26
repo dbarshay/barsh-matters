@@ -556,7 +556,7 @@ export default function FilteredMattersPage() {
   }
 
   const settlementRecordSettlementOpenerLabel = "Record Settlement";
-  const settlementCommitButtonGreenMarker = "data-barsh-settlement-commit-button-green-marker: Commit Settlement uses the same solid green action styling as other primary green buttons";
+  const settlementCommitButtonGreenMarker = "data-barsh-settlement-commit-button-green-marker: Record Settlement uses the same solid green action styling as other primary green buttons";
   function masterSettlementCommitButtonStyle(): React.CSSProperties {
     const canCommit = masterSettlementCanCommit();
     return {
@@ -568,12 +568,15 @@ export default function FilteredMattersPage() {
     };
   }
   const settlementClearRetainersMarker = "data-barsh-settlement-clear-retainers-marker: Clear resets settlement entry fields but preserves/reloads provider retainer defaults";
-  const settlementCalculateCommitMarker = "data-barsh-settlement-calculate-commit-marker: Calculate Settlement prepares settlementRecordPayload; Commit Settlement requires a valid local preview";
-  const settlementPopupBottomButtonsMarker = "data-barsh-settlement-popup-bottom-buttons-marker: Cancel | Clear | Commit Settlement";
-  const settlementCommitFlowMarker = "data-barsh-settlement-commit-flow-marker: Cancel | Clear | Commit Settlement | tickler | document-dialog";
+  const settlementCalculateCommitMarker = "data-barsh-settlement-calculate-commit-marker: Record Settlement calculates local preview internally before saving";
+  const settlementPopupBottomButtonsMarker = "data-barsh-settlement-popup-bottom-buttons-marker: Cancel | Clear | Record Settlement";
+  const settlementCommitFlowMarker = "data-barsh-settlement-commit-flow-marker: Cancel | Clear | Record Settlement | internal-preview | tickler | document-dialog";
   const [masterSettlementFormOpen, setMasterSettlementFormOpen] = useState(false);
   const [masterSettlementGrossInput, setMasterSettlementGrossInput] = useState("");
   const [masterSettlementWithInput, setMasterSettlementWithInput] = useState("");
+  const [masterSettlementContacts, setMasterSettlementContacts] = useState<any[]>([]);
+  const [masterSettlementContactsLoading, setMasterSettlementContactsLoading] = useState(false);
+  const [masterSettlementContactsError, setMasterSettlementContactsError] = useState("");
   const [masterSettlementDateInput, setMasterSettlementDateInput] = useState(() => masterPaymentTodayInput());
   const [masterSettlementPaymentExpectedDateInput, setMasterSettlementPaymentExpectedDateInput] = useState(() => addDaysToDateInput(masterPaymentTodayInput(), 45));
   const [masterSettlementPrincipalFeePercentInput, setMasterSettlementPrincipalFeePercentInput] = useState("");
@@ -597,6 +600,14 @@ export default function FilteredMattersPage() {
   const [masterSettlementProviderFeeDefaultsLoading, setMasterSettlementProviderFeeDefaultsLoading] = useState(false);
   const [masterSettlementPopupPosition, setMasterSettlementPopupPosition] = useState({ x: 0, y: 72 });
   const [masterSettlementPopupDragging, setMasterSettlementPopupDragging] = useState(false);
+  const masterHasActiveRecordedSettlement = Boolean(
+    masterSettlementHistory?.activeRecordId ||
+      (
+        masterSettlementHistory?.ok &&
+        Array.isArray(masterSettlementHistory.records) &&
+        masterSettlementHistory.records.some((record: any) => !record?.voided)
+      )
+  );
 
   const [masterInfoEditDialog, setMasterInfoEditDialog] = useState<null | {
     field: string;
@@ -2479,6 +2490,34 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
+  function settlementContactDisplay(contact: any): string {
+    const name = clean(contact?.name);
+    const email = clean(contact?.email);
+    if (name && email) return `${name} <${email}>`;
+    return name || email || "";
+  }
+
+  async function loadMasterSettlementContacts() {
+    setMasterSettlementContactsLoading(true);
+    setMasterSettlementContactsError("");
+
+    try {
+      const response = await fetch("/api/settlements/contacts", { cache: "no-store" });
+      const json = await response.json().catch(() => null);
+
+      if (response.ok === false || json?.ok !== true) {
+        throw new Error(json?.error || "Settlement contact lookup failed.");
+      }
+
+      setMasterSettlementContacts(Array.isArray(json.contacts) ? json.contacts : []);
+    } catch (error: any) {
+      setMasterSettlementContacts([]);
+      setMasterSettlementContactsError(error?.message || "Settlement contact lookup failed.");
+    } finally {
+      setMasterSettlementContactsLoading(false);
+    }
+  }
+
   function formatMasterSettlementMoneyInput(value: string): string {
     const cleaned = String(value || "").replace(/[$,\s]/g, "");
     if (!cleaned) return "";
@@ -2579,19 +2618,25 @@ function masterSettlementDateFiledValue(): string {
       });
 
       const json = await response.json().catch(() => null);
-      setMasterSettlementLocalPreview({
+      const previewResult = {
         ...(json || {}),
         ok: Boolean(response.ok && json?.ok),
         responseStatus: response.status,
-      });
+      };
+
+      setMasterSettlementLocalPreview(previewResult);
+      return previewResult;
     } catch (error: any) {
-      setMasterSettlementLocalPreview({
+      const previewResult = {
         ok: false,
         action: "settlement-local-preview",
         previewOnly: true,
         localFirst: true,
         error: error?.message || "Local settlement preview failed.",
-      });
+      };
+
+      setMasterSettlementLocalPreview(previewResult);
+      return previewResult;
     } finally {
       setMasterSettlementLocalPreviewLoading(false);
     }
@@ -2742,21 +2787,77 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
+  function masterSettlementBasisReady(): boolean {
+    if (masterSettlementDraft.settlementBasedOn === "fee_schedule_amount") {
+      return masterSettlementMoneyValue(masterSettlementDraft.feeScheduleAmount) > 0;
+    }
+
+    if (masterSettlementDraft.settlementBasedOn === "custom_amount") {
+      return masterSettlementMoneyValue(masterSettlementDraft.customAmount) > 0;
+    }
+
+    return masterSettlementDraft.settlementBasedOn === "lawsuit_amount";
+  }
+
+  function masterSettlementPrincipalReady(): boolean {
+    return clean(masterSettlementGrossInput).length > 0 && masterSettlementGrossValue() > 0;
+  }
+
+  function masterSettlementInterestReady(): boolean {
+    return clean(masterSettlementInterestAmountInput).length > 0 || clean(masterSettlementSettledInterestInput).length > 0;
+  }
+
+  function masterSettlementSettledWithReady(): boolean {
+    return clean(masterSettlementWithInput).length > 0;
+  }
+
+  function masterSettlementRequiredFieldMessage(): string {
+    if (!masterSettlementBasisReady()) {
+      if (masterSettlementDraft.settlementBasedOn === "fee_schedule_amount") {
+        return "Enter a Fee Schedule amount before recording the settlement.";
+      }
+
+      if (masterSettlementDraft.settlementBasedOn === "custom_amount") {
+        return "Enter a Custom amount before recording the settlement.";
+      }
+
+      return "Select a settlement basis before recording the settlement.";
+    }
+
+    if (!masterSettlementPrincipalReady()) {
+      return "Enter the principal settlement before recording the settlement.";
+    }
+
+    if (!masterSettlementInterestReady()) {
+      return "Select or enter the interest settlement before recording the settlement.";
+    }
+
+    if (!masterSettlementSettledWithReady()) {
+      return "Select the settled-with contact before recording the settlement.";
+    }
+
+    if (masterHasActiveRecordedSettlement) {
+      return "A settlement has already been recorded for this lawsuit.  Only one active settlement is permitted per lawsuit.";
+    }
+
+    return "";
+  }
+
   function masterSettlementCanCommit(): boolean {
     return Boolean(
-      masterSettlementLocalPreview?.ok &&
-      masterSettlementLocalPreview?.settlementRecordPayload &&
-      !masterSettlementRecordSaveLoading
+      masterSettlementRequiredFieldMessage() === "" &&
+      !masterSettlementRecordSaveLoading &&
+      !masterSettlementLocalPreviewLoading
     );
   }
 
   async function commitMasterSettlementAndLaunchDocuments() {
-    const settlementRecordPayload = masterSettlementLocalPreview?.settlementRecordPayload;
-
-    if (!settlementRecordPayload) {
+    const requiredFieldMessage = masterSettlementRequiredFieldMessage();
+    if (requiredFieldMessage) {
       setMasterSettlementRecordSave({
         ok: false,
-        error: "Run local settlement preview before committing the settlement.",
+        duplicateSettlementBlocked: masterHasActiveRecordedSettlement,
+        error: requiredFieldMessage,
       });
       return;
     }
@@ -2765,6 +2866,19 @@ function masterSettlementDateFiledValue(): string {
     setMasterSettlementRecordSave(null);
 
     try {
+      const previewResult = await runMasterSettlementLocalPreview();
+      const settlementRecordPayload = previewResult?.settlementRecordPayload;
+
+      if (!previewResult?.ok || !settlementRecordPayload) {
+        setMasterSettlementRecordSave({
+          ...(previewResult || {}),
+          ok: false,
+          action: "settlement-record-internal-preview",
+          error: previewResult?.error || "Settlement calculation failed.  Review the settlement fields and try again.",
+        });
+        return;
+      }
+
       const response = await fetch("/api/settlements/local-record", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2807,7 +2921,7 @@ function masterSettlementDateFiledValue(): string {
         action: "local-settlement-record-save",
         previewOnly: true,
         localFirst: true,
-        error: error?.message || "Local settlement commit failed.",
+        error: error?.message || "Local settlement record failed.",
       });
     } finally {
       setMasterSettlementRecordSaveLoading(false);
@@ -2819,6 +2933,7 @@ function masterSettlementDateFiledValue(): string {
     if (!masterSettlementFormOpen || activeMasterWorkspaceTab !== "payments") return;
 
     loadMasterSettlementProviderFeeDefaults();
+    void loadMasterSettlementContacts();
 
     const costsAmount = masterSettlementCostDefaultValue();
     if (!clean(masterSettlementCostsInput) && costsAmount > 0) {
@@ -9807,20 +9922,31 @@ function masterSettlementDateFiledValue(): string {
                         <span>Settled With *</span>
                         <input
                           data-master-settlement-entry-field="true"
+                          list="master-settlement-contacts-list"
                           value={masterSettlementWithInput}
                           onChange={(event) => setMasterSettlementWithInput(event.target.value)}
-                          placeholder="Search Local Contact"
-                          style={{
-                            width: "100%",
-                            border: "1px solid #cbd5e1",
-                            borderRadius: 8,
-                            padding: "8px 10px",
-                            background: "#fff",
-                            color: "#0f172a",
-                            fontWeight: 800,
-                            outline: "none",
-                          }}
+                          placeholder="Start typing settled-with contact"
+                          style={masterSettlementInputStyle}
                         />
+                        <datalist id="master-settlement-contacts-list">
+                          {masterSettlementContacts.map((contact: any) => {
+                            const display = settlementContactDisplay(contact);
+                            return <option key={contact.id || display} value={display} />;
+                          })}
+                        </datalist>
+                        <div style={{ marginTop: 4, fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+                          Start typing, then choose a settlement contact from the predictive list.
+                        </div>
+                        {masterSettlementContactsLoading && (
+                          <div style={{ marginTop: 4, fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+                            Loading settlement contacts...
+                          </div>
+                        )}
+                        {masterSettlementContactsError && (
+                          <div style={{ marginTop: 4, fontSize: 11, color: "#991b1b", fontWeight: 800 }}>
+                            {masterSettlementContactsError}
+                          </div>
+                        )}
                       </label>
 
                       <label className="barsh-direct-payment-field">
@@ -10254,74 +10380,34 @@ function masterSettlementDateFiledValue(): string {
 
                     <button
                       type="button"
-                      onClick={runMasterSettlementLocalPreview}
-                      disabled={masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0}
-                      title="Preview local-first settlement calculations only.  No database write, document generation, print queue change, or matter closure occurs."
-                      style={{
-                        minWidth: 250,
-                        height: 44,
-                        border: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "1px solid #bfdbfe" : "1px solid #2563eb",
-                        borderRadius: 12,
-                        background: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "#dbeafe" : "#2563eb",
-                        color: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "#1d4ed8" : "#ffffff",
-                        fontWeight: 950,
-                        fontSize: 15,
-                        cursor: masterSettlementLocalPreviewLoading || masterSettlementGrossValue() <= 0 ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {masterSettlementLocalPreviewLoading ? "Calculating..." : "Calculate Settlement"}
-                    </button>
-
-                    <button
-                      type="button"
                       data-barsh-record-local-settlement-guarded-button="true"
                       onClick={commitMasterSettlementAndLaunchDocuments}
-                      disabled={
-                        masterSettlementRecordSaveLoading ||
-                        !masterSettlementLocalPreview?.ok ||
-                        !masterSettlementLocalPreview?.settlementRecordPayload
+                      disabled={!masterSettlementCanCommit()}
+                      title={
+                        masterSettlementRequiredFieldMessage() ||
+                        "Calculate and record the settlement in Barsh Matters, then open the settlement document workflow.  This does not write Clio, print, queue, or close matters."
                       }
-                      title="Save the settlement to Barsh Matters local settlement tables only.  This does not write Clio, generate documents, print, queue, or close matters."
                       style={{
                         minWidth: 230,
                         height: 44,
-                        border:
-                          masterSettlementRecordSaveLoading ||
-                          !masterSettlementLocalPreview?.ok ||
-                          !masterSettlementLocalPreview?.settlementRecordPayload
-                            ? "1px solid #bbf7d0"
-                            : "1px solid #16a34a",
+                        border: !masterSettlementCanCommit() ? "1px solid #bbf7d0" : "1px solid #16a34a",
                         borderRadius: 12,
-                        background:
-                          masterSettlementRecordSaveLoading ||
-                          !masterSettlementLocalPreview?.ok ||
-                          !masterSettlementLocalPreview?.settlementRecordPayload
-                            ? "#dcfce7"
-                            : "#16a34a",
-                        color:
-                          masterSettlementRecordSaveLoading ||
-                          !masterSettlementLocalPreview?.ok ||
-                          !masterSettlementLocalPreview?.settlementRecordPayload
-                            ? "#166534"
-                            : "#ffffff",
+                        background: !masterSettlementCanCommit() ? "#dcfce7" : "#16a34a",
+                        color: !masterSettlementCanCommit() ? "#166534" : "#ffffff",
                         fontWeight: 950,
                         fontSize: 15,
-                        cursor:
-                          masterSettlementRecordSaveLoading ||
-                          !masterSettlementLocalPreview?.ok ||
-                          !masterSettlementLocalPreview?.settlementRecordPayload
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity:
-                          masterSettlementRecordSaveLoading ||
-                          !masterSettlementLocalPreview?.ok ||
-                          !masterSettlementLocalPreview?.settlementRecordPayload
-                            ? 0.78
-                            : 1,
-                      
-                ...masterSettlementCommitButtonStyle(),}}
+                        cursor: !masterSettlementCanCommit() ? "not-allowed" : "pointer",
+                        opacity: !masterSettlementCanCommit() ? 0.78 : 1,
+                        boxShadow: masterSettlementCanCommit() ? "0 10px 20px rgba(22, 163, 74, 0.24)" : "none",
+                      }}
                     >
-                      {masterSettlementRecordSaveLoading ? "Committing..." : "Commit Settlement"}
+                      {masterSettlementRecordSaveLoading || masterSettlementLocalPreviewLoading
+                        ? "Recording..."
+                        : masterHasActiveRecordedSettlement
+                          ? "Settlement Already Recorded"
+                          : masterSettlementRequiredFieldMessage()
+                            ? "Complete Required Fields"
+                            : "Record Settlement"}
                     </button>
                   </div>
                 </div>

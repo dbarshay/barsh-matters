@@ -684,6 +684,23 @@ model LocalWorkflowTickler {
   @@index([createdAt])
 }
 
+model SettlementContact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  role      String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, email])
+  @@index([isActive])
+}
+
 model DocumentTemplate {
   id                    String                       @id @default(cuid())
   key                   String                       @unique

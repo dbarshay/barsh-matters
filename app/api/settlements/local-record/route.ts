@@ -160,51 +160,38 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    let supersededExistingRecord: any = null;
-    let supersededTicklersClosed = 0;
-
     if (existingRecord) {
-      const supersededAt = new Date();
-
-      supersededExistingRecord = await prisma.localSettlementRecord.update({
-        where: { id: existingRecord.id },
-        data: {
-          voided: true,
-          voidedAt: supersededAt,
-          voidedBy: "barsh-matters-local-record-save",
-          voidReason: "Superseded by a newly saved local settlement record for the same Master Lawsuit.",
-          status: "SUPERSEDED_BY_NEW_LOCAL_SETTLEMENT",
-          voidSnapshot: {
-            supersededByNewLocalSettlementRecord: true,
-            supersededAt: supersededAt.toISOString(),
-            previousRecord: existingRecord,
+      return NextResponse.json(
+        {
+          ok: false,
+          action: "local-settlement-record-save",
+          localFirst: true,
+          databaseRecordsChanged: false,
+          duplicateSettlementBlocked: true,
+          error: "A settlement has already been recorded for this lawsuit.  Only one active settlement is permitted per lawsuit.",
+          existingSettlement: {
+            id: existingRecord.id,
+            recordedAt: existingRecord.recordedAt,
+            status: existingRecord.status,
+          },
+          validation: {
+            readyForLocalSettlementRecordSave: false,
+            blockingErrors: [
+              "A settlement has already been recorded for this lawsuit.  Only one active settlement is permitted per lawsuit.",
+            ],
+            warnings: validation.warnings,
+          },
+          safety: {
+            clioRecordsChanged: false,
+            databaseRecordsChanged: false,
+            documentsGenerated: false,
+            printQueueChanged: false,
+            mattersClosed: false,
+            settlementWritebackPerformed: false,
           },
         },
-        select: {
-          id: true,
-          recordedAt: true,
-          status: true,
-          voided: true,
-          voidedAt: true,
-          voidReason: true,
-        },
-      });
-
-      const ticklerUpdate = await prisma.localWorkflowTickler.updateMany({
-        where: {
-          settlementRecordId: existingRecord.id,
-          kind: "settlement_payment_due_followup",
-          status: "open",
-        },
-        data: {
-          status: "closed",
-          completedAt: supersededAt,
-          completedBy: "barsh-matters-local-record-save",
-          completedNote: "Closed automatically because the prior local settlement record was superseded by a newly saved local settlement record.",
-        },
-      });
-
-      supersededTicklersClosed = ticklerUpdate.count;
+        { status: 409 }
+      );
     }
 
     const terms = validation.settlementTerms;
@@ -240,8 +227,8 @@ export async function POST(req: NextRequest) {
           clioRecordsChanged: false,
           databaseRecordsChanged: true,
           databaseWriteScope: ["LocalSettlementRecord", "LocalSettlementRow"],
-          priorActiveSettlementAutoSuperseded: Boolean(supersededExistingRecord),
-          supersededTicklersClosed,
+          priorActiveSettlementAutoSuperseded: false,
+          duplicateSettlementBlocked: false,
           documentsGenerated: false,
           printQueueChanged: false,
           mattersClosed: false,
@@ -313,7 +300,7 @@ export async function POST(req: NextRequest) {
           settlementWritebackPerformed: false,
         },
         note:
-          "Local settlement record saved to Barsh Matters local settlement tables only.  No Clio write, document generation, print queue change, or matter closure occurred.",
+          "Local settlement record saved to Barsh Matters local settlement tables only.  One active settlement is permitted per lawsuit.  No Clio write, document generation, print queue change, or matter closure occurred.",
       },
       { status: 200 }
     );
