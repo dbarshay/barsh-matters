@@ -651,6 +651,7 @@ export default function FilteredMattersPage() {
   const [masterDocumentRepositoryTemplatesError, setMasterDocumentRepositoryTemplatesError] = useState("");
   const [masterDocumentFinalizing, setMasterDocumentFinalizing] = useState(false);
   const [masterDocumentFinalizationResult, setMasterDocumentFinalizationResult] = useState<any>(null);
+  const [masterSettlementUploadNotice, setMasterSettlementUploadNotice] = useState("");
   const [masterFinalizePreview, setMasterFinalizePreview] = useState<any>(null);
   const [masterFinalizeUploadLoading, setMasterFinalizeUploadLoading] = useState(false);
   const [masterFinalizeUploadResult, setMasterFinalizeUploadResult] = useState<any>(null);
@@ -3859,6 +3860,68 @@ function masterSettlementDateFiledValue(): string {
     }
   }
 
+  async function saveMasterSettlementDocumentLocally(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const context = buildMasterDocumentDeliveryContext(selectedTemplate);
+    const isSettlementDocumentMode =
+      masterDocumentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.documentLaunchMode === "settlement" ||
+      masterDocumentDataPreview?.action === "settlement-documents-preview";
+
+    if (isSettlementDocumentMode) {
+      const finalizationId = Number(masterDocumentFinalizationResult?.finalizationRecord?.id || 0);
+
+      if (!finalizationId) {
+        alert("Finalize the settlement document before saving it locally.");
+        return;
+      }
+
+      const docxDownloadUrl =
+        masterDocumentFinalizationResult?.generatedDocument?.downloadUrl ||
+        masterDocumentFinalizationResult?.selectedDocument?.generatedDocument?.downloadUrl ||
+        masterDocumentFinalizationResult?.selectedDocument?.docxDownloadUrl ||
+        "";
+
+      if (!docxDownloadUrl) {
+        alert("The finalized settlement document does not expose a local save/download route.");
+        return;
+      }
+
+      const downloadLink = document.createElement("a");
+      downloadLink.href = docxDownloadUrl;
+      downloadLink.target = "_blank";
+      downloadLink.rel = "noopener noreferrer";
+      downloadLink.download =
+        masterDocumentFinalizationResult?.generatedDocument?.filename ||
+        masterDocumentFinalizationResult?.selectedDocument?.filename ||
+        context.documentLabel ||
+        "Settlement Document.docx";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      setMasterDocumentPrintResult({
+        ok: true,
+        action: "settlement-document-save-local-opened",
+        documentLabel: context.documentLabel,
+        filename:
+          masterDocumentFinalizationResult?.generatedDocument?.filename ||
+          masterDocumentFinalizationResult?.selectedDocument?.filename ||
+          context.documentLabel ||
+          "",
+        docxDownloadUrl,
+        finalizationId,
+        finalizedPdfGenerated: false,
+        printablePdfReady: false,
+        clioRecordsChanged: false,
+        emailSent: false,
+        note: "Opened the generated DOCX route so the user can save the settlement document locally.",
+      });
+      return;
+    }
+
+    alert("Save Locally is currently wired for settlement documents only.");
+  }
+
   async function launchMasterDocumentPrint(selectedTemplate: { key: string; label: string; description: string } | null) {
     const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
@@ -3868,39 +3931,37 @@ function masterSettlementDateFiledValue(): string {
       masterDocumentDataPreview?.action === "settlement-documents-preview";
 
     if (isSettlementDocumentMode) {
-      const docxDownloadUrl =
-        masterDocumentFinalizationResult?.generatedDocument?.downloadUrl ||
-        masterDocumentFinalizationResult?.selectedDocument?.generatedDocument?.downloadUrl ||
-        masterDocumentFinalizationResult?.selectedDocument?.docxDownloadUrl ||
-        "";
+      const finalizationId = Number(masterDocumentFinalizationResult?.finalizationRecord?.id || 0);
 
-      if (!docxDownloadUrl) {
-        alert("Finalize the settlement document before opening the generated DOCX route.");
+      if (!finalizationId) {
+        alert("Finalize the settlement document before opening the print dialog.");
         return;
       }
 
-      const docxWindow = window.open(docxDownloadUrl, "_blank", "noopener,noreferrer");
+      const printableUrl = `/api/settlements/documents-print-local?finalizationId=${encodeURIComponent(String(finalizationId))}`;
+      const printWindow = window.open(printableUrl, "_blank", "noopener,noreferrer");
 
-      if (!docxWindow) {
-        alert("The browser blocked the generated DOCX route.  Please allow popups for Barsh Matters and try again.");
+      if (!printWindow) {
+        alert("The browser blocked the settlement print window.  Please allow popups for Barsh Matters and try again.");
         return;
       }
 
       setMasterDocumentPrintResult({
         ok: true,
-        action: "settlement-document-docx-open-for-print",
+        action: "settlement-document-print-dialog-opened",
         documentLabel: context.documentLabel,
         filename:
           masterDocumentFinalizationResult?.generatedDocument?.filename ||
           masterDocumentFinalizationResult?.selectedDocument?.filename ||
           context.documentLabel ||
           "",
-        docxDownloadUrl,
+        printableUrl,
+        finalizationId,
         finalizedPdfGenerated: false,
         printablePdfReady: false,
         clioRecordsChanged: false,
         emailSent: false,
-        note: "Opened the real generated DOCX route.  PDF conversion/printing remains browser-controlled.",
+        note: "Opened a local printable settlement document view and launched the browser print dialog.",
       });
       return;
     }
@@ -4418,6 +4479,7 @@ function masterSettlementDateFiledValue(): string {
       setMasterFinalizeUploadResult(json);
       setMasterDocumentFinalizationResult(json);
       setMasterDocumentWorkflowStage("delivery");
+
       setMasterDocumentDeliveryPopupOpen(true);
       await loadMasterClioDocuments();
 
@@ -4480,6 +4542,7 @@ function masterSettlementDateFiledValue(): string {
 
     setMasterDocumentFinalizing(true);
     setMasterDocumentFinalizationResult(null);
+    setMasterSettlementUploadNotice("Uploading finalized PDF to Clio matter BRL30148");
 
     try {
       const response = await fetch("/api/settlements/documents-finalize-local", {
@@ -4505,6 +4568,19 @@ function masterSettlementDateFiledValue(): string {
 
       setMasterDocumentFinalizationResult(json);
       setMasterDocumentWorkflowStage("delivery");
+
+      const settlementUploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
+      const settlementSkippedCount = Array.isArray(json.skipped) ? json.skipped.length : 0;
+      const settlementClioDisplayNumber = json?.clioUploadTarget?.displayNumber || "BRL30148";
+      const settlementUploadMessage =
+        settlementUploadedCount > 0
+          ? `Uploaded finalized PDF to Clio matter ${settlementClioDisplayNumber}`
+          : `Finalized PDF already exists in Clio matter ${settlementClioDisplayNumber}; duplicate upload skipped`;
+
+      setMasterSettlementUploadNotice(settlementUploadMessage);
+      window.setTimeout(() => {
+        setMasterSettlementUploadNotice("");
+      }, 4500);
     } catch (err: any) {
       const fallback = {
         ok: false,
@@ -4512,6 +4588,7 @@ function masterSettlementDateFiledValue(): string {
         error: err?.message || "Master document finalization failed.",
       };
       setMasterDocumentFinalizationResult(fallback);
+      setMasterSettlementUploadNotice("");
       alert(fallback.error);
     } finally {
       setMasterDocumentFinalizing(false);
@@ -6189,6 +6266,22 @@ function masterSettlementDateFiledValue(): string {
               </section>
             )}
 
+            {masterSettlementUploadNotice && (
+              <section
+                style={{
+                  border: "1px solid #bfdbfe",
+                  borderRadius: 18,
+                  padding: 16,
+                  background: "#eff6ff",
+                  color: "#1e3a8a",
+                  fontWeight: 900,
+                  lineHeight: 1.45,
+                }}
+              >
+                {masterSettlementUploadNotice}
+              </section>
+            )}
+
             {masterDocumentFinalizationResult && (
               <section
                 style={{
@@ -6205,12 +6298,29 @@ function masterSettlementDateFiledValue(): string {
                 </h3>
                 <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
                   {masterDocumentFinalizationResult.ok
-                    ? `DocumentFinalization ID ${masterDocumentFinalizationResult.finalizationRecord?.id || "created"} was saved locally for this finalization/upload attempt.  Uploaded and skipped document results are shown above.  No Outlook draft was created, no email was sent, and no print queue record was written.`
+                    ? isSettlementDocumentMode
+                      ? `DocumentFinalization ID ${masterDocumentFinalizationResult.finalizationRecord?.id || "created"} was saved locally.  Uploaded to Clio: ${Array.isArray(masterDocumentFinalizationResult.uploaded) ? masterDocumentFinalizationResult.uploaded.length : 0} document(s).  Skipped duplicates: ${Array.isArray(masterDocumentFinalizationResult.skipped) ? masterDocumentFinalizationResult.skipped.length : 0} document(s).  No Outlook draft was created, no email was sent, and no print queue record was written.`
+                      : `DocumentFinalization ID ${masterDocumentFinalizationResult.finalizationRecord?.id || "created"} was saved locally for this finalization/upload attempt.  Uploaded and skipped document results are shown above.  No Outlook draft was created, no email was sent, and no print queue record was written.`
                     : masterDocumentFinalizationResult.error || "Master document finalization failed."}
                 </p>
                 {masterDocumentFinalizationResult?.selectedDocument?.filename && (
                   <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
                     Planned filename: <strong>{masterDocumentFinalizationResult.selectedDocument.filename}</strong>
+                  </p>
+                )}
+                {isSettlementDocumentMode && masterDocumentFinalizationResult?.clioUploadTarget?.displayNumber && (
+                  <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                    Uploaded finalized PDF to mapped Clio matter: <strong>{masterDocumentFinalizationResult.clioUploadTarget.displayNumber}</strong>
+                  </p>
+                )}
+                {Array.isArray(masterDocumentFinalizationResult?.uploaded) && masterDocumentFinalizationResult.uploaded.length > 0 && (
+                  <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                    Clio document: <strong>{masterDocumentFinalizationResult.uploaded.map((doc: any) => doc?.filename || doc?.clioDocumentName).filter(Boolean).join(", ")}</strong>
+                  </p>
+                )}
+                {Array.isArray(masterDocumentFinalizationResult?.skipped) && masterDocumentFinalizationResult.skipped.length > 0 && (
+                  <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                    Clio duplicate skipped: <strong>{masterDocumentFinalizationResult.skipped.map((doc: any) => doc?.filename || doc?.existingClioDocumentName).filter(Boolean).join(", ")}</strong>
                   </p>
                 )}
                 {masterDocumentFinalizationResult?.generatedDocument?.downloadUrl && (
@@ -6239,19 +6349,81 @@ function masterSettlementDateFiledValue(): string {
                     Delivery actions will be enabled after the finalized-document email, print, and queue workflows are wired.  Master/Lawsuit final upload to Clio is now handled in Step 3.
                   </p>
                 </div>
-                <div
-                  style={{
-                    border: "1px solid #fed7aa",
-                    background: "#fff7ed",
-                    color: "#9a3412",
-                    borderRadius: 14,
-                    padding: 14,
-                    fontWeight: 850,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  Email, print, and queue actions remain hidden until finalized-document delivery is wired.  The current production action is explicit upload to the mapped master Clio matter.
-                </div>
+                {isSettlementDocumentMode ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 10,
+                      }}
+                    >
+                      {actionButton(
+                        masterDocumentPrintQueueLoading ? "Sending to Print Queue..." : "Send to Print Queue",
+                        () => sendMasterDocumentToPrintQueue(displayedSelectedTemplate),
+                        masterDocumentPrintQueueLoading || !masterDocumentFinalizationResult?.finalizationRecord?.id
+                      )}
+                      {actionButton(
+                        "Save Locally",
+                        () => saveMasterSettlementDocumentLocally(displayedSelectedTemplate),
+                        !masterDocumentFinalizationResult?.finalizationRecord?.id
+                      )}
+                      {actionButton(
+                        "Print Finalized Document",
+                        () => launchMasterDocumentPrint(displayedSelectedTemplate),
+                        !masterDocumentFinalizationResult?.finalizationRecord?.id
+                      )}
+                      <button
+                        type="button"
+                        disabled
+                        title="Email delivery for finalized settlement documents is not wired yet."
+                        style={{
+                          border: "1px solid #cbd5e1",
+                          background: "#f8fafc",
+                          color: "#94a3b8",
+                          borderRadius: 999,
+                          padding: "10px 14px",
+                          fontWeight: 850,
+                          cursor: "not-allowed",
+                        }}
+                      >
+                        Email Finalized Document
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        border: "1px solid #bbf7d0",
+                        background: "#f0fdf4",
+                        color: "#166534",
+                        borderRadius: 14,
+                        padding: 14,
+                        fontWeight: 800,
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      Settlement delivery now uses the local settlement finalization record created in Step 2.  Save Locally opens the generated DOCX route for desktop saving.  Print Finalized Document opens a local printable view and launches the browser print dialog.  Send to Print Queue writes a local Barsh Matters print-queue item only.
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      border: "1px solid #fed7aa",
+                      background: "#fff7ed",
+                      color: "#9a3412",
+                      borderRadius: 14,
+                      padding: 14,
+                      fontWeight: 850,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Email, print, and queue actions remain hidden until finalized-document delivery is wired.  The current production action is explicit upload to the mapped master Clio matter.
+                  </div>
+                )}
               </section>
             )}
 
@@ -6267,16 +6439,31 @@ function masterSettlementDateFiledValue(): string {
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 18 }}>
-                  {masterDocumentPrintResult.ok ? "DOCX Route Opened" : "Print Launch Failed"}
+                  {masterDocumentPrintResult.ok
+                    ? masterDocumentPrintResult.action === "settlement-document-save-local-opened"
+                      ? "Save Locally Opened"
+                      : masterDocumentPrintResult.action === "settlement-document-print-dialog-opened"
+                        ? "Print Dialog Opened"
+                        : "DOCX Route Opened"
+                    : "Print Launch Failed"}
                 </h3>
                 <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
                   {masterDocumentPrintResult.ok
-                    ? "The placeholder-seeded generated DOCX route was opened.  This is not a final production template/document.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no email was sent."
+                    ? masterDocumentPrintResult.action === "settlement-document-save-local-opened"
+                      ? "The generated DOCX route was opened so the user can save the settlement document locally.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no email was sent."
+                      : masterDocumentPrintResult.action === "settlement-document-print-dialog-opened"
+                        ? "A local printable settlement document view was opened and the browser print dialog was launched.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no email was sent."
+                        : "The placeholder-seeded generated DOCX route was opened.  This is not a final production template/document.  No PDF was generated, no Clio upload occurred, no Outlook draft was created, and no email was sent."
                     : masterDocumentPrintResult.error || "Could not open the generated settlement document route."}
                 </p>
                 {masterDocumentPrintResult?.docxDownloadUrl && (
                   <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
-                    Opened placeholder DOCX route: <strong>{masterDocumentPrintResult.docxDownloadUrl}</strong>
+                    Local save DOCX route: <strong>{masterDocumentPrintResult.docxDownloadUrl}</strong>
+                  </p>
+                )}
+                {masterDocumentPrintResult?.printableUrl && (
+                  <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                    Printable local route: <strong>{masterDocumentPrintResult.printableUrl}</strong>
                   </p>
                 )}
               </section>
@@ -8268,8 +8455,16 @@ function masterSettlementDateFiledValue(): string {
 
                       <button
                         type="button"
-                        onClick={() => setMasterSettlementFormOpen(true)}
-                        title="Open settlement preview popup.  Local settlement workflow only."
+                        disabled={masterHasActiveRecordedSettlement}
+                        onClick={() => {
+                          if (masterHasActiveRecordedSettlement) return;
+                          setMasterSettlementFormOpen(true);
+                        }}
+                        title={
+                          masterHasActiveRecordedSettlement
+                            ? "A settlement is already recorded for this lawsuit.  The settlement entry dialog is disabled."
+                            : "Open settlement preview popup.  Local settlement workflow only."
+                        }
                         style={{
                           width: "100%",
                           minWidth: 0,
@@ -8280,12 +8475,12 @@ function masterSettlementDateFiledValue(): string {
                           color: "#fff",
                           fontSize: 12,
                           fontWeight: 950,
-                          cursor: "pointer",
-                          boxShadow: "0 8px 24px rgba(22, 163, 74, 0.22)",
-                          opacity: 1,
+                          cursor: masterHasActiveRecordedSettlement ? "not-allowed" : "pointer",
+                          boxShadow: masterHasActiveRecordedSettlement ? "none" : "0 8px 24px rgba(22, 163, 74, 0.22)",
+                          opacity: masterHasActiveRecordedSettlement ? 0.72 : 1,
                         }}
                       >
-                        Record Settlement
+                        {masterHasActiveRecordedSettlement ? "Settlement Already Recorded" : "Record Settlement"}
                       </button>
 
                                           

@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  listClioMatterDocuments,
+  uploadBufferToClioMatterDocuments,
+} from "@/lib/clioDocumentUpload";
+import {
+  convertWorkingDocxDriveItemToPdf,
+  uploadWorkingDocxToGraph,
+} from "@/lib/documents/graphWorkingDocuments";
 import { buildSettlementPlannedDocuments } from "@/lib/documents/templateRegistry";
 import { buildPlaceholderSeededDocxRouteArtifact } from "@/lib/documents/artifactContract";
 
 export const runtime = "nodejs";
 
+const DOCX_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const PDF_CONTENT_TYPE = "application/pdf";
+
 function clean(value: unknown): string {
   return String(value || "").trim();
+}
+
+function pdfFilenameFromDocxFilename(value: unknown): string {
+  const raw = clean(value) || "Settlement Document.pdf";
+  if (raw.toLowerCase().endsWith(".pdf")) return raw;
+  if (raw.toLowerCase().endsWith(".docx")) return `${raw.slice(0, -5)}.pdf`;
+  return `${raw.replace(/\.[^.]+$/, "") || "Settlement Document"}.pdf`;
 }
 
 function jsonSafe(value: unknown) {
@@ -278,6 +297,149 @@ export async function POST(req: NextRequest) {
       templateLabel: templateLabelInput || selectedDocument.label || templateKey,
     };
 
+    const lawsuit = await prisma.lawsuit.findUnique({
+      where: { masterLawsuitId: effectiveMasterLawsuitId },
+      select: {
+        clioMasterMatterId: true,
+        clioMasterDisplayNumber: true,
+        clioMasterMatterDescription: true,
+      },
+    });
+
+    const clioMatterId = Number(lawsuit?.clioMasterMatterId || 0);
+    const clioDisplayNumber = clean(lawsuit?.clioMasterDisplayNumber);
+    const finalFilename = clean(generatedDocx.filename || selectedDocument.filename || `${templateKey}.docx`);
+
+    if (!Number.isFinite(clioMatterId) || clioMatterId <= 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          action: "settlement-document-finalize-local",
+          error: `No mapped Clio master matter exists for ${effectiveMasterLawsuitId}. Finalized settlement documents must upload to the mapped master Clio matter.`,
+          safety: {
+            localFirst: true,
+            databaseRecordsChanged: false,
+            clioRecordsChanged: false,
+            printQueueChanged: false,
+            emailsSent: false,
+            noPdfPretended: true,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const generatedDocxDownloadUrl = clean(generatedDocx.downloadUrl);
+
+    if (!generatedDocxDownloadUrl) {
+      throw new Error("Generated settlement DOCX did not expose a download URL for Clio upload.");
+    }
+
+    const docxUrl = new URL(generatedDocxDownloadUrl, req.nextUrl.origin);
+    const docxRes = await fetch(docxUrl);
+
+    if (!docxRes.ok) {
+      const text = await docxRes.text().catch(() => "");
+      throw new Error(
+        `Could not generate settlement DOCX for Clio upload: ${docxRes.status} ${docxRes.statusText}${text ? ` ${text.slice(0, 300)}` : ""}`
+      );
+    }
+
+    const docxBuffer = Buffer.from(await docxRes.arrayBuffer());
+
+    if (!docxBuffer.length) {
+      throw new Error("Generated settlement DOCX was empty and could not be uploaded to Clio.");
+    }
+
+    const finalPdfFilename = pdfFilenameFromDocxFilename(finalFilename);
+
+    const workingDocx = await uploadWorkingDocxToGraph({
+      docxBuffer,
+      filename: finalFilename,
+      folder: "BarshMattersSettlementFinalizationWorkingDocs",
+    });
+
+    const pdfConversion = await convertWorkingDocxDriveItemToPdf({
+      driveItemId: workingDocx.driveItemId,
+    });
+
+    const pdfBuffer = pdfConversion.pdfBuffer;
+
+    if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.byteLength <= 0) {
+      throw new Error("Generated settlement PDF was empty and could not be uploaded to Clio.");
+    }
+
+    const existingClioDocuments = await listClioMatterDocuments(clioMatterId);
+    const existingMatch = existingClioDocuments.find((doc: any) => {
+      const names = [
+        clean(doc?.name),
+        clean(doc?.filename),
+        clean(doc?.latestDocumentVersion?.filename),
+      ].filter(Boolean);
+      return names.some((name) => name.toLowerCase() === finalPdfFilename.toLowerCase());
+    });
+
+    const uploaded: any[] = [];
+    const skipped: any[] = [];
+
+    if (existingMatch) {
+      skipped.push({
+        key: templateKey,
+        label: templateLabelInput || selectedDocument.label || templateKey,
+        filename: finalPdfFilename,
+        sourceDocxFilename: finalFilename,
+        reason: "A PDF document with this exact filename already exists in the mapped master Clio matter Documents tab.",
+        duplicatePrevention: true,
+        clioUploaded: false,
+        existingClioDocumentId: existingMatch.id,
+        existingClioDocumentName: existingMatch.name || existingMatch.filename || finalPdfFilename,
+        existingClioDocumentVersionUuid: existingMatch.latestDocumentVersion?.uuid || null,
+        finalizedPdfGenerated: true,
+        uploadedAsDocx: false,
+        uploadedAsPdf: false,
+        workingDocumentDriveItemId: workingDocx.driveItemId,
+        graphPdfSourceDriveItemId: pdfConversion.sourceDriveItemId || workingDocx.driveItemId,
+        printQueueRecordCreated: false,
+        emailAttachmentReady: false,
+      });
+    } else {
+      const uploadResult = await uploadBufferToClioMatterDocuments({
+        matterId: clioMatterId,
+        filename: finalPdfFilename,
+        buffer: pdfBuffer,
+        contentType: PDF_CONTENT_TYPE,
+      });
+
+      uploaded.push({
+        key: templateKey,
+        label: templateLabelInput || selectedDocument.label || templateKey,
+        filename: finalPdfFilename,
+        sourceDocxFilename: finalFilename,
+        byteLength: pdfBuffer.byteLength,
+        sourceDocxByteLength: docxBuffer.byteLength,
+        contentType: PDF_CONTENT_TYPE,
+        sourceDocxContentType: DOCX_CONTENT_TYPE,
+        uploadedAsDocx: false,
+        uploadedAsPdf: true,
+        finalizedPdfGenerated: true,
+        workingDocumentDriveItemId: workingDocx.driveItemId,
+        graphPdfSourceDriveItemId: pdfConversion.sourceDriveItemId || workingDocx.driveItemId,
+        pdfFinalization: {
+          provider: "microsoft_graph_driveitem_content_format_pdf",
+          source: "settlement-generated-docx-drive-item",
+          sourceDriveItemId: pdfConversion.sourceDriveItemId || workingDocx.driveItemId,
+          pdfContentType: pdfConversion.pdfContentType || PDF_CONTENT_TYPE,
+          pdfByteLength: pdfConversion.pdfByteLength || pdfBuffer.byteLength,
+        },
+        clioDocumentId: uploadResult.documentId,
+        clioDocumentName: uploadResult.documentName,
+        clioDocumentVersionUuid: uploadResult.documentVersionUuid,
+        fullyUploaded: uploadResult.fullyUploaded,
+        printQueueRecordCreated: false,
+        emailAttachmentReady: false,
+      });
+    }
+
     const selectedSnapshot = {
       ...selectedDocument,
       templateLabel: templateLabelInput || selectedDocument.label || templateKey,
@@ -289,39 +451,34 @@ export async function POST(req: NextRequest) {
       finalProductionDocument: false,
       generatedDocument: generatedDocx,
       docxDownloadUrl: generatedDocx.downloadUrl,
-      finalizedPdfGenerated: false,
+      finalizedPdfGenerated: true,
       persistentFileCreated: false,
       routeBackedArtifact: generatedDocx.routeBackedArtifact,
-      clioUploaded: false,
+      clioUploaded: uploaded.length > 0,
+      clioSkippedDuplicate: skipped.length > 0,
+      clioUploadTargetMatterId: clioMatterId,
+      clioUploadTargetDisplayNumber: clioDisplayNumber || null,
       printQueueRecordCreated: false,
       emailAttachmentReady: false,
-      note: "Local finalization stores a placeholder-seeded Barsh Matters DOCX generation route reference for testing. This is not a final production template/document. It does not create a persistent file, PDF, Clio upload, email attachment, or print queue record.",
+      note: "Local settlement finalization generated the settlement DOCX route and automatically stored the document in the mapped master Clio matter Documents tab when no exact filename duplicate existed.",
     };
 
     const record = await prisma.documentFinalization.create({
       data: {
         masterLawsuitId: effectiveMasterLawsuitId,
-        masterMatterId: 0,
-        masterDisplayNumber: null,
-        status: "local-settlement-finalized-placeholder",
+        masterMatterId: clioMatterId,
+        masterDisplayNumber: clioDisplayNumber || null,
+        status: uploaded.length > 0 ? "settlement-uploaded-to-clio" : "settlement-clio-duplicate-skipped",
         requestedKeys: jsonSafe([templateKey]),
-        uploaded: jsonSafe([]),
-        skipped: jsonSafe([
-          {
-            key: templateKey,
-            label: selectedSnapshot.templateLabel,
-            filename: selectedDocument.filename || null,
-            reason: "PDF generation and Clio upload are intentionally not wired in this local-only placeholder finalization step.",
-            finalizedPdfGenerated: false,
-            clioUploaded: false,
-            printQueueRecordCreated: false,
-            emailAttachmentReady: false,
-          },
-        ]),
+        uploaded: jsonSafe(uploaded),
+        skipped: jsonSafe(skipped),
         clioUploadTarget: jsonSafe({
-          type: "none-local-placeholder",
-          clioUploadDeferred: true,
-          reason: "Clio remains document vault/access storage only and is not used during local settlement finalization placeholder creation.",
+          type: "mapped-master-lawsuit",
+          matterId: clioMatterId,
+          displayNumber: clioDisplayNumber || null,
+          description: clean(lawsuit?.clioMasterMatterDescription) || null,
+          uploadTargetMode: "master-lawsuit",
+          clioUploadDeferred: false,
         }),
         validationSnapshot: jsonSafe({
           canFinalizeLocally: true,
@@ -330,7 +487,11 @@ export async function POST(req: NextRequest) {
           settlementVoided: settlementRecord.voided,
           selectedTemplateKey: templateKey,
           selectedTemplateLabel: selectedSnapshot.templateLabel,
-          finalizedPdfGenerated: false,
+          finalizedPdfGenerated: true,
+          uploadedAsDocx: false,
+          uploadedAsPdf: uploaded.length > 0,
+          duplicateSkipped: skipped.length > 0,
+          clioUploaded: uploaded.length > 0,
           noPdfPretended: true,
         }),
         packetSummarySnapshot: jsonSafe({
@@ -358,7 +519,7 @@ export async function POST(req: NextRequest) {
           folderPath,
         }),
         allowDuplicateUploads: false,
-        noUploadPerformed: true,
+        noUploadPerformed: uploaded.length === 0,
         error: null,
         finalizedAt: new Date(),
       },
@@ -373,6 +534,14 @@ export async function POST(req: NextRequest) {
       settlementRecordId: settlementRecord.id,
       selectedDocument: selectedSnapshot,
       generatedDocument: generatedDocx,
+      uploaded,
+      skipped,
+      clioUploadTarget: {
+        type: "mapped-master-lawsuit",
+        matterId: clioMatterId,
+        displayNumber: clioDisplayNumber || null,
+        description: clean(lawsuit?.clioMasterMatterDescription) || null,
+      },
       finalizationRecord: {
         id: record.id,
         status: record.status,
@@ -383,8 +552,18 @@ export async function POST(req: NextRequest) {
         finalizedAt: record.finalizedAt.toISOString(),
         createdAt: record.createdAt.toISOString(),
       },
-      safety: safetyLocalSettlementDocumentFinalize(),
-      note: "Created a persistent local Barsh Matters DocumentFinalization record for the selected settlement document with a placeholder-seeded DOCX generation route reference. This is not a final production template/document. No persistent file was created, no PDF was generated, no Clio upload occurred, no Outlook draft was created, and no print queue item was written.",
+      safety: {
+        ...safetyLocalSettlementDocumentFinalize(),
+        clioRecordsChanged: uploaded.length > 0,
+        clioDocumentsUploaded: uploaded.length,
+        duplicateClioDocumentsSkipped: skipped.length,
+        noUploadPerformed: uploaded.length === 0,
+        uploadedOnlyToMappedMasterClioMatterDocumentsTab: true,
+      },
+      note:
+        uploaded.length > 0
+          ? "Created a persistent local Barsh Matters DocumentFinalization record and automatically uploaded the finalized settlement PDF to the mapped master Clio matter Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written."
+          : "Created a persistent local Barsh Matters DocumentFinalization record. Clio upload was skipped because an exact filename duplicate already exists in the mapped master Clio matter Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written.",
     });
   } catch (error: any) {
     return NextResponse.json(
