@@ -24,6 +24,172 @@ function money(value: unknown): number {
   return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : 0;
 }
 
+
+function firstPresent(...values: any[]): any {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return null;
+}
+
+function settlementAmountOrPercentDisplay(value: any): string | null {
+  const raw = firstPresent(value);
+  if (raw === null) return null;
+
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  if (text.includes("%")) {
+    const n = Number(text.replace(/[%\s,]/g, ""));
+    return Number.isFinite(n) ? `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}%` : text;
+  }
+
+  if (text.includes("$")) {
+    const n = Number(text.replace(/[$,\s]/g, ""));
+    return Number.isFinite(n)
+      ? n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : text;
+  }
+
+  const n = Number(text.replace(/[,\s]/g, ""));
+  if (!Number.isFinite(n)) return text;
+
+  if (n < 101) {
+    return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
+  }
+
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+
+function numericMoney(value: any): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
+
+function recordCostsAmount(record: any): number {
+  const snapshot = record?.previewSnapshot && typeof record.previewSnapshot === "object" ? record.previewSnapshot : {};
+  const terms = snapshot?.settlementTerms && typeof snapshot.settlementTerms === "object" ? snapshot.settlementTerms : {};
+  const totals = snapshot?.settlementTotals && typeof snapshot.settlementTotals === "object" ? snapshot.settlementTotals : {};
+  return numericMoney(
+    firstPresent(
+      totals.costsAmount,
+      terms.costsAmount,
+      snapshot.costsAmount,
+      0
+    )
+  );
+}
+
+function rowCostsAmount(row: any): number {
+  const snapshot = row?.rowSnapshot && typeof row.rowSnapshot === "object" ? row.rowSnapshot : {};
+  return numericMoney(
+    firstPresent(
+      snapshot.costAmount,
+      snapshot.costsAmount,
+      snapshot.filingFee,
+      0
+    )
+  );
+}
+
+function displayMoney(value: any): string {
+  const n = numericMoney(value);
+  return n.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function percentText(value: number): string | null {
+  if (!Number.isFinite(value)) return null;
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
+}
+
+function percentDisplayFromRawInput(value: any): string | null {
+  const raw = firstPresent(value);
+  if (raw === null) return null;
+
+  const text = String(raw).trim();
+  if (!text) return null;
+  if (text.includes("$")) return null;
+
+  const n = Number(text.replace(/[%\s,]/g, ""));
+  if (!Number.isFinite(n)) return null;
+
+  if (text.includes("%") || n < 101) return percentText(n);
+  return null;
+}
+
+function derivedPrincipalPercent(record: any): string | null {
+  const rows = Array.isArray(record?.rows) ? record.rows : [];
+  const basisTotal = rows.reduce((sum: number, row: any) => sum + numericMoney(row?.principalBasis), 0);
+  const allocatedTotal = numericMoney(record?.allocatedSettlementTotal);
+
+  if (basisTotal <= 0 || allocatedTotal <= 0) return null;
+  return percentText((allocatedTotal / basisTotal) * 100);
+}
+
+function derivedInterestPercent(record: any): string | null {
+  const snapshot = record?.previewSnapshot && typeof record.previewSnapshot === "object" ? record.previewSnapshot : {};
+  const terms = snapshot?.settlementTerms && typeof snapshot.settlementTerms === "object" ? snapshot.settlementTerms : {};
+  const basis = numericMoney(
+    firstPresent(
+      terms.interestBasis,
+      terms.calculatedInterestAmount,
+      snapshot.interestBasis,
+      snapshot.calculatedInterestAmount,
+      0
+    )
+  );
+  const amount = numericMoney(record?.interestAmountTotal);
+
+  if (basis > 0 && amount > 0) return percentText((amount / basis) * 100);
+  return percentDisplayFromRawInput(firstPresent(terms.interestSettlementInput, snapshot.interestSettlementInput));
+}
+
+function combinedSettlementDisplay(amount: any, rawPercentInput: any, fallbackPercent: string | null): string | null {
+  const amountDisplay = displayMoney(amount);
+  const percentDisplay = percentDisplayFromRawInput(rawPercentInput) || fallbackPercent;
+  return percentDisplay ? `${amountDisplay} (${percentDisplay})` : amountDisplay;
+}
+
+function settlementInputDisplaysFromRecord(record: any): {
+  principalSettlementDisplay: string | null;
+  interestSettlementDisplay: string | null;
+} {
+  const snapshot = record?.previewSnapshot && typeof record.previewSnapshot === "object" ? record.previewSnapshot : {};
+  const terms = snapshot?.settlementTerms && typeof snapshot.settlementTerms === "object" ? snapshot.settlementTerms : {};
+  const totals = snapshot?.settlementTotals && typeof snapshot.settlementTotals === "object" ? snapshot.settlementTotals : {};
+
+  const principalPercentInput = firstPresent(
+    terms.principalSettlementInput,
+    terms.grossSettlementAmountInput,
+    snapshot.principalSettlementInput,
+    snapshot.grossSettlementAmountInput
+  );
+
+  const interestPercentInput = firstPresent(
+    terms.interestSettlementInput,
+    snapshot.interestSettlementInput
+  );
+
+  return {
+    principalSettlementDisplay: combinedSettlementDisplay(
+      firstPresent(record.allocatedSettlementTotal, totals.allocatedSettlementTotal, terms.grossSettlementAmount, record.grossSettlementAmount),
+      principalPercentInput,
+      derivedPrincipalPercent(record)
+    ),
+    interestSettlementDisplay: combinedSettlementDisplay(
+      firstPresent(record.interestAmountTotal, totals.interestAmountTotal, terms.interestAmount),
+      interestPercentInput,
+      derivedInterestPercent(record)
+    ),
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
@@ -83,7 +249,12 @@ export async function GET(req: NextRequest) {
       includeVoided,
       count: records.length,
       activeRecordId: activeRecord?.id || null,
-      records: records.map((record) => ({
+      records: records.map((record) => {
+        const settlementInputDisplays = settlementInputDisplaysFromRecord(record);
+        const costsAmount = recordCostsAmount(record);
+        const totalSettlementAmount = numericMoney(record.allocatedSettlementTotal) + numericMoney(record.interestAmountTotal) + costsAmount + numericMoney(record.totalFee);
+
+        return {
         id: record.id,
         masterLawsuitId: record.masterLawsuitId,
         status: record.status,
@@ -94,6 +265,10 @@ export async function GET(req: NextRequest) {
         notes: record.notes,
         allocationMode: record.allocationMode,
         grossSettlementAmount: money(record.grossSettlementAmount),
+        principalSettlementDisplay: settlementInputDisplays.principalSettlementDisplay,
+        interestSettlementDisplay: settlementInputDisplays.interestSettlementDisplay,
+        costsAmount: money(costsAmount),
+        totalSettlementAmount: money(totalSettlementAmount),
         interestAmountTotal: money(record.interestAmountTotal),
         principalFeePercent: money(record.principalFeePercent),
         interestFeePercent: money(record.interestFeePercent),
@@ -111,7 +286,11 @@ export async function GET(req: NextRequest) {
         voidedAt: record.voidedAt,
         voidedBy: record.voidedBy,
         voidReason: record.voidReason,
-        rows: record.rows.map((row) => ({
+        rows: record.rows.map((row, rowIndex) => {
+          const costAmount = rowCostsAmount(row) || (rowIndex === 0 ? costsAmount : 0);
+          const settlementTotal = numericMoney(row.allocatedSettlement) + numericMoney(row.interestAmount) + costAmount + numericMoney(row.totalFee);
+
+          return {
           id: row.id,
           settlementRecordId: row.settlementRecordId,
           masterLawsuitId: row.masterLawsuitId,
@@ -129,15 +308,19 @@ export async function GET(req: NextRequest) {
           principalBasis: money(row.principalBasis),
           allocatedSettlement: money(row.allocatedSettlement),
           interestAmount: money(row.interestAmount),
+          costAmount: money(costAmount),
           principalFee: money(row.principalFee),
           interestFee: money(row.interestFee),
           totalFee: money(row.totalFee),
+          settlementTotal: money(settlementTotal),
           providerPrincipalNet: money(row.providerPrincipalNet),
           providerInterestNet: money(row.providerInterestNet),
           providerNet: money(row.providerNet),
           settlementStatus: row.settlementStatus,
-        })),
-      })),
+          };
+        }),
+      };
+      }),
       totals: activeRecord
         ? {
             grossSettlementAmount: money(activeRecord.grossSettlementAmount),

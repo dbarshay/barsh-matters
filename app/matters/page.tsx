@@ -2777,12 +2777,15 @@ function masterSettlementDateFiledValue(): string {
         body: JSON.stringify({
           masterLawsuitId: currentMasterLawsuitIdForDocumentPreview(),
           grossSettlementAmount: masterSettlementGrossValue(),
+          principalSettlementInput: masterSettlementGrossInput,
           settledWith: masterSettlementWithInput,
           settlementDate: masterSettlementDateInput,
           paymentExpectedDate: masterSettlementPaymentExpectedDateInput,
           allocationMode: "pro_rata_by_principal_balance",
           principalFeePercent: masterSettlementPercentValue(masterSettlementPrincipalFeePercentInput),
           interestAmount: masterSettlementInterestValue(),
+          interestSettlementInput: masterSettlementInterestAmountInput,
+          settledInterestAmountInput: masterSettlementSettledInterestInput || money(masterSettlementCalculatedSettledInterestValue()),
           costsAmount: masterSettlementCostsValue(),
           interestFeePercent: masterSettlementPercentValue(masterSettlementInterestFeePercentInput),
           notes: masterSettlementNotesInput,
@@ -2844,6 +2847,26 @@ function masterSettlementDateFiledValue(): string {
     } finally {
       setMasterSettlementRecordSaveLoading(false);
     }
+  }
+
+  function formatSettlementHistoryDate(value: unknown): string {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "—";
+
+    const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (ymd) {
+      return `${ymd[2]}/${ymd[3]}/${ymd[1]}`;
+    }
+
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      const month = String(parsed.getMonth() + 1).padStart(2, "0");
+      const day = String(parsed.getDate()).padStart(2, "0");
+      const year = parsed.getFullYear();
+      return `${month}/${day}/${year}`;
+    }
+
+    return raw;
   }
 
   function formatSettlementHistoryMoney(value: unknown): string {
@@ -9343,11 +9366,7 @@ function masterSettlementDateFiledValue(): string {
                     >
                       <span>Costs</span>
                       <strong style={{ color: "#0f172a", fontSize: 17 }}>
-                        {money(
-                          masterInfoMoneyNumber("filingFee", "$0.00") +
-                            masterInfoMoneyNumber("serviceFee", "$0.00") +
-                            masterInfoMoneyNumber("otherCourtCosts", "$0.00")
-                        )}
+                        {masterCourtCostsDisplayValue()}
                       </strong>
                     </div>
 
@@ -9384,9 +9403,7 @@ function masterSettlementDateFiledValue(): string {
                       <strong style={{ color: "#0f172a", fontSize: 22 }}>
                         {money(
                           masterPaymentSummary.lawsuitAmount +
-                            masterInfoMoneyNumber("filingFee", "$0.00") +
-                            masterInfoMoneyNumber("serviceFee", "$0.00") +
-                            masterInfoMoneyNumber("otherCourtCosts", "$0.00") -
+                            masterSettlementCostDefaultValue() -
                             masterPaymentSummary.paymentsPosted
                         )}
                       </strong>
@@ -10451,7 +10468,27 @@ function masterSettlementDateFiledValue(): string {
                     padding: 14,
                   }}
                 >
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(110px, 1fr))", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(130px, 1fr))", gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Principal Settlement</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{record.principalSettlementDisplay || formatSettlementHistoryMoney(record.allocatedSettlementTotal || 0)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Interest Settlement</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{record.interestSettlementDisplay || formatSettlementHistoryMoney(record.interestAmountTotal || 0)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Costs</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.costsAmount || 0)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Attorney Fee</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.totalFee || 0)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Total</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.totalSettlementAmount || 0)}</div>
+                    </div>
                     <div>
                       <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Status</div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: record.voided ? "#991b1b" : "#166534" }}>
@@ -10464,31 +10501,11 @@ function masterSettlementDateFiledValue(): string {
                     </div>
                     <div>
                       <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Settlement Date</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{record.settlementDate || "—"}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{formatSettlementHistoryDate(record.settlementDate)}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Payment Due</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{record.paymentExpectedDate || "—"}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Principal</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.allocatedSettlementTotal || 0)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Interest</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.interestAmountTotal || 0)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Attorney Fee</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.totalFee || 0)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Provider Net</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.providerNetTotal || 0)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Rows</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{record.rowCount || record.rows?.length || 0}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{formatSettlementHistoryDate(record.paymentExpectedDate)}</div>
                     </div>
                   </div>
 
@@ -10502,8 +10519,9 @@ function masterSettlementDateFiledValue(): string {
                             <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Patient</th>
                             <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Principal</th>
                             <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Interest</th>
+                            <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Costs</th>
                             <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Fee</th>
-                            <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Provider Net</th>
+                            <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #e2e8f0" }}>Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -10514,11 +10532,42 @@ function masterSettlementDateFiledValue(): string {
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.patient || "—"}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>{formatSettlementHistoryMoney(row.allocatedSettlement || 0)}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>{formatSettlementHistoryMoney(row.interestAmount || 0)}</td>
+                              <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>{formatSettlementHistoryMoney(row.costAmount || 0)}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>{formatSettlementHistoryMoney(row.totalFee || 0)}</td>
-                              <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 800 }}>{formatSettlementHistoryMoney(row.providerNet || 0)}</td>
+                              <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 800 }}>{formatSettlementHistoryMoney(row.settlementTotal || 0)}</td>
                             </tr>
                           ))}
                         </tbody>
+                        <tfoot>
+                          <tr style={{ background: "#f8fafc" }}>
+                            <td colSpan={3} style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 900, color: "#334155", textTransform: "uppercase" }}>
+                              Column Totals
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.allocatedSettlementTotal || 0)}
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.interestAmountTotal || 0)}
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.costsAmount || 0)}
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.totalFee || 0)}
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.totalSettlementAmount || 0)}
+                            </td>
+                          </tr>
+                          <tr style={{ background: "#f1f5f9" }}>
+                            <td colSpan={7} style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#334155", textTransform: "uppercase" }}>
+                              Gross Total
+                            </td>
+                            <td style={{ padding: 8, borderTop: "1px solid #cbd5e1", textAlign: "right", fontWeight: 950, color: "#0f172a" }}>
+                              {formatSettlementHistoryMoney(record.totalSettlementAmount || 0)}
+                            </td>
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
                   )}
