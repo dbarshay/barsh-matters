@@ -383,6 +383,23 @@ export async function POST(req: NextRequest) {
     const skipped: any[] = [];
 
     if (existingMatch) {
+      const existingMatchAny = existingMatch as any;
+      const existingClioDocumentIdForSkippedPdf = String(
+        existingMatch.id ||
+        existingMatchAny.documentId ||
+        existingMatchAny.document_id ||
+        existingMatchAny.clioDocumentId ||
+        ""
+      ).trim();
+
+      const existingClioDocumentVersionUuidForSkippedPdf = String(
+        existingMatch.latestDocumentVersion?.uuid ||
+        existingMatchAny.latest_document_version?.uuid ||
+        existingMatch.latestDocumentVersion?.id ||
+        existingMatchAny.latest_document_version?.id ||
+        ""
+      ).trim();
+
       skipped.push({
         key: templateKey,
         label: templateLabelInput || selectedDocument.label || templateKey,
@@ -391,11 +408,13 @@ export async function POST(req: NextRequest) {
         reason: "A PDF document with this exact filename already exists in the mapped master Clio matter Documents tab.",
         duplicatePrevention: true,
         clioUploaded: false,
-        existingClioDocumentId: existingMatch.id,
-        clioDocumentId: existingMatch.id,
+        existingClioDocumentId: existingClioDocumentIdForSkippedPdf || null,
+        clioDocumentId: existingClioDocumentIdForSkippedPdf || null,
+        documentId: existingClioDocumentIdForSkippedPdf || null,
+        id: existingClioDocumentIdForSkippedPdf || null,
         existingClioDocumentName: existingMatch.name || existingMatch.filename || finalPdfFilename,
-        existingClioDocumentVersionUuid: existingMatch.latestDocumentVersion?.uuid || null,
-        clioDocumentVersionUuid: existingMatch.latestDocumentVersion?.uuid || null,
+        existingClioDocumentVersionUuid: existingClioDocumentVersionUuidForSkippedPdf || null,
+        clioDocumentVersionUuid: existingClioDocumentVersionUuidForSkippedPdf || null,
         finalizedPdfGenerated: true,
         uploadedAsDocx: false,
         uploadedAsPdf: false,

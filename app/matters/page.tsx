@@ -585,6 +585,41 @@ export default function FilteredMattersPage() {
   const [masterSettlementCostsInput, setMasterSettlementCostsInput] = useState("");
   const [masterSettlementAttorneyFeeOverrides, setMasterSettlementAttorneyFeeOverrides] = useState<Record<string, string>>({});
   const [masterSettlementInterestFeePercentInput, setMasterSettlementInterestFeePercentInput] = useState("");
+  // data-barsh-normalize-settlement-amount-percent-threshold-open-effect
+  useEffect(() => {
+    if (!masterSettlementFormOpen) return;
+
+    setMasterSettlementGrossInput((current) => {
+      if (!masterSettlementAmountOrPercentShouldUsePercent(current) && !masterSettlementBareNumericInput(current)) return current;
+      const normalized = formatMasterSettlementAmountOrPercentInput(current);
+      return normalized || current;
+    });
+
+    setMasterSettlementInterestAmountInput((current) => {
+      if (!masterSettlementAmountOrPercentShouldUsePercent(current) && !masterSettlementBareNumericInput(current)) return current;
+      const normalized = formatMasterSettlementAmountOrPercentInput(current);
+      return normalized || current;
+    });
+  }, [masterSettlementFormOpen]);
+
+  // data-barsh-normalize-settlement-percent-open-effect
+  useEffect(() => {
+    if (!masterSettlementFormOpen) return;
+
+    setMasterSettlementPrincipalFeePercentInput((current) => {
+      if (!shouldNormalizeDisplayedSettlementPercent(current)) return current;
+      const normalized = formatMasterSettlementPercentInput(current);
+      return normalized || current;
+    });
+
+    setMasterSettlementInterestFeePercentInput((current) => {
+      if (!shouldNormalizeDisplayedSettlementPercent(current)) return current;
+      const normalized = formatMasterSettlementPercentInput(current);
+      return normalized || current;
+    });
+  }, [masterSettlementFormOpen]);
+
+
   const [masterSettlementNotesInput, setMasterSettlementNotesInput] = useState("");
   const [masterSettlementLocalPreview, setMasterSettlementLocalPreview] = useState<any>(null);
   const [masterSettlementLocalPreviewLoading, setMasterSettlementLocalPreviewLoading] = useState(false);
@@ -2366,14 +2401,28 @@ export default function FilteredMattersPage() {
   }
 
   function masterSettlementInterestSettlementPercentValue(): number {
-    const raw = clean(masterSettlementInterestAmountInput);
-    if (!raw) return 100;
-    const n = masterSettlementPercentValue(raw);
-    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 100;
+    const raw = String(masterSettlementInterestAmountInput || "").trim();
+    if (!raw) return 0;
+
+    if (masterSettlementAmountOrPercentShouldUsePercent(raw)) {
+      const percentRaw = raw.endsWith("%") ? raw : `${raw}%`;
+      return masterSettlementPercentValue(percentRaw);
+    }
+
+    const interestBasis = masterSettlementSimpleInterestAmountValue();
+    const settledInterestAmount = masterSettlementLooseNumericValue(raw);
+    return interestBasis > 0 ? (settledInterestAmount / interestBasis) * 100 : 0;
   }
 
   function masterSettlementCalculatedSettledInterestValue(): number {
-    return masterSettlementSimpleInterestAmountValue() * (masterSettlementInterestSettlementPercentValue() / 100);
+    const raw = String(masterSettlementInterestAmountInput || "").trim();
+    if (!raw) return 0;
+
+    if (masterSettlementAmountOrPercentShouldUsePercent(raw)) {
+      return masterSettlementSimpleInterestAmountValue() * (masterSettlementInterestSettlementPercentValue() / 100);
+    }
+
+    return masterSettlementLooseNumericValue(raw);
   }
 
   function masterSettlementInterestValue(): number {
@@ -2419,6 +2468,51 @@ function masterSettlementDateFiledValue(): string {
     const cleaned = String(value || "").replace(/[%\s]/g, "");
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : 0;
+  }
+
+  function shouldNormalizeDisplayedSettlementPercent(value: string): boolean {
+    return /^\s*-?\d+\.0+%?\s*$/.test(String(value || ""));
+  }
+
+  function formatMasterSettlementPercentInput(value: string): string {
+    const n = masterSettlementPercentValue(value);
+    if (!Number.isFinite(n)) return value;
+
+    const rounded = Math.round(n * 100) / 100;
+    return Number.isInteger(rounded)
+      ? String(rounded)
+      : rounded.toFixed(2).replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+  }
+
+  function masterSettlementLooseNumericValue(value: string): number {
+    const raw = String(value || "")
+      .trim()
+      .replace(/^\$/, "")
+      .replace(/%$/, "")
+      .replace(/,/g, "")
+      .trim();
+
+    if (!raw) return 0;
+
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function masterSettlementBareNumericInput(value: string): boolean {
+    const raw = String(value || "").trim();
+    if (!raw || raw.startsWith("$") || raw.endsWith("%")) return false;
+    return /^-?\d{1,3}(?:,\d{3})*(?:\.\d+)?$|^-?\d+(?:\.\d+)?$/.test(raw);
+  }
+
+  function masterSettlementAmountOrPercentShouldUsePercent(value: string): boolean {
+    const raw = String(value || "").trim();
+    if (!raw) return false;
+    if (raw.endsWith("%")) return true;
+    if (raw.startsWith("$")) return false;
+    if (!masterSettlementBareNumericInput(raw)) return false;
+
+    const n = masterSettlementLooseNumericValue(raw);
+    return Number.isFinite(n) && n >= 0 && n < 101;
   }
 
   function masterSettlementWholePercentLabel(value: string): string {
@@ -2473,32 +2567,24 @@ function masterSettlementDateFiledValue(): string {
   function masterSettlementAmountOrPercentValue(value: string): number {
     const raw = String(value || "").trim();
     if (!raw) return 0;
-    if (raw.includes("%")) {
-      const percentage = masterSettlementPercentValue(raw);
+
+    if (masterSettlementAmountOrPercentShouldUsePercent(raw)) {
+      const percentRaw = raw.endsWith("%") ? raw : `${raw}%`;
+      const percentage = masterSettlementPercentValue(percentRaw);
       return (masterSettlementBasisAmountValue() * percentage) / 100;
     }
 
-    const numeric = masterSettlementMoneyValue(raw);
-    const explicitDollar = raw.includes("$") || raw.includes(",") || numeric > 100;
-    if (!explicitDollar && numeric > 0 && numeric <= 100) {
-      return (masterSettlementBasisAmountValue() * numeric) / 100;
-    }
-
-    return numeric;
+    return masterSettlementLooseNumericValue(raw);
   }
 
   function formatMasterSettlementAmountOrPercentInput(value: string): string {
     const raw = String(value || "").trim();
     if (!raw) return "";
-    if (raw.includes("%")) {
-      const percentage = masterSettlementPercentValue(raw);
-      return Number.isFinite(percentage) ? `${percentage.toFixed(2)}%` : value;
-    }
 
-    const numeric = masterSettlementMoneyValue(raw);
-    const explicitDollar = raw.includes("$") || raw.includes(",") || numeric > 100;
-    if (!explicitDollar && numeric > 0 && numeric <= 100) {
-      return `${numeric.toFixed(2)}%`;
+    if (masterSettlementAmountOrPercentShouldUsePercent(raw)) {
+      const percentRaw = raw.endsWith("%") ? raw : `${raw}%`;
+      const percentage = masterSettlementPercentValue(percentRaw);
+      return Number.isFinite(percentage) ? `${formatMasterSettlementPercentInput(String(percentage))}%` : value;
     }
 
     const formattedMoney = formatMasterSettlementMoneyInput(value);
@@ -2546,13 +2632,13 @@ function masterSettlementDateFiledValue(): string {
       const interestFeePercent = json?.defaults?.interestFeePercent;
 
       if (typeof principalFeePercent === "number" && Number.isFinite(principalFeePercent)) {
-        setMasterSettlementPrincipalFeePercentInput(principalFeePercent.toFixed(2));
+        setMasterSettlementPrincipalFeePercentInput(formatMasterSettlementPercentInput(String(principalFeePercent)));
       } else {
         setMasterSettlementPrincipalFeePercentInput("");
       }
 
       if (typeof interestFeePercent === "number" && Number.isFinite(interestFeePercent)) {
-        setMasterSettlementInterestFeePercentInput(interestFeePercent.toFixed(2));
+        setMasterSettlementInterestFeePercentInput(formatMasterSettlementPercentInput(String(interestFeePercent)));
       } else {
         setMasterSettlementInterestFeePercentInput("");
       }
@@ -2614,8 +2700,8 @@ function masterSettlementDateFiledValue(): string {
   }
 
   function clearMasterSettlementEntryFields() {
-    const currentPrincipalRetainer = masterSettlementPrincipalFeePercentInput;
-    const currentInterestRetainer = masterSettlementInterestFeePercentInput;
+    const currentPrincipalRetainer = formatMasterSettlementPercentInput(masterSettlementPrincipalFeePercentInput);
+    const currentInterestRetainer = formatMasterSettlementPercentInput(masterSettlementInterestFeePercentInput);
     const currentProviderDefaults = masterSettlementProviderFeeDefaults;
 
     setMasterSettlementGrossInput("");
@@ -3630,8 +3716,8 @@ function masterSettlementDateFiledValue(): string {
 
     const clioDocumentId =
       source.clioDocumentId ||
-      source.documentId ||
       source.existingClioDocumentId ||
+      source.documentId ||
       source.id ||
       "";
 
@@ -3656,6 +3742,15 @@ function masterSettlementDateFiledValue(): string {
       source.clioUploadTargetDisplayNumber ||
       "";
 
+    const clioMatterId =
+      result.clioUploadTarget?.id ||
+      result.clioUploadTarget?.matterId ||
+      result.clioUploadTarget?.clioMatterId ||
+      source.clioMatterId ||
+      source.clioUploadTargetMatterId ||
+      masterClioDocumentsResult?.clioMatterId ||
+      "";
+
     return {
       ...source,
       id: clioDocumentId,
@@ -3671,6 +3766,8 @@ function masterSettlementDateFiledValue(): string {
       masterLawsuitId,
       masterDisplayNumber: clioDisplayNumber,
       clioDisplayNumber,
+      clioMatterId,
+      clioUploadTargetMatterId: clioMatterId,
       downloadUrl: source.downloadUrl || source.url || "",
       webUrl: source.webUrl || source.url || "",
     };
@@ -3715,8 +3812,37 @@ function masterSettlementDateFiledValue(): string {
         documentUrl: finalizedDocumentUrl || baseContext.documentUrl,
         pdfUrl: finalizedPdfUrl || baseContext.pdfUrl,
         pdfFilename: selectedCandidate.filename || baseContext.documentLabel || "Finalized Settlement Document.pdf",
-        clioDocumentId: selectedCandidate.clioDocumentId || "",
-        clioDocumentVersionUuid: selectedCandidate.clioDocumentVersionUuid || "",
+        clioDocumentId:
+          selectedCandidate.clioDocumentId ||
+          selectedCandidate.existingClioDocumentId ||
+          selectedCandidate.documentId ||
+          selectedCandidate.id ||
+          "",
+        existingClioDocumentId: selectedCandidate.existingClioDocumentId || selectedCandidate.id || "",
+        clioMatterId:
+          selectedCandidate.clioMatterId ||
+          selectedCandidate.clioUploadTargetMatterId ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.id ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.matterId ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.clioMatterId ||
+          masterClioDocumentsResult?.clioMatterId ||
+          "",
+        clioUploadTargetMatterId:
+          selectedCandidate.clioUploadTargetMatterId ||
+          selectedCandidate.clioMatterId ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.id ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.matterId ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.clioMatterId ||
+          masterClioDocumentsResult?.clioMatterId ||
+          "",
+        clioDisplayNumber:
+          selectedCandidate.clioDisplayNumber ||
+          selectedCandidate.masterDisplayNumber ||
+          masterDocumentFinalizationResult?.clioUploadTarget?.displayNumber ||
+          masterClioDocumentsResult?.clioDisplayNumber ||
+          "",
+        clioDocumentVersionUuid: selectedCandidate.clioDocumentVersionUuid || selectedCandidate.existingClioDocumentVersionUuid || "",
+        existingClioDocumentVersionUuid: selectedCandidate.existingClioDocumentVersionUuid || selectedCandidate.clioDocumentVersionUuid || "",
         source: "settlement_finalized_pdf_delivery",
       };
 
@@ -4071,32 +4197,65 @@ function masterSettlementDateFiledValue(): string {
     setMasterDocumentDraftCreateLoading(true);
 
     try {
+      const graphDraftPayloadPreview = readDocumentDeliveryGraphPreview(previewState);
+      const settlementFinalizedPdfDraft =
+        Boolean(previewState?.settlementFinalizedPdfDelivery) ||
+        previewState?.context?.source === "settlement_finalized_pdf_delivery" ||
+        previewState?.source === "settlement_finalized_pdf_delivery";
+
       const response = await fetch("/api/graph/create-draft?confirm=create-graph-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           previewState?.graphDraftPayload
-            ? previewState.graphDraftPayload
-            : { graphDraftPayloadPreview: readDocumentDeliveryGraphPreview(previewState) }
+            ? {
+                ...previewState.graphDraftPayload,
+                source: settlementFinalizedPdfDraft ? "settlement_finalized_pdf_delivery" : previewState.graphDraftPayload?.source,
+                context: previewState?.context || previewState.graphDraftPayload?.context || {},
+                selectedFinalizedDocument: previewState?.selectedFinalizedDocument || null,
+              }
+            : {
+                source: settlementFinalizedPdfDraft ? "settlement_finalized_pdf_delivery" : previewState?.source,
+                context: previewState?.context || {},
+                selectedFinalizedDocument: previewState?.selectedFinalizedDocument || null,
+                graphDraftPayloadPreview,
+              }
         ),
       });
 
       const result = await response.json().catch(() => null);
       const outlookDraftUrl = String(result?.draftMetadata?.webLink || result?.webLink || result?.draft?.webLink || "").trim();
 
-      if (response.ok && result?.createsOutlookDraft && outlookDraftUrl) {
+      if (result?.createsOutlookDraft && outlookDraftUrl) {
         if (draftWindow && !draftWindow.closed) {
           draftWindow.location.href = outlookDraftUrl;
         } else {
           window.open(outlookDraftUrl, "_blank", "noopener,noreferrer");
         }
       } else if (draftWindow && !draftWindow.closed) {
-        draftWindow.document.write("<!doctype html><title>Outlook Draft</title><body style='font-family: system-ui, sans-serif; padding: 24px;'>Outlook draft could not be opened.  Return to Barsh Matters for details.</body>");
+        const safeErrorJson = JSON.stringify(
+          {
+            status: response.status,
+            statusText: response.statusText,
+            result,
+            outlookDraftUrl,
+          },
+          null,
+          2
+        )
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        draftWindow.document.write(
+          "<!doctype html><title>Outlook Draft Error</title><body style='font-family: system-ui, sans-serif; padding: 24px; white-space: pre-wrap;'><h1 style='font-size: 20px;'>Outlook draft could not be created</h1><p>Copy the diagnostic text below back into ChatGPT.</p><pre style='background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; overflow: auto;'>" +
+            safeErrorJson +
+            "</pre></body>"
+        );
       }
 
       setMasterDocumentDeliveryPreview({
         ...previewState,
-        draftCreated: Boolean(response.ok && result?.createsOutlookDraft),
+        draftCreated: Boolean(result?.createsOutlookDraft),
         outlookDraftUrl,
         draftMetadata: result?.draftMetadata || null,
         attachmentUploads: Array.isArray(result?.attachmentUploads) ? result.attachmentUploads : [],
@@ -10574,7 +10733,7 @@ function masterSettlementDateFiledValue(): string {
                         <span>Principal *</span>
                         <input
                           data-master-settlement-entry-field="true"
-                          value={masterSettlementGrossInput}
+                          value={shouldNormalizeDisplayedSettlementPercent(masterSettlementGrossInput) ? formatMasterSettlementAmountOrPercentInput(masterSettlementGrossInput) : masterSettlementGrossInput}
                           onChange={(event) => setMasterSettlementGrossInput(event.target.value)}
                           onBlur={() => setMasterSettlementGrossInput((current) => formatMasterSettlementAmountOrPercentInput(current))}
                           placeholder="$ amount or % of selected basis"

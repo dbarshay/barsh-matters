@@ -39,11 +39,15 @@ const checks = [
   },
   {
     label: "duplicate-skipped finalized PDFs expose clioDocumentId alias",
-    ok: finalizeRoute.includes("clioDocumentId: existingMatch.id"),
+    ok:
+      finalizeRoute.includes("existingClioDocumentIdForSkippedPdf") &&
+      finalizeRoute.includes("clioDocumentId: existingClioDocumentIdForSkippedPdf || null"),
   },
   {
     label: "duplicate-skipped finalized PDFs expose clioDocumentVersionUuid alias",
-    ok: finalizeRoute.includes("clioDocumentVersionUuid: existingMatch.latestDocumentVersion?.uuid || null"),
+    ok:
+      finalizeRoute.includes("existingClioDocumentVersionUuidForSkippedPdf") &&
+      finalizeRoute.includes("clioDocumentVersionUuid: existingClioDocumentVersionUuidForSkippedPdf || null"),
   },
   {
     label: "settlement finalized email preview popup renderer exists",
@@ -82,6 +86,103 @@ const checks = [
       createDraftRoute.includes("hasFinalizedSettlementPdfAttachment") &&
       createDraftRoute.includes("!(settlementFinalizedPdfDelivery && hasFinalizedSettlementPdfAttachment)"),
   },
+  {
+    label: "settlement finalized email sends top-level source to Graph create-draft route",
+    ok:
+      page.includes("settlementFinalizedPdfDraft") &&
+      page.includes('source: settlementFinalizedPdfDraft ? "settlement_finalized_pdf_delivery"'),
+  },
+  {
+    label: "backend Graph draft route normalizes settlement finalized PDF attachment plan",
+    ok:
+      createDraftRoute.includes("normalizeSettlementAttachment") &&
+      createDraftRoute.includes('source: clean(attachment?.source) || "settlement_finalized_pdf_delivery"') &&
+      createDraftRoute.includes("normalizedSettlementAttachments = attachmentPlanForReadiness.map(normalizeSettlementAttachment)"),
+  },
+  {
+    label: "settlement finalized email sends context and selected document to create-draft route",
+    ok:
+      page.includes("context: previewState?.context || {}") &&
+      page.includes("selectedFinalizedDocument: previewState?.selectedFinalizedDocument || null"),
+  },
+  {
+    label: "backend Graph draft route synthesizes settlement attachment from context fallback",
+    ok:
+      createDraftRoute.includes("contextFallbackAttachment") &&
+      createDraftRoute.includes("body?.selectedFinalizedDocument") &&
+      createDraftRoute.includes("preview.attachmentPlan = hasNormalizedAttachment"),
+  },
+  {
+    label: "backend Graph draft route treats Clio document version UUID as attachment source",
+    ok:
+      createDraftRoute.includes("clioDocumentVersionUuid || downloadUrl") &&
+      createDraftRoute.includes("/api/v4/document_versions/") &&
+      createDraftRoute.includes("clean(attachment?.clioDocumentVersionUuid)"),
+  },
+  {
+    label: "backend Graph attachment download falls back to existing Clio document id",
+    ok:
+      createDraftRoute.includes("clean(attachment?.existingClioDocumentId)") &&
+      createDraftRoute.includes("clean(attachment?.documentId)") &&
+      createDraftRoute.includes("clean(attachment?.id)"),
+  },
+  {
+    label: "settlement finalized email prefers existing Clio document id over version UUID",
+    ok:
+      page.includes("selectedCandidate.existingClioDocumentId") &&
+      createDraftRoute.includes("existingClioDocumentId: clean(attachment?.existingClioDocumentId) || clioDocumentId") &&
+      createDraftRoute.includes("documentId: clean(attachment?.documentId) || clioDocumentId"),
+  },
+  {
+    label: "settlement finalized email falls back to loaded master Clio matter id",
+    ok:
+      page.includes("masterClioDocumentsResult?.clioMatterId") &&
+      page.includes("masterClioDocumentsResult?.clioDisplayNumber"),
+  },
+  {
+    label: "settlement finalization duplicate skip preserves document id aliases robustly",
+    ok:
+      finalizeRoute.includes("existingClioDocumentIdForSkippedPdf") &&
+      finalizeRoute.includes("documentId: existingClioDocumentIdForSkippedPdf || null") &&
+      finalizeRoute.includes("id: existingClioDocumentIdForSkippedPdf || null"),
+  },
+
+  {
+    label: "backend Graph attachment resolves Clio document id from mapped matter documents",
+    ok:
+      createDraftRoute.includes("resolveClioDocumentIdForAttachment") &&
+      createDraftRoute.includes("listClioMatterDocuments(matterId)") &&
+      createDraftRoute.includes("resolveClioMatterIdForAttachment"),
+  },
+  {
+    label: "settlement finalized email passes mapped Clio matter target for attachment resolution",
+    ok:
+      page.includes("clioMatterId:") &&
+      page.includes("masterDocumentFinalizationResult?.clioUploadTarget?.id") &&
+      page.includes("clioDisplayNumber:"),
+  },
+  {
+    label: "backend Graph attachment resolver searches Clio matter documents by mapped matter target",
+    ok:
+      createDraftRoute.includes("resolveClioMatterIdForAttachment") &&
+      createDraftRoute.includes("/api/v4/matters.json?") &&
+      createDraftRoute.includes("/matters.json?") &&
+      createDraftRoute.includes("listClioMatterDocuments(matterId)"),
+  },
+
+  {
+    label: "frontend opens Outlook draft when Graph creates it even if attachment upload fails",
+    ok:
+      page.includes("if (result?.createsOutlookDraft && outlookDraftUrl)") &&
+      page.includes("draftCreated: Boolean(result?.createsOutlookDraft)"),
+  },
+
+
+
+
+
+
+
   {
     label: "settlement finalization route still states no email is created during finalization",
     ok: finalizeRoute.includes("No Outlook draft was created, no email was sent"),

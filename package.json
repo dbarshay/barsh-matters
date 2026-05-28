@@ -9,7 +9,7 @@
     "lint": "eslint",
     "smoke:workflow": "bash scripts/smoke-workflow.sh",
     "smoke:workflow:prod": "bash scripts/smoke-workflow.sh https://clio-lawsuit-aggregator.vercel.app",
-    "verify:prod": "bash scripts/verify-prod.sh && npm run verify:document-delivery-draft-preview-safety && npm run verify:document-delivery-preview-ui-safety && npm run verify:email-maildrop-unified-ui-safety && npm run verify:graph-background-thread-sync-safety && npm run verify:vercel-background-email-cron-safety && npm run verify:graph-maildrop-discovery-safety && npm run verify:maildrop-address-registry-safety && npm run verify:email-automation-status-safety && npm run verify:clio-maildrop-resolve-source-scope-safety && npm run verify:master-email-strict-display-filter-safety && npm run verify:administrator-header-opens-admin-home-only && npm run verify:settlement-finalized-email-safety && npm run verify:settlement-void-safety",
+    "verify:prod": "bash scripts/verify-prod.sh && npm run verify:document-delivery-draft-preview-safety && npm run verify:document-delivery-preview-ui-safety && npm run verify:email-maildrop-unified-ui-safety && npm run verify:graph-background-thread-sync-safety && npm run verify:vercel-background-email-cron-safety && npm run verify:graph-maildrop-discovery-safety && npm run verify:maildrop-address-registry-safety && npm run verify:email-automation-status-safety && npm run verify:clio-maildrop-resolve-source-scope-safety && npm run verify:master-email-strict-display-filter-safety && npm run verify:administrator-header-opens-admin-home-only && npm run verify:settlement-finalized-email-safety && npm run verify:settlement-void-safety && npm run verify:settlement-percent-normalization-safety",
     "verify:settlement-writeback-safety": "node scripts/verify-settlement-writeback-safety.mjs",
     "test:settlement-blocked-audit:local": "bash scripts/test-settlement-blocked-audit-local.sh",
     "verify:settled-with-person-contact-safety": "node scripts/verify-settled-with-person-contact-safety.mjs",
@@ -124,7 +124,8 @@
     "verify:stored-db-docx-generation-path-safety": "node scripts/verify-stored-db-docx-generation-path-safety.mjs",
     "verify:admin-template-custom-import-demoted-safety": "node scripts/verify-admin-template-custom-import-demoted-safety.mjs",
     "verify:settlement-finalized-email-safety": "node scripts/verify-settlement-finalized-email-safety.mjs",
-    "verify:settlement-void-safety": "node scripts/verify-settlement-void-safety.mjs"
+    "verify:settlement-void-safety": "node scripts/verify-settlement-void-safety.mjs",
+    "verify:settlement-percent-normalization-safety": "node scripts/verify-settlement-percent-normalization-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

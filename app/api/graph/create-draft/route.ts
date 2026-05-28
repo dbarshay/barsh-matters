@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertGraphDraftEnvironmentReady, graphApiBase, graphFetchJson, graphMailboxMessagesUrl } from "@/lib/graph/client";
 import { clioFetch } from "@/lib/clio";
+import { listClioMatterDocuments } from "@/lib/clioDocumentUpload";
 import { requestMicrosoftGraphAppToken } from "@/lib/graph/token";
 import { buildGraphDraftPayloadPreview, normalizeGraphRecipients } from "@/lib/graph/draft";
 import { persistGraphDraftMetadata } from "@/lib/graph/emailPersistence";
@@ -23,6 +24,88 @@ function safeAttachmentName(value: unknown): string {
   return raw.replace(/[\\/:*?"<>|#%{}~&]+/g, "_").slice(0, 180) || "document.pdf";
 }
 
+
+async function resolveClioMatterIdForAttachment(attachment: any): Promise<number | null> {
+  const directMatterId = Number(
+    clean(attachment?.clioMatterId || attachment?.clioUploadTargetMatterId || attachment?.matterId)
+  );
+  if (Number.isFinite(directMatterId) && directMatterId > 0) return directMatterId;
+
+  const displayNumber = clean(
+    attachment?.clioDisplayNumber ||
+    attachment?.masterDisplayNumber ||
+    attachment?.matterDisplayNumber ||
+    attachment?.clioUploadTargetDisplayNumber
+  );
+
+  if (!displayNumber) return null;
+
+  const params = new URLSearchParams();
+  params.set("query", displayNumber);
+  params.set("fields", "id,display_number");
+
+  const paths = [
+    `/api/v4/matters.json?${params.toString()}`,
+    `/api/v4/matters?${params.toString()}`,
+    `/matters.json?${params.toString()}`,
+  ];
+
+  for (const path of paths) {
+    const res = await clioFetch(path);
+    if (!res.ok) continue;
+
+    const json = await res.json().catch(() => null);
+    const rows = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+    const exact =
+      rows.find((row: any) => clean(row?.display_number).toLowerCase() === displayNumber.toLowerCase()) ||
+      rows[0] ||
+      null;
+
+    const resolved = Number(exact?.id);
+    if (Number.isFinite(resolved) && resolved > 0) return resolved;
+  }
+
+  return null;
+}
+
+async function resolveClioDocumentIdForAttachment(attachment: any, filename: string): Promise<string> {
+  const existing =
+    clean(attachment?.clioDocumentId) ||
+    clean(attachment?.existingClioDocumentId) ||
+    clean(attachment?.documentId) ||
+    clean(attachment?.id);
+
+  if (existing) return existing;
+
+  const matterId = await resolveClioMatterIdForAttachment(attachment);
+  if (!matterId) return "";
+
+  const targetName = clean(
+    filename ||
+    attachment?.name ||
+    attachment?.filename ||
+    attachment?.clioDocumentName ||
+    attachment?.existingClioDocumentName ||
+    attachment?.pdfFilename ||
+    attachment?.documentLabel
+  ).toLowerCase();
+
+  if (!targetName) return "";
+
+  const documents = await listClioMatterDocuments(matterId);
+  const exact =
+    documents.find((doc: any) =>
+      clean(doc?.name || doc?.filename || doc?.clioDocumentName).toLowerCase() === targetName
+    ) ||
+    documents.find((doc: any) => {
+      const candidate = clean(doc?.name || doc?.filename || doc?.clioDocumentName).toLowerCase();
+      return Boolean(candidate && (candidate.includes(targetName) || targetName.includes(candidate)));
+    }) ||
+    null;
+
+  return clean(exact?.id);
+}
+
 async function downloadAttachmentBytesFromPlan(attachment: any): Promise<{
   name: string;
   contentType: string;
@@ -32,22 +115,40 @@ async function downloadAttachmentBytesFromPlan(attachment: any): Promise<{
 }> {
   const name = safeAttachmentName(attachment?.name || attachment?.filename || "document.pdf");
   const contentType = clean(attachment?.contentType) || "application/pdf";
-  const clioDocumentId = clean(attachment?.clioDocumentId);
+  let clioDocumentId =
+    clean(attachment?.clioDocumentId) ||
+    clean(attachment?.existingClioDocumentId) ||
+    clean(attachment?.documentId) ||
+    clean(attachment?.id);
 
-  if (clioDocumentId) {
-    const downloadRes = await clioFetch(`/api/v4/documents/${encodeURIComponent(clioDocumentId)}/download`);
+  clioDocumentId = clioDocumentId || await resolveClioDocumentIdForAttachment(attachment, name);
+
+  const clioDocumentVersionUuid =
+    clean(attachment?.clioDocumentVersionUuid) ||
+    clean(attachment?.existingClioDocumentVersionUuid) ||
+    clean(attachment?.documentVersionUuid);
+
+  if (clioDocumentId || clioDocumentVersionUuid) {
+    const downloadPath = clioDocumentId
+      ? `/api/v4/documents/${encodeURIComponent(clioDocumentId)}/download`
+      : `/api/v4/document_versions/${encodeURIComponent(clioDocumentVersionUuid)}/download`;
+
+    const downloadLabel = clioDocumentId || clioDocumentVersionUuid;
+    const downloadSource = clioDocumentId ? "clio-document-download" : "clio-document-version-download";
+
+    const downloadRes = await clioFetch(downloadPath);
 
     if (!downloadRes.ok) {
       const text = await downloadRes.text().catch(() => "");
       throw new Error(
-        `Could not download finalized Clio document ${clioDocumentId} for attachment: ${downloadRes.status} ${downloadRes.statusText}${text ? ` ${text.slice(0, 500)}` : ""}`
+        `Could not download finalized Clio document ${downloadLabel} for attachment: ${downloadRes.status} ${downloadRes.statusText}${text ? ` ${text.slice(0, 500)}` : ""}`
       );
     }
 
     const buffer = Buffer.from(await downloadRes.arrayBuffer());
 
     if (!buffer.byteLength) {
-      throw new Error(`Finalized Clio document ${clioDocumentId} downloaded as an empty file.`);
+      throw new Error(`Finalized Clio document ${downloadLabel} downloaded as an empty file.`);
     }
 
     return {
@@ -55,7 +156,7 @@ async function downloadAttachmentBytesFromPlan(attachment: any): Promise<{
       contentType: downloadRes.headers.get("content-type") || contentType,
       contentBytes: buffer.toString("base64"),
       byteLength: buffer.byteLength,
-      source: "clio-document-download",
+      source: downloadSource,
     };
   }
 
@@ -269,10 +370,83 @@ export async function POST(req: NextRequest) {
     body?.graphDraftPayloadPreview?.context?.source
   );
   const settlementFinalizedPdfDelivery = sourceForReadiness === "settlement_finalized_pdf_delivery";
-  const hasFinalizedSettlementPdfAttachment = attachmentPlanForReadiness.some((attachment: any) =>
+
+  const normalizeSettlementAttachment = (attachment: any) => {
+    const clioDocumentId =
+      clean(attachment?.clioDocumentId) ||
+      clean(attachment?.existingClioDocumentId) ||
+      clean(attachment?.documentId) ||
+      clean(attachment?.id);
+
+    const clioDocumentVersionUuid =
+      clean(attachment?.clioDocumentVersionUuid) ||
+      clean(attachment?.documentVersionUuid) ||
+      clean(attachment?.existingClioDocumentVersionUuid);
+
+    const downloadUrl =
+      clean(attachment?.downloadUrl) ||
+      clean(attachment?.pdfUrl) ||
+      clean(attachment?.url);
+
+    const name =
+      clean(attachment?.name) ||
+      clean(attachment?.filename) ||
+      clean(attachment?.clioDocumentName) ||
+      clean(attachment?.existingClioDocumentName) ||
+      "Finalized Settlement Document.pdf";
+
+    return {
+      ...attachment,
+      name,
+      filename: clean(attachment?.filename) || name,
+      contentType: clean(attachment?.contentType) || "application/pdf",
+      clioDocumentId,
+      existingClioDocumentId: clean(attachment?.existingClioDocumentId) || clioDocumentId,
+      documentId: clean(attachment?.documentId) || clioDocumentId,
+      id: clean(attachment?.id) || clioDocumentId,
+      clioMatterId: clean(attachment?.clioMatterId) || clean(attachment?.clioUploadTargetMatterId) || "",
+      clioUploadTargetMatterId: clean(attachment?.clioUploadTargetMatterId) || clean(attachment?.clioMatterId) || "",
+      clioDisplayNumber: clean(attachment?.clioDisplayNumber) || clean(attachment?.masterDisplayNumber) || "",
+      masterDisplayNumber: clean(attachment?.masterDisplayNumber) || clean(attachment?.clioDisplayNumber) || "",
+      clioDocumentVersionUuid,
+      existingClioDocumentVersionUuid: clean(attachment?.existingClioDocumentVersionUuid) || clioDocumentVersionUuid,
+      downloadUrl,
+      graphUploadRequired: Boolean(clioDocumentId || clioDocumentVersionUuid || downloadUrl || attachment?.graphUploadRequired),
+      requiredForFinalGraphDraft: true,
+      source: clean(attachment?.source) || "settlement_finalized_pdf_delivery",
+    };
+  };
+
+  if (settlementFinalizedPdfDelivery) {
+    const contextAttachment = {
+      ...(body?.context || {}),
+      ...(body?.selectedFinalizedDocument || {}),
+      ...(preview?.context || {}),
+      ...(preview?.matterContext || {}),
+      source: "settlement_finalized_pdf_delivery",
+    };
+
+    const normalizedSettlementAttachments = attachmentPlanForReadiness.map(normalizeSettlementAttachment);
+    const contextFallbackAttachment = normalizeSettlementAttachment(contextAttachment);
+    const hasNormalizedAttachment = normalizedSettlementAttachments.some((attachment: any) =>
+      Boolean(clean(attachment?.clioDocumentId) || clean(attachment?.clioDocumentVersionUuid) || clean(attachment?.downloadUrl) || clean(attachment?.pdfUrl))
+    );
+
+    preview.attachmentPlan = hasNormalizedAttachment
+      ? normalizedSettlementAttachments
+      : [contextFallbackAttachment];
+  }
+
+  const normalizedAttachmentPlanForReadiness = Array.isArray(preview?.attachmentPlan) ? preview.attachmentPlan : [];
+  const hasFinalizedSettlementPdfAttachment = normalizedAttachmentPlanForReadiness.some((attachment: any) =>
     Boolean(
       attachment?.graphUploadRequired &&
-      (clean(attachment?.clioDocumentId) || clean(attachment?.downloadUrl) || clean(attachment?.pdfUrl))
+      (
+        clean(attachment?.clioDocumentId) ||
+        clean(attachment?.clioDocumentVersionUuid) ||
+        clean(attachment?.downloadUrl) ||
+        clean(attachment?.pdfUrl)
+      )
     )
   );
 
@@ -290,6 +464,41 @@ export async function POST(req: NextRequest) {
         validation: preview?.validation || null,
         settlementFinalizedPdfDelivery,
         hasFinalizedSettlementPdfAttachment,
+        settlementAttachmentDebug: settlementFinalizedPdfDelivery
+          ? {
+              sourceForReadiness,
+              bodyContextKeys: Object.keys(body?.context || {}),
+              selectedFinalizedDocumentKeys: Object.keys(body?.selectedFinalizedDocument || {}),
+              previewContextKeys: Object.keys(preview?.context || {}),
+              previewMatterContextKeys: Object.keys(preview?.matterContext || {}),
+              rawAttachmentPlanCount: attachmentPlanForReadiness.length,
+              rawAttachmentPlan: attachmentPlanForReadiness.map((attachment: any) => ({
+                name: clean(attachment?.name),
+                filename: clean(attachment?.filename),
+                source: clean(attachment?.source),
+                graphUploadRequired: Boolean(attachment?.graphUploadRequired),
+                clioDocumentId: clean(attachment?.clioDocumentId),
+                documentId: clean(attachment?.documentId),
+                existingClioDocumentId: clean(attachment?.existingClioDocumentId),
+                id: clean(attachment?.id),
+                downloadUrl: clean(attachment?.downloadUrl),
+                pdfUrl: clean(attachment?.pdfUrl),
+                url: clean(attachment?.url),
+              })),
+              normalizedAttachmentPlanCount: normalizedAttachmentPlanForReadiness.length,
+              normalizedAttachmentPlan: normalizedAttachmentPlanForReadiness.map((attachment: any) => ({
+                name: clean(attachment?.name),
+                filename: clean(attachment?.filename),
+                source: clean(attachment?.source),
+                graphUploadRequired: Boolean(attachment?.graphUploadRequired),
+                clioDocumentId: clean(attachment?.clioDocumentId),
+                clioDocumentVersionUuid: clean(attachment?.clioDocumentVersionUuid),
+                downloadUrl: clean(attachment?.downloadUrl),
+                pdfUrl: clean(attachment?.pdfUrl),
+                url: clean(attachment?.url),
+              })),
+            }
+          : null,
       },
       { status: 400 }
     );
