@@ -31,64 +31,58 @@ function mustNotContain(label, text, needle) {
   }
 }
 
-console.log("=== VERIFY PROVIDER FEE DEFAULTS SAFETY ===");
+console.log("=== VERIFY LEGACY PROVIDER FEE DEFAULTS ROUTE IS DISABLED ===");
 
 const route = read("app/api/settlements/provider-fee-defaults/route.ts");
-const matterPage = read("app/matter/[id]/page.tsx");
+const matterPage = read("app/matters/page.tsx");
 const verifyProd = read("scripts/verify-prod.sh");
 const packageJson = read("package.json");
 
 console.log("");
-console.log("=== VERIFY ROUTE IS READ-ONLY ===");
-mustContain("provider fee defaults route", route, 'action: "settlement-provider-fee-defaults"');
-mustContain("provider fee defaults route", route, "readOnly: true");
-mustContain("provider fee defaults route", route, "noClioRecordsChanged: true");
-mustContain("provider fee defaults route", route, "noDatabaseRecordsChanged: true");
-mustContain("provider fee defaults route", route, "noDocumentsGenerated: true");
-mustContain("provider fee defaults route", route, "noPrintQueueRecordsChanged: true");
-mustContain("provider fee defaults route", route, "method: \"GET\"");
-mustContain("provider fee defaults route", route, "cache: \"no-store\"");
+console.log("=== VERIFY ROUTE DISABLED LOCAL-FIRST CONTRACT ===");
+
+mustContain("provider fee defaults route", route, 'action: "legacy-clio-settlement-route-disabled"');
+mustContain("provider fee defaults route", route, "disabled: true");
+mustContain("provider fee defaults route", route, 'localFirst: true');
+mustContain("provider fee defaults route", route, 'sourceOfTruth: "barsh-matters-local"');
+mustContain("provider fee defaults route", route, "This legacy Clio settlement operational route is disabled.");
+mustContain("provider fee defaults route", route, "/api/settlements/local-preview");
+mustContain("provider fee defaults route", route, "/api/settlements/local-record-preview");
+mustContain("provider fee defaults route", route, "/api/settlements/local-record");
+mustContain("provider fee defaults route", route, "clioRecordsChanged: false");
+mustContain("provider fee defaults route", route, "databaseRecordsChanged: false");
+mustContain("provider fee defaults route", route, "documentsGenerated: false");
+mustContain("provider fee defaults route", route, "printQueueChanged: false");
+mustContain("provider fee defaults route", route, "mattersClosed: false");
+mustContain("provider fee defaults route", route, "settlementWritebackPerformed: false");
+mustContain("provider fee defaults route", route, "return NextResponse.json(disabledPayload, { status: 410 });");
+
 mustNotContain("provider fee defaults route", route, "method: \"PATCH\"");
-mustNotContain("provider fee defaults route", route, "method: \"POST\"");
 mustNotContain("provider fee defaults route", route, "method: \"DELETE\"");
 mustNotContain("provider fee defaults route", route, ".create(");
 mustNotContain("provider fee defaults route", route, ".update(");
 mustNotContain("provider fee defaults route", route, ".delete(");
+mustNotContain("provider fee defaults route", route, "custom_field_values{id,field_name,value,custom_field}");
+mustNotContain("provider fee defaults route", route, "clioFetch(");
+mustNotContain("provider fee defaults route", route, "PATCH");
 
 console.log("");
-console.log("=== VERIFY CLIO PROVIDER CONTACT FIELDS ===");
-mustContain("provider fee defaults route", route, "const PROVIDER_PRINCIPAL_NF_CF = 22156490");
-mustContain("provider fee defaults route", route, "const PROVIDER_INTEREST_CF = 22156565");
-mustContain("provider fee defaults route", route, "Retainer Principal NF");
-mustContain("provider fee defaults route", route, "Retainer Interest");
-mustContain("provider fee defaults route", route, "custom_field_values{id,field_name,value,custom_field}");
-mustContain("provider fee defaults route", route, "client{id,name,type}");
+console.log("=== VERIFY OLD CLIO PROVIDER DEFAULT CONTRACT IS NOT RESTORED ===");
+
+mustNotContain("provider fee defaults route", route, "const PROVIDER_PRINCIPAL_NF_CF = 22156490");
+mustNotContain("provider fee defaults route", route, "const PROVIDER_INTEREST_CF = 22156565");
+mustNotContain("provider fee defaults route", route, "canApplyAnyDefault");
+mustNotContain("provider fee defaults route", route, "canApplyPrincipalDefault");
+mustNotContain("provider fee defaults route", route, "canApplyInterestDefault");
+mustNotContain("provider fee defaults route", route, "missingDefaults");
 
 console.log("");
-console.log("=== VERIFY PARTIAL / MISSING DEFAULTS ARE NON-BLOCKING ===");
-mustContain("provider fee defaults route", route, "canApplyAnyDefault");
-mustContain("provider fee defaults route", route, "canApplyPrincipalDefault");
-mustContain("provider fee defaults route", route, "canApplyInterestDefault");
-mustContain("provider fee defaults route", route, "missingDefaults");
-mustContain("matter page", matterPage, "Partial provider fee defaults loaded.");
-mustContain("matter page", matterPage, "Missing Clio default(s):");
-mustContain("matter page", matterPage, "Missing values are not blocking");
-mustContain("matter page", matterPage, "may be entered manually");
-mustContain("matter page", matterPage, "principalDefault == null ? prev.principalFeePercent : String(principalDefault)");
-mustContain("matter page", matterPage, "interestDefault == null ? prev.interestFeePercent : String(interestDefault)");
+console.log("=== VERIFY MASTER SETTLEMENT UI STILL SHOWS EDITABLE RETAINER VALUES ===");
 
-console.log("");
-console.log("=== VERIFY UI AUTO-LOAD IS PREVIEW-ONLY ===");
-mustContain("matter page", matterPage, "activeWorkspaceTab !== \"settlement\"");
-mustContain("matter page", matterPage, "providerFeeDefaultsAutoLoadedMatterId");
-mustContain("matter page", matterPage, "loadProviderFeeDefaultsFromClio({ silent: true })");
-mustContain("matter page", matterPage, "/api/settlements/provider-fee-defaults?matterId=");
-mustContain("matter page", matterPage, "setSettlementPreviewInput");
-mustContain("matter page", matterPage, "setSettlementPreviewResult(null)");
-mustContain("matter page", matterPage, "setSettlementWritebackPreviewResult(null)");
-mustContain("matter page", matterPage, "setSettlementWritebackResult(null)");
-mustContain("matter page", matterPage, "Auto-loads when this tab opens from the read-only Clio provider/client contact defaults");
-mustNotContain("matter page", matterPage, "Load Provider Defaults");
+mustContain("matters page", matterPage, "Retainer Principal:");
+mustContain("matters page", matterPage, "Retainer Interest:");
+mustContain("matters page", matterPage, "masterSettlementPrincipalFeePercentInput");
+mustContain("matters page", matterPage, "masterSettlementInterestFeePercentInput");
 
 console.log("");
 console.log("=== VERIFY SCRIPT REGISTRATION ===");
@@ -103,6 +97,7 @@ if (process.exitCode) {
 
 console.log("");
 console.log("=== PROVIDER FEE DEFAULTS SAFETY VERIFICATION PASSED ===");
+console.log("Legacy Clio provider fee defaults route remains disabled.");
 console.log("No Clio records were changed by this verifier.");
 console.log("No database writes were made by this verifier.");
 console.log("No documents were generated by this verifier.");
