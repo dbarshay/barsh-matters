@@ -1,8 +1,13 @@
 #!/usr/bin/env node
+
 import fs from "fs";
 
 function read(path) {
   return fs.readFileSync(path, "utf8");
+}
+
+function pass(message) {
+  console.log(`PASS: ${message}`);
 }
 
 function fail(message) {
@@ -10,84 +15,91 @@ function fail(message) {
   process.exitCode = 1;
 }
 
-function pass(message) {
-  console.log(`PASS: ${message}`);
-}
-
 function mustContain(label, text, needle) {
-  if (!text.includes(needle)) {
+  if (text.includes(needle)) {
+    pass(`${label}: found ${needle}`);
+  } else {
     fail(`${label}: missing ${needle}`);
-    return;
   }
-  pass(`${label}: found ${needle}`);
 }
 
 function mustNotContain(label, text, needle) {
-  if (text.includes(needle)) {
-    fail(`${label}: must not contain ${needle}`);
-    return;
+  if (!text.includes(needle)) {
+    pass(`${label}: does not contain ${needle}`);
+  } else {
+    fail(`${label}: unexpectedly contains ${needle}`);
   }
-  pass(`${label}: does not contain ${needle}`);
 }
 
 console.log("=== VERIFY PROVIDER REMITTANCE BREAKDOWN DOCX ROUTE SAFETY ===");
 
-const route = read("app/api/settlements/provider-remittance-breakdown/route.ts");
+const providerRemittanceRoute = read("app/api/settlements/provider-remittance-breakdown/route.ts");
 const previewRoute = read("app/api/settlements/documents-preview/route.ts");
+const templateRegistry = read("lib/documents/templateRegistry.ts");
 const packageJson = read("package.json");
 const verifyProd = read("scripts/verify-prod.sh");
 
 console.log("");
 console.log("=== VERIFY ROUTE-ONLY DOCX GENERATION ===");
-mustContain("provider remittance route", route, 'action: "provider-remittance-breakdown-docx"');
-mustContain("provider remittance route", route, "generatedDocxResponseOnly: true");
-mustContain("provider remittance route", route, "routeOnly: true");
-mustContain("provider remittance route", route, "Packer.toBuffer(doc)");
-mustContain(
-  "provider remittance route",
-  route,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-);
-mustContain("provider remittance route", route, "Content-Disposition");
-mustContain("provider remittance route", route, 'if (base.toLowerCase().endsWith(".docx")) return base;');
-mustContain("provider remittance route", route, 'return `${base}.docx`;');
-mustContain("provider remittance route", route, "/api/settlements/documents-preview");
-mustContain("provider remittance route", route, 'method: "GET"');
-mustContain("provider remittance route", route, 'cache: "no-store"');
+mustContain("provider remittance route", providerRemittanceRoute, 'action: "provider-remittance-breakdown-docx"');
+mustContain("provider remittance route", providerRemittanceRoute, "generatedDocxResponseOnly: true");
+mustContain("provider remittance route", providerRemittanceRoute, "routeOnly: true");
+mustContain("provider remittance route", providerRemittanceRoute, "Packer.toBuffer(doc)");
+mustContain("provider remittance route", providerRemittanceRoute, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+mustContain("provider remittance route", providerRemittanceRoute, "Content-Disposition");
+mustContain("provider remittance route", providerRemittanceRoute, 'if (base.toLowerCase().endsWith(".docx")) return base;');
+mustContain("provider remittance route", providerRemittanceRoute, "return `${base}.docx`;");
+mustContain("provider remittance route", providerRemittanceRoute, "/api/settlements/documents-preview");
+mustContain("provider remittance route", providerRemittanceRoute, 'method: "GET"');
+mustContain("provider remittance route", providerRemittanceRoute, 'cache: "no-store"');
 
 console.log("");
 console.log("=== VERIFY NO CLIO / DATABASE / FILE / PRINT QUEUE MUTATION ===");
-mustContain("provider remittance route", route, "noClioRecordsChanged: true");
-mustContain("provider remittance route", route, "noDatabaseRecordsChanged: true");
-mustContain("provider remittance route", route, "noDocumentUploadPerformed: true");
-mustContain("provider remittance route", route, "noPrintQueueRecordsChanged: true");
-mustContain("provider remittance route", route, "noPersistentFilesCreated: true");
-mustNotContain("provider remittance route", route, "clioFetch(");
-mustNotContain("provider remittance route", route, "uploadBufferToClioMatterDocuments");
-mustNotContain("provider remittance route", route, "listClioMatterDocuments");
-mustNotContain("provider remittance route", route, "prisma.");
-mustNotContain("provider remittance route", route, ".create(");
-mustNotContain("provider remittance route", route, ".update(");
-mustNotContain("provider remittance route", route, ".delete(");
-mustNotContain("provider remittance route", route, "writeFile");
-mustNotContain("provider remittance route", route, "appendFile");
-mustNotContain("provider remittance route", route, "mkdir(");
-mustNotContain("provider remittance route", route, "printQueue");
-mustNotContain("provider remittance route", route, 'method: "PATCH"');
-mustNotContain("provider remittance route", route, 'method: "POST"');
-mustNotContain("provider remittance route", route, 'method: "DELETE"');
+mustContain("provider remittance route", providerRemittanceRoute, "noClioRecordsChanged: true");
+mustContain("provider remittance route", providerRemittanceRoute, "noDatabaseRecordsChanged: true");
+mustContain("provider remittance route", providerRemittanceRoute, "noDocumentUploadPerformed: true");
+mustContain("provider remittance route", providerRemittanceRoute, "noPrintQueueRecordsChanged: true");
+mustContain("provider remittance route", providerRemittanceRoute, "noPersistentFilesCreated: true");
+mustNotContain("provider remittance route", providerRemittanceRoute, "clioFetch(");
+mustNotContain("provider remittance route", providerRemittanceRoute, "uploadBufferToClioMatterDocuments");
+mustNotContain("provider remittance route", providerRemittanceRoute, "listClioMatterDocuments");
+mustNotContain("provider remittance route", providerRemittanceRoute, "prisma.");
+mustNotContain("provider remittance route", providerRemittanceRoute, ".create(");
+mustNotContain("provider remittance route", providerRemittanceRoute, ".update(");
+mustNotContain("provider remittance route", providerRemittanceRoute, ".delete(");
+mustNotContain("provider remittance route", providerRemittanceRoute, "writeFile");
+mustNotContain("provider remittance route", providerRemittanceRoute, "appendFile");
+mustNotContain("provider remittance route", providerRemittanceRoute, "mkdir(");
+mustNotContain("provider remittance route", providerRemittanceRoute, "printQueue");
+mustNotContain("provider remittance route", providerRemittanceRoute, 'method: "PATCH"');
+mustNotContain("provider remittance route", providerRemittanceRoute, 'method: "POST"');
+mustNotContain("provider remittance route", providerRemittanceRoute, 'method: "DELETE"');
 
 console.log("");
-console.log("=== VERIFY PREVIEW ROUTE ADVERTISES PROVIDER REMITTANCE AS AVAILABLE ===");
-mustContain("settlement documents preview route", previewRoute, 'key: "provider-remittance-breakdown"');
-mustContain("settlement documents preview route", previewRoute, 'label: "Provider Remittance Breakdown"');
-mustContain("settlement documents preview route", previewRoute, 'generationEndpoint: "/api/settlements/provider-remittance-breakdown"');
-mustContain("settlement documents preview route", previewRoute, "availableNow: true");
-mustContain("settlement documents preview route", previewRoute, "routeOnly: true");
-mustContain("settlement documents preview route", previewRoute, "noUploadToClio: true");
-mustContain("settlement documents preview route", previewRoute, "noDatabaseRecordCreated: true");
-mustContain("settlement documents preview route", previewRoute, "noPrintQueueRecordCreated: true");
-mustContain("settlement documents preview route", previewRoute, "Attorney Fee Breakdown");
+console.log("=== VERIFY TEMPLATE REGISTRY ADVERTISES ROUTE-ONLY SETTLEMENT DOCX OPTIONS ===");
+mustContain("template registry", templateRegistry, "buildSettlementPlannedDocuments");
+mustContain("template registry", templateRegistry, "Settlement Summary");
+mustContain("template registry", templateRegistry, "Provider Remittance Breakdown");
+mustContain("template registry", templateRegistry, "Attorney Fee Breakdown");
+mustContain("template registry", templateRegistry, 'generationEndpoint: "/api/settlements/settlement-summary"');
+mustContain("template registry", templateRegistry, 'generationEndpoint: "/api/settlements/provider-remittance-breakdown"');
+mustContain("template registry", templateRegistry, 'generationEndpoint: "/api/settlements/attorney-fee-breakdown"');
+mustContain("template registry", templateRegistry, "routeOnly: true");
+
+console.log("");
+console.log("=== VERIFY DOCUMENTS PREVIEW ROUTE DELEGATES PLANNED DOCUMENTS TO TEMPLATE REGISTRY ===");
+mustContain("settlement documents preview route", previewRoute, "buildSettlementPlannedDocuments");
+mustContain("settlement documents preview route", previewRoute, "plannedDocuments");
+mustContain("settlement documents preview route", previewRoute, 'action: "settlement-documents-preview"');
+mustContain("settlement documents preview route", previewRoute, "previewOnly: true");
+mustContain("settlement documents preview route", previewRoute, "readOnly: true");
+mustContain("settlement documents preview route", previewRoute, "documentsGenerated: false");
+mustContain("settlement documents preview route", previewRoute, "persistentFilesCreated: false");
+mustContain("settlement documents preview route", previewRoute, "printQueueChanged: false");
+mustNotContain("settlement documents preview route", previewRoute, "/api/settlements/current-values");
+mustNotContain("settlement documents preview route", previewRoute, "live-clio-read");
+mustNotContain("settlement documents preview route", previewRoute, "clioFetch(");
+mustNotContain("settlement documents preview route", previewRoute, "MATTER_CF.");
 
 console.log("");
 console.log("=== VERIFY SCRIPT REGISTRATION ===");
@@ -104,5 +116,6 @@ console.log("");
 console.log("=== PROVIDER REMITTANCE BREAKDOWN DOCX SAFETY VERIFICATION PASSED ===");
 console.log("No Clio records were changed by this verifier.");
 console.log("No database writes were made by this verifier.");
-console.log("No documents were uploaded or persistently saved by this verifier.");
+console.log("No documents were uploaded by this verifier.");
+console.log("No persistent files were created by this verifier.");
 console.log("No print queue records were changed by this verifier.");
