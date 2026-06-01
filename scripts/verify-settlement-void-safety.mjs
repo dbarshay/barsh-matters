@@ -14,7 +14,7 @@ const checks = [
   },
   {
     label: "void route updates LocalSettlementRecord as voided",
-    ok: route.includes("localSettlementRecord.update") && route.includes("voided: true") && route.includes('kind: "settlement-payment-due"'),
+    ok: route.includes("localSettlementRecord.update") && route.includes("voided: true") && route.includes('kind: "settlement_payment_due_followup"'),
   },
   {
     label: "void route falls back to active settlement when record id is missing",
@@ -27,7 +27,7 @@ const checks = [
   },
   {
     label: "void route voids related open ticklers only",
-    ok: route.includes("localWorkflowTickler.deleteMany") && route.includes('kind: "settlement-payment-due"'),
+    ok: route.includes("localWorkflowTickler.deleteMany") && route.includes('kind: "settlement_payment_due_followup"'),
   },
   {
     label: "Settlement Already Recorded button opens admin void flow",

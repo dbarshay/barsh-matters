@@ -153,7 +153,7 @@ export async function POST(req: Request) {
 
       const ticklers = await tx.localWorkflowTickler.deleteMany({
         where: {
-          kind: "settlement-payment-due",
+          kind: "settlement_payment_due_followup",
           OR: [
             { masterLawsuitId, settlementRecordId: existing.id },
             { settlementRecordId: existing.id },
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
         localSettlementRowsPreservedForHistory: true,
       },
       note:
-        "Voided the active local settlement record and deleted related open settlement payment-due ticklers only. No Clio records, documents, print queue records, or email records were changed.",
+        "Voided the active local settlement record and deleted related open settlement payment due ticklers only. No Clio records, documents, print queue records, or email records were changed.",
     });
   } catch (error: any) {
     return NextResponse.json(

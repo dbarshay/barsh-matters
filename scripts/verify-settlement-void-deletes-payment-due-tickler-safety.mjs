@@ -13,11 +13,11 @@ function mustNotInclude(label, haystack, needle) {
 }
 
 mustInclude("void route deletes related ticklers", route, "tx.localWorkflowTickler.deleteMany");
-mustInclude("void route limits deletion to settlement payment due ticklers", route, 'kind: "settlement-payment-due"');
+mustInclude("void route limits deletion to settlement payment due ticklers", route, 'kind: "settlement_payment_due_followup"');
 mustInclude("void route deletes by settlement record id", route, "{ settlementRecordId: existing.id }");
 mustInclude("void route excludes final tickler statuses", route, 'notIn: ["completed", "voided", "cancelled"]');
 mustInclude("void response exposes deleted tickler count", route, "workflowTicklersDeleted");
-mustInclude("void note says payment-due ticklers deleted", route, "deleted related open settlement payment-due ticklers only");
+mustInclude("void note says payment-due ticklers deleted", route, "deleted related open settlement payment due ticklers only");
 
 mustInclude("new settlement still auto-creates payment due tickler", page, "await createMasterSettlementPaymentDueTickler(savedSettlementRecordId);");
 mustInclude("page still displays payment due follow-up", page, "Payment Due Follow-Up");
@@ -35,4 +35,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS: voided settlements delete related open settlement payment-due ticklers while new settlements auto-create their own ticklers.");
+console.log("PASS: voided settlements delete related open settlement payment due ticklers while new settlements auto-create their own ticklers.");
