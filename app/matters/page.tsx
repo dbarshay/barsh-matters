@@ -5069,6 +5069,7 @@ function masterSettlementDateFiledValue(): string {
           workingDocumentDriveItemId: masterDocumentFinalizationResult?.workingDocument?.driveItemId || "",
           workingDocumentName: masterDocumentFinalizationResult?.workingDocument?.name || "",
           workingDocumentWebUrl: masterDocumentFinalizationResult?.workingDocument?.webUrl || "",
+          workingDocumentSourceDocxSha256: masterDocumentFinalizationResult?.workingDocument?.sourceDocxSha256 || "",
           workingDocumentKey: masterDocumentFinalizationResult?.selectedDocument?.key || selectedTemplate.key,
           confirmFinalize: true,
         }),

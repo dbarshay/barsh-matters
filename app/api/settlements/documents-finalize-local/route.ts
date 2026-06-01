@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import {
   listClioMatterDocuments,
@@ -44,6 +45,11 @@ function editedPdfFilenameFromDocxFilename(value: unknown): string {
 function jsonSafe(value: unknown) {
   return JSON.parse(JSON.stringify(value ?? null));
 }
+
+function sha256Hex(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
 
 function safeFilePart(value: unknown): string {
   const text = clean(value) || "Unknown";
@@ -133,30 +139,75 @@ function waitForGraphContentSync(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function downloadStableEditedWorkingDocxFromGraph(driveItemId: string) {
+async function downloadStableEditedWorkingDocxFromGraph(driveItemId: string, originalSourceDocxSha256 = "") {
+  const pollMs = 2000;
+  const minElapsedMs = 6000;
+  const maxElapsedMs = originalSourceDocxSha256 ? 30000 : 12000;
+
   const byteLengthSequence: number[] = [];
+  const sha256Sequence: string[] = [];
+
   let latest = await downloadWorkingDocxFromGraph(driveItemId);
+  let latestBuffer = Buffer.from(latest.buffer);
+  let latestSha256 = sha256Hex(latestBuffer);
+
   byteLengthSequence.push(latest.byteLength);
+  sha256Sequence.push(latestSha256);
 
   let changedAcrossAttempts = false;
+  let stableConsecutiveDownloads = 0;
+  let changedFromOriginalSource = originalSourceDocxSha256
+    ? latestSha256 !== originalSourceDocxSha256
+    : true;
+  let elapsedMs = 0;
 
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    await waitForGraphContentSync(5000);
+  while (elapsedMs < maxElapsedMs) {
+    await waitForGraphContentSync(pollMs);
+    elapsedMs += pollMs;
+
     const next = await downloadWorkingDocxFromGraph(driveItemId);
-    byteLengthSequence.push(next.byteLength);
+    const nextBuffer = Buffer.from(next.buffer);
+    const nextSha256 = sha256Hex(nextBuffer);
 
-    if (!Buffer.from(next.buffer).equals(Buffer.from(latest.buffer))) {
+    byteLengthSequence.push(next.byteLength);
+    sha256Sequence.push(nextSha256);
+
+    if (nextBuffer.equals(latestBuffer)) {
+      stableConsecutiveDownloads += 1;
+    } else {
       changedAcrossAttempts = true;
+      stableConsecutiveDownloads = 0;
+    }
+
+    if (originalSourceDocxSha256 && nextSha256 !== originalSourceDocxSha256) {
+      changedFromOriginalSource = true;
     }
 
     latest = next;
+    latestBuffer = nextBuffer;
+    latestSha256 = nextSha256;
+
+    if (
+      elapsedMs >= minElapsedMs &&
+      changedFromOriginalSource
+    ) {
+      break;
+    }
   }
 
   return {
     ...latest,
     downloadAttempts: byteLengthSequence.length,
     byteLengthSequence,
+    sha256Sequence,
+    latestSha256,
+    originalSourceDocxSha256: originalSourceDocxSha256 || null,
     changedAcrossAttempts,
+    changedFromOriginalSource,
+    graphContentStabilityPollMs: pollMs,
+    graphContentStabilityMinElapsedMs: minElapsedMs,
+    graphContentStabilityMaxElapsedMs: maxElapsedMs,
+    graphContentStabilityElapsedMs: elapsedMs,
   };
 }
 
@@ -189,6 +240,7 @@ export async function POST(req: NextRequest) {
     const templateLabelInput = clean(body?.templateLabel);
     const workingDocumentDriveItemId = clean(body?.workingDocumentDriveItemId);
     const workingDocumentKey = clean(body?.workingDocumentKey);
+    const workingDocumentSourceDocxSha256 = clean(body?.workingDocumentSourceDocxSha256);
     const finalizeFromEditedWorkingDocument = Boolean(workingDocumentDriveItemId);
     const confirmFinalize = body?.confirmFinalize === true;
 
@@ -382,7 +434,10 @@ export async function POST(req: NextRequest) {
     let workingDocx: any = null;
 
     if (finalizeFromEditedWorkingDocument) {
-      const downloadedEditedDocx = await downloadStableEditedWorkingDocxFromGraph(workingDocumentDriveItemId);
+      const downloadedEditedDocx = await downloadStableEditedWorkingDocxFromGraph(
+        workingDocumentDriveItemId,
+        workingDocumentSourceDocxSha256
+      );
       docxBuffer = Buffer.from(downloadedEditedDocx.buffer);
 
       if (!docxBuffer.length) {
@@ -409,6 +464,13 @@ export async function POST(req: NextRequest) {
         editedSnapshotDownloadAttempts: downloadedEditedDocx.downloadAttempts,
         editedSnapshotByteLengthSequence: downloadedEditedDocx.byteLengthSequence,
         editedSnapshotChangedAcrossAttempts: downloadedEditedDocx.changedAcrossAttempts,
+        editedSnapshotSha256Sequence: downloadedEditedDocx.sha256Sequence,
+        editedSnapshotLatestSha256: downloadedEditedDocx.latestSha256,
+        editedSnapshotOriginalSourceDocxSha256: downloadedEditedDocx.originalSourceDocxSha256,
+        editedSnapshotChangedFromOriginalSource: downloadedEditedDocx.changedFromOriginalSource,
+        graphContentStabilityElapsedMs: downloadedEditedDocx.graphContentStabilityElapsedMs,
+        graphContentStabilityMinElapsedMs: downloadedEditedDocx.graphContentStabilityMinElapsedMs,
+        graphContentStabilityMaxElapsedMs: downloadedEditedDocx.graphContentStabilityMaxElapsedMs,
       };
     } else {
       if (!generatedDocxDownloadUrl) {

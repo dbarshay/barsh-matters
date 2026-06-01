@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { uploadWorkingDocxToGraph } from "@/lib/documents/graphWorkingDocuments";
 import { requestMicrosoftGraphAppToken } from "@/lib/graph/token";
 
@@ -15,6 +16,11 @@ function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => clean(item)).filter(Boolean);
 }
+
+function sha256Hex(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
 
 async function loadFinalizePreview(req: NextRequest, params: {
   masterLawsuitId: string;
@@ -171,6 +177,7 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = await generateDocumentBuffer(req, selectedDocument);
+    const sourceDocxSha256 = sha256Hex(buffer);
     const graphTokenResult = await requestMicrosoftGraphAppToken();
 
     if (!graphTokenResult.ok || !graphTokenResult.token?.accessToken) {
@@ -238,8 +245,13 @@ export async function POST(req: NextRequest) {
         hasStoredDocx: Boolean(selectedDocument.hasStoredDocx),
         generatedFromStoredDbDocx: clean(selectedDocument.repositorySource) === "barsh-matters-db" && clean(selectedDocument.storageKind) === "db-docx-base64",
       },
-      workingDocument: working,
+      workingDocument: {
+        ...working,
+        sourceDocxByteLength: buffer.byteLength,
+        sourceDocxSha256,
+      },
       sourceDocxByteLength: buffer.byteLength,
+      sourceDocxSha256,
       graphTokenPreflight: {
         ok: graphTokenResult.ok,
         status: graphTokenResult.status,
