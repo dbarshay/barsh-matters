@@ -1338,9 +1338,9 @@ export default function FilteredMattersPage() {
     return "text";
   }
 
-  function masterInfoContactType(field: string): "person" | "company" | "provider_client" | "all" {
+  function masterInfoContactType(field: string): "person" | "insurer_company" | "provider_client" | "all" {
     if (field === "patient") return "person";
-    if (field === "insurer") return "company";
+    if (field === "insurer") return "insurer_company";
     if (field === "provider") return "provider_client";
 
     return "all";

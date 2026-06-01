@@ -25,10 +25,12 @@ const IDENTITY_FIELDS: Record<string, IdentityFieldConfig> = {
   client_name: {
     fieldName: "client_name",
     label: "Provider",
+    referenceType: "provider_client",
   },
   insurer_name: {
     fieldName: "insurer_name",
     label: "Insurer",
+    referenceType: "insurer_company",
   },
   claim_number_raw: {
     fieldName: "claim_number_raw",

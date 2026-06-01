@@ -162,7 +162,8 @@
     "verify:admin-duplicate-settlement-tickler-cleanup-preview-safety": "node scripts/verify-admin-duplicate-settlement-tickler-cleanup-preview-safety.mjs",
     "verify:admin-tickler-diagnostics-compact-ui-safety": "node scripts/verify-admin-tickler-diagnostics-compact-ui-safety.mjs",
     "seed:settled-with-reference-contacts": "node scripts/seed-settled-with-reference-contacts.mjs",
-    "verify:settled-with-reference-contacts-seed-safety": "node scripts/verify-settled-with-reference-contacts-seed-safety.mjs"
+    "verify:settled-with-reference-contacts-seed-safety": "node scripts/verify-settled-with-reference-contacts-seed-safety.mjs",
+    "verify:populated-reference-table-targets-safety": "node scripts/verify-populated-reference-table-targets-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
