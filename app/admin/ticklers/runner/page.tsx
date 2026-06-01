@@ -47,13 +47,41 @@ export default function AdminTicklerRunnerPage() {
   const [completedNote, setCompletedNote] = useState("Completed by Administrator bulk tickler runner.");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RunnerResponse | null>(null);
+  const [previewCriteria, setPreviewCriteria] = useState<Record<string, unknown> | null>(null);
 
   const ticklers = useMemo(() => result?.ticklers || [], [result]);
 
+  const currentPreviewCriteria = useMemo(
+    () => ({
+      kind,
+      dueThrough,
+      limit: Number(limit),
+    }),
+    [kind, dueThrough, limit],
+  );
+
+  const previewCriteriaMatchesCurrent =
+    !!previewCriteria &&
+    previewCriteria.kind === currentPreviewCriteria.kind &&
+    previewCriteria.dueThrough === currentPreviewCriteria.dueThrough &&
+    Number(previewCriteria.limit) === Number(currentPreviewCriteria.limit);
+
+  const completeDisabled = loading || !previewCriteriaMatchesCurrent;
+
+  function invalidatePreviewCriteria() {
+    setPreviewCriteria(null);
+    setResult(null);
+  }
+
   async function run(mode: "preview" | "complete") {
     if (mode === "complete") {
+      if (!previewCriteriaMatchesCurrent) {
+        setResult({ ok: false, error: "Run Preview first. Completion is locked to the exact current filter set." });
+        return;
+      }
+
       const ok = window.confirm(
-        "Complete all listed open ticklers matching these filters?  This changes only LocalWorkflowTickler status/completion fields.",
+        "Complete the exact previewed open tickler filter set?  This changes only LocalWorkflowTickler status/completion fields.",
       );
       if (!ok) return;
     }
@@ -61,21 +89,37 @@ export default function AdminTicklerRunnerPage() {
     setLoading(true);
     setResult(null);
 
+    const requestPayload =
+      mode === "complete" && previewCriteriaMatchesCurrent && previewCriteria
+        ? {
+            ...previewCriteria,
+            mode,
+            completedBy: "admin-bulk-tickler-runner",
+            completedNote,
+          }
+        : {
+            mode,
+            kind,
+            dueThrough,
+            limit: Number(limit),
+            completedBy: "admin-bulk-tickler-runner",
+            completedNote,
+          };
+
     try {
       const response = await fetch("/api/admin/ticklers/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode,
-          kind,
-          dueThrough,
-          limit: Number(limit),
-          completedBy: "admin-bulk-tickler-runner",
-          completedNote,
-        }),
+        body: JSON.stringify(requestPayload),
       });
 
       const json = await response.json().catch(() => ({}));
+      if (mode === "preview" && response.ok && json?.ok) {
+        setPreviewCriteria(currentPreviewCriteria);
+      }
+      if (mode === "complete" && response.ok && json?.ok) {
+        setPreviewCriteria(null);
+      }
       setResult({ ...json, httpStatus: response.status });
     } catch (error: any) {
       setResult({ ok: false, error: error?.message || "Unable to run tickler bulk runner." });
@@ -125,7 +169,7 @@ export default function AdminTicklerRunnerPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 12 }}>
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Type / Kind
-            <select value={kind} onChange={(event) => setKind(event.target.value)} style={{ padding: 9 }}>
+            <select value={kind} onChange={(event) => { setKind(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }}>
               <option value="all">All open ticklers</option>
               <option value="settlement_payment_due_followup">Settlement: Follow-Up for Payment</option>
               <option value="settlement_signed_agreement_followup">Settlement: Follow-Up for Signed Agreement</option>
@@ -134,12 +178,12 @@ export default function AdminTicklerRunnerPage() {
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Due Through
-            <input type="date" value={dueThrough} onChange={(event) => setDueThrough(event.target.value)} style={{ padding: 9 }} />
+            <input type="date" value={dueThrough} onChange={(event) => { setDueThrough(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }} />
           </label>
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Limit
-            <input value={limit} onChange={(event) => setLimit(event.target.value)} style={{ padding: 9 }} />
+            <input value={limit} onChange={(event) => { setLimit(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }} />
           </label>
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
@@ -170,7 +214,9 @@ export default function AdminTicklerRunnerPage() {
           <button
             type="button"
             data-barsh-admin-tickler-bulk-runner-complete="true"
-            disabled={loading}
+            disabled={completeDisabled}
+            data-barsh-admin-tickler-bulk-runner-complete-disabled-until-preview={completeDisabled}
+            title={completeDisabled ? "Run Preview first. Completion is locked to the exact current filter set." : "Complete the exact previewed filter set."}
             onClick={() => run("complete")}
             style={{
               border: "1px solid #7f1d1d",
@@ -179,12 +225,22 @@ export default function AdminTicklerRunnerPage() {
               borderRadius: 10,
               padding: "9px 16px",
               fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: completeDisabled ? "not-allowed" : "pointer",
+              opacity: completeDisabled ? 0.55 : 1,
             }}
           >
             Complete Previewed Filter Set
           </button>
         </div>
+
+        <p
+          data-barsh-admin-tickler-bulk-runner-preview-lock-status="true"
+          style={{ margin: "10px 0 0", color: previewCriteriaMatchesCurrent ? "#166534" : "#7f1d1d", fontWeight: 700 }}
+        >
+          {previewCriteriaMatchesCurrent
+            ? "Completion is locked to the exact previewed filter set."
+            : "Run Preview before completing. Changing Type / Kind, Due Through, or Limit clears the preview lock."}
+        </p>
       </section>
 
       {result ? (
