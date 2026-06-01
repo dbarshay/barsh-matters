@@ -48,6 +48,16 @@ const TYPE_ALIASES: Record<string, string> = {
   close_reasons: "closed_reason",
   final_status: "closed_reason",
   final_statuses: "closed_reason",
+
+  transaction_type: "transaction_type",
+  transaction_types: "transaction_type",
+  transaction: "transaction_type",
+  transactions: "transaction_type",
+
+  transaction_status: "transaction_status",
+  transaction_statuses: "transaction_status",
+  payment_status: "transaction_status",
+  payment_statuses: "transaction_status",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -58,6 +68,8 @@ const TYPE_LABELS: Record<string, string> = {
   service_type: "Service Types",
   denial_reason: "Denial Reasons",
   closed_reason: "Closed Reasons / Final Statuses",
+  transaction_type: "Transaction Types",
+  transaction_status: "Transaction Statuses",
 };
 
 function textValue(value: unknown): string {

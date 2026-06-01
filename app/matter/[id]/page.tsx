@@ -1423,6 +1423,9 @@ const activeGroupKey =
   const [paymentDateInput, setPaymentDateInput] = useState(() => formatPaymentDateYYYYMMDD(new Date()));
   const [paymentTransactionTypeInput, setPaymentTransactionTypeInput] = useState("Collection Payment");
   const [paymentTransactionStatusInput, setPaymentTransactionStatusInput] = useState("Show on Remittance");
+  const [paymentTransactionTypeOptions, setPaymentTransactionTypeOptions] = useState<any[]>([]);
+  const [paymentTransactionStatusOptions, setPaymentTransactionStatusOptions] = useState<any[]>([]);
+  const [paymentTransactionOptionsLoading, setPaymentTransactionOptionsLoading] = useState(false);
   const [paymentCheckDateInput, setPaymentCheckDateInput] = useState("");
   const [paymentCheckNumberInput, setPaymentCheckNumberInput] = useState("");
   const [paymentVoidLoadingId, setPaymentVoidLoadingId] = useState<number | null>(null);
@@ -1461,6 +1464,66 @@ const activeGroupKey =
       return String(value);
     }
   }
+
+  const fallbackPaymentTransactionTypeOptions = [
+    "Collection Payment",
+    "Voluntary Payment",
+    "Attorney Fee",
+    "Filing Fee Collected",
+    "Filing Fee Billed",
+    "Interest",
+    "PreC to Provider",
+    "Service Fee Collected",
+    "Service Fee Billed",
+    "Other Court Fees Collected",
+    "Other Court Fees Billed",
+  ];
+
+  const fallbackPaymentTransactionStatusOptions = [
+    "Show on Remittance",
+    "Do Not Show on Remittance",
+  ];
+
+  function referenceOptionDisplayName(option: any): string {
+    return String(option?.displayName || option?.label || option?.value || "").trim();
+  }
+
+  function paymentTransactionTypeDropdownOptions(): string[] {
+    const loaded = paymentTransactionTypeOptions.map(referenceOptionDisplayName).filter(Boolean);
+    return loaded.length ? loaded : fallbackPaymentTransactionTypeOptions;
+  }
+
+  function paymentTransactionStatusDropdownOptions(): string[] {
+    const loaded = paymentTransactionStatusOptions.map(referenceOptionDisplayName).filter(Boolean);
+    return loaded.length ? loaded : fallbackPaymentTransactionStatusOptions;
+  }
+
+  async function loadPaymentTransactionReferenceOptions() {
+    setPaymentTransactionOptionsLoading(true);
+    try {
+      const [typeResponse, statusResponse] = await Promise.all([
+        fetch("/api/reference-data/options?type=transaction_type", { cache: "no-store" }),
+        fetch("/api/reference-data/options?type=transaction_status", { cache: "no-store" }),
+      ]);
+
+      const [typeJson, statusJson] = await Promise.all([
+        typeResponse.json().catch(() => ({})),
+        statusResponse.json().catch(() => ({})),
+      ]);
+
+      setPaymentTransactionTypeOptions(Array.isArray(typeJson?.options) ? typeJson.options : []);
+      setPaymentTransactionStatusOptions(Array.isArray(statusJson?.options) ? statusJson.options : []);
+    } catch {
+      setPaymentTransactionTypeOptions([]);
+      setPaymentTransactionStatusOptions([]);
+    } finally {
+      setPaymentTransactionOptionsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadPaymentTransactionReferenceOptions();
+  }, []);
 
   function formatMatterAuditTimestamp(value: any): string {
     const date = new Date(String(value || ""));
@@ -9070,7 +9133,7 @@ const activeGroupKey =
                       }}
                     >
                       <label className="barsh-direct-payment-field">
-                        <span>Transaction Type *</span>
+                        <span>Transaction Type *{paymentTransactionOptionsLoading ? " · loading..." : ""}</span>
                         <select
                           value={paymentTransactionTypeInput}
                           onChange={(event) => setPaymentTransactionTypeInput(event.target.value)}
@@ -9085,17 +9148,9 @@ const activeGroupKey =
                             outline: "none",
                           }}
                         >
-                          <option value="Collection Payment">Collection Payment</option>
-                          <option value="Voluntary Payment">Voluntary Payment</option>
-                          <option value="Attorney Fee">Attorney Fee</option>
-                          <option value="Filing Fee Collected">Filing Fee Collected</option>
-                          <option value="Filing Fee Billed">Filing Fee Billed</option>
-                          <option value="Interest">Interest</option>
-                          <option value="PreC to Provider">PreC to Provider</option>
-                          <option value="Service Fee Collected">Service Fee Collected</option>
-                          <option value="Service Fee Billed">Service Fee Billed</option>
-                          <option value="Other Court Fees Collected">Other Court Fees Collected</option>
-                          <option value="Other Court Fees Billed">Other Court Fees Billed</option>
+                          {paymentTransactionTypeDropdownOptions().map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
                         </select>
                       </label>
 
@@ -9115,8 +9170,9 @@ const activeGroupKey =
                             outline: "none",
                           }}
                         >
-                          <option value="Show on Remittance">Show on Remittance</option>
-                          <option value="Do Not Show on Remittance">Do Not Show on Remittance</option>
+                          {paymentTransactionStatusDropdownOptions().map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
                         </select>
                       </label>
 

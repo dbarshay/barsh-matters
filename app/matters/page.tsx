@@ -341,6 +341,9 @@ export default function FilteredMattersPage() {
   const [masterPaymentDateInput, setMasterPaymentDateInput] = useState(() => masterPaymentTodayInput());
   const [masterPaymentTransactionTypeInput, setMasterPaymentTransactionTypeInput] = useState("Collection Payment");
   const [masterPaymentTransactionStatusInput, setMasterPaymentTransactionStatusInput] = useState("Show on Remittance");
+  const [masterPaymentTransactionTypeOptions, setMasterPaymentTransactionTypeOptions] = useState<any[]>([]);
+  const [masterPaymentTransactionStatusOptions, setMasterPaymentTransactionStatusOptions] = useState<any[]>([]);
+  const [masterPaymentTransactionOptionsLoading, setMasterPaymentTransactionOptionsLoading] = useState(false);
   const [masterPaymentCheckDateInput, setMasterPaymentCheckDateInput] = useState("");
   const [masterPaymentCheckNumberInput, setMasterPaymentCheckNumberInput] = useState("");
   const [masterPaymentPosting, setMasterPaymentPosting] = useState(false);
@@ -349,6 +352,68 @@ export default function FilteredMattersPage() {
   const [masterPaymentReceipts, setMasterPaymentReceipts] = useState<any[]>([]);
   const [masterPaymentReceiptsError, setMasterPaymentReceiptsError] = useState("");
   const [masterPaymentShowVoided, setMasterPaymentShowVoided] = useState(false);
+
+  const fallbackMasterPaymentTransactionTypeOptions = [
+    "Collection Payment",
+    "Voluntary Payment",
+    "Attorney Fee",
+    "Filing Fee Collected",
+    "Filing Fee Billed",
+    "Index Fee Collected",
+    "Index Fee Billed",
+    "Interest",
+    "PreC to Provider",
+    "Service Fee Collected",
+    "Service Fee Billed",
+    "Other Court Fees Collected",
+    "Other Court Fees Billed",
+  ];
+
+  const fallbackMasterPaymentTransactionStatusOptions = [
+    "Show on Remittance",
+    "Do Not Show on Remittance",
+  ];
+
+  function masterReferenceOptionDisplayName(option: any): string {
+    return String(option?.displayName || option?.label || option?.value || "").trim();
+  }
+
+  function masterPaymentTransactionTypeDropdownOptions(): string[] {
+    const loaded = masterPaymentTransactionTypeOptions.map(masterReferenceOptionDisplayName).filter(Boolean);
+    return loaded.length ? loaded : fallbackMasterPaymentTransactionTypeOptions;
+  }
+
+  function masterPaymentTransactionStatusDropdownOptions(): string[] {
+    const loaded = masterPaymentTransactionStatusOptions.map(masterReferenceOptionDisplayName).filter(Boolean);
+    return loaded.length ? loaded : fallbackMasterPaymentTransactionStatusOptions;
+  }
+
+  async function loadMasterPaymentTransactionReferenceOptions() {
+    setMasterPaymentTransactionOptionsLoading(true);
+    try {
+      const [typeResponse, statusResponse] = await Promise.all([
+        fetch("/api/reference-data/options?type=transaction_type", { cache: "no-store" }),
+        fetch("/api/reference-data/options?type=transaction_status", { cache: "no-store" }),
+      ]);
+
+      const [typeJson, statusJson] = await Promise.all([
+        typeResponse.json().catch(() => ({})),
+        statusResponse.json().catch(() => ({})),
+      ]);
+
+      setMasterPaymentTransactionTypeOptions(Array.isArray(typeJson?.options) ? typeJson.options : []);
+      setMasterPaymentTransactionStatusOptions(Array.isArray(statusJson?.options) ? statusJson.options : []);
+    } catch {
+      setMasterPaymentTransactionTypeOptions([]);
+      setMasterPaymentTransactionStatusOptions([]);
+    } finally {
+      setMasterPaymentTransactionOptionsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadMasterPaymentTransactionReferenceOptions();
+  }, []);
 
   function masterPaymentPreviewAmountValue(): number {
     const cleaned = String(masterPaymentAmountInput || "").replace(/[$,\s]/g, "");
@@ -11739,7 +11804,7 @@ function masterSettlementDateFiledValue(): string {
                     }}
                   >
                     <label className="barsh-direct-payment-field">
-                      <span>Transaction Type *</span>
+                      <span>Transaction Type *{masterPaymentTransactionOptionsLoading ? " · loading..." : ""}</span>
                       <select
                         value={masterPaymentTransactionTypeInput}
                         onChange={(event) => setMasterPaymentTransactionTypeInput(event.target.value)}
@@ -11754,17 +11819,9 @@ function masterSettlementDateFiledValue(): string {
                           outline: "none",
                         }}
                       >
-                        <option value="Collection Payment">Collection Payment</option>
-                        <option value="Voluntary Payment">Voluntary Payment</option>
-                        <option value="Attorney Fee">Attorney Fee</option>
-                        <option value="Index Fee Collected">Index Fee Collected</option>
-                        <option value="Index Fee Billed">Index Fee Billed</option>
-                        <option value="Interest">Interest</option>
-                        <option value="PreC to Provider">PreC to Provider</option>
-                        <option value="Service Fee Collected">Service Fee Collected</option>
-                        <option value="Service Fee Billed">Service Fee Billed</option>
-                        <option value="Other Court Fees Collected">Other Court Fees Collected</option>
-                        <option value="Other Court Fees Billed">Other Court Fees Billed</option>
+                        {masterPaymentTransactionTypeDropdownOptions().map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
                       </select>
                     </label>
 
@@ -11784,8 +11841,9 @@ function masterSettlementDateFiledValue(): string {
                           outline: "none",
                         }}
                       >
-                        <option value="Show on Remittance">Show on Remittance</option>
-                        <option value="Do Not Show on Remittance">Do Not Show on Remittance</option>
+                        {masterPaymentTransactionStatusDropdownOptions().map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
                       </select>
                     </label>
 
