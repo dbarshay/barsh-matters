@@ -14,14 +14,14 @@ function mustNotInclude(label, haystack, needle) {
 }
 
 mustInclude("reference options route supports provider_client", optionsRoute, 'provider_client: "provider_client"');
-mustInclude("reference options route supports insurer", optionsRoute, 'insurer: "insurer"');
+mustInclude("reference options route supports insurer_company", optionsRoute, 'insurer: "insurer_company"');
 mustInclude("reference options route supports denial_reason", optionsRoute, 'denial_reason: "denial_reason"');
 mustInclude("reference options route supports closed_reason", optionsRoute, 'closed_reason: "closed_reason"');
 mustInclude("reference options route supports court_venue", optionsRoute, 'court_venue: "court_venue"');
 
 mustInclude("reference option types map", page, "const referenceOptionTypes =");
 mustInclude("provider option type", page, 'provider: "provider_client"');
-mustInclude("insurer option type", page, 'insurer: "insurer"');
+mustInclude("insurer option type", page, 'insurer: "insurer_company"');
 mustInclude("denial reason option type", page, 'denialReason: "denial_reason"');
 mustInclude("closed reason option type", page, 'closedReason: "closed_reason"');
 mustInclude("court option type", page, 'court: "court_venue"');

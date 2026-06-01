@@ -5,12 +5,14 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const TYPE_ALIASES: Record<string, string> = {
-  insurer: "insurer",
-  insurers: "insurer",
-  insurance_company: "insurer",
-  insurance_companies: "insurer",
-  company: "insurer",
-  companies: "insurer",
+  insurer: "insurer_company",
+  insurers: "insurer_company",
+  insurer_company: "insurer_company",
+  insurer_companies: "insurer_company",
+  insurance_company: "insurer_company",
+  insurance_companies: "insurer_company",
+  company: "insurer_company",
+  companies: "insurer_company",
 
   provider: "provider_client",
   providers: "provider_client",
@@ -61,7 +63,7 @@ const TYPE_ALIASES: Record<string, string> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  insurer: "Insurers / Companies",
+  insurer_company: "Insurers / Companies",
   provider_client: "Providers / Clients",
   treating_provider: "Treating Providers",
   court_venue: "Courts / Venues",

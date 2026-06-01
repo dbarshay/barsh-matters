@@ -183,21 +183,22 @@ const inputStyle = {
 
 const referenceOptionTypes = {
   provider: "provider_client",
-  insurer: "insurer",
+  insurer: "insurer_company",
+  serviceType: "service_type",
   denialReason: "denial_reason",
   closedReason: "closed_reason",
   court: "court_venue",
-} as const;
+  treatingProvider: "treating_provider",
+};
 
 function optionText(option: ReferenceOption): string {
-  return text(option.label || option.displayName || option.name || option.value);
+  return text(option.displayName || option.label || option.value || option.name || "");
 }
 
-
 function formatAdminTicklerDetailValue(value: any): string {
-  if (value === undefined) return "undefined";
-  if (value === null) return "null";
-  if (typeof value === "string") return value || "—";
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string") return value;
+
   try {
     return JSON.stringify(value, null, 2);
   } catch {
@@ -205,35 +206,32 @@ function formatAdminTicklerDetailValue(value: any): string {
   }
 }
 
-function adminTicklerDetailSourceFields(tickler: any) {
+function adminTicklerDetailSourceFields(tickler: any): Record<string, unknown> {
+  const metadata = tickler?.metadata && typeof tickler.metadata === "object" ? tickler.metadata : {};
+  const source = tickler?.source && typeof tickler.source === "object" ? tickler.source : {};
+  const caseData = tickler?.caseData && typeof tickler.caseData === "object" ? tickler.caseData : {};
+
   return {
     id: tickler?.id,
     kind: tickler?.kind,
     type: tickler?.type,
     status: tickler?.status,
-    dueAt: tickler?.dueAt,
+    priority: tickler?.priority,
+    title: tickler?.title,
+    source,
+    sourceId: tickler?.sourceId,
+    sourceType: tickler?.sourceType,
+    sourceScope: tickler?.sourceScope,
+    sourcePage: tickler?.sourcePage,
+    sourceAction: tickler?.sourceAction,
+    sourceWorkflow: tickler?.sourceWorkflow,
+    metadata,
+    metadataSource: metadata?.source,
+    metadataSourcePage: metadata?.sourcePage,
+    metadataWorkflow: metadata?.workflow,
+    caseDataSource: caseData?.source,
     createdAt: tickler?.createdAt,
     updatedAt: tickler?.updatedAt,
-    matterId: tickler?.matterId,
-    masterLawsuitId: tickler?.masterLawsuitId,
-    settlementRecordId: tickler?.settlementRecordId,
-    displayNumber: tickler?.displayNumber,
-    caseData: tickler?.caseData,
-    contextScope: tickler?.contextScope,
-    contextKind: tickler?.contextKind,
-    contextId: tickler?.contextId,
-    sourceScope: tickler?.sourceScope,
-    sourceType: tickler?.sourceType,
-    sourceId: tickler?.sourceId,
-    sourceTable: tickler?.sourceTable,
-    sourceRecordId: tickler?.sourceRecordId,
-    createdBy: tickler?.createdBy,
-    createdFrom: tickler?.createdFrom,
-    reason: tickler?.reason,
-    completedAt: tickler?.completedAt,
-    completedBy: tickler?.completedBy,
-    completedNote: tickler?.completedNote,
-    metadata: tickler?.metadata,
   };
 }
 
@@ -881,6 +879,18 @@ export default function AdminTicklersPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+              Service Type
+              <input list="admin-tickler-service-type-options" value={serviceType} onChange={(event) => setServiceType(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Service type" style={inputStyle} />
+              {renderReferenceDatalist("admin-tickler-service-type-options", referenceOptions.serviceType || [])}
+            </label>
+
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+              Treating Provider
+              <input list="admin-tickler-treating-provider-options" value={treatingProvider} onChange={(event) => setTreatingProvider(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Treating provider" style={inputStyle} />
+              {renderReferenceDatalist("admin-tickler-treating-provider-options", referenceOptions.treatingProvider || [])}
+            </label>
+
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Denial Reason
               <input list="admin-tickler-denial-reason-options" value={denialReason} onChange={(event) => setDenialReason(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Denial reason" style={inputStyle} />
