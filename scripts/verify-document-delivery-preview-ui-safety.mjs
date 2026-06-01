@@ -42,7 +42,7 @@ console.log("=== DOCUMENT DELIVERY PREVIEW UI SAFETY VERIFICATION ===");
 console.log("\n=== VERIFY NEW IN-POPUP DOCUMENT DELIVERY PREVIEW PANEL ===");
 [
   "data-barsh-document-delivery-preview-panel",
-  "Document Delivery Preview",
+  "Document Delivery",
   "Preview only.  No Outlook draft is created unless Create Outlook Draft is clicked.",
   "Create Outlook Draft",
   "Open Outlook Draft in Web",
