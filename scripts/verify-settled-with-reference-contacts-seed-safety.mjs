@@ -47,11 +47,38 @@ const expectedContacts = [
   "Lynnette Marzan-Claudio",
   "Lynette.Marzan-Claudio@libertymutual.com",
   "Lynette Marzan-Claudio",
+  "Christine Madigan",
+  "christine_madigan@progressive.com",
+  "Jennifer Michaels",
+  "Jennifer_Michaels@progressive.com",
+  "Shawn Scheidecker",
+  "shawn.scheidecker.u1zn@statefarm.com",
+  "Anxhela Ringer",
+  "anxhela.ringer.umlg@statefarm.com",
+  "Christopher Harris",
+  "christopher.harris@allstate.com",
+  "David Streiner",
+  "DStreiner@streinerlaw.com",
+  "Clarissa Moreno",
+  "Cmoreno@streinerlaw.com",
+  "Theresa Balzer",
+  "Theresa_Balzer@Progressive.com",
+  "Nicole Perry",
+  "nicole.perry.cw8a@statefarm.com",
+  "Michelle Oleksy",
+  "OleksyM@nationwide.com",
 ];
 
 for (const expected of expectedContacts) {
   mustContain("settled-with seed", seed, expected);
 }
+
+const expectedUniqueContactCount = 20;
+const contactObjectCount = (seed.match(/name: "/g) || []).length;
+if (contactObjectCount !== expectedUniqueContactCount) {
+  fail(`settled-with seed should contain ${expectedUniqueContactCount} unique contacts, found ${contactObjectCount}`);
+}
+
 
 mustContain("package.json", packageJson, "seed:settled-with-reference-contacts");
 mustContain("package.json", packageJson, "verify:settled-with-reference-contacts-seed-safety");

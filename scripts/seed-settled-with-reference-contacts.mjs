@@ -106,6 +106,56 @@ const SETTLED_WITH_CONTACTS = [
     company: "Liberty Mutual",
     aliases: ["Lynette Marzan-Claudio"],
   },
+  {
+    name: "Christine Madigan",
+    email: "christine_madigan@progressive.com",
+    company: "Progressive",
+  },
+  {
+    name: "Jennifer Michaels",
+    email: "Jennifer_Michaels@progressive.com",
+    company: "Progressive",
+  },
+  {
+    name: "Shawn Scheidecker",
+    email: "shawn.scheidecker.u1zn@statefarm.com",
+    company: "State Farm",
+  },
+  {
+    name: "Anxhela Ringer",
+    email: "anxhela.ringer.umlg@statefarm.com",
+    company: "State Farm",
+  },
+  {
+    name: "Christopher Harris",
+    email: "christopher.harris@allstate.com",
+    company: "Allstate",
+  },
+  {
+    name: "David Streiner",
+    email: "DStreiner@streinerlaw.com",
+    company: "Streiner Law",
+  },
+  {
+    name: "Clarissa Moreno",
+    email: "Cmoreno@streinerlaw.com",
+    company: "Streiner Law",
+  },
+  {
+    name: "Theresa Balzer",
+    email: "Theresa_Balzer@Progressive.com",
+    company: "Progressive",
+  },
+  {
+    name: "Nicole Perry",
+    email: "nicole.perry.cw8a@statefarm.com",
+    company: "State Farm",
+  },
+  {
+    name: "Michelle Oleksy",
+    email: "OleksyM@nationwide.com",
+    company: "Nationwide",
+  },
 ];
 
 function cleanText(value) {
