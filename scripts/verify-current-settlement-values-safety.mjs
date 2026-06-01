@@ -31,61 +31,57 @@ function mustNotContain(label, text, needle) {
   }
 }
 
-console.log("=== VERIFY CURRENT SETTLEMENT VALUES SAFETY ===");
+console.log("=== VERIFY LEGACY CURRENT SETTLEMENT VALUES ROUTE IS DISABLED ===");
 
 const route = read("app/api/settlements/current-values/route.ts");
-const matterPage = read("app/matter/[id]/page.tsx");
 const packageJson = read("package.json");
 const verifyProd = read("scripts/verify-prod.sh");
 
 console.log("");
-console.log("=== VERIFY ROUTE IS READ-ONLY LIVE CLIO READBACK ===");
-mustContain("current values route", route, 'action: "settlement-current-values"');
-mustContain("current values route", route, 'source: "live-clio-read"');
-mustContain("current values route", route, "readOnly: true");
-mustContain("current values route", route, "liveClioReadOnly: true");
-mustContain("current values route", route, "noClioRecordsChanged: true");
-mustContain("current values route", route, "noDatabaseRecordsChanged: true");
-mustContain("current values route", route, "noDocumentsGenerated: true");
-mustContain("current values route", route, "noPrintQueueRecordsChanged: true");
-mustContain("current values route", route, "method: \"GET\"");
-mustContain("current values route", route, "cache: \"no-store\"");
+console.log("=== VERIFY ROUTE DISABLED LOCAL-FIRST CONTRACT ===");
+
+mustContain("current values route", route, 'action: "legacy-clio-settlement-route-disabled"');
+mustContain("current values route", route, "disabled: true");
+mustContain("current values route", route, "localFirst: true");
+mustContain("current values route", route, 'sourceOfTruth: "barsh-matters-local"');
+mustContain("current values route", route, "This legacy Clio settlement operational route is disabled.");
+mustContain("current values route", route, "/api/settlements/local-preview");
+mustContain("current values route", route, "/api/settlements/local-record-preview");
+mustContain("current values route", route, "/api/settlements/local-record");
+mustContain("current values route", route, "clioRecordsChanged: false");
+mustContain("current values route", route, "databaseRecordsChanged: false");
+mustContain("current values route", route, "documentsGenerated: false");
+mustContain("current values route", route, "printQueueChanged: false");
+mustContain("current values route", route, "mattersClosed: false");
+mustContain("current values route", route, "settlementWritebackPerformed: false");
+mustContain("current values route", route, "return NextResponse.json(disabledPayload, { status: 410 });");
+
 mustNotContain("current values route", route, "method: \"PATCH\"");
-mustNotContain("current values route", route, "method: \"POST\"");
 mustNotContain("current values route", route, "method: \"DELETE\"");
 mustNotContain("current values route", route, ".create(");
 mustNotContain("current values route", route, ".update(");
 mustNotContain("current values route", route, ".delete(");
 mustNotContain("current values route", route, "upsertClaimIndexFromMatter");
+mustNotContain("current values route", route, "clioFetch(");
+mustNotContain("current values route", route, "PATCH");
 
 console.log("");
-console.log("=== VERIFY ROUTE READS CHILD/BILL SETTLEMENT FIELDS ONLY ===");
-mustContain("current values route", route, "master_lawsuit_id: masterLawsuitId");
-mustContain("current values route", route, "isMasterMatter");
-mustContain("current values route", route, "if (!row.isMasterMatter)");
-mustContain("current values route", route, "MATTER_CF.SETTLED_AMOUNT");
-mustContain("current values route", route, "MATTER_CF.SETTLED_WITH");
-mustContain("current values route", route, "MATTER_CF.ALLOCATED_SETTLEMENT");
-mustContain("current values route", route, "MATTER_CF.INTEREST_AMOUNT");
-mustContain("current values route", route, "MATTER_CF.PRINCIPAL_FEE");
-mustContain("current values route", route, "MATTER_CF.INTEREST_FEE");
-mustContain("current values route", route, "MATTER_CF.TOTAL_FEE");
-mustContain("current values route", route, "MATTER_CF.PROVIDER_NET");
-mustContain("current values route", route, "MATTER_CF.PROVIDER_PRINCIPAL_NET");
-mustContain("current values route", route, "MATTER_CF.PROVIDER_INTEREST_NET");
+console.log("=== VERIFY OLD LIVE CLIO READBACK CONTRACT IS NOT RESTORED ===");
 
-console.log("");
-console.log("=== VERIFY UI IS READBACK ONLY ===");
-mustContain("matter page", matterPage, "Current Clio Settlement Values");
-mustContain("matter page", matterPage, "/api/settlements/current-values?masterLawsuitId=");
-mustContain("matter page", matterPage, "Live read-only Clio readback for child/bill matters");
-mustContain("matter page", matterPage, "Refresh Clio Values");
-mustContain("matter page", matterPage, "currentSettlementValuesLoadedMasterId");
-mustContain("matter page", matterPage, "loadCurrentSettlementValues(tabMasterLawsuitId)");
-mustContain("matter page", matterPage, "Source: {textValue(currentSettlementValuesResult?.source)");
-mustContain("matter page", matterPage, "currentSettlementValuesResult.rows.map");
-mustNotContain("matter page current values UI", matterPage, "Save Current Clio Settlement Values");
-mustNotContain("matter page current values UI", matterPage, "Write Current Clio Settlement Values");
+mustNotContain("current values route", route, 'action: "settlement-current-values"');
+mustNotContain("current values route", route, 'source: "live-clio-read"');
+mustNotContain("current values route", route, "liveClioReadOnly");
+mustNotContain("current values route", route, "master_lawsuit_id: masterLawsuitId");
+mustNotContain("current values route", route, "MATTER_CF.SETTLED_AMOUNT");
+mustNotContain("current values route", route, "MATTER_CF.SETTLED_WITH");
+mustNotContain("current values route", route, "MATTER_CF.ALLOCATED_SETTLEMENT");
+mustNotContain("current values route", route, "MATTER_CF.INTEREST_AMOUNT");
+mustNotContain("current values route", route, "MATTER_CF.PRINCIPAL_FEE");
+mustNotContain("current values route", route, "MATTER_CF.INTEREST_FEE");
+mustNotContain("current values route", route, "MATTER_CF.TOTAL_FEE");
+mustNotContain("current values route", route, "MATTER_CF.PROVIDER_NET");
+mustNotContain("current values route", route, "MATTER_CF.PROVIDER_PRINCIPAL_NET");
+mustNotContain("current values route", route, "MATTER_CF.PROVIDER_INTEREST_NET");
 
 console.log("");
 console.log("=== VERIFY SCRIPT REGISTRATION ===");
@@ -100,6 +96,7 @@ if (process.exitCode) {
 
 console.log("");
 console.log("=== CURRENT SETTLEMENT VALUES SAFETY VERIFICATION PASSED ===");
+console.log("Legacy Clio current settlement values route remains disabled.");
 console.log("No Clio records were changed by this verifier.");
 console.log("No database writes were made by this verifier.");
 console.log("No documents were generated by this verifier.");
