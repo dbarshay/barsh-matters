@@ -6,7 +6,10 @@ function clean(value: unknown): string {
 }
 
 function numberOrNull(value: unknown): number | null {
-  const numeric = Number(value);
+  const raw = clean(value);
+  if (!raw) return null;
+
+  const numeric = Number(raw);
   return Number.isFinite(numeric) ? numeric : null;
 }
 
@@ -246,10 +249,316 @@ export async function GET(req: NextRequest) {
       select: { status: true },
     });
 
+    const ticklerMatterIds: number[] = Array.from(
+      new Set(
+        ticklers
+          .map((tickler) => Number(tickler.matterId))
+          .filter((value) => Number.isFinite(value))
+      )
+    );
+
+    const ticklerDisplayNumbers: string[] = Array.from(
+      new Set(
+        ticklers
+          .map((tickler) => clean(tickler.displayNumber))
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    const ticklerMasterLawsuitIds: string[] = Array.from(
+      new Set(
+        ticklers
+          .map((tickler) => clean(tickler.masterLawsuitId))
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    const ticklerSettlementRecordIds: string[] = Array.from(
+      new Set(
+        ticklers
+          .map((tickler) => clean(tickler.settlementRecordId))
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    const relatedClaimRows = ticklers.length
+      ? await prisma.claimIndex.findMany({
+          where: {
+            OR: [
+              ...(ticklerMatterIds.length ? [{ matter_id: { in: ticklerMatterIds } }] : []),
+              ...(ticklerDisplayNumbers.length ? [{ display_number: { in: ticklerDisplayNumbers } }] : []),
+              ...(ticklerMasterLawsuitIds.length ? [{ master_lawsuit_id: { in: ticklerMasterLawsuitIds } }] : []),
+            ],
+          },
+          take: 1000,
+        })
+      : [];
+
+    const relatedSettlementRecords = ticklerSettlementRecordIds.length
+      ? await prisma.localSettlementRecord.findMany({
+          where: { id: { in: ticklerSettlementRecordIds } },
+          select: {
+            id: true,
+            masterLawsuitId: true,
+            status: true,
+            settledWith: true,
+            settlementDate: true,
+            paymentExpectedDate: true,
+            voided: true,
+            voidedAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        })
+      : [];
+
+    const relatedSettlementRows = ticklerSettlementRecordIds.length
+      ? await prisma.localSettlementRow.findMany({
+          where: { settlementRecordId: { in: ticklerSettlementRecordIds } },
+          select: {
+            id: true,
+            settlementRecordId: true,
+            masterLawsuitId: true,
+            matterId: true,
+            displayNumber: true,
+            provider: true,
+            patient: true,
+            insurer: true,
+            claimNumber: true,
+            denialReason: true,
+            rowSnapshot: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: [{ settlementRecordId: "asc" }, { displayNumber: "asc" }],
+        })
+      : [];
+
+    const relatedLawsuits = ticklerMasterLawsuitIds.length
+      ? await prisma.lawsuit.findMany({
+          where: { masterLawsuitId: { in: ticklerMasterLawsuitIds } },
+          select: {
+            masterLawsuitId: true,
+            venue: true,
+            venueSelection: true,
+            venueOther: true,
+            indexAaaNumber: true,
+            lawsuitOptions: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        })
+      : [];
+
+    const claimByMatterId = new Map(relatedClaimRows.map((row: any) => [String(row.matter_id || ""), row]));
+    const claimByDisplayNumber = new Map(relatedClaimRows.map((row: any) => [String(row.display_number || ""), row]));
+    const claimsByMasterLawsuitId = new Map<string, any[]>();
+    for (const row of relatedClaimRows as any[]) {
+      const key = String(row.master_lawsuit_id || "");
+      if (!key) continue;
+      const rows = claimsByMasterLawsuitId.get(key) || [];
+      rows.push(row);
+      claimsByMasterLawsuitId.set(key, rows);
+    }
+
+    const settlementRecordById = new Map(relatedSettlementRecords.map((row: any) => [String(row.id || ""), row]));
+    const lawsuitByMasterLawsuitId = new Map(relatedLawsuits.map((row: any) => [String(row.masterLawsuitId || ""), row]));
+    const settlementRowsByRecordId = new Map<string, any[]>();
+
+    for (const row of relatedSettlementRows as any[]) {
+      const key = String(row.settlementRecordId || "");
+      if (!key) continue;
+      const rows = settlementRowsByRecordId.get(key) || [];
+      rows.push(row);
+      settlementRowsByRecordId.set(key, rows);
+    }
+
+    function plainObject(value: unknown): Record<string, unknown> {
+      return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    }
+
+    function firstText(...values: unknown[]): string {
+      for (const value of values) {
+        const cleaned = clean(value);
+        if (cleaned) return cleaned;
+      }
+      return "";
+    }
+
+    function firstRelatedMatterText(metadata: Record<string, unknown>, keys: string[]): string {
+      const relatedMatters = Array.isArray(metadata.relatedMatters) ? metadata.relatedMatters : [];
+
+      for (const row of relatedMatters) {
+        if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+        const record = row as Record<string, unknown>;
+
+        for (const key of keys) {
+          const cleaned = clean(record[key]);
+          if (cleaned) return cleaned;
+        }
+      }
+
+      return "";
+    }
+
+    function firstSettlementRowText(rows: any[], keys: string[]): string {
+      for (const row of Array.isArray(rows) ? rows : []) {
+        const rowSnapshot = plainObject(row?.rowSnapshot);
+
+        for (const key of keys) {
+          const cleaned = clean(row?.[key]);
+          if (cleaned) return cleaned;
+
+          const snapshotCleaned = clean(rowSnapshot[key]);
+          if (snapshotCleaned) return snapshotCleaned;
+        }
+      }
+
+      return "";
+    }
+
+    function claimForTickler(tickler: any): any {
+      if (tickler.kind === "settlement_payment_due_followup") {
+        return {};
+      }
+
+      return (
+        claimByMatterId.get(String(tickler.matterId || "")) ||
+        claimByDisplayNumber.get(String(tickler.displayNumber || "")) ||
+        {}
+      );
+    }
+
+    const enrichedTicklersRaw = ticklers.map((tickler: any) => {
+      const claim = claimForTickler(tickler);
+      const settlementRecord = settlementRecordById.get(String(tickler.settlementRecordId || "")) || {};
+      const lawsuit = lawsuitByMasterLawsuitId.get(String(tickler.masterLawsuitId || settlementRecord.masterLawsuitId || "")) || {};
+      const lawsuitOptions = plainObject((lawsuit as any).lawsuitOptions);
+      const metadata = tickler.metadata && typeof tickler.metadata === "object" ? tickler.metadata : {};
+      const settlementRows = settlementRowsByRecordId.get(String(tickler.settlementRecordId || "")) || [];
+      const isMasterSettlementTickler = tickler.kind === "settlement_payment_due_followup";
+
+      return {
+        ...tickler,
+        contextScope: isMasterSettlementTickler ? "master_lawsuit_only" : "individual_matter_only",
+        caseData: {
+          matter: isMasterSettlementTickler
+            ? firstText(tickler.masterLawsuitId, settlementRecord.masterLawsuitId, lawsuit.masterLawsuitId)
+            : firstText(tickler.displayNumber, claim.display_number, tickler.matterId, claim.matter_id),
+          masterLawsuit: firstText(tickler.masterLawsuitId, claim.master_lawsuit_id, settlementRecord.masterLawsuitId, lawsuit.masterLawsuitId),
+          provider: isMasterSettlementTickler
+            ? firstText(
+                metadata.provider,
+                metadata.providerName,
+                metadata.clientName,
+                lawsuitOptions.provider,
+                lawsuitOptions.providerName,
+                firstSettlementRowText(settlementRows, ["provider", "providerName", "clientName", "provider_client"]),
+                firstRelatedMatterText(metadata, ["provider", "providerName", "clientName", "provider_client"])
+              )
+            : firstText(claim.provider_name, claim.client_name, metadata.provider, metadata.providerName, metadata.clientName),
+          patient: isMasterSettlementTickler
+            ? firstText(
+                metadata.patient,
+                metadata.patientName,
+                lawsuitOptions.patient,
+                lawsuitOptions.patientName,
+                firstSettlementRowText(settlementRows, ["patient", "patientName", "patient_name"]),
+                firstRelatedMatterText(metadata, ["patient", "patientName", "patient_name"])
+              )
+            : firstText(claim.patient_name, metadata.patient, metadata.patientName),
+          insurer: isMasterSettlementTickler
+            ? firstText(
+                metadata.insurer,
+                metadata.insurerName,
+                metadata.insuranceCompany,
+                lawsuitOptions.insurer,
+                lawsuitOptions.insurerName,
+                lawsuitOptions.insuranceCompany,
+                firstSettlementRowText(settlementRows, ["insurer", "insurerName", "insuranceCompany", "insurance_company"]),
+                firstRelatedMatterText(metadata, ["insurer", "insurerName", "insuranceCompany", "insurance_company"])
+              )
+            : firstText(claim.insurer_name, metadata.insurer, metadata.insurerName, metadata.insuranceCompany),
+          claimNumber: isMasterSettlementTickler
+            ? firstText(
+                lawsuit.claimNumber,
+                metadata.claimNumber,
+                metadata.claim,
+                lawsuitOptions.claimNumber,
+                lawsuitOptions.claim,
+                firstSettlementRowText(settlementRows, ["claimNumber", "claim_number", "claim"]),
+                firstRelatedMatterText(metadata, ["claimNumber", "claim_number", "claim"])
+              )
+            : firstText(claim.claim_number_normalized, claim.claim_number_raw, metadata.claimNumber, metadata.claim),
+          dateOfLoss: isMasterSettlementTickler
+            ? firstText(lawsuitOptions.dateOfLoss, lawsuitOptions.date_of_loss, metadata.masterDateOfLoss)
+            : firstText(claim.date_of_loss, metadata.dateOfLoss),
+          court: isMasterSettlementTickler
+            ? firstText(lawsuit.venue, lawsuit.venueSelection, lawsuit.venueOther, lawsuitOptions.court, lawsuitOptions.courtVenue, lawsuitOptions.venue)
+            : firstText(metadata.court, metadata.courtVenue, claim.court, claim.court_venue),
+          indexNumber: isMasterSettlementTickler
+            ? firstText(lawsuit.indexAaaNumber, lawsuitOptions.indexAaaNumber, lawsuitOptions.indexNumber, metadata.masterIndexNumber)
+            : firstText(claim.index_aaa_number, metadata.indexNumber, metadata.indexAaaNumber),
+          dateFiled: isMasterSettlementTickler
+            ? firstText(lawsuitOptions.dateFiled, lawsuitOptions.date_filed, lawsuitOptions.filedDate, metadata.masterDateFiled)
+            : firstText(metadata.dateFiled, metadata.filedDate, claim.date_filed, claim.filed_date),
+          settledDate: firstText(settlementRecord.settlementDate, metadata.settlementDate, metadata.settledDate),
+          settledWith: firstText(settlementRecord.settledWith, metadata.settledWith),
+          denialReason: isMasterSettlementTickler
+            ? firstText(metadata.denialReason, lawsuitOptions.denialReason)
+            : firstText(claim.denial_reason, metadata.denialReason),
+          status: isMasterSettlementTickler
+            ? firstText(settlementRecord.status, tickler.status)
+            : firstText(claim.status, tickler.status),
+          closedReason: isMasterSettlementTickler
+            ? firstText(lawsuitOptions.closeReason, lawsuitOptions.closedReason, metadata.masterClosedReason)
+            : firstText(claim.close_reason, metadata.closeReason, metadata.closedReason),
+          closedDate: isMasterSettlementTickler
+            ? firstText(lawsuitOptions.closedDate, lawsuitOptions.closedAt, metadata.masterClosedDate)
+            : firstText(metadata.closedDate, metadata.closedAt, claim.closed_date, claim.closedAt),
+        },
+        settlementRecord,
+        lawsuit,
+      };
+    });
+
+    const settlementFollowupByKey = new Map<string, any>();
+    const enrichedTicklers: any[] = [];
+
+    for (const tickler of enrichedTicklersRaw) {
+      if (tickler.kind !== "settlement_payment_due_followup") {
+        enrichedTicklers.push(tickler);
+        continue;
+      }
+
+      const key = [
+        tickler.kind,
+        tickler.caseData?.masterLawsuit || tickler.masterLawsuitId || "",
+        tickler.dueDate || "",
+      ].join("|");
+
+      const existing = settlementFollowupByKey.get(key);
+      if (!existing) {
+        settlementFollowupByKey.set(key, tickler);
+        continue;
+      }
+
+      const existingCreated = new Date(existing.createdAt || 0).getTime();
+      const currentCreated = new Date(tickler.createdAt || 0).getTime();
+
+      if (currentCreated > existingCreated) {
+        settlementFollowupByKey.set(key, tickler);
+      }
+    }
+
+    enrichedTicklers.push(...settlementFollowupByKey.values());
+
     return NextResponse.json({
       ok: true,
       action: "admin-generic-tickler-search",
-      count: ticklers.length,
+      count: enrichedTicklers.length,
+      rawCount: enrichedTicklersRaw.length,
+      dedupedCount: enrichedTicklersRaw.length - enrichedTicklers.length,
       limit,
       filters: {
         kind: kind || "all",
@@ -290,11 +599,19 @@ export async function GET(req: NextRequest) {
         kinds: kinds.map((row) => row.kind).filter(Boolean),
         statuses: statuses.map((row) => row.status).filter(Boolean),
       },
-      ticklers: ticklers.map((tickler) => ({
+      ticklers: enrichedTicklers.map((tickler) => ({
         ...tickler,
         completedAt: iso(tickler.completedAt),
         createdAt: iso(tickler.createdAt),
         updatedAt: iso(tickler.updatedAt),
+        settlementRecord: tickler.settlementRecord
+          ? {
+              ...tickler.settlementRecord,
+              createdAt: iso(tickler.settlementRecord.createdAt),
+              updatedAt: iso(tickler.settlementRecord.updatedAt),
+              voidedAt: iso(tickler.settlementRecord.voidedAt),
+            }
+          : null,
       })),
       safety: {
         administratorFunction: true,

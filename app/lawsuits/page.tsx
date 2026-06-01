@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import * as XLSX from "xlsx";
 
 type Matter = any;
 type ClaimGroup = any;
@@ -80,6 +81,63 @@ function getClaimNumber(g: ClaimGroup) {
   return g.claimNumber ?? g.claim_number ?? g.claimNumberNormalized ?? g.claim_number_normalized ?? "(no claim number)";
 }
 
+function timestampForFilename(): string {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function safeExportCell(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+const standardCaseExportHeaders = [
+  "Due",
+  "Type",
+  "Created",
+  "Updated",
+  "Matter",
+  "Master Lawsuit",
+  "Provider",
+  "Patient",
+  "Insurer",
+  "Claim Number",
+  "Date of Loss",
+  "Court",
+  "Index Number",
+  "Date Filed",
+  "Settled Date",
+  "Settled With",
+  "Denial Reason",
+  "Status",
+  "Closed Reason",
+  "Closed Date",
+];
+
+function downloadWorkbookRows(headers: string[], rows: unknown[][], filename: string, sheetName: string) {
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, filename);
+}
+
+function pickAny(source: any, keys: string[]): string {
+  for (const key of keys) {
+    const value = source?.[key];
+    const cleaned = safeExportCell(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
+function pickMeta(source: any, keys: string[]): string {
+  const metadata = source?.metadata && typeof source.metadata === "object" ? source.metadata : {};
+  for (const key of keys) {
+    const value = metadata?.[key];
+    const cleaned = safeExportCell(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
 function masterId(m: Matter) {
   return val(m, "masterLawsuitId", "master_lawsuit_id") || "";
 }
@@ -140,6 +198,42 @@ export default function LawsuitsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function exportSearchResultsXlsx() {
+    const rows = groups.flatMap((group) =>
+      getRows(group).map((matter) => [
+        "",
+        "",
+        pickAny(matter, ["createdAt", "created_at", "openedAt", "opened_at"]),
+        pickAny(matter, ["updatedAt", "updated_at", "indexed_at"]),
+        displayNumber(matter),
+        safeExportCell(masterId(matter)),
+        safeExportCell(val(matter, "client_name", "clientName", "provider_name", "providerName")),
+        safeExportCell(val(matter, "patientName", "patient_name")),
+        safeExportCell(insurerName(matter)),
+        safeExportCell(getClaimNumber(group)),
+        pickAny(matter, ["dateOfLoss", "date_of_loss"]),
+        pickAny(matter, ["court", "courtVenue", "court_venue"]),
+        pickAny(matter, ["indexAaaNumber", "index_aaa_number", "indexNumber"]),
+        pickAny(matter, ["dateFiled", "date_filed", "filedDate", "filed_at"]),
+        pickAny(matter, ["settledDate", "settlementDate", "settlement_date"]),
+        pickAny(matter, ["settledWith", "settled_with"]),
+        pickAny(matter, ["denialReason", "denial_reason"]),
+        pickAny(matter, ["status", "matter_stage_name"]),
+        pickAny(matter, ["closeReason", "close_reason", "closedReason"]),
+        pickAny(matter, ["closedDate", "closed_date", "closedAt"]),
+      ])
+    );
+
+    if (!rows.length) return;
+
+    downloadWorkbookRows(
+      standardCaseExportHeaders,
+      rows,
+      `barsh-matters-lawsuit-search-results-${timestampForFilename()}.xlsx`,
+      "Search Results"
+    );
   }
 
   function toggleMatter(m: Matter) {
@@ -348,6 +442,27 @@ export default function LawsuitsPage() {
         <div style={successBox}>
           <strong>Result:</strong> {result.action ?? result.status ?? result.result ?? "completed"}
           {(result.masterLawsuitId ?? result.master_lawsuit_id) ? ` — ${result.masterLawsuitId ?? result.master_lawsuit_id}` : ""}
+        </div>
+      )}
+
+      {groups.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={exportSearchResultsXlsx}
+            style={{
+              border: "1px solid #4f46e5",
+              background: "#4f46e5",
+              color: "#fff",
+              borderRadius: 999,
+              padding: "8px 12px",
+              fontWeight: 900,
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            Export XLS
+          </button>
         </div>
       )}
 

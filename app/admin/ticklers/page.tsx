@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 
 type TicklerRow = {
   id: string;
@@ -73,6 +74,66 @@ function kindLabel(value: unknown): string {
     .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
     .join(" ");
 }
+
+function safeExportCell(value: unknown): string {
+  const raw = text(value);
+  return raw || "";
+}
+
+const standardCaseExportHeaders = [
+  "Due",
+  "Type",
+  "Created",
+  "Updated",
+  "Matter",
+  "Master Lawsuit",
+  "Provider",
+  "Patient",
+  "Insurer",
+  "Claim Number",
+  "Date of Loss",
+  "Court",
+  "Index Number",
+  "Date Filed",
+  "Settled Date",
+  "Settled With",
+  "Denial Reason",
+  "Status",
+  "Closed Reason",
+  "Closed Date",
+];
+
+function downloadWorkbookRows(headers: string[], rows: unknown[][], filename: string, sheetName: string) {
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, filename);
+}
+
+function pickAny(source: any, keys: string[]): string {
+  for (const key of keys) {
+    const value = source?.[key];
+    const cleaned = safeExportCell(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
+function pickMeta(source: any, keys: string[]): string {
+  const metadata = source?.metadata && typeof source.metadata === "object" ? source.metadata : {};
+  for (const key of keys) {
+    const value = metadata?.[key];
+    const cleaned = safeExportCell(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
+
+function timestampForFilename(): string {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
 
 const inputStyle = {
   border: "1px solid #cbd5e1",
@@ -155,6 +216,40 @@ export default function AdminTicklersPage() {
           return <option key={`${id}-${option.id || value}-${index}`} value={value} />;
         })}
       </datalist>
+    );
+  }
+
+  function exportTicklerResultsXlsx() {
+    const rows = Array.isArray(result?.ticklers) ? result.ticklers : [];
+
+    if (!rows.length) return;
+
+    downloadWorkbookRows(
+      standardCaseExportHeaders,
+      rows.map((tickler: any) => [
+        formatDate(tickler.dueDate),
+        kindLabel(tickler.kind),
+        formatDate(tickler.createdAt),
+        formatDate(tickler.updatedAt),
+        safeExportCell(tickler.caseData?.matter || tickler.masterLawsuitId || tickler.displayNumber || tickler.matterId),
+        safeExportCell(tickler.caseData?.masterLawsuit || tickler.masterLawsuitId),
+        safeExportCell(tickler.caseData?.provider),
+        safeExportCell(tickler.caseData?.patient),
+        safeExportCell(tickler.caseData?.insurer),
+        safeExportCell(tickler.caseData?.claimNumber),
+        safeExportCell(tickler.caseData?.dateOfLoss),
+        safeExportCell(tickler.caseData?.court),
+        safeExportCell(tickler.caseData?.indexNumber),
+        safeExportCell(tickler.caseData?.dateFiled),
+        safeExportCell(tickler.caseData?.settledDate),
+        safeExportCell(tickler.caseData?.settledWith),
+        safeExportCell(tickler.caseData?.denialReason),
+        safeExportCell(tickler.caseData?.status || tickler.status),
+        safeExportCell(tickler.caseData?.closedReason),
+        safeExportCell(tickler.caseData?.closedDate),
+      ]),
+      `barsh-matters-ticklers-${timestampForFilename()}.xlsx`,
+      "Ticklers"
     );
   }
 
@@ -426,10 +521,30 @@ export default function AdminTicklersPage() {
         </section>
 
         <section style={{ border: "1px solid #e2e8f0", borderRadius: 18, background: "#fff", padding: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
             <h2 style={{ margin: 0, fontSize: 20 }}>Tickler Results</h2>
-            <div style={{ fontWeight: 900, color: "#475569" }}>
-              {loading ? "Loading..." : `${result?.count ?? 0} result${(result?.count ?? 0) === 1 ? "" : "s"}`}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ fontWeight: 900, color: "#475569" }}>
+                {loading ? "Loading..." : `${result?.count ?? 0} result${(result?.count ?? 0) === 1 ? "" : "s"}`}
+              </div>
+              {Array.isArray(result?.ticklers) && result.ticklers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={exportTicklerResultsXlsx}
+                  style={{
+                    border: "1px solid #4f46e5",
+                    background: "#4f46e5",
+                    color: "#fff",
+                    borderRadius: 999,
+                    padding: "8px 12px",
+                    fontWeight: 900,
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  Export XLS
+                </button>
+              )}
             </div>
           </div>
 
@@ -467,8 +582,8 @@ export default function AdminTicklersPage() {
                         <div style={{ fontWeight: 900 }}>{tickler.title || "—"}</div>
                         {tickler.description ? <div style={{ marginTop: 4, color: "#64748b" }}>{tickler.description}</div> : null}
                       </td>
-                      <td style={{ padding: "10px 8px" }}>{tickler.displayNumber || tickler.matterId || "—"}</td>
-                      <td style={{ padding: "10px 8px" }}>{tickler.masterLawsuitId || "—"}</td>
+                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.matter || tickler.displayNumber || tickler.matterId || "—"}</td>
+                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.masterLawsuit || tickler.masterLawsuitId || "—"}</td>
                       <td style={{ padding: "10px 8px" }}>{tickler.priority || "—"}</td>
                     </tr>
                   ))}
