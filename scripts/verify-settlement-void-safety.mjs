@@ -46,6 +46,58 @@ const checks = [
     ok: page.includes('runAdministratorGate(') && page.includes('"Void Active Settlement"'),
   },
   {
+    label: "temporary no-password void settlement helper exists",
+    ok:
+      page.includes("function openTemporaryNoPasswordVoidSettlementFlow()") &&
+      page.includes("void voidActiveMasterSettlementRecord(record, { skipTypedConfirm: true, skipReasonPrompt: true });"),
+  },
+  {
+    label: "temporary no-password void button is clearly marked temporary",
+    ok:
+      page.includes("Temporary Void Settlement") &&
+      page.includes("Temporary local-development shortcut") &&
+      page.includes("main settlement area temporary no-password void button") &&
+      page.includes("skipTypedConfirm") &&
+      page.includes("skipReasonPrompt"),
+  },
+  {
+    label: "temporary no-password void button is visible in main settlement area",
+    ok:
+      page.includes("main settlement area temporary no-password void button") &&
+      page.includes("masterHasActiveRecordedSettlement && (") &&
+      page.includes("onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()}"),
+  },
+
+  {
+    label: "temporary no-password void button still uses shared safe void function",
+    ok:
+      page.includes("onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()}") &&
+      page.includes("voidActiveMasterSettlementRecord(record, { skipTypedConfirm: true, skipReasonPrompt: true })") &&
+      page.includes("skipTypedConfirm") &&
+      page.includes("skipReasonPrompt") &&
+      page.includes("Type confirm to void this settlement."),
+  },
+
+  {
+    label: "temporary no-password void bypasses typed confirm only for temporary helper",
+    ok:
+      page.includes("options: { skipTypedConfirm?: boolean; skipReasonPrompt?: boolean } = {}") &&
+      page.includes("if (!options.skipTypedConfirm)") &&
+      page.includes("options.skipReasonPrompt") &&
+      page.includes("voidActiveMasterSettlementRecord(record, { skipTypedConfirm: true, skipReasonPrompt: true })") &&
+      page.includes("() => void voidActiveMasterSettlementRecord(record)"),
+  },
+
+  {
+    label: "temporary no-password void bypasses reason prompt only for temporary helper",
+    ok:
+      page.includes("skipReasonPrompt?: boolean") &&
+      page.includes("Temporary no-password development void") &&
+      page.includes("!options.skipReasonPrompt && !String(reason).trim()") &&
+      page.includes("voidActiveMasterSettlementRecord(record, { skipTypedConfirm: true, skipReasonPrompt: true })"),
+  },
+
+  {
     label: "void UI calls local-void route",
     ok: page.includes('fetch("/api/settlements/local-void"'),
   },

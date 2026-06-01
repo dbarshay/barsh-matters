@@ -1725,29 +1725,33 @@ export default function FilteredMattersPage() {
     return masterSettlementHistory?.activeRecord || records.find((record: any) => !record?.voided) || null;
   }
 
-  async function voidActiveMasterSettlementRecord(record: any) {
+  async function voidActiveMasterSettlementRecord(record: any, options: { skipTypedConfirm?: boolean; skipReasonPrompt?: boolean } = {}) {
     if (!record?.id) {
       setMasterSettlementVoidNotice("No active settlement record was found to void.");
       return;
     }
 
-    const reason = window.prompt(
-      "VOID SETTLEMENT\n\nThis will void the active local settlement record and restore the Record Settlement workflow.  It will not delete Clio documents, print queue records, email records, or local settlement rows.\n\nEnter a reason for voiding this settlement:"
-    );
+    const reason = options.skipReasonPrompt
+      ? "Temporary no-password development void"
+      : window.prompt(
+          "VOID SETTLEMENT\n\nThis will void the active local settlement record and restore the Record Settlement workflow.  It will not delete Clio documents, print queue records, email records, or local settlement rows.\n\nEnter a reason for voiding this settlement:"
+        );
 
     if (reason === null) return;
-    if (!String(reason).trim()) {
+    if (!options.skipReasonPrompt && !String(reason).trim()) {
       window.alert("A void reason is required.");
       return;
     }
 
-    const typed = window.prompt(
-      "Confirm settlement void.\n\nType confirm to void this settlement."
-    );
+    if (!options.skipTypedConfirm) {
+      const typed = window.prompt(
+        "Confirm settlement void.\n\nType confirm to void this settlement."
+      );
 
-    if (String(typed || "").trim().toLowerCase() !== "confirm") {
-      window.alert("Settlement void cancelled.  Confirmation text did not match.");
-      return;
+      if (String(typed || "").trim().toLowerCase() !== "confirm") {
+        window.alert("Settlement void cancelled.  Confirmation text did not match.");
+        return;
+      }
     }
 
     setMasterSettlementVoidLoading(true);
@@ -1799,6 +1803,17 @@ export default function FilteredMattersPage() {
       "Void Active Settlement",
       () => void voidActiveMasterSettlementRecord(record)
     );
+  }
+
+  function openTemporaryNoPasswordVoidSettlementFlow() {
+    const record = activeMasterSettlementRecordForVoid();
+
+    if (!record?.id) {
+      setMasterSettlementVoidNotice("No active settlement record was found to void.");
+      return;
+    }
+
+    void voidActiveMasterSettlementRecord(record, { skipTypedConfirm: true, skipReasonPrompt: true });
   }
 
   function openAdministratorMenu() {
@@ -6836,6 +6851,23 @@ function masterSettlementDateFiledValue(): string {
                       >
                         Email Finalized Document
                       </button>
+                      <button
+                        onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()}
+                        type="button"
+                        disabled={masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id}
+                        title="Temporary local-development shortcut: void the active local settlement without the administrator password gate.  Does not require password, reason, or typed confirm."
+                        style={{
+                          border: "1px solid #f97316",
+                          background: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#f8fafc" : "#fff7ed",
+                          color: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#94a3b8" : "#9a3412",
+                          borderRadius: 999,
+                          padding: "10px 14px",
+                          fontWeight: 900,
+                          cursor: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {masterSettlementVoidLoading ? "Voiding..." : "Temporary Void Settlement"}
+                      </button>
                       {masterSettlementEmailNotice && (
                         <div
                           style={{
@@ -6880,7 +6912,7 @@ function masterSettlementDateFiledValue(): string {
                         lineHeight: 1.45,
                       }}
                     >
-                      Settlement delivery now uses the local settlement finalization record created in Step 2.  Save Locally opens the generated DOCX route for desktop saving.  Print Finalized Document opens a local printable view and launches the browser print dialog.  Send to Print Queue writes a local Barsh Matters print-queue item only.  Email Finalized Document creates a Microsoft Graph / Outlook draft using the finalized PDF stored in the mapped master Clio matter Documents tab.  Review and edit the draft in Outlook before sending.
+                      Settlement delivery now uses the local settlement finalization record created in Step 2.  Save Locally opens the generated DOCX route for desktop saving.  Print Finalized Document opens a local printable view and launches the browser print dialog.  Send to Print Queue writes a local Barsh Matters print-queue item only.  Email Finalized Document creates a Microsoft Graph / Outlook draft using the finalized PDF stored in the mapped master Clio matter Documents tab.  Review and edit the draft in Outlook before sending.  Temporary Void Settlement is a local-development shortcut only; it bypasses the administrator password gate but still requires a reason.
                     </div>
                   </div>
                 ) : (
@@ -9206,6 +9238,32 @@ function masterSettlementDateFiledValue(): string {
                       >
                         {masterHasActiveRecordedSettlement ? "Settlement Already Recorded" : "Record Settlement"}
                       </button>
+                      {masterHasActiveRecordedSettlement && (
+                        <>
+                          {/* main settlement area temporary no-password void button */}
+                          <button
+                            type="button"
+                            onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()}
+                            disabled={masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id}
+                            title="Temporary local-development shortcut: void the active local settlement without the administrator password gate.  Does not require password, reason, or typed confirm."
+                            style={{
+                              width: "100%",
+                              minWidth: 0,
+                              height: 44,
+                              border: "1px solid #f97316",
+                              borderRadius: 999,
+                              background: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#f8fafc" : "#fff7ed",
+                              color: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#94a3b8" : "#9a3412",
+                              fontSize: 12,
+                              fontWeight: 950,
+                              cursor: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            {masterSettlementVoidLoading ? "Voiding..." : "Temporary Void Settlement"}
+                          </button>
+                        </>
+                      )}
+
 
                                           
 
