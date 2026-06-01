@@ -486,6 +486,36 @@ export default function AdminTicklersPage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 32 }}>
+      <details
+        data-barsh-admin-duplicate-settlement-tickler-compact-panel="true"
+        style={{
+          border: "1px solid #d7e0ec",
+          borderRadius: 12,
+          marginBottom: 12,
+          background: "#fffdf7",
+        }}
+      >
+        <summary
+          data-barsh-admin-duplicate-settlement-tickler-compact-summary="true"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 16,
+            alignItems: "center",
+            padding: "10px 12px",
+            cursor: "pointer",
+            fontWeight: 800,
+          }}
+        >
+          <span>Duplicate Tickler Tools</span>
+          <span style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+            Preview duplicate diagnostics and cleanup plan
+          </span>
+        </summary>
+        <div
+          data-barsh-admin-duplicate-settlement-tickler-compact-body="true"
+          style={{ borderTop: "1px solid #f1e2b8", padding: 0 }}
+        >
       <section
         data-barsh-admin-duplicate-settlement-tickler-diagnostic="true"
         style={{
@@ -662,6 +692,9 @@ export default function AdminTicklersPage() {
           </div>
         ) : null}
       </section>
+
+        </div>
+      </details>
 
       <div
         data-barsh-admin-tickler-completed-history-controls="true"
