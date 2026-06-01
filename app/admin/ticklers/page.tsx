@@ -193,6 +193,80 @@ function optionText(option: ReferenceOption): string {
   return text(option.label || option.displayName || option.name || option.value);
 }
 
+
+function formatAdminTicklerDetailValue(value: any): string {
+  if (value === undefined) return "undefined";
+  if (value === null) return "null";
+  if (typeof value === "string") return value || "—";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function adminTicklerDetailSourceFields(tickler: any) {
+  return {
+    id: tickler?.id,
+    kind: tickler?.kind,
+    type: tickler?.type,
+    status: tickler?.status,
+    dueAt: tickler?.dueAt,
+    createdAt: tickler?.createdAt,
+    updatedAt: tickler?.updatedAt,
+    matterId: tickler?.matterId,
+    masterLawsuitId: tickler?.masterLawsuitId,
+    settlementRecordId: tickler?.settlementRecordId,
+    displayNumber: tickler?.displayNumber,
+    caseData: tickler?.caseData,
+    contextScope: tickler?.contextScope,
+    contextKind: tickler?.contextKind,
+    contextId: tickler?.contextId,
+    sourceScope: tickler?.sourceScope,
+    sourceType: tickler?.sourceType,
+    sourceId: tickler?.sourceId,
+    sourceTable: tickler?.sourceTable,
+    sourceRecordId: tickler?.sourceRecordId,
+    createdBy: tickler?.createdBy,
+    createdFrom: tickler?.createdFrom,
+    reason: tickler?.reason,
+    metadata: tickler?.metadata,
+  };
+}
+
+function AdminTicklerDetailJsonSection({ title, value }: { title: string; value: any }) {
+  return (
+    <section
+      data-barsh-admin-tickler-detail-json-section={title}
+      style={{
+        border: "1px solid #d6e0ef",
+        borderRadius: 10,
+        padding: 12,
+        background: "#f8fbff",
+      }}
+    >
+      <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>{title}</h4>
+      <pre
+        style={{
+          margin: 0,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          fontSize: 12,
+          lineHeight: 1.45,
+          maxHeight: 260,
+          overflow: "auto",
+          background: "#ffffff",
+          border: "1px solid #e4e9f2",
+          borderRadius: 8,
+          padding: 10,
+        }}
+      >
+        {formatAdminTicklerDetailValue(value)}
+      </pre>
+    </section>
+  );
+}
+
 export default function AdminTicklersPage() {
   const [kind, setKind] = useState("all");
   const [dueBefore, setDueBefore] = useState("");
@@ -210,6 +284,7 @@ export default function AdminTicklersPage() {
   const [serviceType, setServiceType] = useState("");
   const [claimStatus, setClaimStatus] = useState("");
   const [closeReason, setCloseReason] = useState("");
+  const [selectedTicklerDetail, setSelectedTicklerDetail] = useState<any | null>(null);
   const [finalStatus, setFinalStatus] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [policyNumber, setPolicyNumber] = useState("");
@@ -637,7 +712,7 @@ export default function AdminTicklersPage() {
                 </thead>
                 <tbody>
                   {result.ticklers.map((tickler) => (
-                    <tr key={tickler.id} style={{ borderBottom: "1px solid #f1f5f9", verticalAlign: "top" }}>
+                    <tr key={tickler.id} style={{ borderBottom: "1px solid #f1f5f9", verticalAlign: "top" }} data-barsh-admin-tickler-detail-row-open="true" role="button" tabIndex={0} title="View read-only tickler detail" onClick={() => setSelectedTicklerDetail(tickler)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedTicklerDetail(tickler); } }}>
                       <td style={{ padding: "10px 8px", fontWeight: 900 }}>{formatDate(tickler.dueDate)}</td>
                       <td style={{ padding: "10px 8px" }}>{kindLabel(tickler.kind)}</td>
                       <td style={{ padding: "10px 8px" }}>
@@ -669,6 +744,139 @@ export default function AdminTicklersPage() {
           ) : null}
         </section>
       </div>
+
+      {selectedTicklerDetail ? (
+        <div
+          data-barsh-admin-tickler-detail-overlay="true"
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 12000,
+            background: "rgba(15, 23, 42, 0.32)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            paddingTop: 64,
+          }}
+        >
+          <div
+            data-barsh-admin-tickler-detail-popup="true"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Read-only Admin Tickler Detail"
+            style={{
+              width: "min(1180px, calc(100vw - 48px))",
+              height: "min(780px, calc(100vh - 96px))",
+              resize: "both",
+              overflow: "auto",
+              background: "#ffffff",
+              borderRadius: 16,
+              border: "1px solid #cbd5e1",
+              boxShadow: "0 24px 80px rgba(15, 23, 42, 0.35)",
+            }}
+          >
+            <div
+              data-barsh-admin-tickler-detail-header="true"
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 1,
+                padding: "18px 22px",
+                borderBottom: "1px solid #dbe4f0",
+                background: "#0f3d5e",
+                color: "#ffffff",
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: 20 }}>Read-Only Tickler Detail</h2>
+              <p style={{ margin: "6px 0 0", fontSize: 13 }}>
+                Administrator inspection only.  This popup does not process ticklers, complete ticklers, post payments, change statuses, run ticklers, write records, update Clio, or modify Barsh Matters data.
+              </p>
+            </div>
+
+            <div
+              data-barsh-admin-tickler-detail-body="true"
+              style={{
+                display: "grid",
+                gap: 14,
+                padding: 22,
+              }}
+            >
+              <AdminTicklerDetailJsonSection
+                title="Full tickler record"
+                value={selectedTicklerDetail}
+              />
+              <AdminTicklerDetailJsonSection
+                title="caseData / contextScope"
+                value={{
+                  caseData: selectedTicklerDetail?.caseData,
+                  contextScope: selectedTicklerDetail?.contextScope,
+                  contextKind: selectedTicklerDetail?.contextKind,
+                  contextId: selectedTicklerDetail?.contextId,
+                  sourceScope: selectedTicklerDetail?.sourceScope,
+                }}
+              />
+              <AdminTicklerDetailJsonSection
+                title="settlementRecord"
+                value={{
+                  settlementRecord: selectedTicklerDetail?.settlementRecord,
+                  settlementRecordId: selectedTicklerDetail?.settlementRecordId,
+                  settlement: selectedTicklerDetail?.settlement,
+                  settlementSnapshot: selectedTicklerDetail?.settlementSnapshot,
+                }}
+              />
+              <AdminTicklerDetailJsonSection
+                title="lawsuit / master context"
+                value={{
+                  masterLawsuitId: selectedTicklerDetail?.masterLawsuitId,
+                  lawsuitId: selectedTicklerDetail?.lawsuitId,
+                  masterMatterId: selectedTicklerDetail?.masterMatterId,
+                  masterLawsuit: selectedTicklerDetail?.masterLawsuit,
+                  lawsuit: selectedTicklerDetail?.lawsuit,
+                  master: selectedTicklerDetail?.master,
+                  caseDataMasterLawsuit: selectedTicklerDetail?.caseData?.masterLawsuit,
+                }}
+              />
+              <AdminTicklerDetailJsonSection
+                title="metadata and source fields"
+                value={adminTicklerDetailSourceFields(selectedTicklerDetail)}
+              />
+            </div>
+
+            <div
+              data-barsh-admin-tickler-detail-bottom-close="true"
+              style={{
+                position: "sticky",
+                bottom: 0,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                padding: "14px 22px",
+                borderTop: "1px solid #dbe4f0",
+                background: "#ffffff",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedTicklerDetail(null)}
+                style={{
+                  border: "1px solid #1f4f73",
+                  background: "#1f4f73",
+                  color: "#ffffff",
+                  borderRadius: 10,
+                  padding: "9px 18px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+
     </main>
   );
 }

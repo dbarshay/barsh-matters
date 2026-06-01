@@ -152,7 +152,8 @@
     "verify:tickler-own-context-enrichment-safety": "node scripts/verify-tickler-own-context-enrichment-safety.mjs",
     "verify:admin-tickler-no-autoload-simplified-results-safety": "node scripts/verify-admin-tickler-no-autoload-simplified-results-safety.mjs",
     "verify:admin-tickler-result-links-safety": "node scripts/verify-admin-tickler-result-links-safety.mjs",
-    "verify:admin-tickler-enter-search-safety": "node scripts/verify-admin-tickler-enter-search-safety.mjs"
+    "verify:admin-tickler-enter-search-safety": "node scripts/verify-admin-tickler-enter-search-safety.mjs",
+    "verify:admin-tickler-read-only-detail-popup-safety": "node scripts/verify-admin-tickler-read-only-detail-popup-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
