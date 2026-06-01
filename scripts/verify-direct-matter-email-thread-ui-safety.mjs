@@ -1,27 +1,61 @@
-import fs from "node:fs";
+#!/usr/bin/env node
 
-let failures = 0;
+import fs from "fs";
 
 function read(path) {
   return fs.readFileSync(path, "utf8");
 }
 
+let failures = 0;
+
 function mustContain(label, text, marker) {
   if (!text.includes(marker)) {
     console.error(`FAIL: ${label} missing marker: ${marker}`);
     failures += 1;
-  } else {
-    console.log(`PASS: ${label} found ${marker}`);
+    return;
   }
+  console.log(`PASS: ${label} found ${marker}`);
 }
 
 function mustNotContain(label, text, marker) {
   if (text.includes(marker)) {
     console.error(`FAIL: ${label} must not contain marker: ${marker}`);
     failures += 1;
-  } else {
-    console.log(`PASS: ${label} does not contain ${marker}`);
+    return;
   }
+  console.log(`PASS: ${label} does not contain ${marker}`);
+}
+
+function extractFunctionBody(text, functionName) {
+  const start = text.indexOf(`function ${functionName}(`);
+  if (start < 0) {
+    console.error(`FAIL: could not find function ${functionName}`);
+    failures += 1;
+    return "";
+  }
+
+  const braceStart = text.indexOf("{", start);
+  if (braceStart < 0) {
+    console.error(`FAIL: could not find function body for ${functionName}`);
+    failures += 1;
+    return "";
+  }
+
+  let depth = 0;
+  for (let index = braceStart; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === "{") depth += 1;
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, index + 1);
+      }
+    }
+  }
+
+  console.error(`FAIL: could not close function body for ${functionName}`);
+  failures += 1;
+  return "";
 }
 
 console.log("=== VERIFY DIRECT MATTER EMAILS UI SAFETY ===");
@@ -30,6 +64,7 @@ const pagePath = "app/matter/[id]/page.tsx";
 const routePath = "app/api/graph/local-thread-preview/route.ts";
 const page = read(pagePath);
 const route = read(routePath);
+const emailPanel = extractFunctionBody(page, "renderMatterEmailThreadsPanel");
 
 console.log("\n=== VERIFY UNIFIED DIRECT EMAILS UI MARKERS ===");
 [
@@ -73,14 +108,18 @@ console.log("\n=== VERIFY LOCAL THREAD PREVIEW ROUTE IS READ-ONLY ===");
   'Read-only local email-thread preview.',
 ].forEach((marker) => mustContain(routePath, route, marker));
 
-console.log("\n=== VERIFY NO DIRECT DRAFT/SEND/CLIO WRITE WIRING IN DIRECT EMAILS UI ===");
+console.log("\n=== VERIFY NO DIRECT DRAFT/SEND/CLIO WRITE WIRING INSIDE DIRECT EMAILS PANEL ===");
 [
   'fetch("/api/graph/create-draft"',
   'fetch(`/api/graph/create-draft',
   'confirm=create-graph-draft',
   'sendMail',
   'window.location.href = buildMailtoHref(context);',
-].forEach((marker) => mustNotContain(pagePath, page, marker));
+].forEach((marker) => mustNotContain("renderMatterEmailThreadsPanel", emailPanel, marker));
+
+console.log("\n=== VERIFY DIRECT EMAILS SAFETY CHECK IS SCOPED TO EMAIL PANEL ===");
+mustContain("verifier", read("scripts/verify-direct-matter-email-thread-ui-safety.mjs"), 'extractFunctionBody(page, "renderMatterEmailThreadsPanel")');
+mustContain("verifier", read("scripts/verify-direct-matter-email-thread-ui-safety.mjs"), "VERIFY NO DIRECT DRAFT/SEND/CLIO WRITE WIRING INSIDE DIRECT EMAILS PANEL");
 
 console.log("\n=== VERIFY SCRIPT REGISTRATION ===");
 const packageJson = read("package.json");
@@ -94,3 +133,4 @@ if (failures > 0) {
 console.log("\n=== DIRECT MATTER EMAILS UI SAFETY VERIFICATION PASSED ===");
 console.log("Direct matter Emails UI is unified for Graph-synced and MailDrop-linked local records.");
 console.log("Opening the panel auto-loads local records only; hidden debug controls do not create drafts, send email, write Clio, or write database records.");
+console.log("Draft-creation checks are scoped to renderMatterEmailThreadsPanel so unrelated document-delivery draft flows are not treated as direct Emails UI wiring.");
