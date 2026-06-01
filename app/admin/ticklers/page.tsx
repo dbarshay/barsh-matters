@@ -75,6 +75,43 @@ function kindLabel(value: unknown): string {
     .join(" ");
 }
 
+function ticklerMatterHref(tickler: any): string {
+  const caseMatter = text(tickler?.caseData?.matter);
+  const caseMaster = text(tickler?.caseData?.masterLawsuit);
+  const displayNumber = text(tickler?.displayNumber);
+  const matterId = text(tickler?.matterId);
+
+  if (caseMaster && caseMatter === caseMaster) {
+    return `/matters?master=${encodeURIComponent(caseMaster)}`;
+  }
+
+  if (caseMatter && /^\d{4}\.\d{2}\.\d{5}$/.test(caseMatter)) {
+    return `/matters?master=${encodeURIComponent(caseMatter)}`;
+  }
+
+  if (displayNumber && /^BRL\d+$/i.test(displayNumber)) {
+    return `/matter/${encodeURIComponent(matterId || displayNumber.replace(/\D/g, ""))}`;
+  }
+
+  if (matterId) {
+    return `/matter/${encodeURIComponent(matterId)}`;
+  }
+
+  return "";
+}
+
+function ticklerMasterHref(tickler: any): string {
+  const master = text(tickler?.caseData?.masterLawsuit || tickler?.masterLawsuitId);
+  return master ? `/matters?master=${encodeURIComponent(master)}` : "";
+}
+
+const linkStyle = {
+  color: "#1d4ed8",
+  fontWeight: 900,
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+} as const;
+
 function safeExportCell(value: unknown): string {
   const raw = text(value);
   return raw || "";
@@ -183,11 +220,26 @@ export default function AdminTicklersPage() {
   const [dateFiledFrom, setDateFiledFrom] = useState("");
   const [dateFiledTo, setDateFiledTo] = useState("");
   const [result, setResult] = useState<TicklerSearchResponse | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [ticklerKindOptions, setTicklerKindOptions] = useState<string[]>([]);
   const [referenceOptions, setReferenceOptions] = useState<Record<string, ReferenceOption[]>>({});
   const [referenceOptionsLoading, setReferenceOptionsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const kinds = useMemo(() => result?.availableFilters?.kinds || [], [result]);
+  const kinds = useMemo(
+    () => ticklerKindOptions.length ? ticklerKindOptions : result?.availableFilters?.kinds || [],
+    [result, ticklerKindOptions]
+  );
+
+  async function loadTicklerFilterOptions() {
+    try {
+      const response = await fetch("/api/admin/ticklers/search?kind=all&status=all&limit=1");
+      const json = (await response.json().catch(() => ({}))) as TicklerSearchResponse;
+      setTicklerKindOptions(Array.isArray(json.availableFilters?.kinds) ? json.availableFilters.kinds : []);
+    } catch {
+      setTicklerKindOptions([]);
+    }
+  }
 
   async function loadReferenceOptions() {
     setReferenceOptionsLoading(true);
@@ -254,6 +306,7 @@ export default function AdminTicklersPage() {
   }
 
   async function loadTicklers() {
+    setSearched(true);
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -299,9 +352,15 @@ export default function AdminTicklersPage() {
     }
   }
 
-  useEffect(() => {
-    void loadReferenceOptions();
+  function handleTicklerSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
     void loadTicklers();
+  }
+
+  useEffect(() => {
+    void loadTicklerFilterOptions();
+    void loadReferenceOptions();
   }, []);
 
   return (
@@ -343,7 +402,7 @@ export default function AdminTicklersPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(180px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Type / Kind
-              <select value={kind} onChange={(event) => setKind(event.target.value)} style={inputStyle}>
+              <select value={kind} onChange={(event) => setKind(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle}>
                 <option value="all">All types</option>
                 {kinds.map((item) => (
                   <option key={item} value={item}>
@@ -355,12 +414,12 @@ export default function AdminTicklersPage() {
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Due From
-              <input type="date" value={dueAfter} onChange={(event) => setDueAfter(event.target.value)} style={inputStyle} />
+              <input type="date" value={dueAfter} onChange={(event) => setDueAfter(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Due Through
-              <input type="date" value={dueBefore} onChange={(event) => setDueBefore(event.target.value)} style={inputStyle} />
+              <input type="date" value={dueBefore} onChange={(event) => setDueBefore(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
           </div>
 
@@ -382,47 +441,47 @@ export default function AdminTicklersPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(160px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Provider / Client
-              <input list="admin-tickler-provider-options" value={provider} onChange={(event) => setProvider(event.target.value)} placeholder="Provider or client" style={inputStyle} />
+              <input list="admin-tickler-provider-options" value={provider} onChange={(event) => setProvider(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Provider or client" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-provider-options", referenceOptions.provider || [])}
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Patient
-              <input value={patient} onChange={(event) => setPatient(event.target.value)} placeholder="Patient name" style={inputStyle} />
+              <input value={patient} onChange={(event) => setPatient(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Patient name" style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Insurance Company
-              <input list="admin-tickler-insurer-options" value={insuranceCompany} onChange={(event) => setInsuranceCompany(event.target.value)} placeholder="Insurer" style={inputStyle} />
+              <input list="admin-tickler-insurer-options" value={insuranceCompany} onChange={(event) => setInsuranceCompany(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Insurer" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-insurer-options", referenceOptions.insurer || [])}
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Claim Number
-              <input value={claim} onChange={(event) => setClaim(event.target.value)} placeholder="Claim number" style={inputStyle} />
+              <input value={claim} onChange={(event) => setClaim(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Claim number" style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Date of Loss
-              <input type="date" value={dateOfLoss} onChange={(event) => setDateOfLoss(event.target.value)} style={inputStyle} />
+              <input type="date" value={dateOfLoss} onChange={(event) => setDateOfLoss(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Denial Reason
-              <input list="admin-tickler-denial-reason-options" value={denialReason} onChange={(event) => setDenialReason(event.target.value)} placeholder="Denial reason" style={inputStyle} />
+              <input list="admin-tickler-denial-reason-options" value={denialReason} onChange={(event) => setDenialReason(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Denial reason" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-denial-reason-options", referenceOptions.denialReason || [])}
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Status
-              <input value={claimStatus} onChange={(event) => setClaimStatus(event.target.value)} placeholder="Matter status" style={inputStyle} />
+              <input value={claimStatus} onChange={(event) => setClaimStatus(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Matter status" style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Closed Reason
-              <input list="admin-tickler-closed-reason-options" value={closeReason} onChange={(event) => setCloseReason(event.target.value)} placeholder="Closed reason" style={inputStyle} />
+              <input list="admin-tickler-closed-reason-options" value={closeReason} onChange={(event) => setCloseReason(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Closed reason" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-closed-reason-options", referenceOptions.closedReason || [])}
             </label>
           </div>
@@ -430,30 +489,30 @@ export default function AdminTicklersPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Court
-              <input list="admin-tickler-court-options" value={court} onChange={(event) => setCourt(event.target.value)} placeholder="Court" style={inputStyle} />
+              <input list="admin-tickler-court-options" value={court} onChange={(event) => setCourt(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Court" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-court-options", referenceOptions.court || [])}
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Date Filed From
-              <input type="date" value={dateFiledFrom} onChange={(event) => setDateFiledFrom(event.target.value)} style={inputStyle} />
+              <input type="date" value={dateFiledFrom} onChange={(event) => setDateFiledFrom(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Date Filed Through
-              <input type="date" value={dateFiledTo} onChange={(event) => setDateFiledTo(event.target.value)} style={inputStyle} />
+              <input type="date" value={dateFiledTo} onChange={(event) => setDateFiledTo(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Master Lawsuit
-              <input value={masterLawsuitId} onChange={(event) => setMasterLawsuitId(event.target.value)} placeholder="2026.06.00001" style={inputStyle} />
+              <input value={masterLawsuitId} onChange={(event) => setMasterLawsuitId(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="2026.06.00001" style={inputStyle} />
             </label>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
               Matter Number
-              <input value={displayNumber} onChange={(event) => setDisplayNumber(event.target.value)} placeholder="BRL30121" style={inputStyle} />
+              <input value={displayNumber} onChange={(event) => setDisplayNumber(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="BRL30121" style={inputStyle} />
             </label>
 
             <div />
@@ -504,6 +563,8 @@ export default function AdminTicklersPage() {
                 setCourt("");
                 setDateFiledFrom("");
                 setDateFiledTo("");
+                setResult(null);
+                setSearched(false);
               }}
               style={{
                 border: "1px solid #cbd5e1",
@@ -554,7 +615,9 @@ export default function AdminTicklersPage() {
             </div>
           ) : null}
 
-          {!loading && result?.ok && !result.ticklers?.length ? (
+          {!searched ? (
+            <div style={{ color: "#64748b", fontWeight: 800 }}>Enter criteria and click Search Ticklers.</div>
+          ) : !loading && result?.ok && !result.ticklers?.length ? (
             <div style={{ color: "#64748b", fontWeight: 800 }}>No matching ticklers found.</div>
           ) : null}
 
@@ -565,11 +628,11 @@ export default function AdminTicklersPage() {
                   <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
                     <th style={{ padding: "10px 8px" }}>Due</th>
                     <th style={{ padding: "10px 8px" }}>Type</th>
-                    <th style={{ padding: "10px 8px" }}>Status</th>
-                    <th style={{ padding: "10px 8px" }}>Title</th>
                     <th style={{ padding: "10px 8px" }}>Matter</th>
                     <th style={{ padding: "10px 8px" }}>Master Lawsuit</th>
-                    <th style={{ padding: "10px 8px" }}>Priority</th>
+                    <th style={{ padding: "10px 8px" }}>Provider</th>
+                    <th style={{ padding: "10px 8px" }}>Patient</th>
+                    <th style={{ padding: "10px 8px" }}>Insurer</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -577,14 +640,27 @@ export default function AdminTicklersPage() {
                     <tr key={tickler.id} style={{ borderBottom: "1px solid #f1f5f9", verticalAlign: "top" }}>
                       <td style={{ padding: "10px 8px", fontWeight: 900 }}>{formatDate(tickler.dueDate)}</td>
                       <td style={{ padding: "10px 8px" }}>{kindLabel(tickler.kind)}</td>
-                      <td style={{ padding: "10px 8px" }}>{tickler.status || "—"}</td>
                       <td style={{ padding: "10px 8px" }}>
-                        <div style={{ fontWeight: 900 }}>{tickler.title || "—"}</div>
-                        {tickler.description ? <div style={{ marginTop: 4, color: "#64748b" }}>{tickler.description}</div> : null}
+                        {ticklerMatterHref(tickler) ? (
+                          <Link href={ticklerMatterHref(tickler)} style={linkStyle}>
+                            {(tickler as any).caseData?.matter || tickler.displayNumber || tickler.matterId || "—"}
+                          </Link>
+                        ) : (
+                          (tickler as any).caseData?.matter || tickler.displayNumber || tickler.matterId || "—"
+                        )}
                       </td>
-                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.matter || tickler.displayNumber || tickler.matterId || "—"}</td>
-                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.masterLawsuit || tickler.masterLawsuitId || "—"}</td>
-                      <td style={{ padding: "10px 8px" }}>{tickler.priority || "—"}</td>
+                      <td style={{ padding: "10px 8px" }}>
+                        {ticklerMasterHref(tickler) ? (
+                          <Link href={ticklerMasterHref(tickler)} style={linkStyle}>
+                            {(tickler as any).caseData?.masterLawsuit || tickler.masterLawsuitId || "—"}
+                          </Link>
+                        ) : (
+                          (tickler as any).caseData?.masterLawsuit || tickler.masterLawsuitId || "—"
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.provider || "—"}</td>
+                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.patient || "—"}</td>
+                      <td style={{ padding: "10px 8px" }}>{(tickler as any).caseData?.insurer || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
