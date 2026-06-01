@@ -40,6 +40,18 @@ function dueDate(value: unknown): string {
   return value.slice(0, 10);
 }
 
+function dateTimeCell(value: unknown): string {
+  if (!value || typeof value !== "string") return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+function firstCompletionTimestamp(ticklers: any[]): string {
+  const first = ticklers.find((tickler) => tickler?.completedAt)?.completedAt;
+  return dateTimeCell(first);
+}
+
 export default function AdminTicklerRunnerPage() {
   const [kind, setKind] = useState("all");
   const [dueThrough, setDueThrough] = useState(todayInputValue());
@@ -259,6 +271,49 @@ export default function AdminTicklerRunnerPage() {
                   : `Preview found ${result.count || 0} open tickler(s). No write performed.`}
               </p>
 
+              {result.writePerformed ? (
+                <div
+                  data-barsh-admin-tickler-bulk-runner-completion-audit-summary="true"
+                  style={{
+                    margin: "12px 0 16px",
+                    border: "1px solid #fecaca",
+                    borderRadius: 12,
+                    padding: 14,
+                    background: "#fff7f7",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 8px", color: "#7f1d1d" }}>Completion Audit Summary</h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, minmax(160px, 1fr))",
+                      gap: 10,
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <strong>Completed Count</strong>
+                      <div>{result.completedCount || 0}</div>
+                    </div>
+                    <div>
+                      <strong>Completed By</strong>
+                      <div>{cell(ticklers[0]?.completedBy)}</div>
+                    </div>
+                    <div>
+                      <strong>Completed At</strong>
+                      <div>{firstCompletionTimestamp(ticklers)}</div>
+                    </div>
+                    <div>
+                      <strong>Completion Note</strong>
+                      <div>{cell(ticklers[0]?.completedNote)}</div>
+                    </div>
+                  </div>
+                  <p style={{ margin: "10px 0 0", color: "#7f1d1d", fontWeight: 700 }}>
+                    Audit only: this summary records the LocalWorkflowTickler completion result and does not post payments, close matters, change settlement records, update Clio, generate documents, email, print, or queue anything.
+                  </p>
+                </div>
+              ) : null}
+
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
@@ -271,12 +326,15 @@ export default function AdminTicklerRunnerPage() {
                       <th style={{ padding: 8 }}>Patient</th>
                       <th style={{ padding: 8 }}>Insurer</th>
                       <th style={{ padding: 8 }}>Status</th>
+                      <th style={{ padding: 8 }}>Completed At</th>
+                      <th style={{ padding: 8 }}>Completed By</th>
+                      <th style={{ padding: 8 }}>Completion Note</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ticklers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ padding: 12, color: "#64748b" }}>
+                        <td colSpan={11} style={{ padding: 12, color: "#64748b" }}>
                           No matching ticklers.
                         </td>
                       </tr>
@@ -291,6 +349,9 @@ export default function AdminTicklerRunnerPage() {
                           <td style={{ padding: 8 }}>{cell(tickler.caseData?.patient)}</td>
                           <td style={{ padding: 8 }}>{cell(tickler.caseData?.insurer)}</td>
                           <td style={{ padding: 8, fontWeight: 800 }}>{cell(tickler.status)}</td>
+                          <td style={{ padding: 8 }}>{dateTimeCell(tickler.completedAt)}</td>
+                          <td style={{ padding: 8 }}>{cell(tickler.completedBy)}</td>
+                          <td style={{ padding: 8 }}>{cell(tickler.completedNote)}</td>
                         </tr>
                       ))
                     )}

@@ -156,7 +156,8 @@
     "verify:admin-tickler-read-only-detail-popup-safety": "node scripts/verify-admin-tickler-read-only-detail-popup-safety.mjs",
     "verify:admin-tickler-bulk-runner-safety": "node scripts/verify-admin-tickler-bulk-runner-safety.mjs",
     "verify:admin-tickler-completed-history-safety": "node scripts/verify-admin-tickler-completed-history-safety.mjs",
-    "verify:admin-tickler-bulk-runner-preview-lock-safety": "node scripts/verify-admin-tickler-bulk-runner-preview-lock-safety.mjs"
+    "verify:admin-tickler-bulk-runner-preview-lock-safety": "node scripts/verify-admin-tickler-bulk-runner-preview-lock-safety.mjs",
+    "verify:admin-tickler-bulk-runner-completion-audit-safety": "node scripts/verify-admin-tickler-bulk-runner-completion-audit-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
