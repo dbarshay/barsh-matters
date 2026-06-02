@@ -268,6 +268,131 @@ function AdminTicklerDetailJsonSection({ title, value }: { title: string; value:
   );
 }
 
+type AdminTicklerSearchState = {
+  kind: string;
+  status: "open" | "completed";
+  dueBefore: string;
+  dueAfter: string;
+  masterLawsuitId: string;
+  displayNumber: string;
+  patient: string;
+  provider: string;
+  insuranceCompany: string;
+  claim: string;
+  indexAaaNumber: string;
+  dosStart: string;
+  dosEnd: string;
+  denialReason: string;
+  serviceType: string;
+  claimStatus: string;
+  closeReason: string;
+  finalStatus: string;
+  billNumber: string;
+  policyNumber: string;
+  dateOfLoss: string;
+  treatingProvider: string;
+  matterStage: string;
+  court: string;
+  dateFiledFrom: string;
+  dateFiledTo: string;
+};
+
+function adminTicklerSearchStateFromUrl(): AdminTicklerSearchState {
+  if (typeof window === "undefined") {
+    return {
+      kind: "all",
+      status: "open",
+      dueBefore: "",
+      dueAfter: "",
+      masterLawsuitId: "",
+      displayNumber: "",
+      patient: "",
+      provider: "",
+      insuranceCompany: "",
+      claim: "",
+      indexAaaNumber: "",
+      dosStart: "",
+      dosEnd: "",
+      denialReason: "",
+      serviceType: "",
+      claimStatus: "",
+      closeReason: "",
+      finalStatus: "",
+      billNumber: "",
+      policyNumber: "",
+      dateOfLoss: "",
+      treatingProvider: "",
+      matterStage: "",
+      court: "",
+      dateFiledFrom: "",
+      dateFiledTo: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get("status") === "completed" ? "completed" : "open";
+
+  return {
+    kind: params.get("kind") || "all",
+    status,
+    dueBefore: params.get("dueBefore") || "",
+    dueAfter: params.get("dueAfter") || "",
+    masterLawsuitId: params.get("masterLawsuitId") || "",
+    displayNumber: params.get("displayNumber") || "",
+    patient: params.get("patient") || "",
+    provider: params.get("provider") || "",
+    insuranceCompany: params.get("insuranceCompany") || "",
+    claim: params.get("claim") || "",
+    indexAaaNumber: params.get("indexAaaNumber") || "",
+    dosStart: params.get("dosStart") || "",
+    dosEnd: params.get("dosEnd") || "",
+    denialReason: params.get("denialReason") || "",
+    serviceType: params.get("serviceType") || "",
+    claimStatus: params.get("claimStatus") || "",
+    closeReason: params.get("closeReason") || "",
+    finalStatus: params.get("finalStatus") || "",
+    billNumber: params.get("billNumber") || "",
+    policyNumber: params.get("policyNumber") || "",
+    dateOfLoss: params.get("dateOfLoss") || "",
+    treatingProvider: params.get("treatingProvider") || "",
+    matterStage: params.get("matterStage") || "",
+    court: params.get("court") || "",
+    dateFiledFrom: params.get("dateFiledFrom") || "",
+    dateFiledTo: params.get("dateFiledTo") || "",
+  };
+}
+
+function adminTicklerSearchStateHasAnyValue(state: AdminTicklerSearchState) {
+  return Boolean(
+    (state.kind && state.kind !== "all") ||
+    (state.status && state.status !== "open") ||
+    state.dueBefore ||
+    state.dueAfter ||
+    state.masterLawsuitId ||
+    state.displayNumber ||
+    state.patient ||
+    state.provider ||
+    state.insuranceCompany ||
+    state.claim ||
+    state.indexAaaNumber ||
+    state.dosStart ||
+    state.dosEnd ||
+    state.denialReason ||
+    state.serviceType ||
+    state.claimStatus ||
+    state.closeReason ||
+    state.finalStatus ||
+    state.billNumber ||
+    state.policyNumber ||
+    state.dateOfLoss ||
+    state.treatingProvider ||
+    state.matterStage ||
+    state.court ||
+    state.dateFiledFrom ||
+    state.dateFiledTo
+  );
+}
+
 export default function AdminTicklersPage() {
   const [kind, setKind] = useState("all");
   const [dueBefore, setDueBefore] = useState("");
@@ -387,42 +512,114 @@ export default function AdminTicklersPage() {
     );
   }
 
-  async function loadTicklers() {
+  async function loadTicklers(
+    overrides: Partial<AdminTicklerSearchState> = {},
+    options: { updateUrl?: boolean; replaceUrl?: boolean } = {}
+  ) {
+    const nextKind = Object.prototype.hasOwnProperty.call(overrides, "kind") ? String(overrides.kind || "all") : kind;
+    const nextStatus = Object.prototype.hasOwnProperty.call(overrides, "status") && overrides.status === "completed" ? "completed" : ticklerStatusMode;
+    const nextDueBefore = Object.prototype.hasOwnProperty.call(overrides, "dueBefore") ? String(overrides.dueBefore || "") : dueBefore;
+    const nextDueAfter = Object.prototype.hasOwnProperty.call(overrides, "dueAfter") ? String(overrides.dueAfter || "") : dueAfter;
+    const nextMasterLawsuitId = Object.prototype.hasOwnProperty.call(overrides, "masterLawsuitId") ? String(overrides.masterLawsuitId || "") : masterLawsuitId;
+    const nextDisplayNumber = Object.prototype.hasOwnProperty.call(overrides, "displayNumber") ? String(overrides.displayNumber || "") : displayNumber;
+    const nextPatient = Object.prototype.hasOwnProperty.call(overrides, "patient") ? String(overrides.patient || "") : patient;
+    const nextProvider = Object.prototype.hasOwnProperty.call(overrides, "provider") ? String(overrides.provider || "") : provider;
+    const nextInsuranceCompany = Object.prototype.hasOwnProperty.call(overrides, "insuranceCompany") ? String(overrides.insuranceCompany || "") : insuranceCompany;
+    const nextClaim = Object.prototype.hasOwnProperty.call(overrides, "claim") ? String(overrides.claim || "") : claim;
+    const nextIndexAaaNumber = Object.prototype.hasOwnProperty.call(overrides, "indexAaaNumber") ? String(overrides.indexAaaNumber || "") : indexAaaNumber;
+    const nextDosStart = Object.prototype.hasOwnProperty.call(overrides, "dosStart") ? String(overrides.dosStart || "") : dosStart;
+    const nextDosEnd = Object.prototype.hasOwnProperty.call(overrides, "dosEnd") ? String(overrides.dosEnd || "") : dosEnd;
+    const nextDenialReason = Object.prototype.hasOwnProperty.call(overrides, "denialReason") ? String(overrides.denialReason || "") : denialReason;
+    const nextServiceType = Object.prototype.hasOwnProperty.call(overrides, "serviceType") ? String(overrides.serviceType || "") : serviceType;
+    const nextClaimStatus = Object.prototype.hasOwnProperty.call(overrides, "claimStatus") ? String(overrides.claimStatus || "") : claimStatus;
+    const nextCloseReason = Object.prototype.hasOwnProperty.call(overrides, "closeReason") ? String(overrides.closeReason || "") : closeReason;
+    const nextFinalStatus = Object.prototype.hasOwnProperty.call(overrides, "finalStatus") ? String(overrides.finalStatus || "") : finalStatus;
+    const nextBillNumber = Object.prototype.hasOwnProperty.call(overrides, "billNumber") ? String(overrides.billNumber || "") : billNumber;
+    const nextPolicyNumber = Object.prototype.hasOwnProperty.call(overrides, "policyNumber") ? String(overrides.policyNumber || "") : policyNumber;
+    const nextDateOfLoss = Object.prototype.hasOwnProperty.call(overrides, "dateOfLoss") ? String(overrides.dateOfLoss || "") : dateOfLoss;
+    const nextTreatingProvider = Object.prototype.hasOwnProperty.call(overrides, "treatingProvider") ? String(overrides.treatingProvider || "") : treatingProvider;
+    const nextMatterStage = Object.prototype.hasOwnProperty.call(overrides, "matterStage") ? String(overrides.matterStage || "") : matterStage;
+    const nextCourt = Object.prototype.hasOwnProperty.call(overrides, "court") ? String(overrides.court || "") : court;
+    const nextDateFiledFrom = Object.prototype.hasOwnProperty.call(overrides, "dateFiledFrom") ? String(overrides.dateFiledFrom || "") : dateFiledFrom;
+    const nextDateFiledTo = Object.prototype.hasOwnProperty.call(overrides, "dateFiledTo") ? String(overrides.dateFiledTo || "") : dateFiledTo;
+
+    setKind(nextKind);
+    setTicklerStatusMode(nextStatus);
+    setDueBefore(nextDueBefore);
+    setDueAfter(nextDueAfter);
+    setMasterLawsuitId(nextMasterLawsuitId);
+    setDisplayNumber(nextDisplayNumber);
+    setPatient(nextPatient);
+    setProvider(nextProvider);
+    setInsuranceCompany(nextInsuranceCompany);
+    setClaim(nextClaim);
+    setIndexAaaNumber(nextIndexAaaNumber);
+    setDosStart(nextDosStart);
+    setDosEnd(nextDosEnd);
+    setDenialReason(nextDenialReason);
+    setServiceType(nextServiceType);
+    setClaimStatus(nextClaimStatus);
+    setCloseReason(nextCloseReason);
+    setFinalStatus(nextFinalStatus);
+    setBillNumber(nextBillNumber);
+    setPolicyNumber(nextPolicyNumber);
+    setDateOfLoss(nextDateOfLoss);
+    setTreatingProvider(nextTreatingProvider);
+    setMatterStage(nextMatterStage);
+    setCourt(nextCourt);
+    setDateFiledFrom(nextDateFiledFrom);
+    setDateFiledTo(nextDateFiledTo);
+
     setSearched(true);
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("kind", kind);
-      params.set("status", ticklerStatusMode);
+      params.set("kind", nextKind);
+      params.set("status", nextStatus);
       params.set("limit", "100");
-      if (dueBefore) params.set("dueBefore", dueBefore);
-      if (dueAfter) params.set("dueAfter", dueAfter);
-      if (masterLawsuitId.trim()) params.set("masterLawsuitId", masterLawsuitId.trim());
-      if (displayNumber.trim()) params.set("displayNumber", displayNumber.trim());
-      if (patient.trim()) params.set("patient", patient.trim());
-      if (provider.trim()) params.set("provider", provider.trim());
-      if (insuranceCompany.trim()) params.set("insuranceCompany", insuranceCompany.trim());
-      if (claim.trim()) params.set("claim", claim.trim());
-      if (indexAaaNumber.trim()) params.set("indexAaaNumber", indexAaaNumber.trim());
-      if (dosStart) params.set("dosStart", dosStart);
-      if (dosEnd) params.set("dosEnd", dosEnd);
-      if (denialReason.trim()) params.set("denialReason", denialReason.trim());
-      if (serviceType.trim()) params.set("serviceType", serviceType.trim());
-      if (claimStatus.trim()) params.set("claimStatus", claimStatus.trim());
-      if (closeReason.trim()) params.set("closeReason", closeReason.trim());
-      if (finalStatus.trim()) params.set("finalStatus", finalStatus.trim());
-      if (billNumber.trim()) params.set("billNumber", billNumber.trim());
-      if (policyNumber.trim()) params.set("policyNumber", policyNumber.trim());
-      if (dateOfLoss) params.set("dateOfLoss", dateOfLoss);
-      if (treatingProvider.trim()) params.set("treatingProvider", treatingProvider.trim());
-      if (matterStage.trim()) params.set("matterStage", matterStage.trim());
-      if (court.trim()) params.set("court", court.trim());
-      if (dateFiledFrom) params.set("dateFiledFrom", dateFiledFrom);
-      if (dateFiledTo) params.set("dateFiledTo", dateFiledTo);
+      if (nextDueBefore) params.set("dueBefore", nextDueBefore);
+      if (nextDueAfter) params.set("dueAfter", nextDueAfter);
+      if (nextMasterLawsuitId.trim()) params.set("masterLawsuitId", nextMasterLawsuitId.trim());
+      if (nextDisplayNumber.trim()) params.set("displayNumber", nextDisplayNumber.trim());
+      if (nextPatient.trim()) params.set("patient", nextPatient.trim());
+      if (nextProvider.trim()) params.set("provider", nextProvider.trim());
+      if (nextInsuranceCompany.trim()) params.set("insuranceCompany", nextInsuranceCompany.trim());
+      if (nextClaim.trim()) params.set("claim", nextClaim.trim());
+      if (nextIndexAaaNumber.trim()) params.set("indexAaaNumber", nextIndexAaaNumber.trim());
+      if (nextDosStart) params.set("dosStart", nextDosStart);
+      if (nextDosEnd) params.set("dosEnd", nextDosEnd);
+      if (nextDenialReason.trim()) params.set("denialReason", nextDenialReason.trim());
+      if (nextServiceType.trim()) params.set("serviceType", nextServiceType.trim());
+      if (nextClaimStatus.trim()) params.set("claimStatus", nextClaimStatus.trim());
+      if (nextCloseReason.trim()) params.set("closeReason", nextCloseReason.trim());
+      if (nextFinalStatus.trim()) params.set("finalStatus", nextFinalStatus.trim());
+      if (nextBillNumber.trim()) params.set("billNumber", nextBillNumber.trim());
+      if (nextPolicyNumber.trim()) params.set("policyNumber", nextPolicyNumber.trim());
+      if (nextDateOfLoss) params.set("dateOfLoss", nextDateOfLoss);
+      if (nextTreatingProvider.trim()) params.set("treatingProvider", nextTreatingProvider.trim());
+      if (nextMatterStage.trim()) params.set("matterStage", nextMatterStage.trim());
+      if (nextCourt.trim()) params.set("court", nextCourt.trim());
+      if (nextDateFiledFrom) params.set("dateFiledFrom", nextDateFiledFrom);
+      if (nextDateFiledTo) params.set("dateFiledTo", nextDateFiledTo);
 
       const response = await fetch(`/api/admin/ticklers/search?${params.toString()}`);
       const json = await response.json().catch(() => ({}));
       setResult({ ...json, httpStatus: response.status } as TicklerSearchResponse);
+
+      if (typeof window !== "undefined" && options.updateUrl !== false) {
+        const uiParams = new URLSearchParams(params);
+        uiParams.delete("limit");
+        const nextUrl = uiParams.toString() ? `/admin/ticklers?${uiParams.toString()}` : "/admin/ticklers";
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        if (nextUrl !== currentUrl) {
+          if (options.replaceUrl) {
+            window.history.replaceState({ barshMattersAdminTicklersSearch: true }, "", nextUrl);
+          } else {
+            window.history.pushState({ barshMattersAdminTicklersSearch: true }, "", nextUrl);
+          }
+        }
+      }
     } catch (error: any) {
       setResult({
         ok: false,
@@ -433,6 +630,55 @@ export default function AdminTicklersPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function applyAdminTicklerSearchFromUrl() {
+      const urlState = adminTicklerSearchStateFromUrl();
+
+      if (adminTicklerSearchStateHasAnyValue(urlState)) {
+        void loadTicklers(urlState, { updateUrl: false });
+        return;
+      }
+
+      setKind("all");
+      setTicklerStatusMode("open");
+      setDueBefore("");
+      setDueAfter("");
+      setMasterLawsuitId("");
+      setDisplayNumber("");
+      setPatient("");
+      setProvider("");
+      setInsuranceCompany("");
+      setClaim("");
+      setIndexAaaNumber("");
+      setDosStart("");
+      setDosEnd("");
+      setDenialReason("");
+      setServiceType("");
+      setClaimStatus("");
+      setCloseReason("");
+      setFinalStatus("");
+      setBillNumber("");
+      setPolicyNumber("");
+      setDateOfLoss("");
+      setTreatingProvider("");
+      setMatterStage("");
+      setCourt("");
+      setDateFiledFrom("");
+      setDateFiledTo("");
+      setResult(null);
+      setSearched(false);
+    }
+
+    applyAdminTicklerSearchFromUrl();
+    window.addEventListener("popstate", applyAdminTicklerSearchFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyAdminTicklerSearchFromUrl);
+    };
+  }, []);
 
   function handleTicklerSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
     if (event.key !== "Enter") return;
@@ -718,7 +964,7 @@ export default function AdminTicklersPage() {
           <button
             type="button"
             data-barsh-admin-tickler-open-mode-button="true"
-            onClick={() => setTicklerStatusMode("open")}
+            onClick={() => void loadTicklers({ status: "open" })}
             style={{
               border: ticklerStatusMode === "open" ? "1px solid #1f4f73" : "1px solid #cbd5e1",
               background: ticklerStatusMode === "open" ? "#1f4f73" : "#ffffff",
@@ -734,7 +980,7 @@ export default function AdminTicklersPage() {
           <button
             type="button"
             data-barsh-admin-tickler-completed-history-button="true"
-            onClick={() => setTicklerStatusMode("completed")}
+            onClick={() => void loadTicklers({ status: "completed" })}
             style={{
               border: ticklerStatusMode === "completed" ? "1px solid #7f1d1d" : "1px solid #cbd5e1",
               background: ticklerStatusMode === "completed" ? "#7f1d1d" : "#ffffff",
@@ -988,6 +1234,9 @@ export default function AdminTicklersPage() {
                 setDateFiledTo("");
                 setResult(null);
                 setSearched(false);
+                if (typeof window !== "undefined") {
+                  window.history.pushState({ barshMattersAdminTicklersSearch: true }, "", "/admin/ticklers");
+                }
               }}
               style={{
                 border: "1px solid #cbd5e1",
