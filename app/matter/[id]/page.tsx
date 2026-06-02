@@ -1696,14 +1696,15 @@ const activeGroupKey =
   }
 
   async function loadClaimIndexTreatingProviderField() {
-    if (!matterId) return;
+    const numericMatterId = resolvedNumericMatterId();
+    if (!numericMatterId) return;
 
     setTreatingProviderResult(null);
 
     const [optionsJson, fieldJson] = await Promise.all([
       loadTreatingProviderOptions(),
       fetch(
-        `/api/matters/identity-field?matterId=${encodeURIComponent(String(matterId))}&fieldName=treating_provider`,
+        `/api/matters/identity-field?matterId=${encodeURIComponent(String(numericMatterId))}&fieldName=treating_provider`,
         { cache: "no-store" }
       ).then((result) => result.json()).catch(() => null),
     ]);
@@ -1723,8 +1724,10 @@ const activeGroupKey =
   }
 
   async function saveClaimIndexTreatingProvider() {
-    if (!matterId) {
-      setTreatingProviderResult({ ok: false, error: "No matter ID is available." });
+    const numericMatterId = resolvedNumericMatterId();
+
+    if (!numericMatterId) {
+      setTreatingProviderResult({ ok: false, error: "No valid local matter ID is available.  Reopen this matter from search or refresh the page before saving." });
       return;
     }
 
@@ -1745,7 +1748,7 @@ const activeGroupKey =
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          matterId: resolvedNumericMatterId(),
+          matterId: numericMatterId,
           matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId),
           fieldName: "treating_provider",
           fieldValueId: option.id,
