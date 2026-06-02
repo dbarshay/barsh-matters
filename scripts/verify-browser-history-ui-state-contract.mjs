@@ -7,12 +7,14 @@ const lawsuitsPath = "app/lawsuits/page.tsx";
 const matterPagePath = "app/matter/[id]/page.tsx";
 const mattersPagePath = "app/matters/page.tsx";
 const adminTicklersPagePath = "app/admin/ticklers/page.tsx";
+const referenceDataPagePath = "app/admin/reference-data/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
 const matterPage = fs.readFileSync(matterPagePath, "utf8");
 const mattersPage = fs.readFileSync(mattersPagePath, "utf8");
 const adminTicklersPage = fs.readFileSync(adminTicklersPagePath, "utf8");
+const referenceDataPage = fs.readFileSync(referenceDataPagePath, "utf8");
 
 const failures = [];
 
@@ -67,6 +69,12 @@ mustContain("/admin/ticklers pushes search history", adminTicklersPage, "window.
 mustContain("/admin/ticklers listens to popstate", adminTicklersPage, 'window.addEventListener("popstate", applyAdminTicklerSearchFromUrl);');
 mustContain("/admin/ticklers restores from URL", adminTicklersPage, "void loadTicklers(urlState, { updateUrl: false });");
 
+mustContain("/admin/reference-data has URL parser", referenceDataPage, "function referenceDataStateFromUrl(): ReferenceDataUrlState");
+mustContain("/admin/reference-data reads selected type from URL", referenceDataPage, 'type: params.get("type") || "individual"');
+mustContain("/admin/reference-data pushes search history", referenceDataPage, "window.history.pushState({ barshMattersReferenceDataSearch: true }, \"\", nextUrl);");
+mustContain("/admin/reference-data listens to popstate", referenceDataPage, 'window.addEventListener("popstate", applyReferenceDataStateFromUrl);');
+mustContain("/admin/reference-data restores from URL", referenceDataPage, "void loadRows(urlState.type, urlState.q, urlState.active, {");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
@@ -75,6 +83,7 @@ console.log("EXPECTS_LAWSUITS_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_MATTER_PAGE_URL_BACKED_TABS=YES");
 console.log("EXPECTS_MATTERS_PAGE_URL_BACKED_MASTER_TABS=YES");
 console.log("EXPECTS_ADMIN_TICKLERS_URL_BACKED_SEARCH=YES");
+console.log("EXPECTS_REFERENCE_DATA_URL_BACKED_SEARCH=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);

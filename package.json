@@ -216,7 +216,8 @@
     "verify:browser-history-ui-state-contract": "node scripts/verify-browser-history-ui-state-contract.mjs",
     "verify:matter-page-tab-history-safety": "node scripts/verify-matter-page-tab-history-safety.mjs",
     "verify:matters-master-tab-history-safety": "node scripts/verify-matters-master-tab-history-safety.mjs",
-    "verify:admin-ticklers-browser-history-safety": "node scripts/verify-admin-ticklers-browser-history-safety.mjs"
+    "verify:admin-ticklers-browser-history-safety": "node scripts/verify-admin-ticklers-browser-history-safety.mjs",
+    "verify:reference-data-browser-history-safety": "node scripts/verify-reference-data-browser-history-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

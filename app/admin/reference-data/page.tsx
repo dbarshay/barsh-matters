@@ -540,6 +540,53 @@ function allReferenceDetailEntries(details: unknown): Array<[string, any, "visib
   ];
 }
 
+type ReferenceDataUrlState = {
+  type: string;
+  q: string;
+  active: string;
+  selectedRowId: string;
+};
+
+function referenceDataStateFromUrl(): ReferenceDataUrlState {
+  if (typeof window === "undefined") {
+    return {
+      type: "individual",
+      q: "",
+      active: "all",
+      selectedRowId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    type: params.get("type") || "individual",
+    q: params.get("q") || "",
+    active: params.get("active") || "all",
+    selectedRowId: params.get("selectedRowId") || "",
+  };
+}
+
+function referenceDataStateHasAnyValue(state: ReferenceDataUrlState) {
+  return Boolean(
+    (state.type && state.type !== "individual") ||
+    state.q ||
+    (state.active && state.active !== "all") ||
+    state.selectedRowId
+  );
+}
+
+function referenceDataUrlForState(state: ReferenceDataUrlState) {
+  const params = new URLSearchParams();
+
+  if (state.type && state.type !== "individual") params.set("type", state.type);
+  if (state.q) params.set("q", state.q);
+  if (state.active && state.active !== "all") params.set("active", state.active);
+  if (state.selectedRowId) params.set("selectedRowId", state.selectedRowId);
+
+  return params.toString() ? `/admin/reference-data?${params.toString()}` : "/admin/reference-data";
+}
+
 export default function AdminReferenceDataPage() {
 
   const [emailAutomationStatus, setEmailAutomationStatus] = useState<EmailAutomationStatus | null>(null);
@@ -661,7 +708,12 @@ export default function AdminReferenceDataPage() {
     setErrorMessage("");
   }
 
-  async function loadRows(nextType = selectedType, nextQuery = query, nextActive = activeFilter) {
+  async function loadRows(
+    nextType = selectedType,
+    nextQuery = query,
+    nextActive = activeFilter,
+    options: { updateUrl?: boolean; replaceUrl?: boolean; selectedRowId?: string } = {}
+  ) {
     try {
       setLoading(true);
       resetMessages();
@@ -687,6 +739,24 @@ export default function AdminReferenceDataPage() {
         setTypeOptions(json.typeOptions);
       }
 
+      if (typeof window !== "undefined" && options.updateUrl !== false) {
+        const nextUrl = referenceDataUrlForState({
+          type: nextType,
+          q: nextQuery,
+          active: nextActive,
+          selectedRowId: options.selectedRowId || "",
+        });
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        if (nextUrl !== currentUrl) {
+          if (options.replaceUrl) {
+            window.history.replaceState({ barshMattersReferenceDataSearch: true }, "", nextUrl);
+          } else {
+            window.history.pushState({ barshMattersReferenceDataSearch: true }, "", nextUrl);
+          }
+        }
+      }
+
       setStatusMessage(
         `Loaded ${json.count ?? 0} ${json.count === 1 ? "record" : "records"} from local Barsh Matters reference data.`
       );
@@ -699,9 +769,35 @@ export default function AdminReferenceDataPage() {
   }
 
   useEffect(() => {
-    void loadRows(selectedType, query, activeFilter);
+    if (typeof window === "undefined") return;
+
+    function applyReferenceDataStateFromUrl() {
+      const urlState = referenceDataStateFromUrl();
+
+      setSelectedType(urlState.type);
+      setQuery(urlState.q);
+      setActiveFilter(urlState.active);
+      setSelectedRowId(urlState.selectedRowId);
+
+      if (referenceDataStateHasAnyValue(urlState)) {
+        void loadRows(urlState.type, urlState.q, urlState.active, {
+          updateUrl: false,
+          selectedRowId: urlState.selectedRowId,
+        });
+        return;
+      }
+
+      void loadRows("individual", "", "all", { updateUrl: false });
+    }
+
+    applyReferenceDataStateFromUrl();
+    window.addEventListener("popstate", applyReferenceDataStateFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyReferenceDataStateFromUrl);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedType, activeFilter]);
+  }, []);
 
   useEffect(() => {
     if (!selectedRow) {
@@ -2645,8 +2741,10 @@ return (
             <select
               value={selectedType}
               onChange={(event) => {
-                setSelectedType(event.target.value);
+                const nextType = event.target.value;
+                setSelectedType(nextType);
                 setSelectedRowId("");
+                void loadRows(nextType, query, activeFilter, { selectedRowId: "" });
               }}
               style={{
                 width: "100%",
@@ -2672,7 +2770,7 @@ return (
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  void loadRows();
+                  void loadRows(selectedType, query, activeFilter, { selectedRowId });
                 }
               }}
               placeholder="Name or alias"
@@ -2691,8 +2789,10 @@ return (
             <select
               value={activeFilter}
               onChange={(event) => {
-                setActiveFilter(event.target.value);
+                const nextActive = event.target.value;
+                setActiveFilter(nextActive);
                 setSelectedRowId("");
+                void loadRows(selectedType, query, nextActive, { selectedRowId: "" });
               }}
               style={{
                 width: "100%",
@@ -2828,7 +2928,7 @@ return (
               </div>
 
               <button
-                onClick={() => loadRows()}
+                onClick={() => loadRows(selectedType, query, activeFilter, { selectedRowId })}
                 disabled={loading}
                 style={{
                   border: "1px solid #cbd5e1",
@@ -2898,7 +2998,18 @@ return (
                     rows.map((row) => (
                       <tr
                         key={row.id}
-                        onClick={() => setSelectedRowId(row.id)}
+                        onClick={() => {
+                          setSelectedRowId(row.id);
+                          if (typeof window !== "undefined") {
+                            const nextUrl = referenceDataUrlForState({
+                              type: selectedType,
+                              q: query,
+                              active: activeFilter,
+                              selectedRowId: row.id,
+                            });
+                            window.history.pushState({ barshMattersReferenceDataSearch: true }, "", nextUrl);
+                          }
+                        }}
                         style={{
                           cursor: "pointer",
                           background: row.id === selectedRowId ? "#eff6ff" : "#ffffff",
