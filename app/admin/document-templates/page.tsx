@@ -138,8 +138,50 @@ function statusBadgeStyle(kind: "ok" | "warn" | "neutral"): React.CSSProperties 
   };
 }
 
+type TemplateVisibilityFilter = "all" | "visible_ui" | "hidden_internal" | "computed" | "system";
+
+type DocumentTemplateUrlState = {
+  category: TemplateCategory;
+  visibility: TemplateVisibilityFilter;
+};
+
+function normalizeTemplateCategory(value: unknown): TemplateCategory {
+  const raw = String(value ?? "").trim();
+  return categories.some((item) => item.key === raw) ? (raw as TemplateCategory) : "settlement";
+}
+
+function normalizeTemplateVisibility(value: unknown): TemplateVisibilityFilter {
+  const raw = String(value ?? "").trim();
+  return ["all", "visible_ui", "hidden_internal", "computed", "system"].includes(raw)
+    ? (raw as TemplateVisibilityFilter)
+    : "all";
+}
+
+function documentTemplateStateFromUrl(): DocumentTemplateUrlState {
+  if (typeof window === "undefined") {
+    return { category: "settlement", visibility: "all" };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    category: normalizeTemplateCategory(params.get("category")),
+    visibility: normalizeTemplateVisibility(params.get("visibility")),
+  };
+}
+
+function documentTemplateUrlForState(state: DocumentTemplateUrlState) {
+  const params = new URLSearchParams();
+
+  if (state.category && state.category !== "settlement") params.set("category", state.category);
+  if (state.visibility && state.visibility !== "all") params.set("visibility", state.visibility);
+
+  return params.toString() ? `/admin/document-templates?${params.toString()}` : "/admin/document-templates";
+}
+
 export default function AdminDocumentTemplatesPage() {
-  const [category, setCategory] = useState<TemplateCategory>("settlement");
+  const initialTemplateUrlState = documentTemplateStateFromUrl();
+  const [category, setCategoryState] = useState<TemplateCategory>(initialTemplateUrlState.category);
   const [data, setData] = useState<TemplateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -147,7 +189,7 @@ export default function AdminDocumentTemplatesPage() {
   const [importConfirmResult, setImportConfirmResult] = useState<any>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState("");
-  const [mergeFieldVisibilityFilter, setMergeFieldVisibilityFilter] = useState<"all" | "visible_ui" | "hidden_internal" | "computed" | "system">("all");
+  const [mergeFieldVisibilityFilter, setMergeFieldVisibilityFilterState] = useState<TemplateVisibilityFilter>(initialTemplateUrlState.visibility);
   const [customTemplateRowsText, setCustomTemplateRowsText] = useState(`[
   {
     "key": "harmless-stored-docx-test-template",
@@ -198,6 +240,54 @@ export default function AdminDocumentTemplatesPage() {
   const [templateFilePlaceholderError, setTemplateFilePlaceholderError] = useState("");
   const [advancedCustomImportOpen, setAdvancedCustomImportOpen] = useState(false);
 
+  function pushDocumentTemplateUrl(nextState: DocumentTemplateUrlState) {
+    if (typeof window === "undefined") return;
+
+    const nextUrl = documentTemplateUrlForState(nextState);
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.pushState({ barshMattersDocumentTemplates: true }, "", nextUrl);
+    }
+  }
+
+  function setCategory(categoryValue: TemplateCategory, options: { updateUrl?: boolean } = {}) {
+    const nextCategory = normalizeTemplateCategory(categoryValue);
+    setCategoryState(nextCategory);
+
+    if (options.updateUrl !== false) {
+      pushDocumentTemplateUrl({ category: nextCategory, visibility: mergeFieldVisibilityFilter });
+    }
+  }
+
+  function setMergeFieldVisibilityFilter(value: TemplateVisibilityFilter, options: { updateUrl?: boolean } = {}) {
+    const nextVisibility = normalizeTemplateVisibility(value);
+    setMergeFieldVisibilityFilterState(nextVisibility);
+
+    if (options.updateUrl !== false) {
+      pushDocumentTemplateUrl({ category, visibility: nextVisibility });
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function applyDocumentTemplateStateFromUrl() {
+      const urlState = documentTemplateStateFromUrl();
+      setCategoryState(urlState.category);
+      setMergeFieldVisibilityFilterState(urlState.visibility);
+      void loadTemplates(urlState.category);
+    }
+
+    applyDocumentTemplateStateFromUrl();
+    window.addEventListener("popstate", applyDocumentTemplateStateFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyDocumentTemplateStateFromUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function loadTemplates(nextCategory = category) {
     setLoading(true);
     setError("");
@@ -221,10 +311,6 @@ export default function AdminDocumentTemplatesPage() {
     }
   }
 
-  useEffect(() => {
-    loadTemplates(category);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
 
   async function previewSeededTemplateImport() {
     setImportLoading(true);

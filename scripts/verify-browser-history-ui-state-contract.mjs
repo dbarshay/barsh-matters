@@ -9,6 +9,7 @@ const mattersPagePath = "app/matters/page.tsx";
 const adminTicklersPagePath = "app/admin/ticklers/page.tsx";
 const referenceDataPagePath = "app/admin/reference-data/page.tsx";
 const adminTicklerRunnerPagePath = "app/admin/ticklers/runner/page.tsx";
+const documentTemplatesPagePath = "app/admin/document-templates/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
@@ -17,6 +18,7 @@ const mattersPage = fs.readFileSync(mattersPagePath, "utf8");
 const adminTicklersPage = fs.readFileSync(adminTicklersPagePath, "utf8");
 const referenceDataPage = fs.readFileSync(referenceDataPagePath, "utf8");
 const adminTicklerRunnerPage = fs.readFileSync(adminTicklerRunnerPagePath, "utf8");
+const documentTemplatesPage = fs.readFileSync(documentTemplatesPagePath, "utf8");
 
 const failures = [];
 
@@ -83,6 +85,12 @@ mustContain("/admin/ticklers/runner pushes filter history", adminTicklerRunnerPa
 mustContain("/admin/ticklers/runner listens to popstate", adminTicklerRunnerPage, 'window.addEventListener("popstate", applyRunnerFiltersFromUrl);');
 mustContain("/admin/ticklers/runner clears preview lock on Back", adminTicklerRunnerPage, "setPreviewCriteria(null);");
 
+mustContain("/admin/document-templates has URL parser", documentTemplatesPage, "function documentTemplateStateFromUrl(): DocumentTemplateUrlState");
+mustContain("/admin/document-templates reads category from URL", documentTemplatesPage, "category: normalizeTemplateCategory(params.get(\"category\"))");
+mustContain("/admin/document-templates pushes history", documentTemplatesPage, "window.history.pushState({ barshMattersDocumentTemplates: true }, \"\", nextUrl);");
+mustContain("/admin/document-templates listens to popstate", documentTemplatesPage, 'window.addEventListener("popstate", applyDocumentTemplateStateFromUrl);');
+mustContain("/admin/document-templates restores templates from URL", documentTemplatesPage, "void loadTemplates(urlState.category);");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
@@ -93,6 +101,7 @@ console.log("EXPECTS_MATTERS_PAGE_URL_BACKED_MASTER_TABS=YES");
 console.log("EXPECTS_ADMIN_TICKLERS_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_REFERENCE_DATA_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_ADMIN_TICKLER_RUNNER_URL_BACKED_FILTERS=YES");
+console.log("EXPECTS_DOCUMENT_TEMPLATES_URL_BACKED_STATE=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);
