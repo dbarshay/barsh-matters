@@ -142,6 +142,51 @@ function masterId(m: Matter) {
   return val(m, "masterLawsuitId", "master_lawsuit_id") || "";
 }
 
+function courtVenue(m: Matter) {
+  return val(m, "courtVenue", "court_venue", "court", "venue", "venueSelection", "venueOther") || "—";
+}
+
+function indexNumber(m: Matter) {
+  return val(m, "indexAaaNumber", "index_aaa_number", "lawsuit_index_aaa_number", "indexNumber") || "—";
+}
+
+function hasDisplayValue(value: unknown) {
+  const cleaned = String(value ?? "").trim();
+  return cleaned !== "" && cleaned !== "—";
+}
+
+function matterStatus(m: Matter) {
+  const closeReason = String(val(m, "closeReason", "close_reason", "closedReason") || "").trim();
+  const status = String(val(m, "status", "matterStatus", "matter_status") || "").trim();
+  const stage = String(val(m, "matter_stage_name", "matterStageName") || "").trim();
+
+  if (closeReason) return "Closed";
+  if (/closed/i.test(status)) return "Closed";
+  if (/closed/i.test(stage)) return "Closed";
+
+  return status || "Open";
+}
+
+function isClosedMatter(m: Matter) {
+  return matterStatus(m).toLowerCase() === "closed";
+}
+
+function isSelectableMatter(m: Matter) {
+  return Boolean(matterId(m)) && !masterId(m) && !isClosedMatter(m);
+}
+
+function matterStatusStyle(m: Matter): React.CSSProperties {
+  return {
+    color: isClosedMatter(m) ? "#dc2626" : "#15803d",
+    fontWeight: 900,
+  };
+}
+
+const filingExistingStyle: React.CSSProperties = {
+  color: "#ca8a04",
+  fontWeight: 900,
+};
+
 export default function LawsuitsPage() {
   const [claim, setClaim] = useState("");
   const [patient, setPatient] = useState("");
@@ -203,7 +248,30 @@ export default function LawsuitsPage() {
     };
   }, []);
 
-  async function search() {
+  async function search(
+    overrides: Partial<{
+      claim: string;
+      patient: string;
+      provider: string;
+      insurer: string;
+      indexAaaNumber: string;
+      masterLawsuitId: string;
+    }> = {}
+  ) {
+    const hasOverride = (key: string) => Object.prototype.hasOwnProperty.call(overrides, key);
+
+    const nextClaim = hasOverride("claim") ? String(overrides.claim ?? "") : claim;
+    const nextPatient = hasOverride("patient") ? String(overrides.patient ?? "") : patient;
+    const nextProvider = hasOverride("provider") ? String(overrides.provider ?? "") : provider;
+    const nextInsurer = hasOverride("insurer") ? String(overrides.insurer ?? "") : insurer;
+    const nextIndexAaaNumber = hasOverride("indexAaaNumber") ? String(overrides.indexAaaNumber ?? "") : "";
+    const nextMasterLawsuitId = hasOverride("masterLawsuitId") ? String(overrides.masterLawsuitId ?? "") : "";
+
+    if (hasOverride("claim")) setClaim(nextClaim);
+    if (hasOverride("patient")) setPatient(nextPatient);
+    if (hasOverride("provider")) setProvider(nextProvider);
+    if (hasOverride("insurer")) setInsurer(nextInsurer);
+
     setLoading(true);
     setError("");
     setResult(null);
@@ -212,10 +280,12 @@ export default function LawsuitsPage() {
 
     try {
       const params = new URLSearchParams();
-      if (claim.trim()) params.set("claim", claim.trim());
-      if (patient.trim()) params.set("patient", patient.trim());
-      if (provider.trim()) params.set("provider", provider.trim());
-      if (insurer.trim()) params.set("insurer", insurer.trim());
+      if (nextClaim.trim()) params.set("claim", nextClaim.trim());
+      if (nextPatient.trim()) params.set("patient", nextPatient.trim());
+      if (nextProvider.trim()) params.set("provider", nextProvider.trim());
+      if (nextInsurer.trim()) params.set("insurer", nextInsurer.trim());
+      if (nextIndexAaaNumber.trim()) params.set("indexAaaNumber", nextIndexAaaNumber.trim());
+      if (nextMasterLawsuitId.trim()) params.set("masterLawsuitId", nextMasterLawsuitId.trim());
 
       if (!params.toString()) {
         throw new Error("Enter at least one search parameter.");
@@ -237,6 +307,50 @@ export default function LawsuitsPage() {
       setSelected({});
     } finally {
       setLoading(false);
+    }
+  }
+
+  function searchLinkedField(
+    field: "claim" | "patient" | "provider" | "insurer" | "indexAaaNumber" | "masterLawsuitId",
+    value: unknown
+  ) {
+    const cleaned = String(value ?? "").trim();
+    if (!cleaned || cleaned === "—") return;
+
+    const clearedVisibleFields = {
+      claim: "",
+      patient: "",
+      provider: "",
+      insurer: "",
+    };
+
+    if (field === "claim") {
+      void search({ ...clearedVisibleFields, claim: cleaned });
+      return;
+    }
+
+    if (field === "patient") {
+      void search({ ...clearedVisibleFields, patient: cleaned });
+      return;
+    }
+
+    if (field === "provider") {
+      void search({ ...clearedVisibleFields, provider: cleaned });
+      return;
+    }
+
+    if (field === "insurer") {
+      void search({ ...clearedVisibleFields, insurer: cleaned });
+      return;
+    }
+
+    if (field === "indexAaaNumber") {
+      void search({ ...clearedVisibleFields, indexAaaNumber: cleaned });
+      return;
+    }
+
+    if (field === "masterLawsuitId") {
+      void search({ ...clearedVisibleFields, masterLawsuitId: cleaned });
     }
   }
 
@@ -278,7 +392,7 @@ export default function LawsuitsPage() {
 
   function toggleMatter(m: Matter) {
     const id = matterId(m);
-    if (!id || masterId(m)) return;
+    if (!id || !isSelectableMatter(m)) return;
 
     setSelected((prev) => {
       const next = { ...prev };
@@ -289,7 +403,7 @@ export default function LawsuitsPage() {
   }
 
   function toggleAllEligible(rows: Matter[]) {
-    const eligible = rows.filter((m) => matterId(m) && !masterId(m));
+    const eligible = rows.filter((m) => isSelectableMatter(m));
     const allSelected = eligible.length > 0 && eligible.every((m) => selected[matterId(m)]);
 
     setSelected((prev) => {
@@ -536,14 +650,24 @@ export default function LawsuitsPage() {
                 return String(aM).localeCompare(String(bM));
               });
 
-              const eligibleRows = rows.filter((m) => matterId(m) && !masterId(m));
+              const eligibleRows = rows.filter((m) => isSelectableMatter(m));
               const allEligibleSelected =
                 eligibleRows.length > 0 && eligibleRows.every((m) => selected[matterId(m)]);
 
               return (
                 <div key={`${getClaimNumber(group)}-${idx}`} style={card}>
                   <div style={header}>
-                    <span>Claim Number: {getClaimNumber(group)}</span>
+                    <span>
+                      Claim Number:{" "}
+                      <button
+                        type="button"
+                        onClick={() => searchLinkedField("claim", getClaimNumber(group))}
+                        style={fieldLinkButton}
+                        title="Search this claim number"
+                      >
+                        {getClaimNumber(group)}
+                      </button>
+                    </span>
                   </div>
 
                   <table style={table}>
@@ -564,7 +688,10 @@ export default function LawsuitsPage() {
                         <th style={th}>Insurer</th>
                         <th style={thRight}>Claim Amount</th>
                         <th style={thRight}>Balance</th>
-                        <th style={th}>Status</th>
+                        <th style={th}>Court</th>
+                        <th style={th}>Index Number</th>
+                        <th style={th}>Filing Status</th>
+                        <th style={th}>Matter Status</th>
                       </tr>
                     </thead>
 
@@ -573,30 +700,97 @@ export default function LawsuitsPage() {
                         const id = matterId(m);
                         const checked = Boolean(selected[id]);
                         const hasMaster = !!masterId(m);
+                        const closedMatter = isClosedMatter(m);
+                        const selectable = isSelectableMatter(m);
 
                         return (
                           <tr
                             key={id}
                             style={{
-                              background: checked ? "#fff7cc" : hasMaster ? "#f2f2f2" : "white",
-                              opacity: hasMaster ? 0.55 : 1,
+                              background: checked ? "#fff7cc" : closedMatter ? "#f2f2f2" : "white",
+                              opacity: closedMatter ? 0.55 : 1,
                             }}
                           >
                             <td style={tdCheck}>
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                disabled={hasMaster}
+                                disabled={!selectable}
                                 onChange={() => toggleMatter(m)}
                               />
                             </td>
-                            <td style={td}>{displayNumber(m)}</td>
-                            <td style={td}>{val(m, "patientName", "patient_name")}</td>
-                            <td style={td}>{val(m, "client_name", "clientName", "provider_name", "providerName")}</td>
-                            <td style={td}>{insurerName(m)}</td>
+                            <td style={td}>
+                              <a href={`/matter/${id}`} style={fieldAnchor} title={`Open ${displayNumber(m)}`}>
+                                {displayNumber(m)}
+                              </a>
+                            </td>
+                            <td style={td}>
+                              <button
+                                type="button"
+                                onClick={() => searchLinkedField("patient", val(m, "patientName", "patient_name"))}
+                                style={fieldLinkButton}
+                                title="Search this patient"
+                              >
+                                {val(m, "patientName", "patient_name") || "—"}
+                              </button>
+                            </td>
+                            <td style={td}>
+                              <button
+                                type="button"
+                                onClick={() => searchLinkedField("provider", val(m, "client_name", "clientName", "provider_name", "providerName"))}
+                                style={fieldLinkButton}
+                                title="Search this provider"
+                              >
+                                {val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}
+                              </button>
+                            </td>
+                            <td style={td}>
+                              <button
+                                type="button"
+                                onClick={() => searchLinkedField("insurer", insurerName(m))}
+                                style={fieldLinkButton}
+                                title="Search this insurer"
+                              >
+                                {insurerName(m) || "—"}
+                              </button>
+                            </td>
                             <td style={tdRight}>{money(val(m, "claimAmount", "claim_amount"))}</td>
-                            <td style={tdRight}>{money(val(m, "balanceAmount", "balance_amount"))}</td>
-                            <td style={td}>{hasMaster ? `Existing: ${masterId(m)}` : "New"}</td>
+                            <td style={tdRight}>{money(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"))}</td>
+                            <td style={td}>{courtVenue(m)}</td>
+                            <td style={td}>
+                              {hasDisplayValue(indexNumber(m)) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => searchLinkedField("indexAaaNumber", indexNumber(m))}
+                                  style={fieldLinkButton}
+                                  title="Search this index number"
+                                >
+                                  {indexNumber(m)}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td style={td}>
+                              {hasMaster ? (
+                                <>
+                                  <span style={filingExistingStyle}>Existing</span>:{" "}
+                                  <button
+                                    type="button"
+                                    onClick={() => searchLinkedField("masterLawsuitId", masterId(m))}
+                                    style={{ ...fieldLinkButton, color: "#ca8a04" }}
+                                    title="Search this master lawsuit"
+                                  >
+                                    {masterId(m)}
+                                  </button>
+                                </>
+                              ) : (
+                                "Not Filed"
+                              )}
+                            </td>
+                            <td style={td}>
+                              <span style={matterStatusStyle(m)}>{matterStatus(m)}</span>
+                            </td>
                           </tr>
                         );
                       })}
@@ -698,6 +892,27 @@ const tdRight: React.CSSProperties = {
   ...td,
   textAlign: "right",
   whiteSpace: "nowrap",
+};
+
+const fieldAnchor: React.CSSProperties = {
+  color: "#1d4ed8",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+  fontWeight: 700,
+};
+
+const fieldLinkButton: React.CSSProperties = {
+  border: 0,
+  background: "transparent",
+  color: "#1d4ed8",
+  padding: 0,
+  margin: 0,
+  font: "inherit",
+  fontWeight: 700,
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+  cursor: "pointer",
+  textAlign: "left",
 };
 
 const panel: React.CSSProperties = {

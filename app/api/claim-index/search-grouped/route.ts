@@ -41,6 +41,65 @@ function attachMasterFlags(rows: any[]) {
   return rows;
 }
 
+function cleanText(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function displayVenue(lawsuit: any) {
+  return (
+    cleanText(lawsuit?.venue) ||
+    cleanText(lawsuit?.venueSelection) ||
+    cleanText(lawsuit?.venueOther)
+  );
+}
+
+async function attachLocalLawsuitMetadata(rows: any[]) {
+  const masterIds = Array.from(
+    new Set(
+      rows
+        .map((row) => cleanText(row.master_lawsuit_id))
+        .filter(Boolean)
+    )
+  );
+
+  if (!masterIds.length) return rows;
+
+  const lawsuits = await prisma.lawsuit.findMany({
+    where: {
+      masterLawsuitId: {
+        in: masterIds,
+      },
+    },
+    select: {
+      masterLawsuitId: true,
+      venue: true,
+      venueSelection: true,
+      venueOther: true,
+      indexAaaNumber: true,
+    },
+  });
+
+  const byMasterId = new Map(lawsuits.map((lawsuit) => [lawsuit.masterLawsuitId, lawsuit]));
+
+  return rows.map((row) => {
+    const lawsuit = byMasterId.get(cleanText(row.master_lawsuit_id));
+    if (!lawsuit) return row;
+
+    const courtVenue = displayVenue(lawsuit);
+    const lawsuitIndexNumber = cleanText(lawsuit.indexAaaNumber);
+
+    return {
+      ...row,
+      court_venue: courtVenue || row.court_venue || row.courtVenue || row.court || null,
+      courtVenue: courtVenue || row.courtVenue || row.court_venue || row.court || null,
+      court: courtVenue || row.court || row.courtVenue || row.court_venue || null,
+      lawsuit_index_aaa_number: lawsuitIndexNumber || null,
+      indexAaaNumber: lawsuitIndexNumber || row.indexAaaNumber || row.index_aaa_number || null,
+      index_aaa_number: row.index_aaa_number || lawsuitIndexNumber || null,
+    };
+  });
+}
+
 export async function GET(req: NextRequest) {
   const params: ClaimIndexSearchParams = {
     matterId: clean(req.nextUrl.searchParams.get("matterId")),
@@ -69,13 +128,13 @@ export async function GET(req: NextRequest) {
 
   const where = buildClaimIndexWhere(params);
 
-  const rows = attachMasterFlags(
-    await prisma.claimIndex.findMany({
-      where,
-      orderBy: { matter_id: "asc" },
-      select: CLAIM_INDEX_SELECT,
-    })
-  );
+  const claimIndexRows = await prisma.claimIndex.findMany({
+    where,
+    orderBy: { matter_id: "asc" },
+    select: CLAIM_INDEX_SELECT,
+  });
+
+  const rows = attachMasterFlags(await attachLocalLawsuitMetadata(claimIndexRows));
 
   const groups = groupByClaim(rows);
 
