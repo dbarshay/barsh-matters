@@ -28,3 +28,9 @@ Forbidden behavior:
 Future migration:
 - Rename or replace legacy status/cache models only after dependent routes and UI are reviewed.
 - Any schema deletion must happen in a separate migration with a fresh backup and restore path confirmed.
+
+Local-index-status compatibility update:
+- /api/claim-index/local-index-status is the preferred read-only status route.
+- /api/claim-index/rebuild-status may remain only as a deprecated compatibility shim.
+- App/UI code should call /api/claim-index/local-index-status, not /api/claim-index/rebuild-status.
+- The deprecated shim must delegate to the local-index-status route and must not read/write local data directly.

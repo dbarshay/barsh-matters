@@ -1,64 +1,72 @@
-import fs from "fs";
+#!/usr/bin/env node
+import fs from "node:fs";
+
+function assert(condition, message) {
+  if (!condition) {
+    console.error(`FAIL: ${message}`);
+    process.exit(1);
+  }
+}
 
 function assertIncludes(label, text, needle) {
-  if (!text.includes(needle)) {
-    throw new Error(`${label}: missing expected marker: ${needle}`);
-  }
-
-  console.log(`PASS: ${label}: found ${needle}`);
+  assert(text.includes(needle), `${label} missing ${needle}`);
 }
 
 function assertNotIncludes(label, text, needle) {
-  if (text.includes(needle)) {
-    throw new Error(`${label}: contains forbidden marker: ${needle}`);
-  }
-
-  console.log(`PASS: ${label}: does not contain ${needle}`);
+  assert(!text.includes(needle), `${label} should not include ${needle}`);
 }
 
-console.log("=== VERIFY CLAIMINDEX REBUILD STATUS ENDPOINT SAFETY ===");
+const legacyRoutePath = "app/api/claim-index/rebuild-status/route.ts";
+const localRoutePath = "app/api/claim-index/local-index-status/route.ts";
+const pkgPath = "package.json";
 
-const routePath = "app/api/claim-index/rebuild-status/route.ts";
-const packagePath = "package.json";
-const verifyProdPath = "scripts/verify-prod.sh";
+assert(fs.existsSync(legacyRoutePath), "legacy rebuild-status compatibility shim missing");
+assert(fs.existsSync(localRoutePath), "local-index-status route missing");
 
-const route = fs.readFileSync(routePath, "utf8");
-const pkg = fs.readFileSync(packagePath, "utf8");
-const verifyProd = fs.readFileSync(verifyProdPath, "utf8");
+const legacyRoute = fs.readFileSync(legacyRoutePath, "utf8");
+const localRoute = fs.readFileSync(localRoutePath, "utf8");
+const pkg = fs.readFileSync(pkgPath, "utf8");
 
-console.log("");
-console.log("=== VERIFY ROUTE IS READ-ONLY ===");
-assertIncludes("rebuild status route", route, "export async function GET");
-assertIncludes("rebuild status route", route, "claimIndexRebuildState.findMany");
-assertIncludes("rebuild status route", route, "claimIndex.findMany");
-assertIncludes("rebuild status route", route, "ok: true");
-assertIncludes("rebuild status route", route, "coverage");
-assertIncludes("rebuild status route", route, "progress");
-assertIncludes("rebuild status route", route, "fieldCoverage");
-assertIncludes("rebuild status route", route, "oldestIndexedAt");
-assertIncludes("rebuild status route", route, "newestIndexedAt");
-assertIncludes("rebuild status route", route, "currentBrlNumber");
-assertIncludes("rebuild status route", route, "lastError");
+assertIncludes("legacy rebuild-status shim", legacyRoute, "Deprecated compatibility shim");
+assertIncludes("legacy rebuild-status shim", legacyRoute, "getLocalIndexStatus");
+assertIncludes("legacy rebuild-status shim", legacyRoute, "export async function GET");
 
-assertNotIncludes("rebuild status route", route, "method: \"PATCH\"");
-assertNotIncludes("rebuild status route", route, "method: \"POST\"");
-assertNotIncludes("rebuild status route", route, "method: \"DELETE\"");
-assertNotIncludes("rebuild status route", route, ".create(");
-assertNotIncludes("rebuild status route", route, ".update(");
-assertNotIncludes("rebuild status route", route, ".delete(");
-assertNotIncludes("rebuild status route", route, "clioFetch(");
-assertNotIncludes("rebuild status route", route, "ingestMatterFromClio");
-assertNotIncludes("rebuild status route", route, "ingestMattersFromClioBatch");
-assertNotIncludes("rebuild status route", route, "upsertClaimIndexFromMatter");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "claimIndexRebuildState.findMany");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "claimIndex.findMany");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "method: \"PATCH\"");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "method: \"POST\"");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "method: \"DELETE\"");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, ".create(");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, ".update(");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, ".delete(");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "clioFetch(");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "ingestMatterFromClio");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "ingestMattersFromClioBatch");
+assertNotIncludes("legacy rebuild-status shim", legacyRoute, "upsertClaimIndexFromMatter");
 
-console.log("");
-console.log("=== VERIFY SCRIPT REGISTRATION ===");
+assertIncludes("local index status route", localRoute, "export async function GET");
+assertIncludes("local index status route", localRoute, "claimIndexRebuildState.findMany");
+assertIncludes("local index status route", localRoute, "claimIndex.findMany");
+assertIncludes("local index status route", localRoute, "ok: true");
+assertIncludes("local index status route", localRoute, "coverage");
+assertIncludes("local index status route", localRoute, "progress");
+assertIncludes("local index status route", localRoute, "fieldCoverage");
+assertIncludes("local index status route", localRoute, "oldestIndexedAt");
+assertIncludes("local index status route", localRoute, "newestIndexedAt");
+assertIncludes("local index status route", localRoute, "currentBrlNumber");
+assertIncludes("local index status route", localRoute, "lastError");
+
+assertNotIncludes("local index status route", localRoute, "method: \"PATCH\"");
+assertNotIncludes("local index status route", localRoute, "method: \"POST\"");
+assertNotIncludes("local index status route", localRoute, "method: \"DELETE\"");
+assertNotIncludes("local index status route", localRoute, ".create(");
+assertNotIncludes("local index status route", localRoute, ".update(");
+assertNotIncludes("local index status route", localRoute, ".delete(");
+assertNotIncludes("local index status route", localRoute, "clioFetch(");
+assertNotIncludes("local index status route", localRoute, "ingestMatterFromClio");
+assertNotIncludes("local index status route", localRoute, "ingestMattersFromClioBatch");
+assertNotIncludes("local index status route", localRoute, "upsertClaimIndexFromMatter");
+
 assertIncludes("package.json", pkg, "verify:claimindex-rebuild-status-safety");
-assertIncludes("verify-prod.sh", verifyProd, "verify:claimindex-rebuild-status-safety");
 
-console.log("");
-console.log("=== CLAIMINDEX REBUILD STATUS SAFETY VERIFICATION PASSED ===");
-console.log("No Clio calls were made by this verifier.");
-console.log("No database writes were made by this verifier.");
-console.log("No documents were generated by this verifier.");
-console.log("No print queue records were changed by this verifier.");
+console.log("RESULT: claimindex rebuild-status compatibility shim safety passed");

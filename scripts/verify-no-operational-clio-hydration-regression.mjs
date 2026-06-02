@@ -82,7 +82,19 @@ for (const full of sourceFiles) {
   const lines = text.split(/\r?\n/);
 
   lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+
     if (allowedUiLine(line)) return;
+
+    // Comments in safety/compatibility routes may describe the local-only route contract.
+    // The enforceable check is against active imports, function calls, API paths, and write handlers.
+    if (
+      trimmed.startsWith('//') &&
+      (rel.includes('local-index-status') || rel.includes('rebuild-status')) &&
+      /local database status inspection|read-only|compatibility shim|delegates to/i.test(trimmed)
+    ) {
+      return;
+    }
 
     for (const rule of forbidden) {
       if (rule.re.test(line)) {

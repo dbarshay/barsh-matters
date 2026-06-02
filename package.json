@@ -205,7 +205,8 @@
     "inventory:claim-index-cleanup-candidates": "node scripts/inventory-claim-index-cleanup-candidates.mjs",
     "verify:no-user-facing-claimindex-rebuild-wording": "node scripts/verify-no-user-facing-claimindex-rebuild-wording.mjs",
     "verify:claimindex-legacy-deprecation-contract": "node scripts/verify-claimindex-legacy-deprecation-contract.mjs",
-    "inventory:claimindex-legacy-status-cache": "node scripts/inventory-claimindex-legacy-status-cache.mjs"
+    "inventory:claimindex-legacy-status-cache": "node scripts/inventory-claimindex-legacy-status-cache.mjs",
+    "verify:local-index-status-route-safety": "node scripts/verify-local-index-status-route-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
