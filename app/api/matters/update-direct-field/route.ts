@@ -281,7 +281,7 @@ export async function PATCH(request: Request) {
     });
 
     if (!existing) {
-      return jsonError("No ClaimIndex row exists for this matter.  Rebuild or locally create the matter before saving direct fields.", 404, {
+      return jsonError("No local matter index row exists for this matter. Import or locally create the matter before saving direct fields.", 404, {
         matterId,
         field,
       });

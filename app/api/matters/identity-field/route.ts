@@ -211,7 +211,7 @@ export async function GET(request: Request) {
     });
 
     if (!claimIndex) {
-      return jsonError("No ClaimIndex row exists for this matter.", 404, {
+      return jsonError("No local matter index row exists for this matter.", 404, {
         matterId,
         fieldName: config.fieldName,
       });
@@ -303,7 +303,7 @@ export async function PATCH(request: Request) {
     });
 
     if (!existing) {
-      return jsonError("No ClaimIndex row exists for this matter.  Rebuild or index the matter before saving local identity fields.", 404, {
+      return jsonError("No local matter index row exists for this matter. Import or locally create the matter before saving local identity fields.", 404, {
         matterId,
         fieldName: config.fieldName,
       });
