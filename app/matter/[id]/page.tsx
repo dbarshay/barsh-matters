@@ -89,26 +89,25 @@ function formatPaymentAmountInput(value: string): string {
   return Number.isFinite(n) ? n.toFixed(2) : raw;
 }
 
-function currentDirectMatterBalancePresuit(matter: any): number {
-  const claimAmount = num(matter?.claimAmount);
-  const paymentVoluntary = num(matter?.paymentVoluntary);
-  const calculated = Math.max(claimAmount - paymentVoluntary, 0);
-
-  const raw = matter?.balancePresuit;
-  const hasRaw =
-    raw !== null &&
-    raw !== undefined &&
-    String(raw).trim() !== "";
-
-  const clioBalance = num(raw);
-
-  if (hasRaw) {
-    if (clioBalance > 0) return clioBalance;
-    if (calculated === 0) return 0;
-  }
-
-  return calculated;
+function directMatterClaimAmountValue(matter: any): number {
+  return num(matter?.claimAmount ?? matter?.claim_amount);
 }
+
+function directMatterPaymentPostedValue(matter: any): number {
+  return num(
+    matter?.paymentVoluntary ??
+      matter?.payment_voluntary ??
+      matter?.paymentAmount ??
+      matter?.payment_amount
+  );
+}
+
+function currentDirectMatterBalancePresuit(matter: any): number {
+  const claimAmount = directMatterClaimAmountValue(matter);
+  const paymentVoluntary = directMatterPaymentPostedValue(matter);
+  return Math.max(claimAmount - paymentVoluntary, 0);
+}
+
 
 function stageColor(stage?: string) {
   if (!stage) return {};
@@ -9304,12 +9303,12 @@ function openClaimAmountEditDialog() {
 
                 <div className="barsh-direct-financial-row">
                   <span>Claim Amount</span>
-                  <strong>{money(num(matter?.claimAmount))}</strong>
+                  <strong>{money(directMatterClaimAmountValue(matter))}</strong>
                 </div>
 
                 <div className="barsh-direct-financial-row">
                   <span>Payments</span>
-                  <strong>{money(num(matter?.paymentVoluntary))}</strong>
+                  <strong>{money(directMatterPaymentPostedValue(matter))}</strong>
                 </div>
 
                 <div className="barsh-direct-financial-row total">
