@@ -2202,7 +2202,7 @@ const activeGroupKey =
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          matterId,
+          matterId: resolvedNumericMatterId(),
           field: "dos",
           dosStart,
           dosEnd,
@@ -2387,7 +2387,7 @@ const activeGroupKey =
       setDirectFieldEditResult(null);
 
       const body: any = {
-        matterId,
+        matterId: resolvedNumericMatterId(),
         field,
       };
 
