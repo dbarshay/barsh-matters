@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import * as XLSX from "xlsx";
 
@@ -147,6 +147,9 @@ export default function LawsuitsPage() {
   const [patient, setPatient] = useState("");
   const [provider, setProvider] = useState("");
   const [insurer, setInsurer] = useState("");
+  const [providerReferenceOptions, setProviderReferenceOptions] = useState<any[]>([]);
+  const [insurerReferenceOptions, setInsurerReferenceOptions] = useState<any[]>([]);
+  const [referenceOptionsLoading, setReferenceOptionsLoading] = useState(false);
 
   const [groups, setGroups] = useState<ClaimGroup[]>([]);
   const [selected, setSelected] = useState<Record<string, Matter>>({});
@@ -162,6 +165,43 @@ export default function LawsuitsPage() {
     (sum, m) => sum + moneyValue(val(m, "claimAmount", "claim_amount")),
     0
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReferenceOptions() {
+      setReferenceOptionsLoading(true);
+      try {
+        const [providerResponse, insurerResponse] = await Promise.all([
+          fetch("/api/reference-data/options?type=provider_client", { cache: "no-store" }),
+          fetch("/api/reference-data/options?type=insurer_company", { cache: "no-store" }),
+        ]);
+
+        const [providerJson, insurerJson] = await Promise.all([
+          providerResponse.ok ? providerResponse.json() : Promise.resolve({ options: [] }),
+          insurerResponse.ok ? insurerResponse.json() : Promise.resolve({ options: [] }),
+        ]);
+
+        if (cancelled) return;
+
+        setProviderReferenceOptions(Array.isArray(providerJson?.options) ? providerJson.options : []);
+        setInsurerReferenceOptions(Array.isArray(insurerJson?.options) ? insurerJson.options : []);
+      } catch {
+        if (!cancelled) {
+          setProviderReferenceOptions([]);
+          setInsurerReferenceOptions([]);
+        }
+      } finally {
+        if (!cancelled) setReferenceOptionsLoading(false);
+      }
+    }
+
+    loadReferenceOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function search() {
     setLoading(true);
@@ -429,8 +469,34 @@ export default function LawsuitsPage() {
       <div style={searchGrid}>
         <input placeholder="Claim number" value={claim} onChange={(e) => setClaim(e.target.value)} style={input} />
         <input placeholder="Patient" value={patient} onChange={(e) => setPatient(e.target.value)} style={input} />
-        <input placeholder="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} style={input} />
-        <input placeholder="Insurer" value={insurer} onChange={(e) => setInsurer(e.target.value)} style={input} />
+        <input
+          placeholder={referenceOptionsLoading ? "Provider · loading..." : "Provider"}
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          list="barsh-lawsuit-provider-reference-options"
+          style={input}
+        />
+        <input
+          placeholder={referenceOptionsLoading ? "Insurer · loading..." : "Insurer"}
+          value={insurer}
+          onChange={(e) => setInsurer(e.target.value)}
+          list="barsh-lawsuit-insurer-reference-options"
+          style={input}
+        />
+        <datalist id="barsh-lawsuit-provider-reference-options">
+          {providerReferenceOptions.map((option, index) => {
+            const value = String(option?.displayName || option?.name || option?.value || "").trim();
+            if (!value) return null;
+            return <option key={`lawsuit-provider-reference-${option.id || value}-${index}`} value={value} />;
+          })}
+        </datalist>
+        <datalist id="barsh-lawsuit-insurer-reference-options">
+          {insurerReferenceOptions.map((option, index) => {
+            const value = String(option?.displayName || option?.name || option?.value || "").trim();
+            if (!value) return null;
+            return <option key={`lawsuit-insurer-reference-${option.id || value}-${index}`} value={value} />;
+          })}
+        </datalist>
         <button onClick={search} disabled={loading || running} style={primaryBtn}>
           {loading ? "Searching..." : "Search"}
         </button>
