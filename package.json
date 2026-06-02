@@ -184,7 +184,14 @@
     "verify:direct-claim-amount-auto-select-safety": "node scripts/verify-direct-claim-amount-auto-select-safety.mjs",
     "verify:direct-financial-section-readonly-safety": "node scripts/verify-direct-financial-section-readonly-safety.mjs",
     "verify:claim-results-table-columns-safety": "node scripts/verify-claim-results-table-columns-safety.mjs",
-    "verify:claim-results-sortable-columns-safety": "node scripts/verify-claim-results-sortable-columns-safety.mjs"
+    "verify:claim-results-sortable-columns-safety": "node scripts/verify-claim-results-sortable-columns-safety.mjs",
+    "verify:local-lawsuit-generation-preview-safety": "node scripts/verify-local-lawsuit-generation-preview-safety.mjs",
+    "verify:local-lawsuit-generation-create-safety": "node scripts/verify-local-lawsuit-generation-create-safety.mjs",
+    "verify:clio-operational-routes-quarantined": "node scripts/verify-clio-operational-routes-quarantined.mjs",
+    "verify:local-search-and-lawsuits-routing-safety": "node scripts/verify-local-search-and-lawsuits-routing-safety.mjs",
+    "verify:direct-matter-clio-operational-callers-removed": "node scripts/verify-direct-matter-clio-operational-callers-removed.mjs",
+    "verify:legacy-operational-clio-modules-deleted": "node scripts/verify-legacy-operational-clio-modules-deleted.mjs",
+    "verify:active-operational-clio-routes-removed": "node scripts/verify-active-operational-clio-routes-removed.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

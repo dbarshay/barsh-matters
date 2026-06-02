@@ -319,19 +319,50 @@ export default function LawsuitsPage() {
     try {
       const matterIds = selectedMatters.map((m) => Number(matterId(m)));
 
-      const res = await fetch("/api/aggregation/from-search", {
+      const previewRes = await fetch("/api/lawsuits/local-generation-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matterIds }),
+        cache: "no-store",
+        body: JSON.stringify({
+          matterIds,
+          amountSoughtMode: "balance_presuit",
+        }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Aggregation failed.");
+      const previewJson = await previewRes.json();
+      if (!previewRes.ok || !previewJson?.ok) {
+        throw new Error(previewJson?.error || "Local lawsuit generation preview failed.");
+      }
 
-      setResult(json);
+      if (!previewJson.canCreate) {
+        setResult(previewJson);
+        throw new Error(previewJson.blockingReason || "Selected matters cannot be used to create a new local lawsuit.");
+      }
+
+      const createRes = await fetch("/api/lawsuits/local-generation-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          confirm: "create-local-lawsuit",
+          matterIds,
+          amountSoughtMode: "balance_presuit",
+          notes: "Created from Lawsuits page local-first generation workflow.",
+        }),
+      });
+
+      const createJson = await createRes.json();
+      if (!createRes.ok || !createJson?.ok) {
+        throw new Error(createJson?.error || "Local lawsuit generation failed.");
+      }
+
+      setResult({
+        ...createJson,
+        preview: previewJson,
+      });
       await search();
     } catch (e: any) {
-      setError(e?.message || "Aggregation failed.");
+      setError(e?.message || "Local lawsuit generation failed.");
     } finally {
       setRunning(false);
     }

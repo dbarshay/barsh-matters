@@ -3050,9 +3050,8 @@ function openClaimAmountEditDialog() {
       setCloseMatterTarget(null);
       setCloseReason("");
 
-      // FORCE fresh Clio-backed refresh (not cache)
-      await fetch(`/api/claim-index/refresh-cluster?matterId=${Number(closeMatterTarget.id)}`);
-
+      // Local-first transition: do not refresh ClaimIndex from Clio after close.
+      // The close route owns any permitted local/legacy state transition.
       window.location.reload();
     } catch (err) {
       alert("Close failed");
@@ -3076,56 +3075,71 @@ function openClaimAmountEditDialog() {
     );
 
     if (invalid.length > 0) {
-      alert("One or more selected matters are not eligible for aggregation.");
+      alert("One or more selected matters are not eligible for local lawsuit generation.");
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/aggregation/build-lawsuit", {
+      const selectedMatterIds = selectedRows.map((r) => Number(r.id));
+      const amountSoughtMode =
+        lawsuitOptions.amountSoughtMode === "claim_amount" ? "claim_amount" : "balance_presuit";
+
+      const previewRes = await fetch("/api/lawsuits/local-generation-preview", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        cache: "no-store",
         body: JSON.stringify({
-          baseMatterId: Number(matter.id),
-          selectedMatterIds: selectedRows.map((r) => Number(r.id)),
-          lawsuitOptions: {
-            venue:
-              lawsuitOptions.venue === "Other"
-                ? lawsuitOptions.venueOther.trim()
-                : lawsuitOptions.venue.trim(),
-            venueSelection: lawsuitOptions.venue,
-            venueOther: lawsuitOptions.venueOther.trim(),
-            amountSoughtMode: lawsuitOptions.amountSoughtMode,
-            customAmountSought:
-              lawsuitOptions.amountSoughtMode === "custom"
-                ? parseMoneyInput(lawsuitOptions.customAmountSought)
-                : null,
-            indexAaaNumber: lawsuitOptions.indexAaaNumber.trim(),
-            notes: lawsuitOptions.notes.trim(),
-          },
+          matterIds: selectedMatterIds,
+          amountSoughtMode,
         }),
       });
 
-      const json = await res.json();
+      const previewJson = await previewRes.json();
 
-      if (!json.ok) {
-        alert(json.error || "Lawsuit build failed");
+      if (!previewRes.ok || !previewJson?.ok) {
+        alert(previewJson?.error || "Local lawsuit generation preview failed.");
+        return;
+      }
+
+      if (!previewJson.canCreate) {
+        alert(previewJson.blockingReason || "Selected matters cannot be used to create a new local lawsuit.");
+        return;
+      }
+
+      const createRes = await fetch("/api/lawsuits/local-generation-create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        body: JSON.stringify({
+          confirm: "create-local-lawsuit",
+          matterIds: selectedMatterIds,
+          amountSoughtMode,
+          notes: lawsuitOptions.notes.trim() || "Created from Direct Matter local-first lawsuit generation workflow.",
+        }),
+      });
+
+      const createJson = await createRes.json();
+
+      if (!createRes.ok || !createJson?.ok) {
+        alert(createJson?.error || "Local lawsuit generation failed.");
         return;
       }
 
       setShowLawsuitOptionsModal(false);
 
       alert(
-        `MASTER CREATED\n\nMaster Matter ID: ${json.masterMatterId}\nMaster Lawsuit ID: ${json.masterLawsuitId}`
+        `LOCAL LAWSUIT CREATED\n\nMaster Lawsuit ID: ${createJson.masterLawsuitId}\nSelected Matters: ${createJson.selectedMatterCount}\nAmount Sought: $${Number(createJson.amountSought || 0).toFixed(2)}\n\nNo Clio records were changed.`
       );
 
-      await new Promise((r) => setTimeout(r, 2000));
       window.location.reload();
     } catch (err: any) {
-      alert(err?.message || "Lawsuit build failed");
+      alert(err?.message || "Local lawsuit generation failed.");
     } finally {
       setSubmitting(false);
     }
@@ -3157,58 +3171,9 @@ function openClaimAmountEditDialog() {
   }
 
   async function deaggregateCluster() {
-    if (!matter?.masterLawsuitId) {
-      alert("This matter is not part of a lawsuit.");
-      return;
-    }
-
-    const clusterRows = rows.filter(
-      (r) => String(r.masterLawsuitId || "").trim() === String(matter.masterLawsuitId).trim()
+    alert(
+      "Legacy de-aggregation is disabled.  Barsh Matters local schema is now the operational source of truth.  A local-first de-aggregation workflow must be built separately before lawsuit memberships can be removed."
     );
-
-    const clusterSize = clusterRows.length;
-
-    const confirmed = confirm(
-      `DE-AGGREGATE LAWSUIT\n\n` +
-      `Master Lawsuit ID: ${matter.masterLawsuitId}\n` +
-      `Total Matters: ${clusterSize}\n\n` +
-      `This will REMOVE ALL matters from this lawsuit.\n\n` +
-      `Continue?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const res = await fetch("/api/deaggregate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          matters: clusterRows.map((r) => ({
-            id: r.id,
-            displayNumber: r.displayNumber,
-          })),
-        }),
-      });
-
-      const json = await res.json();
-
-      if (!json.ok) {
-        alert(json.error || "De-aggregation failed");
-        return;
-      }
-
-      alert(
-        `DE-AGGREGATION COMPLETE\n\n` +
-        `Master Lawsuit ID: ${json.masterLawsuitId}\n` +
-        `Cleared: ${json.cleared} matters`
-      );
-
-      window.location.reload();
-    } catch (err: any) {
-      alert(err?.message || "De-aggregation failed");
-    }
   }
 
   async function expandClaim() {
@@ -3217,21 +3182,9 @@ function openClaimAmountEditDialog() {
     setExpanding(true);
 
     try {
-      const res = await fetch(
-        `/api/aggregation/expand-claim?matterId=${matterId}&limit=20&delayMs=1200`
+      alert(
+        "Legacy Clio-backed claim expansion is disabled.  Claim grouping now reads from ClaimIndex/local Barsh Matters only.  Add missing matters through the local matter creation/import workflow."
       );
-
-      const json = await res.json();
-
-      if (!json.ok) {
-        alert(json.error || "Expansion failed");
-        return;
-      }
-
-      alert(`Expanded claim cluster.\nRefreshed: ${json.refreshed} matters.`);
-      window.location.reload();
-    } catch (err: any) {
-      alert(err?.message || "Expansion failed");
     } finally {
       setExpanding(false);
     }

@@ -813,31 +813,14 @@ async function fetchFastRows(url: string) {
 }
 
 async function hydrateAdvancedRows(rows: any[]) {
-  if (!Array.isArray(rows) || rows.length === 0) return [];
-
-  const res = await fetch("/api/advanced-search/hydrate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-    body: JSON.stringify({
-      rows,
-    }),
-  });
-
-  const json = await res.json();
-
-  if (!res.ok || !json?.ok) {
-    throw new Error(json?.error || "Advanced search hydration failed.");
-  }
-
-  return Array.isArray(json.rows) ? json.rows : rows;
+  // Local-first transition: advanced search candidates already come from ClaimIndex.
+  // Do not call legacy Clio hydration.  ClaimIndex/local Barsh Matters is the operational source of truth.
+  return Array.isArray(rows) ? rows : [];
 }
 
 async function fetchAdvancedFallbackCandidateRows(limit = 750) {
-  let rows = await fetchFastRows(
-    `/api/advanced-search/hydrate?limit=${encodeURIComponent(String(limit))}`
+  const rows = await fetchFastRows(
+    `/api/advanced-search/candidates?limit=${encodeURIComponent(String(limit))}`
   );
 
   return Array.isArray(rows) ? rows : [];
