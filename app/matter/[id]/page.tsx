@@ -1734,8 +1734,8 @@ const activeGroupKey =
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          matterId: Number(matterId),
-          matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number),
+          matterId: resolvedNumericMatterId(),
+          matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId),
           fieldName: "treating_provider",
           fieldValueId: option.id,
           fieldValue: option.displayName,
@@ -1906,6 +1906,22 @@ const activeGroupKey =
     if (field === "insurer_name") return insurerValue(matter);
     if (field === "claim_number_raw") return textValue(matter?.claimNumber);
     return "";
+  }
+
+  function resolvedNumericMatterId(): number {
+    const candidates = [
+      matter?.matterId,
+      matter?.matter_id,
+      matter?.id,
+      matterId,
+    ];
+
+    for (const candidate of candidates) {
+      const numeric = Number(candidate);
+      if (Number.isFinite(numeric) && numeric > 0) return numeric;
+    }
+
+    return 0;
   }
 
   function openIdentityFieldEditDialog(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw") {
@@ -2091,14 +2107,24 @@ const activeGroupKey =
       setIdentityFieldEditLoading(true);
       setIdentityFieldEditResult(null);
 
+      const numericMatterId = resolvedNumericMatterId();
+
+      if (!numericMatterId) {
+        setIdentityFieldEditResult({
+          ok: false,
+          error: "A valid local matter id is required.  Reopen this matter from search or refresh the page before saving.",
+        });
+        return;
+      }
+
       const response = await fetch("/api/matters/identity-field", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          matterId: Number(matterId),
-          matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number),
+          matterId: numericMatterId,
+          matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId),
           fieldName: identityFieldEditModal,
           fieldValue: value,
           actorName: "Barsh Matters User",
