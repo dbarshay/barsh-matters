@@ -344,6 +344,17 @@ type MatterWorkspaceTab =
   | "print_queue"
   | "audit_history";
 
+const MATTER_WORKSPACE_TABS: MatterWorkspaceTab[] = [
+  "overview",
+  "lawsuit",
+  "documents",
+  "settlement",
+  "print_queue",
+  "email_threads",
+  "audit_history",
+];
+
+
 const matterWorkspaceTabs: Array<{ key: MatterWorkspaceTab; label: string; note: string }> = [
   { key: "lawsuit", label: "Lawsuit", note: "Aggregation and lawsuit metadata" },
   { key: "documents", label: "Documents", note: "Preview, finalize, and Clio upload" },
@@ -527,12 +538,44 @@ function parseMoneyInput(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizeMatterWorkspaceTab(value: unknown): MatterWorkspaceTab {
+  const raw = String(value ?? "").trim();
+  return (MATTER_WORKSPACE_TABS as string[]).includes(raw) ? (raw as MatterWorkspaceTab) : "lawsuit";
+}
+
+function matterWorkspaceTabFromUrl(): MatterWorkspaceTab {
+  if (typeof window === "undefined") return "lawsuit";
+  return normalizeMatterWorkspaceTab(new URLSearchParams(window.location.search).get("tab"));
+}
+
+function matterUrlWithWorkspaceTab(tab: MatterWorkspaceTab) {
+  if (typeof window === "undefined") return "";
+  const url = new URL(window.location.href);
+  url.searchParams.set("tab", tab);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [matterId, setMatterId] = useState<string>("");
 
   useEffect(() => {
     params.then((p) => setMatterId(p.id));
   }, [params]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function applyMatterTabFromUrl() {
+      setActiveWorkspaceTabState(matterWorkspaceTabFromUrl());
+    }
+
+    applyMatterTabFromUrl();
+    window.addEventListener("popstate", applyMatterTabFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyMatterTabFromUrl);
+    };
+  }, []);
 
   const [matter, setMatter] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
@@ -620,8 +663,26 @@ const activeGroupKey =
   const [matterDocumentActivityError, setMatterDocumentActivityError] = useState("");
   const [matterDocumentActivityResult, setMatterDocumentActivityResult] = useState<any>(null);
 
-  const [activeWorkspaceTab, setActiveWorkspaceTab] =
-    useState<MatterWorkspaceTab>("overview");
+  const [activeWorkspaceTab, setActiveWorkspaceTabState] =
+    useState<MatterWorkspaceTab>(() => matterWorkspaceTabFromUrl());
+
+  function setActiveWorkspaceTab(tab: MatterWorkspaceTab, options: { updateUrl?: boolean; replaceUrl?: boolean } = {}) {
+    const nextTab = normalizeMatterWorkspaceTab(tab);
+    setActiveWorkspaceTabState(nextTab);
+
+    if (typeof window !== "undefined" && options.updateUrl !== false) {
+      const nextUrl = matterUrlWithWorkspaceTab(nextTab);
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+      if (nextUrl && nextUrl !== currentUrl) {
+        if (options.replaceUrl) {
+          window.history.replaceState({ barshMattersMatterTab: true }, "", nextUrl);
+        } else {
+          window.history.pushState({ barshMattersMatterTab: true }, "", nextUrl);
+        }
+      }
+    }
+  }
   useEffect(() => {
     if (activeWorkspaceTab !== "email_threads") return;
     if (emailThreadPreviewLoading || emailThreadPreviewResult) return;

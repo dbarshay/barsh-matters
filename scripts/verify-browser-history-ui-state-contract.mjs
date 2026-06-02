@@ -4,9 +4,11 @@ import fs from "node:fs";
 
 const contractPath = "BARSH_MATTERS_BROWSER_HISTORY_STATE_CONTRACT.txt";
 const lawsuitsPath = "app/lawsuits/page.tsx";
+const matterPagePath = "app/matter/[id]/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
+const matterPage = fs.readFileSync(matterPagePath, "utf8");
 
 const failures = [];
 
@@ -41,11 +43,19 @@ mustContain("/lawsuits blank URL resets searched", lawsuits, "setSearched(false)
 
 mustNotContain("/lawsuits filter links should not use full page navigation", lawsuits, "window.location.href = `/lawsuits?");
 
+mustContain("/matter has tab URL parser", matterPage, "function matterWorkspaceTabFromUrl(): MatterWorkspaceTab");
+mustContain("/matter reads tab from URL", matterPage, 'new URLSearchParams(window.location.search).get("tab")');
+mustContain("/matter writes tab to URL", matterPage, 'url.searchParams.set("tab", tab);');
+mustContain("/matter pushes tab history", matterPage, "window.history.pushState({ barshMattersMatterTab: true }, \"\", nextUrl);");
+mustContain("/matter listens to popstate", matterPage, 'window.addEventListener("popstate", applyMatterTabFromUrl);');
+mustContain("/matter restores tab from URL", matterPage, "setActiveWorkspaceTabState(matterWorkspaceTabFromUrl());");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
 console.log("EXPECTS_GLOBAL_BROWSER_BACK_RULE=YES");
 console.log("EXPECTS_LAWSUITS_URL_BACKED_SEARCH=YES");
+console.log("EXPECTS_MATTER_PAGE_URL_BACKED_TABS=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);

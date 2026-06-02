@@ -213,7 +213,8 @@
     "verify:create-lawsuit-clio-shell-contract": "node scripts/verify-create-lawsuit-clio-shell-contract.mjs",
     "verify:lawsuits-master-link-target-safety": "node scripts/verify-lawsuits-master-link-target-safety.mjs",
     "verify:matter-page-local-id-hydration-safety": "node scripts/verify-matter-page-local-id-hydration-safety.mjs",
-    "verify:browser-history-ui-state-contract": "node scripts/verify-browser-history-ui-state-contract.mjs"
+    "verify:browser-history-ui-state-contract": "node scripts/verify-browser-history-ui-state-contract.mjs",
+    "verify:matter-page-tab-history-safety": "node scripts/verify-matter-page-tab-history-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
