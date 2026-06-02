@@ -208,7 +208,8 @@
     "inventory:claimindex-legacy-status-cache": "node scripts/inventory-claimindex-legacy-status-cache.mjs",
     "verify:local-index-status-route-safety": "node scripts/verify-local-index-status-route-safety.mjs",
     "verify:claimcluster-cache-contract": "node scripts/verify-claimcluster-cache-contract.mjs",
-    "inventory:claimcluster-cache-usage": "node scripts/inventory-claimcluster-cache-usage.mjs"
+    "inventory:claimcluster-cache-usage": "node scripts/inventory-claimcluster-cache-usage.mjs",
+    "verify:lawsuits-financial-display-canonical": "node scripts/verify-lawsuits-financial-display-canonical.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
