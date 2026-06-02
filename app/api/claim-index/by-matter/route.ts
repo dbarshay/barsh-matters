@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       return jsonError("A valid matterId or displayNumber is required.");
     }
 
+    const hasValidMatterId = Number.isFinite(matterId) && matterId > 0;
     const displayNumberWhere =
       displayNumber && normalizedDisplayNumber && normalizedDisplayNumber !== displayNumber
         ? {
@@ -60,9 +61,9 @@ export async function GET(request: Request) {
         : { display_number: displayNumber };
 
     const row = await prisma.claimIndex.findFirst({
-      where: displayNumber
-        ? displayNumberWhere
-        : { matter_id: matterId },
+      where: hasValidMatterId
+        ? { matter_id: matterId }
+        : displayNumberWhere,
       select: {
         matter_id: true,
         display_number: true,

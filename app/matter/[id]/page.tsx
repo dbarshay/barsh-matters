@@ -2900,9 +2900,9 @@ function openClaimAmountEditDialog() {
 
         if (Number.isFinite(numericMatterId) && numericMatterId > 0) {
           localParams.set("matterId", String(numericMatterId));
-          localParams.set("matterDisplayNumber", String(matterId));
         } else {
           localParams.set("displayNumber", String(matterId));
+          localParams.set("matterDisplayNumber", String(matterId));
         }
 
         const baseResponse = await fetch(`/api/claim-index/by-matter?${localParams.toString()}`, {
