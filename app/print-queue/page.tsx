@@ -454,9 +454,6 @@ export default function PrintQueuePage() {
 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, margin: "0 0 6px 0" }}>Daily Print Queue</h1>
-          <div style={{ color: "#475569", fontSize: 13 }}>
-            Local workflow list only.  This page does not change Clio documents, upload files, create folders, or modify document contents.
-          </div>
         </div>
 
         <a
