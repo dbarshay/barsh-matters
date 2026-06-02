@@ -1029,6 +1029,48 @@ async function getEntryTypeaheadResults(qInput: string): Promise<{
   return getEntrySearchResults(q);
 }
 
+type HomeSearchUrlState = {
+  patient: string;
+  claim: string;
+  provider: string;
+  modal: string;
+};
+
+function homeSearchStateFromUrl(): HomeSearchUrlState {
+  if (typeof window === "undefined") {
+    return {
+      patient: "",
+      claim: "",
+      provider: "",
+      modal: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    patient: params.get("patient") || "",
+    claim: params.get("claim") || "",
+    provider: params.get("provider") || "",
+    modal: params.get("modal") || "",
+  };
+}
+
+function homeSearchStateHasAnyValue(state: HomeSearchUrlState) {
+  return Boolean(state.patient || state.claim || state.provider);
+}
+
+function homeSearchUrlForState(state: HomeSearchUrlState) {
+  const params = new URLSearchParams();
+
+  if (state.patient) params.set("patient", state.patient);
+  if (state.claim) params.set("claim", state.claim);
+  if (state.provider) params.set("provider", state.provider);
+  if (state.modal) params.set("modal", state.modal);
+
+  return params.toString() ? `/?${params.toString()}` : "/";
+}
+
 export default function Home() {
   const [query, setQuery] = useState("");
   const [brlNumberInput, setBrlNumberInput] = useState("");
@@ -1118,18 +1160,30 @@ export default function Home() {
   }, [query]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const patient = clean(params.get("patient"));
-    const provider = clean(params.get("provider"));
-    const claim = clean(params.get("claim"));
+    if (typeof window === "undefined") return;
 
-    if (patient) {
-      void runTargetedSuggestionSearch(patient, "Patient");
-    } else if (provider) {
-      void runTargetedSuggestionSearch(provider, "Provider");
-    } else if (claim) {
-      void runTargetedSuggestionSearch(claim, "Claim number");
+    function applyHomeSearchStateFromUrl() {
+      const urlState = homeSearchStateFromUrl();
+
+      setPatientSearchInput(urlState.patient);
+      setClaimSearchInput(urlState.claim);
+      setProviderSearchInput(urlState.provider);
+
+      if (homeSearchStateHasAnyValue(urlState)) {
+        void runMainCombinedSearch(urlState, { updateUrl: false });
+        return;
+      }
+
+      resetSearch({ updateUrl: false });
     }
+
+    applyHomeSearchStateFromUrl();
+    window.addEventListener("popstate", applyHomeSearchStateFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyHomeSearchStateFromUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function runAdministratorGate(actionLabel: string, onAuthorized: () => void) {
@@ -1381,7 +1435,7 @@ export default function Home() {
     }
   }
 
-  function resetSearch() {
+  function resetSearch(options: { updateUrl?: boolean } = {}) {
     setQuery("");
     setBrlNumberInput("");
     setLawsuitNumberInput("");
@@ -1397,6 +1451,7 @@ export default function Home() {
     setSearched(false);
     setError("");
     setResults([]);
+    setResultsModalOpen(false);
     setCheckedLabel("");
     setSuggestions([]);
     setDirectPatientSuggestions([]);
@@ -1405,6 +1460,24 @@ export default function Home() {
     setProviderSearchSuggestions([]);
     setSuggestionLabel("");
     setSuggestionsLoading(false);
+
+    if (typeof window !== "undefined" && options.updateUrl !== false) {
+      window.history.pushState({ barshMattersHomeSearch: true }, "", "/");
+    }
+  }
+
+  function closeHomeResultsModal(options: { updateUrl?: boolean } = {}) {
+    setResultsModalOpen(false);
+
+    if (typeof window !== "undefined" && options.updateUrl !== false) {
+      const nextUrl = homeSearchUrlForState({
+        patient: clean(patientSearchInput),
+        claim: clean(claimSearchInput),
+        provider: clean(providerSearchInput),
+        modal: "",
+      });
+      window.history.pushState({ barshMattersHomeSearch: true }, "", nextUrl);
+    }
   }
 
   function filteredSearchUrl(
@@ -1892,10 +1965,17 @@ export default function Home() {
     window.location.href = `/matters?workflow=claim&claim=${encodeURIComponent(q)}`;
   }
 
-  async function runMainCombinedSearch() {
-    const patient = clean(patientSearchInput);
-    const claim = clean(claimSearchInput);
-    const provider = clean(providerSearchInput);
+  async function runMainCombinedSearch(
+    overrides: Partial<HomeSearchUrlState> = {},
+    options: { updateUrl?: boolean; replaceUrl?: boolean } = {}
+  ) {
+    const patient = Object.prototype.hasOwnProperty.call(overrides, "patient") ? clean(overrides.patient) : clean(patientSearchInput);
+    const claim = Object.prototype.hasOwnProperty.call(overrides, "claim") ? clean(overrides.claim) : clean(claimSearchInput);
+    const provider = Object.prototype.hasOwnProperty.call(overrides, "provider") ? clean(overrides.provider) : clean(providerSearchInput);
+
+    setPatientSearchInput(patient);
+    setClaimSearchInput(claim);
+    setProviderSearchInput(provider);
 
     setLoading(true);
     setSearched(true);
@@ -1909,6 +1989,24 @@ export default function Home() {
     try {
       if (!patient && !claim && !provider) {
         throw new Error("Enter a patient, claim number, provider, or a combination of those fields.");
+      }
+
+      if (typeof window !== "undefined" && options.updateUrl !== false) {
+        const nextUrl = homeSearchUrlForState({
+          patient,
+          claim,
+          provider,
+          modal: "results",
+        });
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        if (nextUrl !== currentUrl) {
+          if (options.replaceUrl) {
+            window.history.replaceState({ barshMattersHomeSearch: true }, "", nextUrl);
+          } else {
+            window.history.pushState({ barshMattersHomeSearch: true }, "", nextUrl);
+          }
+        }
       }
 
       let rows: any[] = [];
@@ -2279,11 +2377,11 @@ export default function Home() {
             </datalist>
 
             <div style={structuredButtonGridStyle}>
-              <button type="button" onClick={runMainCombinedSearch} disabled={loading} style={primaryButtonStyle(loading)}>
+              <button type="button" onClick={() => void runMainCombinedSearch()} disabled={loading} style={primaryButtonStyle(loading)}>
                 Search
               </button>
 
-              <button type="button" onClick={resetSearch} style={secondaryButtonStyle}>
+              <button type="button" onClick={() => resetSearch()} style={secondaryButtonStyle}>
                 Clear Results
               </button>
             </div>
@@ -2305,7 +2403,7 @@ export default function Home() {
 
                   <button
                     type="button"
-                    onClick={() => setResultsModalOpen(false)}
+                    onClick={() => closeHomeResultsModal()}
                     style={searchResultsCloseButtonStyle}
                     aria-label="Close search results"
                   >

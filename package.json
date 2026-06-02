@@ -219,7 +219,8 @@
     "verify:admin-ticklers-browser-history-safety": "node scripts/verify-admin-ticklers-browser-history-safety.mjs",
     "verify:reference-data-browser-history-safety": "node scripts/verify-reference-data-browser-history-safety.mjs",
     "verify:admin-tickler-runner-browser-history-safety": "node scripts/verify-admin-tickler-runner-browser-history-safety.mjs",
-    "verify:document-templates-browser-history-safety": "node scripts/verify-document-templates-browser-history-safety.mjs"
+    "verify:document-templates-browser-history-safety": "node scripts/verify-document-templates-browser-history-safety.mjs",
+    "verify:home-search-browser-history-safety": "node scripts/verify-home-search-browser-history-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

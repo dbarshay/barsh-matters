@@ -10,6 +10,7 @@ const adminTicklersPagePath = "app/admin/ticklers/page.tsx";
 const referenceDataPagePath = "app/admin/reference-data/page.tsx";
 const adminTicklerRunnerPagePath = "app/admin/ticklers/runner/page.tsx";
 const documentTemplatesPagePath = "app/admin/document-templates/page.tsx";
+const homePagePath = "app/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
@@ -19,6 +20,7 @@ const adminTicklersPage = fs.readFileSync(adminTicklersPagePath, "utf8");
 const referenceDataPage = fs.readFileSync(referenceDataPagePath, "utf8");
 const adminTicklerRunnerPage = fs.readFileSync(adminTicklerRunnerPagePath, "utf8");
 const documentTemplatesPage = fs.readFileSync(documentTemplatesPagePath, "utf8");
+const homePage = fs.readFileSync(homePagePath, "utf8");
 
 const failures = [];
 
@@ -91,6 +93,12 @@ mustContain("/admin/document-templates pushes history", documentTemplatesPage, "
 mustContain("/admin/document-templates listens to popstate", documentTemplatesPage, 'window.addEventListener("popstate", applyDocumentTemplateStateFromUrl);');
 mustContain("/admin/document-templates restores templates from URL", documentTemplatesPage, "void loadTemplates(urlState.category);");
 
+mustContain("/ home has URL parser", homePage, "function homeSearchStateFromUrl(): HomeSearchUrlState");
+mustContain("/ home reads patient from URL", homePage, 'patient: params.get("patient") || ""');
+mustContain("/ home pushes search history", homePage, "window.history.pushState({ barshMattersHomeSearch: true }, \"\", nextUrl);");
+mustContain("/ home listens to popstate", homePage, 'window.addEventListener("popstate", applyHomeSearchStateFromUrl);');
+mustContain("/ home restores search from URL", homePage, "void runMainCombinedSearch(urlState, { updateUrl: false });");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
@@ -102,6 +110,7 @@ console.log("EXPECTS_ADMIN_TICKLERS_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_REFERENCE_DATA_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_ADMIN_TICKLER_RUNNER_URL_BACKED_FILTERS=YES");
 console.log("EXPECTS_DOCUMENT_TEMPLATES_URL_BACKED_STATE=YES");
+console.log("EXPECTS_HOME_SEARCH_URL_BACKED_STATE=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);
