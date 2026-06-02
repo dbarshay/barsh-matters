@@ -151,12 +151,11 @@ function clioMasterDisplayNumber(m: Matter) {
 }
 
 function masterTargetHref(m: Matter) {
-  const clioId = String(clioMasterMatterId(m) || "").trim();
+  const localMatterId = String(matterId(m) || "").trim();
   const localMaster = String(masterId(m) || "").trim();
 
-  if (clioId) {
-    const params = localMaster ? `?masterLawsuitId=${encodeURIComponent(localMaster)}` : "";
-    return `/matter/${encodeURIComponent(clioId)}${params}`;
+  if (localMatterId && localMaster) {
+    return `/matter/${encodeURIComponent(localMatterId)}?masterLawsuitId=${encodeURIComponent(localMaster)}`;
   }
 
   return "";
@@ -961,8 +960,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("patient", val(m, "patientName", "patient_name"))}
-                                style={fieldLinkButton}
-                                title="Search this patient"
+                                style={fieldFilterButton}
+                                title="Filter results by this patient"
                               >
                                 {val(m, "patientName", "patient_name") || "—"}
                               </button>
@@ -971,8 +970,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("provider", val(m, "client_name", "clientName", "provider_name", "providerName"))}
-                                style={fieldLinkButton}
-                                title="Search this provider"
+                                style={fieldFilterButton}
+                                title="Filter results by this provider"
                               >
                                 {val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}
                               </button>
@@ -981,8 +980,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("insurer", insurerName(m))}
-                                style={fieldLinkButton}
-                                title="Search this insurer"
+                                style={fieldFilterButton}
+                                title="Filter results by this insurer"
                               >
                                 {insurerName(m) || "—"}
                               </button>
@@ -1021,8 +1020,8 @@ export default function LawsuitsPage() {
                                 <button
                                   type="button"
                                   onClick={() => searchLinkedField("indexAaaNumber", indexNumber(m))}
-                                  style={fieldLinkButton}
-                                  title="Search this index number"
+                                  style={fieldFilterButton}
+                                  title="Filter results by this index number"
                                 >
                                   {indexNumber(m)}
                                 </button>
@@ -1323,6 +1322,18 @@ const fieldAnchor: React.CSSProperties = {
   textDecoration: "underline",
   textUnderlineOffset: 2,
   fontWeight: 700,
+};
+
+const fieldFilterButton: React.CSSProperties = {
+  border: "1px solid #cbd5e1",
+  background: "#f8fafc",
+  color: "#334155",
+  borderRadius: 999,
+  padding: "2px 8px",
+  cursor: "pointer",
+  font: "inherit",
+  fontWeight: 700,
+  textDecoration: "none",
 };
 
 const fieldLinkButton: React.CSSProperties = {

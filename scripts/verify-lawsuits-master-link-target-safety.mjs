@@ -28,9 +28,21 @@ mustContain("search route remains no Clio hydration", searchRoutePath, searchRou
 mustContain("page has clioMasterMatterId helper", lawsuitsPagePath, lawsuitsPage, "function clioMasterMatterId(m: Matter)");
 mustContain("page has clioMasterDisplayNumber helper", lawsuitsPagePath, lawsuitsPage, "function clioMasterDisplayNumber(m: Matter)");
 mustContain("page has master target href helper", lawsuitsPagePath, lawsuitsPage, "function masterTargetHref(m: Matter)");
+mustContain("page target uses local child matter id", lawsuitsPagePath, lawsuitsPage, "const localMatterId = String(matterId(m) || \"\").trim();");
+mustContain("page target uses local master id as query context", lawsuitsPagePath, lawsuitsPage, "const localMaster = String(masterId(m) || \"\").trim();");
+mustNotContain("page must not route Filing Status to Clio master id as ClaimIndex matter", lawsuitsPagePath, lawsuitsPage, "return `/matter/${encodeURIComponent(clioId)}${params}`;");
 mustContain("page links Filing Status when master target exists", lawsuitsPagePath, lawsuitsPage, "href={masterTargetHref(m)}");
-mustContain("page link goes to matter route for mapped Clio master", lawsuitsPagePath, lawsuitsPage, "return `/matter/${encodeURIComponent(clioId)}${params}`;");
+mustContain("page link goes to local child matter route with master context", lawsuitsPagePath, lawsuitsPage, "return `/matter/${encodeURIComponent(localMatterId)}?masterLawsuitId=${encodeURIComponent(localMaster)}`;");
 mustContain("page preserves search fallback when no Clio mapping", lawsuitsPagePath, lawsuitsPage, "onClick={() => searchLinkedField(\"masterLawsuitId\", masterId(m))}");
+mustContain("page has distinct filter button style", lawsuitsPagePath, lawsuitsPage, "const fieldFilterButton: React.CSSProperties = {");
+mustContain("patient filter uses filter style", lawsuitsPagePath, lawsuitsPage, 'title="Filter results by this patient"');
+mustContain("provider filter uses filter style", lawsuitsPagePath, lawsuitsPage, 'title="Filter results by this provider"');
+mustContain("insurer filter uses filter style", lawsuitsPagePath, lawsuitsPage, 'title="Filter results by this insurer"');
+mustContain("index filter uses filter style", lawsuitsPagePath, lawsuitsPage, 'title="Filter results by this index number"');
+mustNotContain("patient should not be labeled as navigation/search hyperlink", lawsuitsPagePath, lawsuitsPage, 'title="Search this patient"');
+mustNotContain("provider should not be labeled as navigation/search hyperlink", lawsuitsPagePath, lawsuitsPage, 'title="Search this provider"');
+mustNotContain("insurer should not be labeled as navigation/search hyperlink", lawsuitsPagePath, lawsuitsPage, 'title="Search this insurer"');
+mustNotContain("index should not be labeled as navigation/search hyperlink", lawsuitsPagePath, lawsuitsPage, 'title="Search this index number"');
 
 mustNotContain("Filing Status should not always be search-only", lawsuitsPagePath, lawsuitsPage, "title=\"Search this master lawsuit\"\n                                  >\n                                    {masterId(m)}\n                                  </button>\n                                </>\n                              )");
 
