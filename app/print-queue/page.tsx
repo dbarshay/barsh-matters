@@ -101,13 +101,62 @@ const statusOptions: Array<{ value: PrintQueueStatus; label: string; countKey: s
   { value: "skipped", label: "Skipped", countKey: "skipped" },
 ];
 
+type PrintQueueUrlState = {
+  status: PrintQueueStatus;
+  masterLawsuitId: string;
+  limit: number;
+  finalizedPdfOnly: boolean;
+  dedupeClioDocumentId: boolean;
+};
+
+function normalizePrintQueueStatus(value: unknown): PrintQueueStatus {
+  const raw = textValue(value).toLowerCase();
+  return ["queued", "printed", "hold", "skipped"].includes(raw) ? (raw as PrintQueueStatus) : "";
+}
+
+function printQueueStateFromUrl(): PrintQueueUrlState {
+  if (typeof window === "undefined") {
+    return {
+      status: "queued",
+      masterLawsuitId: "",
+      limit: 100,
+      finalizedPdfOnly: true,
+      dedupeClioDocumentId: true,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const limitValue = Number(params.get("limit") || 100);
+
+  return {
+    status: normalizePrintQueueStatus(params.get("status") || "queued") || "queued",
+    masterLawsuitId: params.get("masterLawsuitId") || "",
+    limit: Number.isFinite(limitValue) && limitValue > 0 ? limitValue : 100,
+    finalizedPdfOnly: params.get("finalizedPdfOnly") !== "false",
+    dedupeClioDocumentId: params.get("dedupeClioDocumentId") !== "false",
+  };
+}
+
+function printQueueUrlForState(state: PrintQueueUrlState) {
+  const params = new URLSearchParams();
+
+  if (state.status && state.status !== "queued") params.set("status", state.status);
+  if (state.masterLawsuitId) params.set("masterLawsuitId", state.masterLawsuitId);
+  if (state.limit !== 100) params.set("limit", String(state.limit));
+  if (!state.finalizedPdfOnly) params.set("finalizedPdfOnly", "false");
+  if (!state.dedupeClioDocumentId) params.set("dedupeClioDocumentId", "false");
+
+  return params.toString() ? `/print-queue?${params.toString()}` : "/print-queue";
+}
+
 export default function PrintQueuePage() {
-  const [statusFilter, setStatusFilter] = useState<PrintQueueStatus>("queued");
-  const [masterLawsuitId, setMasterLawsuitId] = useState("");
-  const [limit, setLimit] = useState(100);
+  const initialPrintQueueUrlState = printQueueStateFromUrl();
+  const [statusFilter, setStatusFilter] = useState<PrintQueueStatus>(initialPrintQueueUrlState.status);
+  const [masterLawsuitId, setMasterLawsuitId] = useState(initialPrintQueueUrlState.masterLawsuitId);
+  const [limit, setLimit] = useState(initialPrintQueueUrlState.limit);
   const [queue, setQueue] = useState<any>(null);
-  const [finalizedPdfOnly, setFinalizedPdfOnly] = useState(true);
-  const [dedupeClioDocumentId, setDedupeClioDocumentId] = useState(true);
+  const [finalizedPdfOnly, setFinalizedPdfOnly] = useState(initialPrintQueueUrlState.finalizedPdfOnly);
+  const [dedupeClioDocumentId, setDedupeClioDocumentId] = useState(initialPrintQueueUrlState.dedupeClioDocumentId);
   const [loading, setLoading] = useState(false);
   const [statusLoadingId, setStatusLoadingId] = useState<number | null>(null);
   const [statusResult, setStatusResult] = useState<any>(null);
@@ -117,23 +166,40 @@ export default function PrintQueuePage() {
     return Array.isArray(queue?.rows) ? queue.rows : [];
   }, [queue]);
 
-  async function loadQueue(nextStatusFilter = statusFilter) {
+  async function loadQueue(
+    nextState: Partial<PrintQueueUrlState> = {},
+    options: { updateUrl?: boolean; replaceUrl?: boolean } = {}
+  ) {
+    const effectiveState: PrintQueueUrlState = {
+      status: Object.prototype.hasOwnProperty.call(nextState, "status") ? normalizePrintQueueStatus(nextState.status) : statusFilter,
+      masterLawsuitId: Object.prototype.hasOwnProperty.call(nextState, "masterLawsuitId") ? textValue(nextState.masterLawsuitId).trim() : masterLawsuitId.trim(),
+      limit: Object.prototype.hasOwnProperty.call(nextState, "limit") ? Number(nextState.limit) || 100 : Number(limit) || 100,
+      finalizedPdfOnly: Object.prototype.hasOwnProperty.call(nextState, "finalizedPdfOnly") ? Boolean(nextState.finalizedPdfOnly) : finalizedPdfOnly,
+      dedupeClioDocumentId: Object.prototype.hasOwnProperty.call(nextState, "dedupeClioDocumentId") ? Boolean(nextState.dedupeClioDocumentId) : dedupeClioDocumentId,
+    };
+
+    setStatusFilter(effectiveState.status);
+    setMasterLawsuitId(effectiveState.masterLawsuitId);
+    setLimit(effectiveState.limit);
+    setFinalizedPdfOnly(effectiveState.finalizedPdfOnly);
+    setDedupeClioDocumentId(effectiveState.dedupeClioDocumentId);
+
     setLoading(true);
     setError("");
 
     try {
       const url = new URL("/api/documents/print-queue", window.location.origin);
-      url.searchParams.set("limit", String(limit));
-      url.searchParams.set("finalizedPdfOnly", finalizedPdfOnly ? "true" : "false");
-      url.searchParams.set("dedupeClioDocumentId", dedupeClioDocumentId ? "true" : "false");
+      url.searchParams.set("limit", String(effectiveState.limit));
+      url.searchParams.set("finalizedPdfOnly", effectiveState.finalizedPdfOnly ? "true" : "false");
+      url.searchParams.set("dedupeClioDocumentId", effectiveState.dedupeClioDocumentId ? "true" : "false");
 
-      const cleanMaster = masterLawsuitId.trim();
+      const cleanMaster = effectiveState.masterLawsuitId.trim();
       if (cleanMaster) {
         url.searchParams.set("masterLawsuitId", cleanMaster);
       }
 
-      if (nextStatusFilter) {
-        url.searchParams.set("status", nextStatusFilter);
+      if (effectiveState.status) {
+        url.searchParams.set("status", effectiveState.status);
       }
 
       const res = await fetch(url.toString(), { cache: "no-store" });
@@ -144,6 +210,19 @@ export default function PrintQueuePage() {
       }
 
       setQueue(json);
+
+      if (typeof window !== "undefined" && options.updateUrl !== false) {
+        const nextUrl = printQueueUrlForState(effectiveState);
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        if (nextUrl !== currentUrl) {
+          if (options.replaceUrl) {
+            window.history.replaceState({ barshMattersPrintQueueFilters: true }, "", nextUrl);
+          } else {
+            window.history.pushState({ barshMattersPrintQueueFilters: true }, "", nextUrl);
+          }
+        }
+      }
     } catch (err: any) {
       setError(err?.message || "Could not load print queue.");
       setQueue(null);
@@ -153,8 +232,7 @@ export default function PrintQueuePage() {
   }
 
   async function changeStatusFilter(nextStatusFilter: PrintQueueStatus) {
-    setStatusFilter(nextStatusFilter);
-    await loadQueue(nextStatusFilter);
+    await loadQueue({ status: nextStatusFilter });
   }
 
   async function updatePrintQueueStatus(row: any, status: "queued" | "printed" | "hold" | "skipped") {
@@ -211,7 +289,7 @@ export default function PrintQueuePage() {
         throw new Error(json?.error || "Could not update print queue status.");
       }
 
-      await loadQueue(statusFilter);
+      await loadQueue({ status: statusFilter, masterLawsuitId, limit, finalizedPdfOnly, dedupeClioDocumentId }, { replaceUrl: true });
     } catch (err: any) {
       setStatusResult({
         ok: false,
@@ -262,7 +340,18 @@ export default function PrintQueuePage() {
   }
 
   useEffect(() => {
-    loadQueue("queued");
+    if (typeof window === "undefined") return;
+
+    function applyPrintQueueStateFromUrl() {
+      void loadQueue(printQueueStateFromUrl(), { updateUrl: false });
+    }
+
+    applyPrintQueueStateFromUrl();
+    window.addEventListener("popstate", applyPrintQueueStateFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyPrintQueueStateFromUrl);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -415,7 +504,7 @@ export default function PrintQueuePage() {
 
           <button
             type="button"
-            onClick={() => loadQueue(statusFilter)}
+            onClick={() => loadQueue({ status: statusFilter, masterLawsuitId, limit, finalizedPdfOnly, dedupeClioDocumentId })}
             disabled={loading}
             style={primaryButtonStyle}
           >

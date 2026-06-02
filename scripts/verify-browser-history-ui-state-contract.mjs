@@ -11,6 +11,7 @@ const referenceDataPagePath = "app/admin/reference-data/page.tsx";
 const adminTicklerRunnerPagePath = "app/admin/ticklers/runner/page.tsx";
 const documentTemplatesPagePath = "app/admin/document-templates/page.tsx";
 const homePagePath = "app/page.tsx";
+const printQueuePagePath = "app/print-queue/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
@@ -21,6 +22,7 @@ const referenceDataPage = fs.readFileSync(referenceDataPagePath, "utf8");
 const adminTicklerRunnerPage = fs.readFileSync(adminTicklerRunnerPagePath, "utf8");
 const documentTemplatesPage = fs.readFileSync(documentTemplatesPagePath, "utf8");
 const homePage = fs.readFileSync(homePagePath, "utf8");
+const printQueuePage = fs.readFileSync(printQueuePagePath, "utf8");
 
 const failures = [];
 
@@ -99,6 +101,12 @@ mustContain("/ home pushes search history", homePage, "window.history.pushState(
 mustContain("/ home listens to popstate", homePage, 'window.addEventListener("popstate", applyHomeSearchStateFromUrl);');
 mustContain("/ home restores search from URL", homePage, "void runMainCombinedSearch(urlState, { updateUrl: false });");
 
+mustContain("/print-queue has URL parser", printQueuePage, "function printQueueStateFromUrl(): PrintQueueUrlState");
+mustContain("/print-queue reads status from URL", printQueuePage, 'status: normalizePrintQueueStatus(params.get("status") || "queued") || "queued"');
+mustContain("/print-queue pushes filter history", printQueuePage, "window.history.pushState({ barshMattersPrintQueueFilters: true }, \"\", nextUrl);");
+mustContain("/print-queue listens to popstate", printQueuePage, 'window.addEventListener("popstate", applyPrintQueueStateFromUrl);');
+mustContain("/print-queue restores from URL", printQueuePage, "void loadQueue(printQueueStateFromUrl(), { updateUrl: false });");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
@@ -111,6 +119,7 @@ console.log("EXPECTS_REFERENCE_DATA_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_ADMIN_TICKLER_RUNNER_URL_BACKED_FILTERS=YES");
 console.log("EXPECTS_DOCUMENT_TEMPLATES_URL_BACKED_STATE=YES");
 console.log("EXPECTS_HOME_SEARCH_URL_BACKED_STATE=YES");
+console.log("EXPECTS_PRINT_QUEUE_URL_BACKED_FILTERS=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);
