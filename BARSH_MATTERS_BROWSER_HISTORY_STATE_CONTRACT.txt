@@ -1,0 +1,19 @@
+Barsh Matters Browser History / UI State Contract
+
+Browser Back/Forward must restore the active page state, not stale client-only state.
+
+Standing UI rules:
+- Search/filter state should be represented in URL query parameters where practical.
+- Clickable filter links should push browser history so Back returns to the prior result set.
+- Popstate/back/forward handlers should reload state from the URL.
+- True navigation targets should use real links.
+- Client-only state changes that materially change the visible page should not trap the user in stale state.
+- Tables, tabs, workspace context, and admin/search pages should be URL-backed where practical.
+- This rule applies across Barsh Matters pages, including /lawsuits, /matters, /matter/[id], admin ticklers, and reference data workflows.
+
+Current implementation priority:
+1. /lawsuits search/filter state.
+2. /matters search/filter state.
+3. /matter/[id] active workspace tab and master context.
+4. Admin tickler search/result state.
+5. Reference-data search/list state.

@@ -225,6 +225,48 @@ function matterStatusStyle(m: Matter): React.CSSProperties {
   };
 }
 
+function lawsuitsSearchStateFromUrl() {
+  if (typeof window === "undefined") {
+    return {
+      claim: "",
+      patient: "",
+      provider: "",
+      insurer: "",
+      indexAaaNumber: "",
+      masterLawsuitId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    claim: params.get("claim") || "",
+    patient: params.get("patient") || "",
+    provider: params.get("provider") || "",
+    insurer: params.get("insurer") || "",
+    indexAaaNumber: params.get("indexAaaNumber") || "",
+    masterLawsuitId: params.get("masterLawsuitId") || "",
+  };
+}
+
+function lawsuitsSearchStateHasAnyValue(state: {
+  claim?: string;
+  patient?: string;
+  provider?: string;
+  insurer?: string;
+  indexAaaNumber?: string;
+  masterLawsuitId?: string;
+}) {
+  return Boolean(
+    String(state.claim || "").trim() ||
+    String(state.patient || "").trim() ||
+    String(state.provider || "").trim() ||
+    String(state.insurer || "").trim() ||
+    String(state.indexAaaNumber || "").trim() ||
+    String(state.masterLawsuitId || "").trim()
+  );
+}
+
 export default function LawsuitsPage() {
   const [claim, setClaim] = useState("");
   const [patient, setPatient] = useState("");
@@ -355,7 +397,8 @@ export default function LawsuitsPage() {
       insurer: string;
       indexAaaNumber: string;
       masterLawsuitId: string;
-    }> = {}
+    }> = {},
+    options: { updateUrl?: boolean; replaceUrl?: boolean } = {}
   ) {
     const hasOverride = (key: string) => Object.prototype.hasOwnProperty.call(overrides, key);
 
@@ -400,6 +443,19 @@ export default function LawsuitsPage() {
       const nextGroups = json.groups ?? json.claims ?? json.results ?? json.data ?? [];
       setGroups(Array.isArray(nextGroups) ? nextGroups : []);
       setSelected({});
+
+      if (typeof window !== "undefined" && options.updateUrl !== false) {
+        const nextUrl = params.toString() ? `/lawsuits?${params.toString()}` : "/lawsuits";
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        if (nextUrl !== currentUrl) {
+          if (options.replaceUrl) {
+            window.history.replaceState({ barshMattersLawsuitsSearch: true }, "", nextUrl);
+          } else {
+            window.history.pushState({ barshMattersLawsuitsSearch: true }, "", nextUrl);
+          }
+        }
+      }
     } catch (e: any) {
       setError(e?.message || "Search failed.");
       setGroups([]);
@@ -408,6 +464,37 @@ export default function LawsuitsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function applySearchFromUrl() {
+      const urlState = lawsuitsSearchStateFromUrl();
+
+      setClaim(urlState.claim);
+      setPatient(urlState.patient);
+      setProvider(urlState.provider);
+      setInsurer(urlState.insurer);
+
+      if (lawsuitsSearchStateHasAnyValue(urlState)) {
+        void search(urlState, { updateUrl: false });
+        return;
+      }
+
+      setGroups([]);
+      setSelected({});
+      setResult(null);
+      setSearched(false);
+      setError("");
+    }
+
+    applySearchFromUrl();
+    window.addEventListener("popstate", applySearchFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applySearchFromUrl);
+    };
+  }, []);
 
   function searchLinkedField(
     field: "claim" | "patient" | "provider" | "insurer" | "indexAaaNumber" | "masterLawsuitId",
@@ -960,8 +1047,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("patient", val(m, "patientName", "patient_name"))}
-                                style={fieldFilterButton}
-                                title="Filter results by this patient"
+                                style={fieldTextFilterLink}
+                                title="Show all matters for this patient"
                               >
                                 {val(m, "patientName", "patient_name") || "—"}
                               </button>
@@ -970,8 +1057,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("provider", val(m, "client_name", "clientName", "provider_name", "providerName"))}
-                                style={fieldFilterButton}
-                                title="Filter results by this provider"
+                                style={fieldTextFilterLink}
+                                title="Show all matters for this provider"
                               >
                                 {val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}
                               </button>
@@ -980,8 +1067,8 @@ export default function LawsuitsPage() {
                               <button
                                 type="button"
                                 onClick={() => searchLinkedField("insurer", insurerName(m))}
-                                style={fieldFilterButton}
-                                title="Filter results by this insurer"
+                                style={fieldTextFilterLink}
+                                title="Show all matters for this insurer"
                               >
                                 {insurerName(m) || "—"}
                               </button>
@@ -1020,8 +1107,8 @@ export default function LawsuitsPage() {
                                 <button
                                   type="button"
                                   onClick={() => searchLinkedField("indexAaaNumber", indexNumber(m))}
-                                  style={fieldFilterButton}
-                                  title="Filter results by this index number"
+                                  style={fieldTextFilterLink}
+                                  title="Show all matters for this index number"
                                 >
                                   {indexNumber(m)}
                                 </button>
@@ -1324,16 +1411,17 @@ const fieldAnchor: React.CSSProperties = {
   fontWeight: 700,
 };
 
-const fieldFilterButton: React.CSSProperties = {
-  border: "1px solid #cbd5e1",
-  background: "#f8fafc",
-  color: "#334155",
-  borderRadius: 999,
-  padding: "2px 8px",
+const fieldTextFilterLink: React.CSSProperties = {
+  border: 0,
+  background: "transparent",
+  padding: 0,
+  margin: 0,
+  color: "#1d4ed8",
   cursor: "pointer",
   font: "inherit",
   fontWeight: 700,
-  textDecoration: "none",
+  textDecoration: "underline",
+  whiteSpace: "nowrap",
 };
 
 const fieldLinkButton: React.CSSProperties = {
