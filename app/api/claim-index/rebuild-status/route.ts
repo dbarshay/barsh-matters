@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: err?.message || "Failed to read rebuild status.",
+        error: err?.message || "Failed to read local index status.",
       },
       {
         status: 500,

@@ -1,0 +1,30 @@
+CLAIMINDEX_LEGACY_DEPRECATION_CONTRACT
+
+Purpose:
+- Preserve current runtime safety while retiring old Clio-era ClaimIndex rebuild/cache concepts.
+- This is a non-destructive deprecation lock only.
+- Do not delete database schema in this pass.
+
+Deprecated concepts:
+- ClaimIndexRebuildState is legacy status/accounting terminology from the prior Clio rebuild era.
+- ClaimClusterCache is legacy cache terminology and must not become a correctness source.
+- app/api/claim-index/rebuild is a quarantined legacy Clio operational route and must remain blocked.
+- app/api/advanced-search/hydrate is a quarantined legacy Clio hydration route and must remain blocked.
+
+Allowed temporary behavior:
+- A read-only status route may inspect local database/index status.
+- Local status inspection must not query Clio.
+- Local status inspection must not write, update, delete, rebuild, hydrate, or backfill.
+- UI/API wording should move from "rebuild" toward "local index status" where practical.
+
+Forbidden behavior:
+- Rebuilding ClaimIndex from Clio.
+- Hydrating matter/search/lawsuit data from Clio.
+- Calling Clio matter-context for search/display/local matter edits.
+- Treating ClaimClusterCache as source of truth.
+- Writing ClaimIndexRebuildState as part of normal operational correctness.
+- Zero-result search fallback to Clio.
+
+Future migration:
+- Rename or replace legacy status/cache models only after dependent routes and UI are reviewed.
+- Any schema deletion must happen in a separate migration with a fresh backup and restore path confirmed.
