@@ -2048,7 +2048,7 @@ export default function Home() {
                   textDecoration: "none",
                 }}
               >
-                <span>Create / Manage Lawsuits</span>
+                <span>Create Lawsuit</span>
               </a>
 
             </div>
