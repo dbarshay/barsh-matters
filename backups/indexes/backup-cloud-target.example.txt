@@ -1,0 +1,10 @@
+# Optional cloud mirror target for Barsh Matters database/index backups.
+# Do not put secrets here.
+#
+# Copy this file to:
+#   backups/indexes/CLOUD_TARGET.txt
+#
+# Then place one local synced folder path inside CLOUD_TARGET.txt, for example:
+#   /Users/dbarshay/Library/CloudStorage/OneDrive-BarshayRizzoLopez/Barsh Matters Backups/indexes
+#
+# The actual CLOUD_TARGET.txt file is ignored by Git.

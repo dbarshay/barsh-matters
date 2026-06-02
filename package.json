@@ -192,7 +192,14 @@
     "verify:direct-matter-clio-operational-callers-removed": "node scripts/verify-direct-matter-clio-operational-callers-removed.mjs",
     "verify:legacy-operational-clio-modules-deleted": "node scripts/verify-legacy-operational-clio-modules-deleted.mjs",
     "verify:active-operational-clio-routes-removed": "node scripts/verify-active-operational-clio-routes-removed.mjs",
-    "verify:settlement-close-preview-clio-eliminated-safety": "node scripts/verify-settlement-close-preview-clio-eliminated-safety.mjs"
+    "verify:settlement-close-preview-clio-eliminated-safety": "node scripts/verify-settlement-close-preview-clio-eliminated-safety.mjs",
+    "verify:claim-index-local-source-contract": "node scripts/verify-claim-index-local-source-contract.mjs",
+    "verify:index-backup-safety": "node scripts/verify-index-backup-safety.mjs",
+    "inventory:claim-index-schema": "node scripts/inventory-claim-index-schema.mjs",
+    "backup:indexes": "node scripts/backup-local-indexes.mjs",
+    "restore:indexes-preview": "node scripts/restore-local-indexes-preview.mjs",
+    "restore:indexes-sqlite-guarded": "node scripts/restore-local-indexes-sqlite-guarded.mjs",
+    "restore:indexes-postgres-guarded": "node scripts/restore-local-indexes-postgres-guarded.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

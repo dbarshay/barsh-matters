@@ -1,0 +1,14 @@
+CLAIMINDEX_LOCAL_SOURCE_CONTRACT
+- ClaimIndex is the local searchable matter projection for Barsh Matters.
+- ClaimIndex is not a Clio cache.
+- ClaimIndex is not hydrated from Clio.
+- ClaimIndex is updated only by local imports, manual edits, local lawsuit-generation workflows, controlled local migration tools, and local operational APIs.
+- Clio may be used only for explicit document vault/storage/access, MailDrop/document delivery support, and explicit BRL/document shell workflows.
+- Aggregated lawsuits must preserve child/sibling links so document generation and later workflows can resolve sibling data from local Barsh Matters records.
+- Backup/restore policy must protect ClaimIndex, local matter data, local lawsuit data, lawsuit/sibling links, reference data, and all current/future local PostgreSQL database tables/indexes without querying Clio.
+- Backup/restore policy does not copy actual document folders and does not pull document files from Clio.  Clio remains the document vault.
+- PostgreSQL backups use pg_dump/pg_restore and exclude PostgreSQL large objects.  If actual document binary payloads are ever stored in ordinary database columns, that schema must be reviewed separately before relying on automated backups.
+- Microsoft Graph email sync UI copy is allowed where it expressly says the operation writes only local email metadata and does not write Clio.
+- Windows users may access Barsh Matters through the browser; the dedicated Mac may own scheduled local backups.  The backup scripts remain Node-based and portable.
+- Before staff deployment on the dedicated Mac, complete the migration checklist: final manual backup on current machine; confirm Git clean/pushed/tagged; copy latest backup folder or backups/indexes; clone repo; restore/copy database and environment variables; run verifiers; install LaunchAgent; confirm 15-minute backups; configure Time Machine to include Barsh Matters; attach LaCie/Seagate; complete first Time Machine backup; then begin staff/browser deployment.
+- Backup/Restore should eventually have guarded Admin UI controls for backup status, manual backup, restore preview, guarded restore, and dedicated-machine migration.

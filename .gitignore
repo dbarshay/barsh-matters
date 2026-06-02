@@ -49,3 +49,8 @@ dev.db
 
 # accidental version artifacts
 *.0
+
+# Barsh Matters local operational/index backups
+backups/indexes/*
+!backups/indexes/.gitkeep
+!backups/indexes/backup-cloud-target.example.txt
