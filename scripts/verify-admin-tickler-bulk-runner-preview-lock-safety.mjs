@@ -43,9 +43,15 @@ mustInclude("runner page", page, "previewCriteriaMatchesCurrent");
 mustInclude("runner page", page, "Completion is locked to the exact previewed filter set.");
 mustInclude("runner page", page, "Run Preview before completing. Changing Type / Kind, Due Through, or Limit clears the preview lock.");
 
-mustInclude("runner page Type / Kind invalidates preview", page, "setKind(event.target.value); invalidatePreviewCriteria();");
-mustInclude("runner page Due Through invalidates preview", page, "setDueThrough(event.target.value); invalidatePreviewCriteria();");
-mustInclude("runner page Limit invalidates preview", page, "setLimit(event.target.value); invalidatePreviewCriteria();");
+// URL-backed filter changes must still invalidate the preview lock.
+mustInclude("runner page URL-backed filter application exists", page, "function applyRunnerFilterState(nextState: AdminTicklerRunnerUrlState");
+mustInclude("runner page URL-backed filter application invalidates preview", page, "invalidatePreviewCriteria();");
+mustInclude("runner page URL-backed filter application pushes browser history", page, "pushRunnerFilterUrl(nextState);");
+mustInclude("runner page Type / Kind invalidates preview through URL-backed setter", page, "onChange={(event) => applyRunnerFilterState({ kind: event.target.value, dueThrough, limit })}");
+mustInclude("runner page Due Through invalidates preview through URL-backed setter", page, "onChange={(event) => applyRunnerFilterState({ kind, dueThrough: event.target.value, limit })}");
+mustInclude("runner page Limit invalidates preview through URL-backed setter", page, "onChange={(event) => applyRunnerFilterState({ kind, dueThrough, limit: event.target.value })}");
+mustInclude("runner page Back clears preview criteria", page, "setPreviewCriteria(null);");
+mustInclude("runner page Back clears result", page, "setResult(null);");
 
 mustInclude("runner route", route, "prisma.localWorkflowTickler.updateMany");
 mustInclude("runner route", route, 'status: "completed"');
@@ -54,6 +60,11 @@ mustInclude("runner route", route, 'status: "open"');
 mustNotInclude("runner page must not rely on old disabled expression", page, "disabled={loading || !previewCriteria}");
 mustNotInclude("runner page must not store stale literal preview object", page, "setPreviewCriteria({");
 mustNotInclude("runner page must not complete without hard match", page, "if (!previewCriteria) {");
+
+// These old direct setters bypass URL-backed history and must not return.
+mustNotInclude("runner page must not use old kind setter", page, "setKind(event.target.value); invalidatePreviewCriteria();");
+mustNotInclude("runner page must not use old dueThrough setter", page, "setDueThrough(event.target.value); invalidatePreviewCriteria();");
+mustNotInclude("runner page must not use old limit setter", page, "setLimit(event.target.value); invalidatePreviewCriteria();");
 
 if (!pkg.scripts?.["verify:admin-tickler-bulk-runner-preview-lock-safety"]) {
   failures.push("package.json missing verify:admin-tickler-bulk-runner-preview-lock-safety script");
@@ -65,4 +76,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS: Admin Tickler bulk runner completion is disabled until preview and uses the exact current preview-locked criteria.");
+console.log("PASS: Admin Tickler bulk runner completion is disabled until preview and URL-backed filter changes clear preview lock.");

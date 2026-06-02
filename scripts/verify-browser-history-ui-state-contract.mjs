@@ -8,6 +8,7 @@ const matterPagePath = "app/matter/[id]/page.tsx";
 const mattersPagePath = "app/matters/page.tsx";
 const adminTicklersPagePath = "app/admin/ticklers/page.tsx";
 const referenceDataPagePath = "app/admin/reference-data/page.tsx";
+const adminTicklerRunnerPagePath = "app/admin/ticklers/runner/page.tsx";
 
 const contract = fs.readFileSync(contractPath, "utf8");
 const lawsuits = fs.readFileSync(lawsuitsPath, "utf8");
@@ -15,6 +16,7 @@ const matterPage = fs.readFileSync(matterPagePath, "utf8");
 const mattersPage = fs.readFileSync(mattersPagePath, "utf8");
 const adminTicklersPage = fs.readFileSync(adminTicklersPagePath, "utf8");
 const referenceDataPage = fs.readFileSync(referenceDataPagePath, "utf8");
+const adminTicklerRunnerPage = fs.readFileSync(adminTicklerRunnerPagePath, "utf8");
 
 const failures = [];
 
@@ -75,6 +77,12 @@ mustContain("/admin/reference-data pushes search history", referenceDataPage, "w
 mustContain("/admin/reference-data listens to popstate", referenceDataPage, 'window.addEventListener("popstate", applyReferenceDataStateFromUrl);');
 mustContain("/admin/reference-data restores from URL", referenceDataPage, "void loadRows(urlState.type, urlState.q, urlState.active, {");
 
+mustContain("/admin/ticklers/runner has URL parser", adminTicklerRunnerPage, "function adminTicklerRunnerStateFromUrl(): AdminTicklerRunnerUrlState");
+mustContain("/admin/ticklers/runner reads kind from URL", adminTicklerRunnerPage, 'kind: params.get("kind") || "all"');
+mustContain("/admin/ticklers/runner pushes filter history", adminTicklerRunnerPage, "window.history.pushState({ barshMattersAdminTicklerRunnerFilters: true }, \"\", nextUrl);");
+mustContain("/admin/ticklers/runner listens to popstate", adminTicklerRunnerPage, 'window.addEventListener("popstate", applyRunnerFiltersFromUrl);');
+mustContain("/admin/ticklers/runner clears preview lock on Back", adminTicklerRunnerPage, "setPreviewCriteria(null);");
+
 console.log("RESULT: verify browser history UI state contract");
 console.log("CONTRACT=" + contractPath);
 console.log("LAWSUITS_PAGE=" + lawsuitsPath);
@@ -84,6 +92,7 @@ console.log("EXPECTS_MATTER_PAGE_URL_BACKED_TABS=YES");
 console.log("EXPECTS_MATTERS_PAGE_URL_BACKED_MASTER_TABS=YES");
 console.log("EXPECTS_ADMIN_TICKLERS_URL_BACKED_SEARCH=YES");
 console.log("EXPECTS_REFERENCE_DATA_URL_BACKED_SEARCH=YES");
+console.log("EXPECTS_ADMIN_TICKLER_RUNNER_URL_BACKED_FILTERS=YES");
 console.log("FAILURES=" + failures.length);
 
 for (const failure of failures) console.log("FAIL=" + failure);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 type RunnerResponse = {
@@ -52,16 +52,93 @@ function firstCompletionTimestamp(ticklers: any[]): string {
   return dateTimeCell(first);
 }
 
+type AdminTicklerRunnerUrlState = {
+  kind: string;
+  dueThrough: string;
+  limit: string;
+};
+
+function adminTicklerRunnerStateFromUrl(): AdminTicklerRunnerUrlState {
+  if (typeof window === "undefined") {
+    return {
+      kind: "all",
+      dueThrough: todayInputValue(),
+      limit: "100",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    kind: params.get("kind") || "all",
+    dueThrough: params.get("dueThrough") || todayInputValue(),
+    limit: params.get("limit") || "100",
+  };
+}
+
+function adminTicklerRunnerUrlForState(state: AdminTicklerRunnerUrlState) {
+  const params = new URLSearchParams();
+
+  if (state.kind && state.kind !== "all") params.set("kind", state.kind);
+  if (state.dueThrough && state.dueThrough !== todayInputValue()) params.set("dueThrough", state.dueThrough);
+  if (state.limit && state.limit !== "100") params.set("limit", state.limit);
+
+  return params.toString() ? `/admin/ticklers/runner?${params.toString()}` : "/admin/ticklers/runner";
+}
+
 export default function AdminTicklerRunnerPage() {
-  const [kind, setKind] = useState("all");
-  const [dueThrough, setDueThrough] = useState(todayInputValue());
-  const [limit, setLimit] = useState("100");
+  const initialUrlState = adminTicklerRunnerStateFromUrl();
+  const [kind, setKindState] = useState(initialUrlState.kind);
+  const [dueThrough, setDueThroughState] = useState(initialUrlState.dueThrough);
+  const [limit, setLimitState] = useState(initialUrlState.limit);
   const [completedNote, setCompletedNote] = useState("Completed by Administrator bulk tickler runner.");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RunnerResponse | null>(null);
   const [previewCriteria, setPreviewCriteria] = useState<Record<string, unknown> | null>(null);
 
   const ticklers = useMemo(() => result?.ticklers || [], [result]);
+  function pushRunnerFilterUrl(nextState: AdminTicklerRunnerUrlState) {
+    if (typeof window === "undefined") return;
+
+    const nextUrl = adminTicklerRunnerUrlForState(nextState);
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.pushState({ barshMattersAdminTicklerRunnerFilters: true }, "", nextUrl);
+    }
+  }
+
+  function applyRunnerFilterState(nextState: AdminTicklerRunnerUrlState, options: { updateUrl?: boolean } = {}) {
+    setKindState(nextState.kind);
+    setDueThroughState(nextState.dueThrough);
+    setLimitState(nextState.limit);
+    invalidatePreviewCriteria();
+
+    if (options.updateUrl !== false) {
+      pushRunnerFilterUrl(nextState);
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function applyRunnerFiltersFromUrl() {
+      const nextState = adminTicklerRunnerStateFromUrl();
+      setKindState(nextState.kind);
+      setDueThroughState(nextState.dueThrough);
+      setLimitState(nextState.limit);
+      setPreviewCriteria(null);
+      setResult(null);
+    }
+
+    applyRunnerFiltersFromUrl();
+    window.addEventListener("popstate", applyRunnerFiltersFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", applyRunnerFiltersFromUrl);
+    };
+  }, []);
+
 
   const currentPreviewCriteria = useMemo(
     () => ({
@@ -181,7 +258,7 @@ export default function AdminTicklerRunnerPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 12 }}>
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Type / Kind
-            <select value={kind} onChange={(event) => { setKind(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }}>
+            <select value={kind} onChange={(event) => applyRunnerFilterState({ kind: event.target.value, dueThrough, limit })} style={{ padding: 9 }}>
               <option value="all">All open ticklers</option>
               <option value="settlement_payment_due_followup">Settlement: Follow-Up for Payment</option>
               <option value="settlement_signed_agreement_followup">Settlement: Follow-Up for Signed Agreement</option>
@@ -190,12 +267,12 @@ export default function AdminTicklerRunnerPage() {
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Due Through
-            <input type="date" value={dueThrough} onChange={(event) => { setDueThrough(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }} />
+            <input type="date" value={dueThrough} onChange={(event) => applyRunnerFilterState({ kind, dueThrough: event.target.value, limit })} style={{ padding: 9 }} />
           </label>
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
             Limit
-            <input value={limit} onChange={(event) => { setLimit(event.target.value); invalidatePreviewCriteria(); }} style={{ padding: 9 }} />
+            <input value={limit} onChange={(event) => applyRunnerFilterState({ kind, dueThrough, limit: event.target.value })} style={{ padding: 9 }} />
           </label>
 
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
