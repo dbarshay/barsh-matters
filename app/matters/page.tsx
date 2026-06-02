@@ -14,6 +14,10 @@ type MatterRow = {
   provider: string;
   insurer: string;
   claimNumber: string;
+  dosStart: string;
+  dosEnd: string;
+  denialReason: string;
+  status: string;
   masterLawsuitId: string;
   treatingProvider: string;
   claimAmount: any;
@@ -23,6 +27,24 @@ type MatterRow = {
   isMaster: boolean;
   matchedBy: string;
 };
+
+type ClaimResultsSortKey =
+  | "matter"
+  | "patient"
+  | "provider"
+  | "insurer"
+  | "claim"
+  | "dos"
+  | "denialReason"
+  | "masterLawsuit"
+  | "claimAmount"
+  | "balance"
+  | "status";
+
+type ClaimResultsSortState = {
+  key: ClaimResultsSortKey;
+  direction: "asc" | "desc";
+} | null;
 
 const colors = {
   ink: "#0f172a",
@@ -40,6 +62,19 @@ const colors = {
 
 function clean(v: any) {
   return String(v || "").trim();
+}
+
+function displayDate(v: any) {
+  const raw = clean(v);
+  if (!raw) return "";
+
+  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly;
+    return `${Number(month)}/${Number(day)}/${year}`;
+  }
+
+  return raw;
 }
 
 function nameLike(v: any) {
@@ -187,6 +222,10 @@ function toMatterRow(row: any, matchedBy: string): MatterRow | null {
     provider: providerName(row),
     insurer: insurerName(row),
     claimNumber: claimNumberFromMatter(row),
+    dosStart: clean(row?.dosStart ?? row?.dos_start),
+    dosEnd: clean(row?.dosEnd ?? row?.dos_end),
+    denialReason: clean(row?.denialReason ?? row?.denial_reason),
+    status: clean(row?.matterStage?.name ?? row?.matter_stage_name ?? row?.status),
     masterLawsuitId: masterLawsuitId(row),
     treatingProvider: treatingProviderName(row),
     claimAmount: row?.claimAmount ?? row?.claim_amount,
@@ -209,6 +248,42 @@ function dedupe(rows: MatterRow[]) {
   }
 
   return out;
+}
+
+function matterRowSortValue(row: MatterRow, key: ClaimResultsSortKey): string | number {
+  if (key === "matter") return clean(row.displayNumber || row.id).toLowerCase();
+  if (key === "patient") return clean(row.patient).toLowerCase();
+  if (key === "provider") return clean(row.provider).toLowerCase();
+  if (key === "insurer") return clean(row.insurer).toLowerCase();
+  if (key === "claim") return clean(row.claimNumber).toLowerCase();
+  if (key === "dos") return clean(row.dosStart || row.dosEnd);
+  if (key === "denialReason") return clean(row.denialReason).toLowerCase();
+  if (key === "masterLawsuit") return clean(row.masterLawsuitId).toLowerCase();
+  if (key === "claimAmount") return Number(row.claimAmount ?? 0) || 0;
+  if (key === "balance") return Number(row.balancePresuit ?? 0) || 0;
+  if (key === "status") return clean(row.status).toLowerCase();
+
+  return "";
+}
+
+function sortMatterRows(rows: MatterRow[], sort: ClaimResultsSortState): MatterRow[] {
+  if (!sort) return rows;
+
+  const direction = sort.direction === "desc" ? -1 : 1;
+
+  return [...rows].sort((a, b) => {
+    const av = matterRowSortValue(a, sort.key);
+    const bv = matterRowSortValue(b, sort.key);
+
+    if (typeof av === "number" && typeof bv === "number") {
+      return (av - bv) * direction;
+    }
+
+    return String(av).localeCompare(String(bv), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }) * direction;
+  });
 }
 
 async function fetchRows(url: string) {
@@ -306,6 +381,8 @@ export default function FilteredMattersPage() {
   const [workflowKind, setWorkflowKind] = useState<WorkflowKind>("");
   const [value, setValue] = useState("");
   const [rows, setRows] = useState<MatterRow[]>([]);
+  const [claimResultsSort, setClaimResultsSort] = useState<ClaimResultsSortState>(null);
+  const sortedRows = useMemo(() => sortMatterRows(rows, claimResultsSort), [rows, claimResultsSort]);
   const [masterLawsuitMetadata, setMasterLawsuitMetadata] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -7944,6 +8021,47 @@ function masterSettlementDateFiledValue(): string {
     );
   }
 
+  function toggleClaimResultsSort(key: ClaimResultsSortKey) {
+    setClaimResultsSort((current) => {
+      if (current?.key === key) {
+        return {
+          key,
+          direction: current.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        key,
+        direction: "asc",
+      };
+    });
+  }
+
+  function claimResultsSortIndicator(key: ClaimResultsSortKey): string {
+    if (claimResultsSort?.key !== key) return "";
+    return claimResultsSort.direction === "asc" ? " ▲" : " ▼";
+  }
+
+  function sortableClaimResultsHeader(
+    label: string,
+    key: ClaimResultsSortKey,
+    style: React.CSSProperties = thStyle
+  ) {
+    return (
+      <th style={style}>
+        <button
+          type="button"
+          onClick={() => toggleClaimResultsSort(key)}
+          title={`Sort by ${label}`}
+          style={claimResultsSortButtonStyle}
+        >
+          {label}
+          {claimResultsSortIndicator(key)}
+        </button>
+      </th>
+    );
+  }
+
   return (
     <main style={pageStyle}>
       <div style={shellStyle}>
@@ -12279,19 +12397,21 @@ function masterSettlementDateFiledValue(): string {
             <table style={tableStyle}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Matter</th>
-                  <th style={thStyle}>Patient</th>
-                  <th style={thStyle}>Provider</th>
-                  <th style={thStyle}>Insurer</th>
-                  <th style={thStyle}>Claim</th>
-                  <th style={thStyle}>Master Lawsuit</th>
-                  <th style={rightThStyle}>Claim Amount</th>
-                  <th style={rightThStyle}>Balance</th>
-                  <th style={thStyle}>Action</th>
+                  {sortableClaimResultsHeader("Matter", "matter")}
+                  {sortableClaimResultsHeader("Patient", "patient")}
+                  {sortableClaimResultsHeader("Provider", "provider")}
+                  {sortableClaimResultsHeader("Insurer", "insurer")}
+                  {sortableClaimResultsHeader("Claim", "claim")}
+                  {sortableClaimResultsHeader("DOS", "dos")}
+                  {sortableClaimResultsHeader("Denial Reason", "denialReason")}
+                  {sortableClaimResultsHeader("Master Lawsuit", "masterLawsuit")}
+                  {sortableClaimResultsHeader("Claim Amount", "claimAmount", rightThStyle)}
+                  {sortableClaimResultsHeader("Balance", "balance", rightThStyle)}
+                  {sortableClaimResultsHeader("Status", "status")}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {sortedRows.map((row) => (
                   <tr key={row.id} className="barsh-filter-row">
                     <td style={tdStyle}>
                       <a href={`/matter/${encodeURIComponent(displayNumber(row) || String(row.id))}`} style={matterLinkStyle}>
@@ -12350,34 +12470,29 @@ function masterSettlementDateFiledValue(): string {
                         "—"
                       )}
                     </td>
-                    <td style={tdStyle}>{row.masterLawsuitId || "—"}</td>
+                    <td style={tdStyle}>
+                      {row.dosStart || row.dosEnd
+                        ? `${displayDate(row.dosStart)}${row.dosEnd && row.dosEnd !== row.dosStart ? ` - ${displayDate(row.dosEnd)}` : ""}`
+                        : "—"}
+                    </td>
+                    <td style={tdStyle}>{row.denialReason || "—"}</td>
+                    <td style={tdStyle}>
+                      {row.masterLawsuitId ? (
+                        <a
+                          href={filteredUrl("master", row.masterLawsuitId)}
+                          className="barsh-filter-field-link"
+                          style={fieldLinkStyle}
+                        >
+                          {row.masterLawsuitId}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td style={rightTdStyle}>{money(row.claimAmount)}</td>
                     <td style={rightTdStyle}>{money(row.balancePresuit)}</td>
-                    <td style={tdStyle}>
-                      <div style={actionStackStyle}>
-                        <a href={`/matter/${encodeURIComponent(displayNumber(row) || String(row.id))}`} className="barsh-filter-open-link" style={openLinkStyle}>
-                          Open Matter
-                        </a>
+                    <td style={tdStyle}>{row.status || "—"}</td>
 
-                        {row.patient && (
-                          <a href={`/matters?workflow=patient&patient=${encodeURIComponent(row.patient)}&fromMatter=${encodeURIComponent(String(row.id))}`} style={secondaryActionLinkStyle}>
-                            Launch Patient
-                          </a>
-                        )}
-
-                        {row.claimNumber && (
-                          <a href={`/matters?workflow=claim&claim=${encodeURIComponent(row.claimNumber)}&fromMatter=${encodeURIComponent(String(row.id))}`} style={secondaryActionLinkStyle}>
-                            Launch Claim
-                          </a>
-                        )}
-
-                        {row.masterLawsuitId && (
-                          <a href={filteredUrl("master", row.masterLawsuitId)} style={secondaryActionLinkStyle}>
-                            Open Lawsuit
-                          </a>
-                        )}
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -12602,6 +12717,18 @@ const tableStyle: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
   fontSize: 13,
+};
+
+const claimResultsSortButtonStyle: React.CSSProperties = {
+  width: "100%",
+  border: "none",
+  background: "transparent",
+  color: "inherit",
+  font: "inherit",
+  fontWeight: 950,
+  textAlign: "left",
+  padding: 0,
+  cursor: "pointer",
 };
 
 const thStyle: React.CSSProperties = {

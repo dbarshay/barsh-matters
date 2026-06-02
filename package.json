@@ -182,7 +182,9 @@
     "verify:direct-claim-amount-immediate-ui-update-safety": "node scripts/verify-direct-claim-amount-immediate-ui-update-safety.mjs",
     "verify:direct-claim-amount-money-entry-keys-safety": "node scripts/verify-direct-claim-amount-money-entry-keys-safety.mjs",
     "verify:direct-claim-amount-auto-select-safety": "node scripts/verify-direct-claim-amount-auto-select-safety.mjs",
-    "verify:direct-financial-section-readonly-safety": "node scripts/verify-direct-financial-section-readonly-safety.mjs"
+    "verify:direct-financial-section-readonly-safety": "node scripts/verify-direct-financial-section-readonly-safety.mjs",
+    "verify:claim-results-table-columns-safety": "node scripts/verify-claim-results-table-columns-safety.mjs",
+    "verify:claim-results-sortable-columns-safety": "node scripts/verify-claim-results-sortable-columns-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
