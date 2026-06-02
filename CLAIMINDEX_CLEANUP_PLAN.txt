@@ -1,0 +1,59 @@
+CLAIMINDEX_CLEANUP_PLAN
+
+Purpose:
+- ClaimIndex is the local searchable matter projection for Barsh Matters.
+- ClaimIndex is not a Clio cache, not hydrated from Clio, and not rebuilt from Clio.
+- Clio is permitted only for explicit document vault/storage/access, MailDrop/document delivery support, and explicit BRL/document shell workflows.
+
+ClaimIndex should own:
+- direct matter identity/search snapshot;
+- BRL/display number shell reference;
+- claim number;
+- patient/provider/client/treating provider/insurer display snapshot;
+- optional local reference IDs when reference tables are wired;
+- bill number;
+- DOS start/end;
+- claim amount;
+- denial reason;
+- matter status/workflow search state;
+- master lawsuit ID / lawsuit membership;
+- normalized search helper fields;
+- derived/read-only rollups needed for search/display, where clearly labeled as derived.
+
+ClaimIndex should not be the permanent ledger/source for:
+- payments;
+- settlements;
+- ticklers;
+- audit/history;
+- generated document workflow state;
+- email filing state;
+- full reference-data records;
+- Clio operational field hydration.
+
+Sibling/lawsuit rule:
+- When matters are aggregated into a lawsuit, the lawsuit must preserve links to the child/direct matters.
+- Document generation and later workflows should resolve sibling/child details from local Barsh Matters data at generation time.
+- Aggregation must not flatten child matter data into a one-time static blob as the only source.
+- A snapshot may be stored for audit/history, but live workflow correctness should be based on local matter/lawsuit records.
+
+Search rule:
+- Search must be local-only.
+- Search must not fallback to Clio.
+- Zero-result searches must not query Clio.
+- UI matter/lawsuit display must not call Clio matter-context or custom-field hydration.
+- noClioRead/noClioWrite/noClioHydration markers should remain on local search/API routes where practical.
+
+Cleanup sequence:
+1. Keep PostgreSQL backup lock in place.
+2. Inventory legacy ClaimIndex rebuild/cache/hydration remnants.
+3. Remove or quarantine old Clio rebuild/hydration concepts after review.
+4. Normalize reference-data relationships gradually:
+   - patient;
+   - provider/client;
+   - treating provider;
+   - insurer;
+   - court/venue;
+   - attorney/contact;
+   - denial reason/service type/status.
+5. Keep direct matter edit/import APIs local-only and update ClaimIndex intentionally.
+6. Add Admin Backup/Restore UI later, backed by the guarded scripts.

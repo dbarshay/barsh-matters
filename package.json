@@ -199,7 +199,10 @@
     "backup:indexes": "node scripts/backup-local-indexes.mjs",
     "restore:indexes-preview": "node scripts/restore-local-indexes-preview.mjs",
     "restore:indexes-sqlite-guarded": "node scripts/restore-local-indexes-sqlite-guarded.mjs",
-    "restore:indexes-postgres-guarded": "node scripts/restore-local-indexes-postgres-guarded.mjs"
+    "restore:indexes-postgres-guarded": "node scripts/restore-local-indexes-postgres-guarded.mjs",
+    "verify:no-operational-clio-hydration-regression": "node scripts/verify-no-operational-clio-hydration-regression.mjs",
+    "verify:lawsuit-sibling-local-data-contract": "node scripts/verify-lawsuit-sibling-local-data-contract.mjs",
+    "inventory:claim-index-cleanup-candidates": "node scripts/inventory-claim-index-cleanup-candidates.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
