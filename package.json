@@ -175,7 +175,8 @@
     "verify:direct-matter-direct-field-save-resolved-id-safety": "node scripts/verify-direct-matter-direct-field-save-resolved-id-safety.mjs",
     "verify:direct-identity-reference-dropdowns-safety": "node scripts/verify-direct-identity-reference-dropdowns-safety.mjs",
     "verify:direct-matter-dos-date-only-safety": "node scripts/verify-direct-matter-dos-date-only-safety.mjs",
-    "verify:direct-treating-provider-load-resolved-id-safety": "node scripts/verify-direct-treating-provider-load-resolved-id-safety.mjs"
+    "verify:direct-treating-provider-load-resolved-id-safety": "node scripts/verify-direct-treating-provider-load-resolved-id-safety.mjs",
+    "verify:direct-treating-provider-display-fallback-safety": "node scripts/verify-direct-treating-provider-display-fallback-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

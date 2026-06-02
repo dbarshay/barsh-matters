@@ -1651,7 +1651,10 @@ const activeGroupKey =
   }
 
   function localTreatingProviderName(): string {
-    return textValue(claimIndexTreatingProviderField?.fieldValue);
+    return (
+      textValue(claimIndexTreatingProviderField?.fieldValue) ||
+      textValue(matter?.treatingProvider || matter?.treating_provider)
+    );
   }
 
   function claimIndexTreatingProviderSaved(): boolean {
