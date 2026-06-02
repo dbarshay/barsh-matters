@@ -77,6 +77,31 @@ for (const { file, markers } of requiredLocalMarkers) {
   }
 }
 
+const isAllowedCreateLawsuitClioDocumentShellLine = (rel, line) => {
+  if (rel !== 'app/api/lawsuits/local-generation-create/route.ts') return false;
+
+  const l = line.toLowerCase();
+
+  return (
+    l.includes('from "@/lib/clio"') ||
+    l.includes("from '@/lib/clio'") ||
+    l.includes('cliofetch(') ||
+    l.includes('createcliomastermatter') ||
+    l.includes('readcliomatterclient') ||
+    l.includes('findclientfromchildcliomatters') ||
+    l.includes('createdcliomatter') ||
+    l.includes('createscliodocumentshell') ||
+    l.includes('createscliomastermatter') ||
+    l.includes('cliomastermatterid') ||
+    l.includes('cliomasterdisplaynumber') ||
+    l.includes('cliomastermatterdescription') ||
+    l.includes('cliomastermappedat') ||
+    l.includes('cliomastermappingsource') ||
+    l.includes('noClioOperationalHydration'.toLowerCase()) ||
+    l.includes('writesclio')
+  );
+};
+
 const scan = (rel, patterns, opts = {}) => {
   const full = path.join(repo, rel);
   const text = fs.readFileSync(full, 'utf8');
@@ -84,6 +109,7 @@ const scan = (rel, patterns, opts = {}) => {
 
   lines.forEach((line, idx) => {
     if (opts.ui && isAllowedGraphEmailSyncUiLine(line)) return;
+    if (isAllowedCreateLawsuitClioDocumentShellLine(rel, line)) return;
 
     for (const pattern of patterns) {
       if (pattern.re.test(line)) {

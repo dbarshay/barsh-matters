@@ -209,7 +209,8 @@
     "verify:local-index-status-route-safety": "node scripts/verify-local-index-status-route-safety.mjs",
     "verify:claimcluster-cache-contract": "node scripts/verify-claimcluster-cache-contract.mjs",
     "inventory:claimcluster-cache-usage": "node scripts/inventory-claimcluster-cache-usage.mjs",
-    "verify:lawsuits-financial-display-canonical": "node scripts/verify-lawsuits-financial-display-canonical.mjs"
+    "verify:lawsuits-financial-display-canonical": "node scripts/verify-lawsuits-financial-display-canonical.mjs",
+    "verify:create-lawsuit-clio-shell-contract": "node scripts/verify-create-lawsuit-clio-shell-contract.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
