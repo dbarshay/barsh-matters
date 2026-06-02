@@ -228,10 +228,16 @@ export default function LawsuitsPage() {
     direction: "asc",
   });
   const [createPopupOpen, setCreatePopupOpen] = useState(false);
+  const [createModalPosition, setCreateModalPosition] = useState({ x: 80, y: 70 });
+  const [createModalDrag, setCreateModalDrag] = useState<null | {
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+  }>(null);
   const [lawsuitCourt, setLawsuitCourt] = useState("");
   const [lawsuitAmountMode, setLawsuitAmountMode] = useState<"claim_amount" | "balance_presuit" | "custom">("balance_presuit");
   const [customLawsuitAmount, setCustomLawsuitAmount] = useState("");
-  const [lawsuitNotes, setLawsuitNotes] = useState("");
   const [lawsuitPreview, setLawsuitPreview] = useState<any>(null);
 
   const selectedMatters = useMemo(() => Object.values(selected), [selected]);
@@ -293,6 +299,34 @@ export default function LawsuitsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!createModalDrag) return;
+
+    const dragState = createModalDrag;
+
+    function handleMouseMove(event: MouseEvent) {
+      const nextX = dragState.initialX + event.clientX - dragState.startX;
+      const nextY = dragState.initialY + event.clientY - dragState.startY;
+
+      setCreateModalPosition({
+        x: Math.max(12, Math.min(nextX, window.innerWidth - 320)),
+        y: Math.max(12, Math.min(nextY, window.innerHeight - 160)),
+      });
+    }
+
+    function handleMouseUp() {
+      setCreateModalDrag(null);
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [createModalDrag]);
 
   async function search(
     overrides: Partial<{
@@ -512,7 +546,6 @@ export default function LawsuitsPage() {
     setLawsuitCourt("");
     setLawsuitAmountMode("balance_presuit");
     setCustomLawsuitAmount("");
-    setLawsuitNotes("Created from Lawsuits page local-first generation workflow.");
     setCreatePopupOpen(true);
   }
 
@@ -587,7 +620,7 @@ export default function LawsuitsPage() {
           customAmountSought: lawsuitAmountMode === "custom" ? lawsuitAmountForMode() : null,
           venue: lawsuitCourt.trim(),
           venueSelection: lawsuitCourt.trim(),
-          notes: lawsuitNotes.trim() || "Created from Lawsuits page local-first generation workflow.",
+          notes: "Created from Lawsuits page local-first generation workflow.",
         }),
       });
 
@@ -1007,32 +1040,36 @@ export default function LawsuitsPage() {
 
       {createPopupOpen && (
         <div style={modalBackdrop}>
-          <div style={createModal}>
-            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Create Lawsuit</h2>
-            <p style={{ marginTop: 0, color: "#475569", fontSize: 13 }}>
-              Review selected matters, enter the required court, preview the local lawsuit, and then confirm creation.
-              No Clio read or write occurs in this workflow.
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <label style={fieldLabel}>
-                Court / Venue <span style={{ color: "#dc2626" }}>*</span>
+          <div
+            style={{
+              ...createModal,
+              left: createModalPosition.x,
+              top: createModalPosition.y,
+            }}
+          >
+            <div
+              style={modalDragHandle}
+              onMouseDown={(event) => {
+                setCreateModalDrag({
+                  startX: event.clientX,
+                  startY: event.clientY,
+                  initialX: createModalPosition.x,
+                  initialY: createModalPosition.y,
+                });
+              }}
+              title="Drag to move popup"
+            >
+              <h2 style={modalTitle}>Create Lawsuit</h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(360px, 520px)", gap: 12, marginBottom: 12 }}>
+              <label style={inlineFieldLabel}>
+                <span>Choose Court</span>
                 <input
                   list="barsh-lawsuit-create-court-options"
                   value={lawsuitCourt}
                   onChange={(event) => setLawsuitCourt(event.target.value)}
-                  placeholder="Select or enter court / venue"
-                  style={input}
-                />
-              </label>
-
-              <label style={fieldLabel}>
-                Lawsuit Notes
-                <input
-                  value={lawsuitNotes}
-                  onChange={(event) => setLawsuitNotes(event.target.value)}
-                  placeholder="Optional notes"
-                  style={input}
+                  placeholder="Select or enter court"
+                  style={{ ...input, width: 360 }}
                 />
               </label>
             </div>
@@ -1292,16 +1329,18 @@ const modalBackdrop: React.CSSProperties = {
   inset: 0,
   zIndex: 20000,
   background: "rgba(15, 23, 42, 0.32)",
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "center",
-  paddingTop: 80,
 };
 
 const createModal: React.CSSProperties = {
+  position: "absolute",
   width: "min(1180px, calc(100vw - 48px))",
-  maxHeight: "calc(100vh - 120px)",
+  height: "min(760px, calc(100vh - 96px))",
+  minWidth: 720,
+  minHeight: 480,
+  maxWidth: "calc(100vw - 24px)",
+  maxHeight: "calc(100vh - 24px)",
   overflow: "auto",
+  resize: "both",
   background: "#fff",
   border: "1px solid #cbd5e1",
   borderRadius: 12,
@@ -1309,9 +1348,40 @@ const createModal: React.CSSProperties = {
   padding: 18,
 };
 
+const modalDragHandle: React.CSSProperties = {
+  cursor: "move",
+  userSelect: "none",
+  margin: "-18px -18px 16px",
+  padding: "14px 18px",
+  borderTopLeftRadius: 12,
+  borderTopRightRadius: 12,
+  background: "#0f2a44",
+  boxShadow: "0 8px 18px rgba(15, 42, 68, 0.28)",
+};
+
+const modalTitle: React.CSSProperties = {
+  margin: 0,
+  textAlign: "center",
+  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontSize: 30,
+  lineHeight: 1.2,
+  fontWeight: 700,
+  color: "#fff",
+  letterSpacing: "0.02em",
+};
+
 const fieldLabel: React.CSSProperties = {
   display: "grid",
   gap: 5,
+  fontSize: 12,
+  fontWeight: 900,
+  color: "#334155",
+};
+
+const inlineFieldLabel: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 10,
   fontSize: 12,
   fontWeight: 900,
   color: "#334155",
