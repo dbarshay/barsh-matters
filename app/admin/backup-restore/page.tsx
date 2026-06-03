@@ -176,6 +176,18 @@ type BackupHealthWarning = {
   message: string;
 };
 
+type BackupCompareWarning = {
+  level: "warning" | "danger";
+  message: string;
+};
+
+type BackupCompareRow = {
+  label: string;
+  baseline: React.ReactNode;
+  comparison: React.ReactNode;
+  differs: boolean;
+};
+
 const cardStyle: React.CSSProperties = {
   background: "#fff",
   border: "1px solid #e5e7eb",
@@ -225,14 +237,36 @@ function backupNameFromUrl(): string {
   return new URLSearchParams(window.location.search).get("backup") || "";
 }
 
-function adminBackupRestoreUrlForBackup(backupName: string): string {
+function baselineBackupNameFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("baseline") || "";
+}
+
+function comparisonBackupNameFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("compare") || "";
+}
+
+function adminBackupRestoreUrlForState(backupName: string, baselineName: string, comparisonName: string): string {
   const params = new URLSearchParams();
 
   if (backupName) {
     params.set("backup", backupName);
   }
 
+  if (baselineName) {
+    params.set("baseline", baselineName);
+  }
+
+  if (comparisonName) {
+    params.set("compare", comparisonName);
+  }
+
   return params.toString() ? `/admin/backup-restore?${params.toString()}` : "/admin/backup-restore";
+}
+
+function adminBackupRestoreUrlForBackup(backupName: string): string {
+  return adminBackupRestoreUrlForState(backupName, baselineBackupNameFromUrl(), comparisonBackupNameFromUrl());
 }
 
 function backupNameFromPath(value: string): string {
@@ -261,6 +295,109 @@ function backupIsOlderThanHours(createdAt: string, hours: number): boolean {
   if (!Number.isFinite(created)) return true;
 
   return Date.now() - created > hours * 60 * 60 * 1000;
+}
+
+function backupCompareValue(value: unknown): string {
+  if (value === true) return "YES";
+  if (value === false) return "NO";
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
+}
+
+function buildBackupCompareRows(baseline: BackupRow | null, comparison: BackupRow | null): BackupCompareRow[] {
+  const rows: Array<[string, unknown, unknown]> = [
+    ["Created", formatDate(baseline?.createdAt || ""), formatDate(comparison?.createdAt || "")],
+    ["Git head", baseline?.gitHead || "", comparison?.gitHead || ""],
+    ["Hostname", baseline?.hostname || "", comparison?.hostname || ""],
+    ["Platform", baseline?.platform || "", comparison?.platform || ""],
+    ["Database kind", baseline?.databaseKind || "", comparison?.databaseKind || ""],
+    ["Archive entries", baseline?.archiveEntries ?? "", comparison?.archiveEntries ?? ""],
+    ["Tables", baseline?.tableCount ?? "", comparison?.tableCount ?? ""],
+    ["Table data", baseline?.manifest?.database?.postgresArchiveCounts?.tableData ?? "", comparison?.manifest?.database?.postgresArchiveCounts?.tableData ?? ""],
+    ["Indexes", baseline?.indexCount ?? "", comparison?.indexCount ?? ""],
+    ["Constraints", baseline?.manifest?.database?.postgresArchiveCounts?.constraints ?? "", comparison?.manifest?.database?.postgresArchiveCounts?.constraints ?? ""],
+    ["Sequences", baseline?.manifest?.database?.postgresArchiveCounts?.sequences ?? "", comparison?.manifest?.database?.postgresArchiveCounts?.sequences ?? ""],
+    ["Manifest present", baseline?.hasManifest ?? "", comparison?.hasManifest ?? ""],
+    ["database.dump present", baseline?.hasDatabaseDump ?? "", comparison?.hasDatabaseDump ?? ""],
+    ["schema.sql present", baseline?.hasSchemaSql ?? "", comparison?.hasSchemaSql ?? ""],
+    ["archive-list.txt present", baseline?.hasArchiveList ?? "", comparison?.hasArchiveList ?? ""],
+    ["Uses pg_dump", baseline?.manifest?.databasePolicy?.usesPgDump ?? "", comparison?.manifest?.databasePolicy?.usesPgDump ?? ""],
+    ["Future Prisma models included", baseline?.manifest?.databasePolicy?.futurePrismaModelsIncludedAutomatically ?? "", comparison?.manifest?.databasePolicy?.futurePrismaModelsIncludedAutomatically ?? ""],
+    ["Future indexes included", baseline?.manifest?.databasePolicy?.futureDatabaseIndexesIncludedAutomatically ?? "", comparison?.manifest?.databasePolicy?.futureDatabaseIndexesIncludedAutomatically ?? ""],
+    ["Uses Prisma client", baseline?.manifest?.databasePolicy?.usesPrismaClient ?? "", comparison?.manifest?.databasePolicy?.usesPrismaClient ?? ""],
+    ["Backs up actual document folders", baseline?.manifest?.documentFilePolicy?.backsUpActualDocumentFolders ?? "", comparison?.manifest?.documentFilePolicy?.backsUpActualDocumentFolders ?? ""],
+    ["Pulls documents from Clio", baseline?.manifest?.documentFilePolicy?.pullsDocumentsFromClio ?? "", comparison?.manifest?.documentFilePolicy?.pullsDocumentsFromClio ?? ""],
+    ["Document vault", baseline?.manifest?.documentFilePolicy?.documentVault || "", comparison?.manifest?.documentFilePolicy?.documentVault || ""],
+    ["Password stored in manifest", baseline?.manifest?.database?.safeConnectionInfo?.passwordStoredInManifest ?? "", comparison?.manifest?.database?.safeConnectionInfo?.passwordStoredInManifest ?? ""],
+  ];
+
+  return rows.map(([label, baselineValue, comparisonValue]) => {
+    const baselineText = backupCompareValue(baselineValue);
+    const comparisonText = backupCompareValue(comparisonValue);
+
+    return {
+      label,
+      baseline: baselineText,
+      comparison: comparisonText,
+      differs: baselineText !== comparisonText,
+    };
+  });
+}
+
+function backupCompareWarnings(baseline: BackupRow | null, comparison: BackupRow | null): BackupCompareWarning[] {
+  const warnings: BackupCompareWarning[] = [];
+
+  if (!baseline || !comparison) {
+    warnings.push({ level: "warning", message: "Select both backups to compare." });
+    return warnings;
+  }
+
+  if (baseline.path === comparison.path) {
+    warnings.push({ level: "warning", message: "Baseline and comparison backups are the same backup." });
+  }
+
+  if (!baseline.hasManifest || !comparison.hasManifest) {
+    warnings.push({ level: "danger", message: "One selected backup is missing a manifest." });
+  }
+
+  if (!baseline.hasDatabaseDump || !comparison.hasDatabaseDump) {
+    warnings.push({ level: "danger", message: "One selected backup is missing database.dump." });
+  }
+
+  if (!baseline.hasSchemaSql || !comparison.hasSchemaSql) {
+    warnings.push({ level: "danger", message: "One selected backup is missing schema.sql." });
+  }
+
+  if (!baseline.hasArchiveList || !comparison.hasArchiveList) {
+    warnings.push({ level: "warning", message: "One selected backup is missing archive-list.txt." });
+  }
+
+  if ((baseline.gitHead || "") !== (comparison.gitHead || "")) {
+    warnings.push({ level: "warning", message: "Git head differs between selected backups." });
+  }
+
+  if ((baseline.databaseKind || "") !== (comparison.databaseKind || "")) {
+    warnings.push({ level: "danger", message: "Database kind differs between selected backups." });
+  }
+
+  if ((baseline.tableCount ?? null) !== (comparison.tableCount ?? null)) {
+    warnings.push({ level: "warning", message: "Table count differs between selected backups." });
+  }
+
+  if ((baseline.indexCount ?? null) !== (comparison.indexCount ?? null)) {
+    warnings.push({ level: "warning", message: "Index count differs between selected backups." });
+  }
+
+  const baselineCreated = baseline.createdAt ? new Date(baseline.createdAt).getTime() : NaN;
+  const comparisonCreated = comparison.createdAt ? new Date(comparison.createdAt).getTime() : NaN;
+  if (Number.isFinite(baselineCreated) && Number.isFinite(comparisonCreated)) {
+    const diffHours = Math.abs(baselineCreated - comparisonCreated) / (60 * 60 * 1000);
+    if (diffHours >= 24) {
+      warnings.push({ level: "warning", message: "Selected backups are more than 24 hours apart." });
+    }
+  }
+
+  return warnings;
 }
 
 function currentBackupHealthWarnings(status: BackupStatus | null): BackupHealthWarning[] {
@@ -323,6 +460,8 @@ export default function AdminBackupRestorePage() {
   const [message, setMessage] = useState("");
   const [actionResult, setActionResult] = useState<ActionResult | null>(null);
   const [detailBackup, setDetailBackup] = useState<BackupRow | null>(null);
+  const [baselineBackup, setBaselineBackup] = useState("");
+  const [comparisonBackup, setComparisonBackup] = useState("");
 
   const latestCounts = status?.latestManifest?.database?.postgresArchiveCounts;
   const healthWarnings = useMemo(() => currentBackupHealthWarnings(status), [status]);
@@ -330,6 +469,26 @@ export default function AdminBackupRestorePage() {
   const selectedBackupRow = useMemo(
     () => status?.backups.find((backup) => backup.path === selectedBackup) || null,
     [selectedBackup, status?.backups]
+  );
+
+  const baselineBackupRow = useMemo(
+    () => status?.backups.find((backup) => backup.path === baselineBackup) || null,
+    [baselineBackup, status?.backups]
+  );
+
+  const comparisonBackupRow = useMemo(
+    () => status?.backups.find((backup) => backup.path === comparisonBackup) || null,
+    [comparisonBackup, status?.backups]
+  );
+
+  const backupComparisonRows = useMemo(
+    () => buildBackupCompareRows(baselineBackupRow, comparisonBackupRow),
+    [baselineBackupRow, comparisonBackupRow]
+  );
+
+  const backupComparisonWarnings = useMemo(
+    () => backupCompareWarnings(baselineBackupRow, comparisonBackupRow),
+    [baselineBackupRow, comparisonBackupRow]
   );
 
   const restorePlanRows = useMemo(
@@ -372,14 +531,36 @@ export default function AdminBackupRestorePage() {
       setStatus(data);
 
       const urlBackupName = backupNameFromUrl();
+      const urlBaselineName = baselineBackupNameFromUrl();
+      const urlComparisonName = comparisonBackupNameFromUrl();
       const urlBackup = urlBackupName
         ? data.backups?.find((backup) => backup.name === urlBackupName)
+        : null;
+      const urlBaseline = urlBaselineName
+        ? data.backups?.find((backup) => backup.name === urlBaselineName)
+        : null;
+      const urlComparison = urlComparisonName
+        ? data.backups?.find((backup) => backup.name === urlComparisonName)
         : null;
 
       if (urlBackup?.path) {
         setSelectedBackup(urlBackup.path);
       } else if (!selectedBackup && data.backups?.[0]?.path) {
         setSelectedBackup(data.backups[0].path);
+      }
+
+      if (urlBaseline?.path) {
+        setBaselineBackup(urlBaseline.path);
+      } else if (!baselineBackup && data.backups?.[1]?.path) {
+        setBaselineBackup(data.backups[1].path);
+      } else if (!baselineBackup && data.backups?.[0]?.path) {
+        setBaselineBackup(data.backups[0].path);
+      }
+
+      if (urlComparison?.path) {
+        setComparisonBackup(urlComparison.path);
+      } else if (!comparisonBackup && data.backups?.[0]?.path) {
+        setComparisonBackup(data.backups[0].path);
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -414,8 +595,24 @@ export default function AdminBackupRestorePage() {
     setSelectedBackup(nextPath);
 
     const nextName = backupNameFromPath(nextPath);
-    const nextUrl = adminBackupRestoreUrlForBackup(nextName);
+    const nextUrl = adminBackupRestoreUrlForState(
+      nextName,
+      backupNameFromPath(baselineBackup),
+      backupNameFromPath(comparisonBackup)
+    );
     window.history.pushState({ barshMattersAdminBackupRestoreBackup: true }, "", nextUrl);
+  }
+
+  function updateBackupComparison(nextBaselinePath: string, nextComparisonPath: string) {
+    setBaselineBackup(nextBaselinePath);
+    setComparisonBackup(nextComparisonPath);
+
+    const nextUrl = adminBackupRestoreUrlForState(
+      backupNameFromPath(selectedBackup),
+      backupNameFromPath(nextBaselinePath),
+      backupNameFromPath(nextComparisonPath)
+    );
+    window.history.pushState({ barshMattersAdminBackupComparison: true }, "", nextUrl);
   }
 
   async function copySelectedBackupPath() {
@@ -459,12 +656,24 @@ export default function AdminBackupRestorePage() {
 
     function applySelectedBackupFromUrl() {
       const urlBackupName = backupNameFromUrl();
-      if (!urlBackupName) return;
+      const urlBaselineName = baselineBackupNameFromUrl();
+      const urlComparisonName = comparisonBackupNameFromUrl();
 
       setStatus((current) => {
         const urlBackup = current?.backups.find((backup) => backup.name === urlBackupName);
+        const urlBaseline = current?.backups.find((backup) => backup.name === urlBaselineName);
+        const urlComparison = current?.backups.find((backup) => backup.name === urlComparisonName);
+
         if (urlBackup?.path) {
           setSelectedBackup(urlBackup.path);
+        }
+
+        if (urlBaseline?.path) {
+          setBaselineBackup(urlBaseline.path);
+        }
+
+        if (urlComparison?.path) {
+          setComparisonBackup(urlComparison.path);
         }
 
         return current;
@@ -870,6 +1079,117 @@ export default function AdminBackupRestorePage() {
           >
             Restore Execution Disabled
           </button>
+        </section>
+
+        <section
+          style={{ ...cardStyle, display: "grid", gap: 14 }}
+          data-backup-comparison-preview="read-only"
+          data-backup-comparison-url-state="true"
+          data-restore-execution-enabled="false"
+          data-backup-deletion-enabled="false"
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: 22 }}>Compare Backups</h2>
+            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              Read-only comparison preview for two backup manifests.  This comparison does not restore data, delete backups, run retention cleanup, call Clio, send email, generate documents, or change the print queue.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+            <div style={{ display: "grid", gap: 8 }}>
+              <label htmlFor="baseline-backup-select" style={{ fontWeight: 950 }}>Baseline backup</label>
+              <select
+                id="baseline-backup-select"
+                value={baselineBackup}
+                onChange={(event) => updateBackupComparison(event.target.value, comparisonBackup)}
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 14,
+                  padding: 12,
+                  fontWeight: 850,
+                  background: "#fff",
+                  color: "#0f172a",
+                }}
+              >
+                {(status?.backups || []).map((backup) => (
+                  <option key={backup.path} value={backup.path}>
+                    {backup.name} — {backup.displayPath}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: "grid", gap: 8 }}>
+              <label htmlFor="comparison-backup-select" style={{ fontWeight: 950 }}>Comparison backup</label>
+              <select
+                id="comparison-backup-select"
+                value={comparisonBackup}
+                onChange={(event) => updateBackupComparison(baselineBackup, event.target.value)}
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 14,
+                  padding: 12,
+                  fontWeight: 850,
+                  background: "#fff",
+                  color: "#0f172a",
+                }}
+              >
+                {(status?.backups || []).map((backup) => (
+                  <option key={backup.path} value={backup.path}>
+                    {backup.name} — {backup.displayPath}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            {backupComparisonWarnings.map((warning, index) => (
+              <div
+                key={`${warning.level}-${index}-${warning.message}`}
+                style={{
+                  border: warning.level === "danger" ? "1px solid #fecaca" : "1px solid #fde68a",
+                  background: warning.level === "danger" ? "#fff1f2" : "#fffbeb",
+                  color: warning.level === "danger" ? "#9f1239" : "#92400e",
+                  borderRadius: 16,
+                  padding: 13,
+                  fontWeight: 900,
+                  lineHeight: 1.45,
+                }}
+              >
+                {warning.message}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ padding: "10px 8px", width: 260 }}>Field</th>
+                  <th style={{ padding: "10px 8px" }}>Baseline</th>
+                  <th style={{ padding: "10px 8px" }}>Comparison</th>
+                  <th style={{ padding: "10px 8px" }}>Differs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {backupComparisonRows.map((row) => (
+                  <tr
+                    key={row.label}
+                    style={{
+                      borderBottom: "1px solid #f1f5f9",
+                      background: row.differs ? "#fffbeb" : "#fff",
+                    }}
+                  >
+                    <td style={{ padding: "10px 8px", fontWeight: 950 }}>{row.label}</td>
+                    <td style={{ padding: "10px 8px", color: "#334155", wordBreak: "break-word" }}>{row.baseline}</td>
+                    <td style={{ padding: "10px 8px", color: "#334155", wordBreak: "break-word" }}>{row.comparison}</td>
+                    <td style={{ padding: "10px 8px", fontWeight: 950 }}>{row.differs ? "YES" : "NO"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section style={{ ...cardStyle, display: "grid", gap: 12 }}>

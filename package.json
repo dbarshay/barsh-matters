@@ -230,7 +230,8 @@
     "verify:admin-proxy-clean-redirect-safety": "node scripts/verify-admin-proxy-clean-redirect-safety.mjs",
     "verify:admin-guarded-restore-plan-preview-safety": "node scripts/verify-admin-guarded-restore-plan-preview-safety.mjs",
     "verify:admin-scheduled-backup-health-safety": "node scripts/verify-admin-scheduled-backup-health-safety.mjs",
-    "verify:admin-backup-manifest-detail-safety": "node scripts/verify-admin-backup-manifest-detail-safety.mjs"
+    "verify:admin-backup-manifest-detail-safety": "node scripts/verify-admin-backup-manifest-detail-safety.mjs",
+    "verify:admin-backup-comparison-preview-safety": "node scripts/verify-admin-backup-comparison-preview-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
