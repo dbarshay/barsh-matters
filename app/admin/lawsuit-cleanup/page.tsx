@@ -65,12 +65,57 @@ export default function AdminLawsuitCleanupPage() {
   const [onlyWithClioShell, setOnlyWithClioShell] = useState(false);
   const [preview, setPreview] = useState<CleanupPreview | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cleanupRunning, setCleanupRunning] = useState("");
+  const [confirmByMaster, setConfirmByMaster] = useState<Record<string, string>>({});
+  const [cleanupResult, setCleanupResult] = useState<any | null>(null);
   const [error, setError] = useState("");
 
   const candidateLawsuits = useMemo(
     () => (Array.isArray(preview?.candidateLawsuits) ? preview.candidateLawsuits : []),
     [preview]
   );
+
+  async function confirmCleanup(lawsuit: CleanupLawsuit) {
+    const expectedConfirmation = `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`;
+    const typedConfirmation = String(confirmByMaster[lawsuit.masterLawsuitId] || "").trim();
+
+    if (typedConfirmation !== expectedConfirmation) {
+      setError(`Exact confirmation required: ${expectedConfirmation}`);
+      return;
+    }
+
+    setCleanupRunning(lawsuit.masterLawsuitId);
+    setError("");
+    setCleanupResult(null);
+
+    try {
+      const response = await fetch("/api/admin/lawsuits/cleanup-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          masterLawsuitId: lawsuit.masterLawsuitId,
+          confirmation: typedConfirmation,
+          deleteClioShell: true,
+          actorName: "Admin Lawsuit Cleanup",
+        }),
+      });
+
+      const json = await response.json().catch(() => ({}));
+
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Lawsuit cleanup failed.");
+      }
+
+      setCleanupResult(json);
+      setConfirmByMaster((prev) => ({ ...prev, [lawsuit.masterLawsuitId]: "" }));
+      await loadPreview();
+    } catch (err: any) {
+      setError(err?.message || "Lawsuit cleanup failed.");
+    } finally {
+      setCleanupRunning("");
+    }
+  }
 
   async function loadPreview() {
     setLoading(true);
@@ -157,6 +202,17 @@ export default function AdminLawsuitCleanupPage() {
 
         {error ? <div style={errorStyle}>{error}</div> : null}
       </section>
+
+      {cleanupResult ? (
+        <section style={successStyle}>
+          <strong>Cleanup completed:</strong> {safe(cleanupResult.masterLawsuitId)} · cleared{" "}
+          {cleanupResult.localResult?.clearedClaimIndexLinks ?? 0} child link(s) · audit log{" "}
+          {cleanupResult.localResult?.auditLogId ?? "—"}
+          {cleanupResult.clioDeleteResult ? (
+            <> · deleted Clio shell status {cleanupResult.clioDeleteResult.status}</>
+          ) : null}
+        </section>
+      ) : null}
 
       {preview ? (
         <>
@@ -247,6 +303,58 @@ export default function AdminLawsuitCleanupPage() {
                       <div><strong>Index:</strong> {safe(lawsuit.indexAaaNumber)}</div>
                       <div><strong>Clio Shell:</strong> {safe(lawsuit.clioMasterDisplayNumber || lawsuit.clioMasterMatterId)}</div>
                       <div><strong>Mapping Source:</strong> {safe(lawsuit.clioMasterMappingSource)}</div>
+                    </div>
+
+                    <div style={dangerActionStyle}>
+                      <div>
+                        <strong>Guarded cleanup action</strong>
+                        <div style={mutedTextStyle}>
+                          This will delete only the mapped Clio master shell when present, clear local child lawsuit links,
+                          delete this local Lawsuit row, and create an AuditLog entry.  It will not delete child/bill Clio matters.
+                        </div>
+                      </div>
+                      <label style={labelStyle}>
+                        Type exact confirmation
+                        <input
+                          value={confirmByMaster[lawsuit.masterLawsuitId] || ""}
+                          onChange={(event) =>
+                            setConfirmByMaster((prev) => ({
+                              ...prev,
+                              [lawsuit.masterLawsuitId]: event.target.value,
+                            }))
+                          }
+                          placeholder={`DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`}
+                          style={inputStyle}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void confirmCleanup(lawsuit)}
+                        disabled={
+                          cleanupRunning === lawsuit.masterLawsuitId ||
+                          (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
+                            `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
+                        }
+                        style={{
+                          ...dangerButtonStyle,
+                          opacity:
+                            cleanupRunning === lawsuit.masterLawsuitId ||
+                            (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
+                              `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
+                              ? 0.45
+                              : 1,
+                          cursor:
+                            cleanupRunning === lawsuit.masterLawsuitId ||
+                            (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
+                              `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
+                              ? "not-allowed"
+                              : "pointer",
+                        }}
+                      >
+                        {cleanupRunning === lawsuit.masterLawsuitId
+                          ? "Cleaning Up..."
+                          : "Confirm Deaggregate / Delete Shell"}
+                      </button>
                     </div>
 
                     {lawsuit.children.length ? (
@@ -542,4 +650,34 @@ const emptyChildStyle: React.CSSProperties = {
   padding: 12,
   fontWeight: 800,
   marginTop: 12,
+};
+
+
+const successStyle: React.CSSProperties = {
+  background: "#ecfdf5",
+  border: "1px solid #bbf7d0",
+  color: "#14532d",
+  borderRadius: 14,
+  padding: 14,
+  marginBottom: 18,
+  fontWeight: 900,
+};
+
+const dangerActionStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  background: "#fef2f2",
+  border: "1px solid #fecaca",
+  borderRadius: 12,
+  padding: 12,
+  margin: "12px 0",
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  background: "#991b1b",
+  color: "white",
+  border: 0,
+  borderRadius: 12,
+  padding: "11px 16px",
+  fontWeight: 950,
 };

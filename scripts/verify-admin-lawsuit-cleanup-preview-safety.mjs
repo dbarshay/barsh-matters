@@ -48,11 +48,11 @@ mustContain("page displays preview-only warning", page, "Preview only.");
 mustContain("page displays cleanup candidates", page, "Cleanup Candidates");
 mustContain("page displays kept master children", page, "Kept Master Children");
 mustContain("page links back to admin", page, 'href="/admin"');
-mustNotContain("page must not call destructive API", page, "DELETE_EXTRA_LAWSUITS");
-mustNotContain("page must not render delete button", page, "Delete Local Lawsuit");
-mustNotContain("page must not render destructive deaggregate action button", page, "Confirm Deaggregate");
-mustNotContain("page must not render destructive delete action button", page, "Confirm Delete");
-mustNotContain("page must not call POST", page, "method: \"POST\"");
+mustNotContain("page must not call obsolete temporary destructive API", page, "DELETE_EXTRA_LAWSUITS");
+mustNotContain("page must not render unguarded delete button", page, "Delete Local Lawsuit");
+mustContain("page routes destructive action through guarded confirm API", page, "/api/admin/lawsuits/cleanup-confirm");
+mustContain("page requires exact deaggregate/delete confirmation", page, "DEAGGREGATE AND DELETE");
+mustContain("page explains child Clio matters are not deleted", page, "It will not delete child/bill Clio matters");
 
 mustContain("admin home links cleanup page", adminHome, 'href: "/admin/lawsuit-cleanup"');
 mustContain("admin home labels cleanup page", adminHome, "Lawsuit Cleanup / Deaggregate");
