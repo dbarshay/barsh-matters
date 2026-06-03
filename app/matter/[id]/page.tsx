@@ -1683,12 +1683,7 @@ const activeGroupKey =
   }
 
   function openAdministratorMenu() {
-    void runAdministratorGate(
-      "Open Administrator Home",
-      () => {
-        window.location.href = "/admin";
-      },
-    );
+    window.location.href = "/admin";
   }
 
 

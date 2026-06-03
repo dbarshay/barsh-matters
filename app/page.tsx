@@ -1209,13 +1209,29 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("adminRequired") !== "1") return;
+
+    const requestedPath = params.get("from") || "/admin";
+    const safeRequestedPath = requestedPath.startsWith("/admin") ? requestedPath : "/admin";
+
+    const cleanedUrl = new URL(window.location.href);
+    cleanedUrl.searchParams.delete("adminRequired");
+    cleanedUrl.searchParams.delete("from");
+    window.history.replaceState({ barshMattersAdminGatePrompted: true }, "", `${cleanedUrl.pathname}${cleanedUrl.search}${cleanedUrl.hash}`);
+
+    window.setTimeout(() => {
+      void runAdministratorGate("Open Administrator Home", () => {
+        window.location.href = safeRequestedPath;
+      });
+    }, 50);
+  }, []);
+
   function openAdministratorMenu() {
-    void runAdministratorGate(
-      "Open Administrator Home",
-      () => {
-        window.location.href = "/admin";
-      },
-    );
+    window.location.href = "/admin";
   }
 
 

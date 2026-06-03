@@ -222,7 +222,10 @@
     "verify:document-templates-browser-history-safety": "node scripts/verify-document-templates-browser-history-safety.mjs",
     "verify:home-search-browser-history-safety": "node scripts/verify-home-search-browser-history-safety.mjs",
     "verify:print-queue-browser-history-safety": "node scripts/verify-print-queue-browser-history-safety.mjs",
-    "verify:print-queue-title-copy-safety": "node scripts/verify-print-queue-title-copy-safety.mjs"
+    "verify:print-queue-title-copy-safety": "node scripts/verify-print-queue-title-copy-safety.mjs",
+    "verify:admin-backup-restore-preview-safety": "node scripts/verify-admin-backup-restore-preview-safety.mjs",
+    "verify:admin-button-direct-navigation-safety": "node scripts/verify-admin-button-direct-navigation-safety.mjs",
+    "verify:admin-gate-visible-prompt-safety": "node scripts/verify-admin-gate-visible-prompt-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

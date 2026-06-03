@@ -2018,12 +2018,7 @@ export default function FilteredMattersPage() {
   }
 
   function openAdministratorMenu() {
-    void runAdministratorGate(
-      "Open Administrator Home",
-      () => {
-        window.location.href = "/admin";
-      },
-    );
+    window.location.href = "/admin";
   }
 
 

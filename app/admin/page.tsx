@@ -30,6 +30,13 @@ const adminCards = [
       "Read-only document-template repository view, including categories, repository source, versions, and merge fields.",
     icon: "📄",
   },
+  {
+    label: "Backup / Restore",
+    href: "/admin/backup-restore",
+    description:
+      "Run manual local database/index backups, review recent backups, and perform restore previews only.",
+    icon: "💾",
+  },
 ];
 
 export default function AdminHomePage() {
