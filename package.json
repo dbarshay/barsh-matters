@@ -232,7 +232,9 @@
     "verify:admin-scheduled-backup-health-safety": "node scripts/verify-admin-scheduled-backup-health-safety.mjs",
     "verify:admin-backup-manifest-detail-safety": "node scripts/verify-admin-backup-manifest-detail-safety.mjs",
     "verify:admin-backup-comparison-preview-safety": "node scripts/verify-admin-backup-comparison-preview-safety.mjs",
-    "verify:admin-backup-audit-report-safety": "node scripts/verify-admin-backup-audit-report-safety.mjs"
+    "verify:admin-backup-audit-report-safety": "node scripts/verify-admin-backup-audit-report-safety.mjs",
+    "backup:indexes:monitored": "node scripts/backup-local-indexes-monitored.mjs",
+    "verify:monitored-backup-email-alert-safety": "node scripts/verify-monitored-backup-email-alert-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
