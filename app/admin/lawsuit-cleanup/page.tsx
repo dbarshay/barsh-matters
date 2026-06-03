@@ -27,6 +27,17 @@ type CleanupLawsuit = {
   children: CleanupChild[];
 };
 
+type CleanupHistoryEntry = {
+  id: string;
+  createdAt: string;
+  action: string;
+  summary: string;
+  masterLawsuitId: string;
+  actorName: string;
+  actorEmail: string;
+  details?: any;
+};
+
 type CleanupPreview = {
   ok?: boolean;
   error?: string;
@@ -43,6 +54,7 @@ type CleanupPreview = {
   destructiveActionAvailable?: boolean;
   keepMasterChildren?: CleanupChild[];
   candidateLawsuits?: CleanupLawsuit[];
+  cleanupHistory?: CleanupHistoryEntry[];
   safetyDecision?: string;
 };
 
@@ -56,6 +68,14 @@ function money(value: unknown) {
 function safe(value: unknown) {
   const text = value == null ? "" : String(value).trim();
   return text || "—";
+}
+
+function formatDateTime(value: unknown) {
+  const text = value == null ? "" : String(value).trim();
+  if (!text) return "—";
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return text;
+  return date.toLocaleString();
 }
 
 export default function AdminLawsuitCleanupPage() {
@@ -72,6 +92,11 @@ export default function AdminLawsuitCleanupPage() {
 
   const candidateLawsuits = useMemo(
     () => (Array.isArray(preview?.candidateLawsuits) ? preview.candidateLawsuits : []),
+    [preview]
+  );
+
+  const cleanupHistory = useMemo(
+    () => (Array.isArray(preview?.cleanupHistory) ? preview.cleanupHistory : []),
     [preview]
   );
 
@@ -394,6 +419,64 @@ export default function AdminLawsuitCleanupPage() {
               </div>
             ) : (
               <div style={emptyChildStyle}>No cleanup candidates match the current filters.</div>
+            )}
+          </section>
+
+          <section style={panelStyle} data-barsh-admin-lawsuit-cleanup-history="true">
+            <h2 style={sectionTitleStyle}>Recent Cleanup History</h2>
+            <p style={mutedTextStyle}>
+              Read-only audit history for Admin Lawsuit Cleanup actions.  This panel does not rerun cleanup, delete records,
+              update Clio, or modify Barsh Matters data.
+            </p>
+
+            {cleanupHistory.length ? (
+              <div style={tableWrapStyle}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Date</th>
+                      <th style={thStyle}>Master Lawsuit</th>
+                      <th style={thStyle}>Summary</th>
+                      <th style={thStyle}>Actor</th>
+                      <th style={thRightStyle}>Children Cleared</th>
+                      <th style={thStyle}>Clio Shell</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cleanupHistory.map((entry) => {
+                      const childCount = entry.details?.childCount ?? entry.details?.children?.length ?? 0;
+                      const clioShell = entry.details?.clioShell || {};
+                      const clioLabel =
+                        clioShell.clioMasterDisplayNumber ||
+                        clioShell.clioMasterMatterId ||
+                        entry.details?.deletedLocalLawsuit?.clioMasterDisplayNumber ||
+                        "—";
+                      const clioStatus =
+                        clioShell.result?.status ||
+                        entry.details?.clioDeleteResult?.status ||
+                        "—";
+
+                      return (
+                        <tr key={entry.id}>
+                          <td style={tdStyle}>{formatDateTime(entry.createdAt)}</td>
+                          <td style={tdStyle}>
+                            <strong>{safe(entry.masterLawsuitId)}</strong>
+                          </td>
+                          <td style={tdStyle}>{safe(entry.summary)}</td>
+                          <td style={tdStyle}>{safe(entry.actorName || entry.actorEmail)}</td>
+                          <td style={tdRightStyle}>{childCount}</td>
+                          <td style={tdStyle}>
+                            {safe(clioLabel)}
+                            {clioStatus !== "—" ? ` / status ${clioStatus}` : ""}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={emptyChildStyle}>No Admin Lawsuit Cleanup audit entries found yet.</div>
             )}
           </section>
 

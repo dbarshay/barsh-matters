@@ -101,6 +101,15 @@ export async function GET(request: Request) {
       mappingSource: lawsuit.clioMasterMappingSource,
     }));
 
+  const cleanupHistory = await prisma.auditLog.findMany({
+    where: {
+      action: "admin-lawsuit-cleanup-confirm",
+      entityType: "lawsuit",
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
   return NextResponse.json({
     ok: true,
     previewOnly: true,
@@ -123,6 +132,16 @@ export async function GET(request: Request) {
     keepMasterChildren: (keepRows as any[]).map(claimIndexRow),
     candidateLawsuits: candidateRows,
     clioDeleteCandidates,
+    cleanupHistory: cleanupHistory.map((entry: any) => ({
+      id: text(entry.id),
+      createdAt: entry.createdAt?.toISOString?.() || text(entry.createdAt),
+      action: text(entry.action),
+      summary: text(entry.summary),
+      masterLawsuitId: text(entry.masterLawsuitId),
+      actorName: text(entry.actorName),
+      actorEmail: text(entry.actorEmail),
+      details: entry.details || null,
+    })),
     safetyDecision:
       "Preview only. This route does not deaggregate matters, delete local lawsuits, delete Clio shells, update ClaimIndex, write Clio, upload documents, send email, or queue print jobs.",
   });
