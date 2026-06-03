@@ -17,6 +17,12 @@ for (const required of [
   '/sendMail',
   'BARSH_BACKUP_ALERT_TO',
   'BARSH_BACKUP_ALERT_STALE_MINUTES',
+  'parseAlertRecipients',
+  'alertRecipients',
+  '.split(/[;,]/)',
+  'new Set(recipients)',
+  'toRecipients: alert.recipients.map',
+  'ALERT_RECIPIENT_COUNT',
   '--dry-run',
   '--status-only',
   '--send-test-alert',
@@ -67,4 +73,4 @@ if (failures.length) {
 }
 
 console.log('FAILURES=0');
-console.log('PASS: Monitored backup wrapper alerts by email without restore/delete/Clio/document/print behavior.');
+console.log('PASS: Monitored backup wrapper supports multiple alert recipients without restore/delete/Clio/document/print behavior.');

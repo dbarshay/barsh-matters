@@ -66,8 +66,23 @@ function envValue(...keys) {
   return '';
 }
 
+function parseAlertRecipients(value) {
+  const raw = clean(value) || DEFAULT_ALERT_TO;
+  const recipients = raw
+    .split(/[;,]/)
+    .map((item) => clean(item))
+    .filter(Boolean)
+    .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
+
+  return [...new Set(recipients)].length ? [...new Set(recipients)] : [DEFAULT_ALERT_TO];
+}
+
+function alertRecipients() {
+  return parseAlertRecipients(envValue('BARSH_BACKUP_ALERT_TO', 'BACKUP_ALERT_TO'));
+}
+
 function alertTo() {
-  return envValue('BARSH_BACKUP_ALERT_TO', 'BACKUP_ALERT_TO') || DEFAULT_ALERT_TO;
+  return alertRecipients().join(', ');
 }
 
 function graphConfig() {
@@ -190,13 +205,16 @@ function recordAlert(kind, key, alert) {
       sentAt: new Date().toISOString(),
       subject: alert.subject,
       to: alert.to,
+      recipients: alert.recipients,
+      recipients: alert.recipients,
       dryRun: alert.dryRun,
     },
   });
 }
 
 function buildAlert(kind, status, backupResult) {
-  const to = alertTo();
+  const recipients = alertRecipients();
+  const to = recipients.join(', ');
   const subject =
     kind === 'backup-failed'
       ? 'Barsh Matters backup FAILED'
@@ -248,6 +266,7 @@ function buildAlert(kind, status, backupResult) {
 
   return {
     to,
+    recipients,
     subject,
     body: lines.join('\n'),
   };
@@ -314,13 +333,11 @@ async function sendGraphMail(alert) {
           contentType: 'Text',
           content: alert.body,
         },
-        toRecipients: [
-          {
-            emailAddress: {
-              address: alert.to,
-            },
+        toRecipients: alert.recipients.map((address) => ({
+          emailAddress: {
+            address,
           },
-        ],
+        })),
       },
       saveToSentItems: true,
     }),
@@ -352,6 +369,7 @@ async function alertIfNeeded(kind, status, backupResult) {
       key,
       subject: alert.subject,
       to: alert.to,
+      recipients: alert.recipients,
       dryRun: DRY_RUN,
     };
   }
@@ -364,6 +382,7 @@ async function alertIfNeeded(kind, status, backupResult) {
       key,
       subject: alert.subject,
       to: alert.to,
+      recipients: alert.recipients,
       dryRun: true,
       bodyPreview: alert.body,
     };
@@ -409,6 +428,7 @@ async function main() {
     const status = currentStatus();
     console.log('RESULT: monitored backup status only');
     console.log(`ALERT_TO=${alertTo()}`);
+    console.log(`ALERT_RECIPIENT_COUNT=${alertRecipients().length}`);
     console.log(`LATEST_BACKUP_DIR=${status.latestDir}`);
     console.log(`LATEST_CREATED_AT=${status.latestCreatedAt}`);
     console.log(`AGE_MINUTES=${status.ageMinutes === null ? '' : status.ageMinutes.toFixed(1)}`);
@@ -425,6 +445,7 @@ async function main() {
     console.log('RESULT: monitored backup test alert');
     console.log(`DRY_RUN=${DRY_RUN ? 'YES' : 'NO'}`);
     console.log(`ALERT_TO=${result.to}`);
+    console.log(`ALERT_RECIPIENT_COUNT=${result.recipients?.length ?? ''}`);
     console.log(`SUBJECT=${result.subject}`);
     console.log(`SUPPRESSED=${result.suppressed ? 'YES' : 'NO'}`);
     console.log(`GRAPH_STATUS=${result.graphStatus ?? ''}`);
