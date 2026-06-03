@@ -233,6 +233,10 @@ type ActionResult = {
   stdoutTail?: string;
   stderrTail?: string;
   error?: string;
+  message?: string;
+  archivedDisplayPath?: string;
+  freshLogDisplayPath?: string;
+  originalSizeBytes?: number;
 };
 
 type BackupHealthWarning = {
@@ -672,6 +676,7 @@ export default function AdminBackupRestorePage() {
   const [message, setMessage] = useState("");
   const [actionResult, setActionResult] = useState<ActionResult | null>(null);
   const [detailBackup, setDetailBackup] = useState<BackupRow | null>(null);
+  const [archiveErrorLogConfirm, setArchiveErrorLogConfirm] = useState("");
   const [baselineBackup, setBaselineBackup] = useState("");
   const [comparisonBackup, setComparisonBackup] = useState("");
 
@@ -840,6 +845,36 @@ export default function AdminBackupRestorePage() {
       setMessage("Selected backup path copied to clipboard.");
     } catch {
       setMessage(selectedBackup);
+    }
+  }
+
+  async function archiveErrorLog() {
+    setActionBusy("archive-error-log");
+    setMessage("Archiving launchd.err.log...");
+    setActionResult(null);
+
+    try {
+      const response = await fetch("/api/admin/backups/archive-error-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: archiveErrorLogConfirm }),
+      });
+      const data = (await response.json()) as ActionResult;
+
+      setActionResult(data);
+
+      if (!response.ok || !data.ok) {
+        setMessage(data.error || "Error log archive failed.");
+        return;
+      }
+
+      setMessage(`Archived stderr log to ${data.archivedDisplayPath || "archive file"} and created a fresh empty launchd.err.log.`);
+      setArchiveErrorLogConfirm("");
+      await loadStatus();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActionBusy("");
     }
   }
 
@@ -1063,9 +1098,51 @@ export default function AdminBackupRestorePage() {
               padding: 13,
               lineHeight: 1.45,
               fontWeight: 850,
+              display: "grid",
+              gap: 12,
             }}
+            data-stderr-log-archive-action="guarded"
+            data-stdout-log-archive-enabled="false"
+            data-backup-deletion-enabled="false"
           >
-            Archive execution controls are disabled.  A future guarded action can archive old stderr logs only after a separate confirmation workflow is approved.
+            <div>
+              Guarded action: archive <strong>launchd.err.log only</strong>. This moves the current stderr log to a timestamped archive and creates a fresh empty stderr log. It does not touch stdout, backups, manifests, database dumps, restore workflows, alert state, Clio, email, documents, or the print queue.
+            </div>
+
+            <label style={{ display: "grid", gap: 6, fontWeight: 950 }}>
+              Type ARCHIVE ERROR LOG to enable
+              <input
+                value={archiveErrorLogConfirm}
+                onChange={(event) => setArchiveErrorLogConfirm(event.target.value)}
+                placeholder="ARCHIVE ERROR LOG"
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 14,
+                  padding: 12,
+                  fontWeight: 850,
+                  color: "#0f172a",
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => void archiveErrorLog()}
+              disabled={archiveErrorLogConfirm !== "ARCHIVE ERROR LOG" || Boolean(actionBusy)}
+              data-archive-error-log-button="guarded"
+              style={{
+                border: "1px solid #b45309",
+                background: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "#b45309" : "#e2e8f0",
+                color: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "#fff" : "#64748b",
+                borderRadius: 14,
+                padding: "12px 15px",
+                fontWeight: 950,
+                cursor: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "pointer" : "not-allowed",
+                maxWidth: 280,
+              }}
+            >
+              {actionBusy === "archive-error-log" ? "Archiving Error Log..." : "Archive Error Log"}
+            </button>
           </div>
         </section>
 

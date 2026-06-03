@@ -45,7 +45,10 @@ for (const required of [
   'Preview only.',
   'Old errors present',
   'Proposed archive',
-  'Archive execution controls are disabled.',
+  'Guarded action: archive <strong>launchd.err.log only</strong>.',
+  'data-stderr-log-archive-action="guarded"',
+  'data-stdout-log-archive-enabled="false"',
+  'data-backup-deletion-enabled="false"',
   'function formatBytes',
 ]) {
   if (!page.includes(required)) {
