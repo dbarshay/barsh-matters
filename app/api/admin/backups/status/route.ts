@@ -147,6 +147,8 @@ export async function GET() {
     : [];
 
   const latestManifest = readJsonIfPresent<BackupManifest>(latestManifestPath);
+  const alertStatePath = path.join(backupRoot, "backup-alert-state.json");
+  const alertState = readJsonIfPresent<Record<string, any>>(alertStatePath);
   const latestBackupAgeHours = hoursSinceIso(latestManifest?.createdAt || "");
   const backupLogRoot = path.join(backupRoot, "logs");
   const launchdOutLogPath = path.join(backupLogRoot, "launchd.out.log");
@@ -157,6 +159,25 @@ export async function GET() {
     latestBackupAgeHours === null
       ? false
       : latestBackupAgeHours <= scheduledWarningThresholdMinutes / 60;
+
+  const backupAlertState = {
+    mode: "read-only-backup-alert-state",
+    path: alertStatePath,
+    displayPath: safeDisplayPath(alertStatePath),
+    exists: fs.existsSync(alertStatePath),
+    lastAlert: alertState?.lastAlert || null,
+    duplicateSuppressionActive: Boolean(alertState?.lastAlert?.kind && alertState?.lastAlert?.key),
+    safety: {
+      readOnly: true,
+      sendEmail: false,
+      restoreExecution: false,
+      backupDeletion: false,
+      retentionCleanup: false,
+      clioWrite: false,
+      documentGeneration: false,
+      printQueueMutation: false,
+    },
+  };
 
   const scheduledBackupHealth = {
     mode: "read-only-scheduled-backup-health",
@@ -201,6 +222,7 @@ export async function GET() {
     latestBackupPath,
     latestBackupDisplay: safeDisplayPath(latestBackupPath),
     latestManifest,
+    backupAlertState,
     scheduledBackupHealth,
     backups,
     safety: {

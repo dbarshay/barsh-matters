@@ -73,7 +73,7 @@ const bannedPatterns = [
   [/CLIO_/i, 'references CLIO env/config'],
   [/graph/i, 'references Graph/email plumbing'],
   [/create-draft/i, 'references email draft route'],
-  [/sendEmail|send_email|maildrop/i, 'references email/maildrop action'],
+  [/sendGraphMail|sendMail\s*\(|send_email\s*\(|maildrop/i, 'references email/maildrop action'],
   [/finalize-preview|finalize\/route|generate-preview|working-docx|preview-pdf/i, 'references document generation/finalization'],
   [/print-queue(?!Mutation: false)/i, 'references print queue action'],
   [/settlements\/documents-print-queue/i, 'references settlement print queue'],

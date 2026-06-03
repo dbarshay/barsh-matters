@@ -84,6 +84,31 @@ type BackupStatus = {
   backupRootDisplay: string;
   latestBackupPath: string;
   latestBackupDisplay: string;
+  backupAlertState?: {
+    mode: string;
+    displayPath: string;
+    exists: boolean;
+    lastAlert: {
+      kind?: string;
+      key?: string;
+      sentAt?: string;
+      subject?: string;
+      to?: string;
+      recipients?: string[];
+      dryRun?: boolean;
+    } | null;
+    duplicateSuppressionActive: boolean;
+    safety: {
+      readOnly: boolean;
+      sendEmail: boolean;
+      restoreExecution: boolean;
+      backupDeletion: boolean;
+      retentionCleanup: boolean;
+      clioWrite: boolean;
+      documentGeneration: boolean;
+      printQueueMutation: boolean;
+    };
+  };
   scheduledBackupHealth?: {
     mode: string;
     expectedIntervalSeconds: number;
@@ -921,6 +946,79 @@ export default function AdminBackupRestorePage() {
               <div><strong>Pulls docs from Clio:</strong> {passFail(status?.latestManifest?.documentFilePolicy?.pullsDocumentsFromClio)}</div>
               <div><strong>Restore execution:</strong> DISABLED</div>
             </div>
+          </div>
+        </section>
+
+        <section
+          style={{ ...cardStyle, display: "grid", gap: 14 }}
+          data-backup-alert-state="read-only"
+          data-send-alert-enabled="false"
+          data-alert-state-file-write-enabled="false"
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: 22 }}>Backup Alert State</h2>
+            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              Read-only alert state from the monitored backup wrapper.  This panel shows the last alert and duplicate-suppression state only.  It does not send email, edit alert state, restore data, delete backups, run retention cleanup, call Clio, generate documents, or change the print queue.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+            {[
+              ["State file", status?.backupAlertState?.displayPath || "—"],
+              ["State file exists", status?.backupAlertState?.exists ? "YES" : "NO"],
+              ["Last alert kind", status?.backupAlertState?.lastAlert?.kind || "—"],
+              ["Last alert sent", formatDate(status?.backupAlertState?.lastAlert?.sentAt || "")],
+              ["Subject", status?.backupAlertState?.lastAlert?.subject || "—"],
+              ["Dry run", passFail(status?.backupAlertState?.lastAlert?.dryRun)],
+              ["Duplicate suppression active", status?.backupAlertState?.duplicateSuppressionActive ? "YES" : "NO"],
+              ["Send controls", "DISABLED"],
+            ].map(([label, value]) => (
+              <div
+                key={String(label)}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  background: "#fff",
+                  borderRadius: 16,
+                  padding: 13,
+                  display: "grid",
+                  gap: 5,
+                }}
+              >
+                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 950, textTransform: "uppercase" }}>{label}</div>
+                <div style={{ fontSize: 15, fontWeight: 950, wordBreak: "break-word" }}>{String(value ?? "—")}</div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              border: "1px solid #dbeafe",
+              background: "#eff6ff",
+              color: "#1e3a8a",
+              borderRadius: 16,
+              padding: 13,
+              lineHeight: 1.45,
+              fontWeight: 850,
+            }}
+          >
+            <strong>Recipients:</strong>{" "}
+            {(status?.backupAlertState?.lastAlert?.recipients || []).length
+              ? status?.backupAlertState?.lastAlert?.recipients?.join(", ")
+              : status?.backupAlertState?.lastAlert?.to || "No prior alert recipients recorded."}
+          </div>
+
+          <div
+            style={{
+              border: "1px solid #e5e7eb",
+              background: "#f8fafc",
+              color: "#334155",
+              borderRadius: 16,
+              padding: 13,
+              lineHeight: 1.45,
+              fontWeight: 850,
+            }}
+          >
+            Duplicate suppression uses the stored alert key from the last sent alert.  A repeated failure or stale condition with the same key is suppressed until the condition changes or a forced/manual test is run.
           </div>
         </section>
 

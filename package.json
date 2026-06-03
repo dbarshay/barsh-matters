@@ -235,7 +235,8 @@
     "verify:admin-backup-audit-report-safety": "node scripts/verify-admin-backup-audit-report-safety.mjs",
     "backup:indexes:monitored": "node scripts/backup-local-indexes-monitored.mjs",
     "verify:monitored-backup-email-alert-safety": "node scripts/verify-monitored-backup-email-alert-safety.mjs",
-    "verify:monitored-backup-launchagent-safety": "node scripts/verify-monitored-backup-launchagent-safety.mjs"
+    "verify:monitored-backup-launchagent-safety": "node scripts/verify-monitored-backup-launchagent-safety.mjs",
+    "verify:admin-backup-alert-state-safety": "node scripts/verify-admin-backup-alert-state-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
