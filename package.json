@@ -227,7 +227,8 @@
     "verify:admin-button-direct-navigation-safety": "node scripts/verify-admin-button-direct-navigation-safety.mjs",
     "verify:admin-gate-visible-prompt-safety": "node scripts/verify-admin-gate-visible-prompt-safety.mjs",
     "verify:admin-backup-restore-health-url-safety": "node scripts/verify-admin-backup-restore-health-url-safety.mjs",
-    "verify:admin-proxy-clean-redirect-safety": "node scripts/verify-admin-proxy-clean-redirect-safety.mjs"
+    "verify:admin-proxy-clean-redirect-safety": "node scripts/verify-admin-proxy-clean-redirect-safety.mjs",
+    "verify:admin-guarded-restore-plan-preview-safety": "node scripts/verify-admin-guarded-restore-plan-preview-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

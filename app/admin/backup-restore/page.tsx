@@ -226,6 +226,35 @@ export default function AdminBackupRestorePage() {
     [selectedBackup, status?.backups]
   );
 
+  const restorePlanRows = useMemo(
+    () => [
+      ["Selected backup", selectedBackupRow?.displayPath || "—"],
+      ["Created", formatDate(selectedBackupRow?.createdAt || "")],
+      ["Git head", selectedBackupRow?.gitHead || "—"],
+      ["Host/platform", selectedBackupRow ? `${selectedBackupRow.hostname || "—"} / ${selectedBackupRow.platform || "—"}` : "—"],
+      ["Database kind", selectedBackupRow?.databaseKind || "—"],
+      ["Archive entries", selectedBackupRow?.archiveEntries ?? "—"],
+      ["Tables", selectedBackupRow?.tableCount ?? "—"],
+      ["Indexes", selectedBackupRow?.indexCount ?? "—"],
+      ["Manifest present", selectedBackupRow?.hasManifest ? "YES" : "NO"],
+      ["database.dump present", selectedBackupRow?.hasDatabaseDump ? "YES" : "NO"],
+      ["schema.sql present", selectedBackupRow?.hasSchemaSql ? "YES" : "NO"],
+      ["archive-list.txt present", selectedBackupRow?.hasArchiveList ? "YES" : "NO"],
+      ["Restore execution", "DISABLED"],
+    ],
+    [selectedBackupRow]
+  );
+
+  const restorePlanChecklist = [
+    "Make a fresh backup immediately before any future restore.",
+    "Confirm the working tree is clean before any future restore.",
+    "Confirm the selected backup path and timestamp.",
+    "Confirm the target database before any future restore.",
+    "Use full PostgreSQL database restore only unless a separate selective-restore workflow is built.",
+    "Remember that document files are not restored by this database/index backup.",
+    "Restore execution must be separately approved and run through a guarded terminal workflow.",
+  ];
+
   async function loadStatus() {
     setLoading(true);
     setMessage("");
@@ -517,6 +546,93 @@ export default function AdminBackupRestorePage() {
               {actionBusy === "restore-preview" ? "Running Preview..." : "Run Restore Preview"}
             </button>
           </div>
+        </section>
+
+        <section
+          style={{ ...cardStyle, display: "grid", gap: 14 }}
+          data-guarded-restore-plan-preview="true"
+          data-restore-execution-enabled="false"
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: 22 }}>Guarded Restore Plan Preview</h2>
+            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              Planning view only.  This section summarizes the selected backup and the required future restore checklist.  It does not execute restores and does not call any guarded restore script.
+            </p>
+          </div>
+
+          <div
+            style={{
+              border: "1px solid #fecaca",
+              background: "#fff1f2",
+              color: "#9f1239",
+              borderRadius: 16,
+              padding: 13,
+              fontWeight: 900,
+              lineHeight: 1.45,
+            }}
+          >
+            Restore execution is intentionally unavailable in the UI.  A restore must be separately approved and run through a guarded terminal workflow.
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ padding: "10px 8px", width: 220 }}>Restore-plan field</th>
+                  <th style={{ padding: "10px 8px" }}>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {restorePlanRows.map(([label, value]) => (
+                  <tr key={label} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "10px 8px", fontWeight: 950 }}>{label}</td>
+                    <td style={{ padding: "10px 8px", wordBreak: "break-word", color: "#334155" }}>{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <h3 style={{ margin: "0 0 8px", fontSize: 18 }}>Pre-Restore Checklist</h3>
+            <div style={{ display: "grid", gap: 8 }}>
+              {restorePlanChecklist.map((item) => (
+                <div
+                  key={item}
+                  style={{
+                    border: "1px solid #dbeafe",
+                    background: "#eff6ff",
+                    color: "#1e3a8a",
+                    borderRadius: 14,
+                    padding: 12,
+                    lineHeight: 1.45,
+                    fontWeight: 850,
+                  }}
+                >
+                  □ {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            data-restore-execution-button="disabled"
+            style={{
+              border: "1px solid #cbd5e1",
+              background: "#e2e8f0",
+              color: "#64748b",
+              borderRadius: 14,
+              padding: "12px 15px",
+              fontWeight: 950,
+              cursor: "not-allowed",
+              maxWidth: 280,
+            }}
+          >
+            Restore Execution Disabled
+          </button>
         </section>
 
         <section style={{ ...cardStyle, display: "grid", gap: 12 }}>
