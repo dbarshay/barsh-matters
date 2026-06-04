@@ -264,7 +264,8 @@
     "verify:matters-results-final-status-column-safety": "node scripts/verify-matters-results-final-status-column-safety.mjs",
     "verify:direct-picker-modal-width-safety": "node scripts/verify-direct-picker-modal-width-safety.mjs",
     "verify:direct-closed-header-display-safety": "node scripts/verify-direct-closed-header-display-safety.mjs",
-    "verify:direct-claim-status-section-layout-safety": "node scripts/verify-direct-claim-status-section-layout-safety.mjs"
+    "verify:direct-claim-status-section-layout-safety": "node scripts/verify-direct-claim-status-section-layout-safety.mjs",
+    "verify:master-costs-claim-status-layout-safety": "node scripts/verify-master-costs-claim-status-layout-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

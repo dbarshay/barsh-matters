@@ -9026,13 +9026,33 @@ function masterSettlementDateFiledValue(): string {
                     alignItems: "start",
                   }}
                 >
+                  <div
+                    data-barsh-master-claim-lawsuit-costs-notes-status-layout="true"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "minmax(0, 1fr) 680px",
+                      gap: 10,
+                      alignItems: "stretch",
+                    }}
+                  >
+                    <div
+                      data-barsh-master-left-info-column="true"
+                      style={{
+                        display: "grid",
+                        gap: 14,
+                        alignItems: "start",
+                        width: "calc(100% + 320px)",
+                        maxWidth: "calc(100% + 320px)",
+                      }}
+                    >
+
                   <section
                     style={{
                       display: "grid",
                       gap: 10,
-                      padding: 12,
-                      borderTop: "1px solid #cbd5e1",
-                      borderBottom: "1px solid #cbd5e1",
+                      padding: "0 12px 12px",
+                      borderTop: "none",
+                      borderBottom: "none",
                       borderLeft: "none",
                       borderRight: "none",
                       borderRadius: 0,
@@ -9210,7 +9230,7 @@ function masterSettlementDateFiledValue(): string {
                       gap: 10,
                       padding: 12,
                       borderTop: "1px solid #cbd5e1",
-                      borderBottom: "1px solid #cbd5e1",
+                      borderBottom: "none",
                       borderLeft: "none",
                       borderRight: "none",
                       borderRadius: 0,
@@ -9232,7 +9252,7 @@ function masterSettlementDateFiledValue(): string {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                         gap: 12,
                         alignItems: "stretch",
                       }}
@@ -9334,6 +9354,48 @@ function masterSettlementDateFiledValue(): string {
                         </button>
                       </div>
 
+
+
+
+
+
+                    </div>
+                  </section>
+
+                  <section
+                    data-barsh-master-costs-section="true"
+                    style={{
+                      display: "grid",
+                      gap: 10,
+                      padding: 12,
+                      borderTop: "1px solid #cbd5e1",
+                      borderBottom: "none",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderRadius: 0,
+                      background: "#f8fafc",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 950,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "#1e3a8a",
+                      }}
+                    >
+                      Costs
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                        gap: 12,
+                        alignItems: "stretch",
+                      }}
+                    >
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Index Fee</span>
                         <strong style={masterSummaryCardValueStyle}>{masterMetadataMoneyDisplayValue("filingFee")}</strong>
@@ -9373,12 +9435,12 @@ function masterSettlementDateFiledValue(): string {
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Other Court Fees</span>
+                        <span style={masterSummaryCardTitleStyle}>Other Court Costs</span>
                         <strong style={masterSummaryCardValueStyle}>{masterMetadataMoneyDisplayValue("otherCourtCosts")}</strong>
                         <button
                           type="button"
-                          onClick={() => openMasterInfoEditDialog("otherCourtCosts", "Other Court Fees", masterMetadataMoneyDisplayValue("otherCourtCosts"))}
-                          title="Open Other Court Fees edit dialog."
+                          onClick={() => openMasterInfoEditDialog("otherCourtCosts", "Other Court Costs", masterMetadataMoneyDisplayValue("otherCourtCosts"))}
+                          title="Open Other Court Costs edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
                             borderColor: "#93c5fd",
@@ -9394,84 +9456,12 @@ function masterSettlementDateFiledValue(): string {
                   </section>
 
                   <section
-                    data-barsh-master-status-section="true"
                     style={{
                       display: "grid",
                       gap: 10,
                       padding: 12,
                       borderTop: "1px solid #cbd5e1",
-                      borderBottom: "1px solid #cbd5e1",
-                      borderLeft: "none",
-                      borderRight: "none",
-                      borderRadius: 0,
-                      background: "#f8fafc",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 950,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "#1e3a8a",
-                      }}
-                    >
-                      Status
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                        gap: 12,
-                        alignItems: "stretch",
-                      }}
-                    >
-                      <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Status</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterDetailedStatusDisplayValue()}</strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("status", "Status", masterDetailedStatusDisplayValue())}
-                          title="Open Status edit dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
-                      </div>
-
-                      <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Final Status</span>
-                        <strong
-                          style={{
-                            ...masterSummaryCardValueStyle,
-                            color: masterFinalStatusDisplayValue() === "Closed" ? "#991b1b" : "#166534",
-                          }}
-                        >
-                          {masterFinalStatusDisplayValue()}
-                        </strong>
-                      </div>
-
-                      <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Closed Reason</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterClosedReasonDisplayValue()}</strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section
-                    style={{
-                      display: "grid",
-                      gap: 10,
-                      padding: 12,
-                      borderTop: "1px solid #cbd5e1",
-                      borderBottom: "1px solid #cbd5e1",
+                      borderBottom: "none",
                       borderLeft: "none",
                       borderRight: "none",
                       borderRadius: 0,
@@ -9610,6 +9600,98 @@ function masterSettlementDateFiledValue(): string {
                     </div>
 
                   </section>
+                    </div>
+
+                  <section
+                    data-barsh-master-status-section="true"
+                    style={{
+                      position: "relative",
+                      display: "grid",
+                      gap: 10,
+                      width: 340,
+                      maxWidth: "100%",
+                      justifySelf: "start",
+                      transform: "translateX(340px)",
+                      padding: "12px 0 0 12",
+                      alignSelf: "stretch",
+                      alignContent: "start",
+                      borderTop: "none",
+                      borderBottom: "none",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderRadius: 0,
+                      background: "transparent",
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        left: -18,
+                        top: 0,
+                        bottom: 0,
+                        width: 1,
+                        background: "#94a3b8",
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 950,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "#1e3a8a",
+                      }}
+                    >
+                      Lawsuit Status
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr",
+                        gap: 12,
+                        alignItems: "stretch",
+                      }}
+                    >
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Status</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterDetailedStatusDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("status", "Status", masterDetailedStatusDisplayValue())}
+                          title="Open Status edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#1d4ed8",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Final Status</span>
+                        <strong
+                          style={{
+                            ...masterSummaryCardValueStyle,
+                            color: masterFinalStatusDisplayValue() === "Closed" ? "#991b1b" : "#166534",
+                          }}
+                        >
+                          {masterFinalStatusDisplayValue()}
+                        </strong>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Closed Reason</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterClosedReasonDisplayValue()}</strong>
+                      </div>
+                    </div>
+                  </section>
+                  </div>
                 </div>
 
                 <div

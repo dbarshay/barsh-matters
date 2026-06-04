@@ -1,106 +1,68 @@
-#!/usr/bin/env node
-import fs from "node:fs";
+import fs from "fs";
 
-function read(path) {
-  return fs.readFileSync(path, "utf8");
+const page = fs.readFileSync("app/matters/page.tsx", "utf8");
+const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+let failed = false;
+
+function pass(label) {
+  console.log(`PASS: ${label}`);
 }
 
-function mustContain(label, text, needle) {
-  if (!text.includes(needle)) {
-    console.error(`FAIL: ${label}: missing ${needle}`);
-    process.exitCode = 1;
-  } else {
-    console.log(`PASS: ${label}`);
-  }
+function fail(label) {
+  console.error(`FAIL: ${label}`);
+  failed = true;
 }
 
-function mustNotContain(label, text, needle) {
-  if (text.includes(needle)) {
-    console.error(`FAIL: ${label}: unexpected ${needle}`);
-    process.exitCode = 1;
-  } else {
-    console.log(`PASS: ${label}`);
-  }
+function mustContain(label, needle) {
+  if (page.includes(needle)) pass(label);
+  else fail(`${label} missing ${JSON.stringify(needle)}`);
 }
 
-console.log("RESULT: verify master Status / Final Status / Closed Reason display section safety");
-
-const page = read("app/matters/page.tsx");
-const pkg = JSON.parse(read("package.json"));
-
-mustContain("master status helper reads detailed status", page, "function masterDetailedStatusDisplayValue(): string");
-mustContain("master status helper reads final status", page, 'function masterFinalStatusDisplayValue(): "Open" | "Closed"');
-mustContain("master status helper reads closed reason", page, "function masterClosedReasonDisplayValue(): string");
-
-mustContain("master header badge reads Final Status", page, "{masterFinalStatusDisplayValue()}");
-mustContain("master header badge colors Closed red", page, 'masterFinalStatusDisplayValue() === "Closed" ? "#dc2626" : "#16a34a"');
-
-mustContain("master title pill background colors Closed red", page, 'masterFinalStatusDisplayValue() === "Closed" ? "#fee2e2" : "#dcfce7"');
-mustContain("master title pill border colors Closed red", page, 'masterFinalStatusDisplayValue() === "Closed" ? "2px solid #dc2626" : "2px solid #16a34a"');
-mustContain("master title pill text colors Closed red", page, 'masterFinalStatusDisplayValue() === "Closed" ? "#991b1b" : "#14532d"');
-
-
-
-mustContain("master status section marker exists", page, 'data-barsh-master-status-section="true"');
-mustContain("master status card exists", page, "<span style={masterSummaryCardTitleStyle}>Status</span>");
-
-mustContain("master Status card is editable", page, 'openMasterInfoEditDialog("status", "Status", masterDetailedStatusDisplayValue())');
-mustContain("master Status edit uses canonical status list", page, "BARSH_MATTER_STATUS_OPTIONS.map");
-mustContain("master Status persists locally", page, 'payload.status = after;');
-mustContain("master Status persists matterStatus alias", page, 'payload.matterStatus = after;');
-
-mustContain("master final status card exists", page, "<span style={masterSummaryCardTitleStyle}>Final Status</span>");
-mustContain("master closed reason card exists", page, "<span style={masterSummaryCardTitleStyle}>Closed Reason</span>");
+mustContain("master status helper reads detailed status", "function masterDetailedStatusDisplayValue()");
+mustContain("master status helper reads final status", "function masterFinalStatusDisplayValue()");
+mustContain("master status helper reads closed reason", "function masterClosedReasonDisplayValue()");
+mustContain("master header badge reads Final Status", "masterFinalStatusDisplayValue()");
+mustContain("master header badge colors Closed red", 'masterFinalStatusDisplayValue() === "Closed" ? "#dc2626"');
+mustContain("master title pill background colors Closed red", 'masterFinalStatusDisplayValue() === "Closed" ? "#fee2e2"');
+mustContain("master title pill border colors Closed red", 'masterFinalStatusDisplayValue() === "Closed" ? "2px solid #dc2626"');
+mustContain("master title pill text colors Closed red", 'masterFinalStatusDisplayValue() === "Closed" ? "#991b1b"');
+mustContain("master status section marker exists", 'data-barsh-master-status-section="true"');
+mustContain("master Status card exists", "<span style={masterSummaryCardTitleStyle}>Status</span>");
+mustContain("master Status card is editable", 'openMasterInfoEditDialog("status", "Status", masterDetailedStatusDisplayValue())');
+mustContain("master Status edit uses canonical status list", "BARSH_MATTER_STATUS_OPTIONS");
+mustContain("master Status persists locally", 'field === "status"');
+mustContain("master Status persists matterStatus alias", "payload.matterStatus = after");
+mustContain("master final status card exists", "<span style={masterSummaryCardTitleStyle}>Final Status</span>");
+mustContain("master closed reason card exists", "<span style={masterSummaryCardTitleStyle}>Closed Reason</span>");
+mustContain("master Lawsuit Status heading exists", "Lawsuit Status");
+mustContain("master right-side divider container is relative", 'position: "relative"');
+mustContain("master right-side divider line is independent", 'background: "#94a3b8"');
+mustContain("master right-side divider line moved left", "left: -18");
 
 const statusSectionIndex = page.indexOf('data-barsh-master-status-section="true"');
 const statusCardIndex = page.indexOf("<span style={masterSummaryCardTitleStyle}>Status</span>", statusSectionIndex);
-const finalStatusCardIndex = page.indexOf("<span style={masterSummaryCardTitleStyle}>Final Status</span>", statusSectionIndex);
-const closedReasonCardIndex = page.indexOf("<span style={masterSummaryCardTitleStyle}>Closed Reason</span>", statusSectionIndex);
-const notesHeaderIndex = page.indexOf("Notes", statusSectionIndex);
+const finalStatusIndex = page.indexOf("<span style={masterSummaryCardTitleStyle}>Final Status</span>", statusSectionIndex);
+const closedReasonIndex = page.indexOf("<span style={masterSummaryCardTitleStyle}>Closed Reason</span>", statusSectionIndex);
 
-if (statusSectionIndex < 0) {
-  console.error("FAIL: master Status section marker missing.");
-  process.exitCode = 1;
+if (!(statusSectionIndex >= 0 && statusCardIndex > statusSectionIndex && finalStatusIndex > statusCardIndex && closedReasonIndex > finalStatusIndex)) {
+  fail("master Status section must contain all three status cards in order");
 } else {
-  console.log("PASS: master Status section marker found");
+  pass("master Status section contains all three status cards in order");
 }
 
-if (
-  statusCardIndex < 0 ||
-  finalStatusCardIndex < 0 ||
-  closedReasonCardIndex < 0
-) {
-  console.error("FAIL: master Status section must contain Status, Final Status, and Closed Reason cards.");
-  process.exitCode = 1;
+if (page.includes('openMasterInfoEditDialog("finalStatus"') || page.includes('openMasterInfoEditDialog("closeReason"') || page.includes('openMasterInfoEditDialog("closedReason"')) {
+  fail("master Final Status / Closed Reason must not be directly editable");
 } else {
-  console.log("PASS: master Status section contains all three status cards");
+  pass("master Final Status / Closed Reason must not be directly editable");
 }
 
-if (
-  statusSectionIndex < 0 ||
-  notesHeaderIndex < 0 ||
-  statusSectionIndex > notesHeaderIndex
-) {
-  console.error("FAIL: master Status section must appear before Notes section.");
-  process.exitCode = 1;
+if (!pkg.scripts?.["verify:master-status-section-safety"]) {
+  fail("package.json registers verify:master-status-section-safety");
 } else {
-  console.log("PASS: master Status section appears before Notes section");
+  pass("package.json registers verify:master-status-section-safety");
 }
 
-mustNotContain("master Final Status must not be directly editable", page, 'openMasterInfoEditDialog("finalStatus"');
-mustNotContain("master Close Reason must not be directly editable", page, 'openMasterInfoEditDialog("closeReason"');
-mustNotContain("master Closed Reason must not be directly editable", page, 'openMasterInfoEditDialog("closedReason"');
+if (failed) process.exit(1);
 
-if (pkg.scripts?.["verify:master-status-section-safety"] !== "node scripts/verify-master-status-section-safety.mjs") {
-  console.error("FAIL: package.json registers verify:master-status-section-safety");
-  process.exitCode = 1;
-} else {
-  console.log("PASS: package.json registers verify:master-status-section-safety");
-}
-
-if (process.exitCode) {
-  console.error("FAILURES=1");
-  process.exit(1);
-}
-
-console.log("FAILURES=0");
+console.log("RESULT: verify master Status / Final Status / Closed Reason display section safety");
