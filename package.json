@@ -254,7 +254,8 @@
     "verify:adversary-attorney-lawsuit-search-export-safety": "node scripts/verify-adversary-attorney-lawsuit-search-export-safety.mjs",
     "normalize:provider-client-display-names": "node scripts/normalize-provider-client-display-names.mjs",
     "verify:provider-client-display-normalization-safety": "node scripts/verify-provider-client-display-normalization-safety.mjs",
-    "verify:admin-reference-data-adversary-attorney-safety": "node scripts/verify-admin-reference-data-adversary-attorney-safety.mjs"
+    "verify:admin-reference-data-adversary-attorney-safety": "node scripts/verify-admin-reference-data-adversary-attorney-safety.mjs",
+    "verify:home-search-results-table-safety": "node scripts/verify-home-search-results-table-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

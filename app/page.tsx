@@ -1049,7 +1049,6 @@ type HomeSearchUrlState = {
   patient: string;
   claim: string;
   provider: string;
-  modal: string;
 };
 
 function homeSearchStateFromUrl(): HomeSearchUrlState {
@@ -1058,7 +1057,6 @@ function homeSearchStateFromUrl(): HomeSearchUrlState {
       patient: "",
       claim: "",
       provider: "",
-      modal: "",
     };
   }
 
@@ -1068,7 +1066,6 @@ function homeSearchStateFromUrl(): HomeSearchUrlState {
     patient: params.get("patient") || "",
     claim: params.get("claim") || "",
     provider: params.get("provider") || "",
-    modal: params.get("modal") || "",
   };
 }
 
@@ -1082,7 +1079,6 @@ function homeSearchUrlForState(state: HomeSearchUrlState) {
   if (state.patient) params.set("patient", state.patient);
   if (state.claim) params.set("claim", state.claim);
   if (state.provider) params.set("provider", state.provider);
-  if (state.modal) params.set("modal", state.modal);
 
   return params.toString() ? `/?${params.toString()}` : "/";
 }
@@ -1503,7 +1499,7 @@ export default function Home() {
     }
   }
 
-  function closeHomeResultsModal(options: { updateUrl?: boolean } = {}) {
+  function closeHomeResults(options: { updateUrl?: boolean } = {}) {
     setResultsModalOpen(false);
 
     if (typeof window !== "undefined" && options.updateUrl !== false) {
@@ -1511,7 +1507,6 @@ export default function Home() {
         patient: clean(patientSearchInput),
         claim: clean(claimSearchInput),
         provider: clean(providerSearchInput),
-        modal: "",
       });
       window.history.pushState({ barshMattersHomeSearch: true }, "", nextUrl);
     }
@@ -2034,7 +2029,6 @@ export default function Home() {
           patient,
           claim,
           provider,
-          modal: "results",
         });
         const currentUrl = `${window.location.pathname}${window.location.search}`;
 
@@ -2374,139 +2368,98 @@ export default function Home() {
             </div>
           </div>
 
-          {resultsModalOpen && (
-            <div style={searchResultsOverlayStyle} role="dialog" aria-modal="true">
-              <div style={searchResultsModalStyle}>
-                <div style={searchResultsHeaderStyle}>
-                  <div>
-                    <div style={searchResultsKickerStyle}>Search Results</div>
-                    <h2 style={searchResultsTitleStyle}>
-                      {loading ? "Searching..." : resultLabel || "Search Results"}
-                    </h2>
-                    {checkedLabel && !loading && !error && (
-                      <div style={searchResultsSubTitleStyle}>Checked: {checkedLabel}</div>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => closeHomeResultsModal()}
-                    style={searchResultsCloseButtonStyle}
-                    aria-label="Close search results"
-                  >
-                    ×
-                  </button>
+          {(loading || error || searched) && (
+            <section style={homeResultsTablePanelStyle} aria-label="Search results">
+              <div style={homeResultsTableHeaderStyle}>
+                <div>
+                  <div style={searchResultsKickerStyle}>Search Results</div>
+                  <h2 style={searchResultsTitleStyle}>
+                    {loading ? "Searching..." : resultLabel || "Search Results"}
+                  </h2>
+                  {checkedLabel && !loading && !error && (
+                    <div style={searchResultsSubTitleStyle}>Checked: {checkedLabel}</div>
+                  )}
                 </div>
 
-                {loading && <div style={searchMetaStyle}>Searching...</div>}
+                <button
+                  type="button"
+                  onClick={() => resetSearch()}
+                  style={secondaryButtonStyle}
+                >
+                  Clear Results
+                </button>
+              </div>
 
-                {!loading && error && <div style={errorStyle}>{error}</div>}
+              {loading && <div style={searchMetaStyle}>Searching...</div>}
 
-                {!loading && !error && searched && results.length === 0 && (
-                  <div style={emptyStyle}>
-                    No matching matter was returned.
-                  </div>
-                )}
+              {!loading && error && <div style={errorStyle}>{error}</div>}
 
-                {!loading && !error && results.length > 0 && (
-                  <div style={searchResultsListStyle}>
-                    {results.map((row) => (
-                      <div key={row.id} className="barsh-result-row" style={resultRowStyle}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={resultTopLineStyle}>
-                            <a href={`/matter/${row.id}`} style={matterTitleLinkStyle}>
-                              {row.displayNumber || row.id}
-                            </a>
-                            {row.matchedBy && <span style={typeaheadMatchedBadgeStyle}>{row.matchedBy}</span>}
-                          </div>
+              {!loading && !error && searched && results.length === 0 && (
+                <div style={emptyStyle}>
+                  No matching matter was returned.
+                </div>
+              )}
 
-                          {compactAdvancedActualValueSummary(row) && (
-                            <div style={advancedActualValuesStyle}>
-                              {compactAdvancedActualValueSummary(row)}
-                            </div>
-                          )}
-
-                          <details style={advancedFieldDetailsStyle}>
-                            <summary style={advancedFieldSummaryStyle}>
-                              Advanced field values returned for this result
-                            </summary>
-
-                            <div style={advancedFieldGridStyle}>
-                              {advancedFieldReadbackRows(row).map(([label, value]) => (
-                                <div key={`${row.id}-${label}`} style={advancedFieldGridItemStyle}>
-                                  <span style={advancedFieldGridLabelStyle}>{label}</span>
-                                  <strong style={value ? advancedFieldGridValueStyle : advancedFieldGridMissingStyle}>
-                                    {advancedDisplayValue(String(label), value) || "Not returned"}
-                                  </strong>
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-
-                          <div style={resultMetaGridStyle}>
-                            <div style={typeaheadFieldStyle}>
-                              <span style={typeaheadFieldLabelStyle}>Patient</span>
+              {!loading && !error && results.length > 0 && (
+                <div style={homeResultsTableScrollStyle}>
+                  <table style={homeResultsTableStyle}>
+                    <thead>
+                      <tr>
+                        <th style={homeResultsThStyle}>Matter</th>
+                        <th style={homeResultsThStyle}>Patient</th>
+                        <th style={homeResultsThStyle}>Provider</th>
+                        <th style={homeResultsThStyle}>Insurer</th>
+                        <th style={homeResultsThStyle}>Claim Number</th>
+                        <th style={homeResultsThStyle}>Lawsuit ID</th>
+                        <th style={homeResultsThStyle}>Court</th>
+                        <th style={homeResultsThStyle}>Adversary Attorney</th>
+                        <th style={homeResultsThStyle}>Denial Reason</th>
+                        <th style={homeResultsThStyle}>Matched By</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((row) => {
+                        const values = advancedActualValuesFromMatter(row);
+                        return (
+                          <tr key={row.id}>
+                            <td style={homeResultsTdStyle}>
+                              <a href={`/matter/${row.id}`} style={homeResultsMatterLinkStyle}>
+                                {row.displayNumber || row.id}
+                              </a>
+                            </td>
+                            <td style={homeResultsTdStyle}>
                               {row.patient ? (
                                 <a href={filteredSearchUrl(row.patient, "Patient")} className="barsh-field-link" style={resultFieldLinkStyle}>
                                   {row.patient}
                                 </a>
                               ) : (
-                                <span style={typeaheadMissingStyle}>No patient</span>
+                                "—"
                               )}
-                            </div>
-
-                            <div style={typeaheadFieldStyle}>
-                              <span style={typeaheadFieldLabelStyle}>Provider</span>
+                            </td>
+                            <td style={homeResultsTdStyle}>
                               {row.provider ? (
                                 <a href={filteredSearchUrl(row.provider, "Provider")} className="barsh-field-link" style={resultFieldLinkStyle}>
                                   {row.provider}
                                 </a>
                               ) : (
-                                <span style={typeaheadMissingStyle}>No provider</span>
+                                "—"
                               )}
-                            </div>
-
-                            <div style={typeaheadFieldStyle}>
-                              <span style={typeaheadFieldLabelStyle}>Insurer</span>
-                              {row.insurer ? (
-                                <a href={filteredSearchUrl(row.insurer, "Insurer")} className="barsh-field-link" style={resultFieldLinkStyle}>
-                                  {row.insurer}
-                                </a>
-                              ) : (
-                                <span style={typeaheadMissingStyle}>No insurer</span>
-                              )}
-                            </div>
-
-                            <div style={typeaheadFieldStyle}>
-                              <span style={typeaheadFieldLabelStyle}>Claim</span>
-                              {row.claimNumber ? (
-                                <a href={filteredSearchUrl(row.claimNumber, "Claim number")} className="barsh-field-link" style={resultFieldLinkStyle}>
-                                  {row.claimNumber}
-                                </a>
-                              ) : (
-                                <span style={typeaheadMissingStyle}>—</span>
-                              )}
-                            </div>
-
-                            <div style={typeaheadFieldStyle}>
-                              <span style={typeaheadFieldLabelStyle}>Master Lawsuit</span>
-                              <span>{row.masterLawsuitId || "—"}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={resultAmountStyle}>
-                          <span style={typeaheadAmountStyle}>{money(row.claimAmount)}</span>
-                          <a href={`/matter/${row.id}`} className="barsh-open-link" style={typeaheadOpenLinkStyle}>
-                            Open Matter
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+                            </td>
+                            <td style={homeResultsTdStyle}>{row.insurer || "—"}</td>
+                            <td style={homeResultsTdStyle}>{row.claimNumber || values.claim || "—"}</td>
+                            <td style={homeResultsTdStyle}>{row.masterLawsuitId || "Not Filed"}</td>
+                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Court", values.court) || "—"}</td>
+                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Adversary Attorney", values.adversaryAttorney) || "—"}</td>
+                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Denial Reason", values.denialReason) || "—"}</td>
+                            <td style={homeResultsTdStyle}>{row.matchedBy || checkedLabel || "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
           )}
 
           {advancedOpen && (
@@ -3620,6 +3573,63 @@ const searchResultsCloseButtonStyle: React.CSSProperties = {
 const searchResultsListStyle: React.CSSProperties = {
   display: "grid",
   gap: 10,
+};
+
+const homeResultsTablePanelStyle: React.CSSProperties = {
+  marginTop: 22,
+  padding: 18,
+  border: "1px solid #cbd5e1",
+  borderRadius: 20,
+  background: "#ffffff",
+  boxShadow: "0 16px 42px rgba(15, 23, 42, 0.10)",
+};
+
+const homeResultsTableHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 18,
+  marginBottom: 14,
+  paddingBottom: 12,
+  borderBottom: "1px solid #e2e8f0",
+};
+
+const homeResultsTableScrollStyle: React.CSSProperties = {
+  overflowX: "auto",
+  border: "1px solid #e2e8f0",
+  borderRadius: 14,
+};
+
+const homeResultsTableStyle: React.CSSProperties = {
+  width: "100%",
+  borderCollapse: "collapse",
+  fontSize: 13,
+};
+
+const homeResultsThStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderBottom: "1px solid #cbd5e1",
+  background: "#f8fafc",
+  color: "#334155",
+  fontWeight: 950,
+  textAlign: "left",
+  whiteSpace: "nowrap",
+};
+
+const homeResultsTdStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderBottom: "1px solid #e2e8f0",
+  color: "#0f172a",
+  verticalAlign: "top",
+  whiteSpace: "nowrap",
+};
+
+const homeResultsMatterLinkStyle: React.CSSProperties = {
+  color: "#2563eb",
+  font: "inherit",
+  fontSize: "inherit",
+  fontWeight: 850,
+  textDecoration: "none",
 };
 
 
