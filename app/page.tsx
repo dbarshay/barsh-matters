@@ -19,7 +19,8 @@ type MatterResult = {
   court: string;
   adversaryAttorney: string;
   denialReason: string;
-  status: "Open" | "Closed";
+  status: string;
+  finalStatus: "Open" | "Closed";
 };
 
 type AdvancedPicklistOption = {
@@ -199,14 +200,32 @@ function statusFromMatter(m: any) {
 }
 
 function finalStatusFromMatter(m: any) {
-  return clean(m?.status ?? m?.finalStatus ?? m?.final_status ?? "");
+  return clean(m?.finalStatus ?? m?.final_status ?? "");
 }
 
 function denialReasonFromMatter(m: any) {
   return clean(m?.denialReason ?? m?.denial_reason ?? "");
 }
 
-function homeOpenClosedStatusFromMatter(m: any): "Open" | "Closed" {
+function homeDetailedStatusFromMatter(m: any) {
+  return clean(
+    m?.matterStageName ??
+      m?.matter_stage_name ??
+      m?.status ??
+      m?.matterStage?.name ??
+      m?.matter_stage?.name ??
+      m?.matterStage ??
+      m?.matter_stage ??
+      m?.stage ??
+      ""
+  );
+}
+
+function homeFinalStatusFromMatter(m: any): "Open" | "Closed" {
+  const explicitFinalStatus = clean(m?.finalStatus ?? m?.final_status ?? "").toLowerCase();
+  if (explicitFinalStatus === "closed") return "Closed";
+  if (explicitFinalStatus === "open") return "Open";
+
   const closeReason = clean(
     m?.closeReason ??
       m?.close_reason ??
@@ -214,17 +233,8 @@ function homeOpenClosedStatusFromMatter(m: any): "Open" | "Closed" {
       m?.closed_reason ??
       ""
   );
-  const rawStatus = clean(
-    statusFromMatter(m) ||
-      m?.matterStageName ||
-      m?.matter_stage_name ||
-      m?.matterStatus ||
-      m?.matter_status ||
-      ""
-  ).toLowerCase();
 
   if (closeReason) return "Closed";
-  if (rawStatus.includes("closed") || rawStatus === "close" || rawStatus === "inactive") return "Closed";
   return "Open";
 }
 
@@ -789,7 +799,8 @@ function toMatterResult(row: any, matchedBy: string, fallbackClaimNumber = ""): 
     court: advancedValues.court,
     adversaryAttorney: advancedValues.adversaryAttorney,
     denialReason: advancedDisplayValue("Denial Reason", advancedValues.denialReason),
-    status: homeOpenClosedStatusFromMatter(row),
+    status: homeDetailedStatusFromMatter(row),
+    finalStatus: homeFinalStatusFromMatter(row),
   };
 }
 
@@ -1200,6 +1211,7 @@ export default function Home() {
     | "adversaryAttorney"
     | "denialReason"
     | "status"
+    | "finalStatus"
     | "matchedBy";
 
   function homeResultSortValue(row: MatterResult, key: HomeResultsSortKey) {
@@ -1213,13 +1225,14 @@ export default function Home() {
     if (key === "adversaryAttorney") return row.adversaryAttorney;
     if (key === "denialReason") return row.denialReason;
     if (key === "status") return row.status;
+    if (key === "finalStatus") return row.finalStatus;
     if (key === "matchedBy") return row.matchedBy;
     return "";
   }
 
   function sortHomeResults(rows: MatterResult[]) {
     const visibleRows = hideClosedHomeResults
-      ? rows.filter((row) => row.status !== "Closed")
+      ? rows.filter((row) => row.finalStatus !== "Closed")
       : rows;
     const sorted = [...visibleRows];
 
@@ -2622,6 +2635,7 @@ export default function Home() {
                         <th style={homeResultsThStyle}>{homeSortableHeader("Adversary Attorney", "adversaryAttorney")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Denial Reason", "denialReason")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Status", "status")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Final Status", "finalStatus")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Matched By", "matchedBy")}</th>
                       </tr>
                     </thead>
@@ -2761,8 +2775,9 @@ export default function Home() {
                                 "—"
                               )}
                             </td>
+                            <td style={homeResultsTdStyle}>{row.status || "—"}</td>
                             <td style={homeResultsTdStyle}>
-                              <span style={homeStatusBadgeStyle(row.status)}>{row.status}</span>
+                              <span style={homeStatusBadgeStyle(row.finalStatus)}>{row.finalStatus}</span>
                             </td>
                             <td style={homeResultsTdStyle}>{row.matchedBy || checkedLabel || "—"}</td>
                           </tr>

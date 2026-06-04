@@ -1,5 +1,7 @@
 "use client";
 
+import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
@@ -19,6 +21,7 @@ type MatterRow = {
   dosEnd: string;
   denialReason: string;
   status: string;
+  finalStatus: "Open" | "Closed";
   masterLawsuitId: string;
   treatingProvider: string;
   claimAmount: any;
@@ -40,7 +43,8 @@ type ClaimResultsSortKey =
   | "masterLawsuit"
   | "claimAmount"
   | "balance"
-  | "status";
+  | "status"
+  | "finalStatus";
 
 type ClaimResultsSortState = {
   key: ClaimResultsSortKey;
@@ -227,6 +231,12 @@ function toMatterRow(row: any, matchedBy: string): MatterRow | null {
     dosEnd: clean(row?.dosEnd ?? row?.dos_end),
     denialReason: clean(row?.denialReason ?? row?.denial_reason),
     status: clean(row?.matterStage?.name ?? row?.matter_stage_name ?? row?.status),
+    finalStatus: (() => {
+      const rawFinalStatus = clean(row?.finalStatus ?? row?.final_status).toLowerCase();
+      if (rawFinalStatus === "closed") return "Closed";
+      if (rawFinalStatus === "open") return "Open";
+      return clean(row?.closeReason ?? row?.close_reason) ? "Closed" : "Open";
+    })(),
     masterLawsuitId: masterLawsuitId(row),
     treatingProvider: treatingProviderName(row),
     claimAmount: row?.claimAmount ?? row?.claim_amount,
@@ -263,6 +273,7 @@ function matterRowSortValue(row: MatterRow, key: ClaimResultsSortKey): string | 
   if (key === "claimAmount") return Number(row.claimAmount ?? 0) || 0;
   if (key === "balance") return Number(row.balancePresuit ?? 0) || 0;
   if (key === "status") return clean(row.status).toLowerCase();
+  if (key === "finalStatus") return clean(row.finalStatus).toLowerCase();
 
   return "";
 }
@@ -489,6 +500,10 @@ export default function FilteredMattersPage() {
   const [masterPaymentReceipts, setMasterPaymentReceipts] = useState<any[]>([]);
   const [masterPaymentReceiptsError, setMasterPaymentReceiptsError] = useState("");
   const [masterPaymentShowVoided, setMasterPaymentShowVoided] = useState(false);
+  const [masterCloseDialogOpen, setMasterCloseDialogOpen] = useState(false);
+  const [masterCloseReason, setMasterCloseReason] = useState("");
+  const [masterClosing, setMasterClosing] = useState(false);
+  const [masterCloseResult, setMasterCloseResult] = useState<any>(null);
 
   const fallbackMasterPaymentTransactionTypeOptions = [
     "Collection Payment",
@@ -1452,7 +1467,45 @@ export default function FilteredMattersPage() {
       return clean(options?.otherCourtCosts);
     }
 
+    if (field === "status") {
+      return (
+        clean(options?.status) ||
+        clean(options?.matterStatus) ||
+        clean(options?.matter_status) ||
+        clean(options?.workflowStatus) ||
+        clean(options?.workflow_status)
+      );
+    }
+
     return "";
+  }
+
+  function masterDetailedStatusDisplayValue(): string {
+    const options = masterLawsuitOptions();
+    return (
+      clean(options?.status) ||
+      clean(options?.matterStatus) ||
+      clean(options?.matter_status) ||
+      clean(options?.workflowStatus) ||
+      clean(options?.workflow_status) ||
+      "—"
+    );
+  }
+
+  function masterFinalStatusDisplayValue(): "Open" | "Closed" {
+    const options = masterLawsuitOptions();
+    const rawFinalStatus = clean(options?.finalStatus || options?.final_status).toLowerCase();
+
+    if (rawFinalStatus === "closed") return "Closed";
+    if (rawFinalStatus === "open") return "Open";
+    if (clean(options?.closeReason || options?.close_reason)) return "Closed";
+
+    return "Open";
+  }
+
+  function masterClosedReasonDisplayValue(): string {
+    const options = masterLawsuitOptions();
+    return clean(options?.closeReason || options?.close_reason) || "—";
   }
 
   function masterIndexAaaDisplayValue(): string {
@@ -1511,6 +1564,36 @@ export default function FilteredMattersPage() {
       serviceFee: clean(options?.serviceFee),
       otherCourtCosts: clean(options?.otherCourtCosts),
       selectedCourtDetails: options?.selectedCourtDetails || null,
+      status:
+        clean(options?.status) ||
+        clean(options?.matterStatus) ||
+        clean(options?.matter_status) ||
+        clean(options?.workflowStatus) ||
+        clean(options?.workflow_status),
+      matterStatus:
+        clean(options?.matterStatus) ||
+        clean(options?.status) ||
+        clean(options?.matter_status) ||
+        clean(options?.workflowStatus) ||
+        clean(options?.workflow_status),
+      matter_status:
+        clean(options?.matter_status) ||
+        clean(options?.matterStatus) ||
+        clean(options?.status) ||
+        clean(options?.workflowStatus) ||
+        clean(options?.workflow_status),
+      workflowStatus:
+        clean(options?.workflowStatus) ||
+        clean(options?.workflow_status) ||
+        clean(options?.status) ||
+        clean(options?.matterStatus) ||
+        clean(options?.matter_status),
+      workflow_status:
+        clean(options?.workflow_status) ||
+        clean(options?.workflowStatus) ||
+        clean(options?.status) ||
+        clean(options?.matterStatus) ||
+        clean(options?.matter_status),
     };
 
     if (field === "court") {
@@ -1518,6 +1601,14 @@ export default function FilteredMattersPage() {
       payload.venueSelection = after;
       payload.venueOther = "";
       payload.selectedCourtDetails = selectedCourtDetails || null;
+    }
+
+    if (field === "status") {
+      payload.status = after;
+      payload.matterStatus = after;
+      payload.matter_status = after;
+      payload.workflowStatus = after;
+      payload.workflow_status = after;
     }
 
     if (field === "indexAaaNumber") payload.indexAaaNumber = after;
@@ -1535,7 +1626,7 @@ export default function FilteredMattersPage() {
   }
 
   function masterInfoFieldPersistsLocally(field: string): boolean {
-    return ["court", "indexAaaNumber", "dateOfLoss", "dateFiled", "adversaryAttorney", "filingFee", "serviceFee", "otherCourtCosts"].includes(field);
+    return ["court", "status", "indexAaaNumber", "dateOfLoss", "dateFiled", "adversaryAttorney", "filingFee", "serviceFee", "otherCourtCosts"].includes(field);
   }
 
   function masterInfoMoneyNumber(field: string, fallback: any): number {
@@ -1545,7 +1636,8 @@ export default function FilteredMattersPage() {
     return Number.isFinite(n) ? n : 0;
   }
 
-  function masterInfoFieldKind(field: string): "contact" | "date" | "money" | "court" | "text" {
+  function masterInfoFieldKind(field: string): "contact" | "date" | "money" | "court" | "status" | "text" {
+    if (field === "status") return "status";
     if (["provider", "patient", "insurer", "adversaryAttorney"].includes(field)) return "contact";
     if (["court", "venue", "venueSelection"].includes(field)) return "court";
     if (["dateOfLoss", "dateFiled"].includes(field)) return "date";
@@ -1619,8 +1711,9 @@ export default function FilteredMattersPage() {
       currentValue: value,
     });
 
-    // The Current box shows the existing value.  The editable field intentionally starts blank.
-    setMasterInfoEditValue("");
+    // The Current box shows the existing value.  Most editable fields intentionally start blank.
+    // Status starts with the current value because it is a controlled picklist.
+    setMasterInfoEditValue(field === "status" && value !== "—" ? value : "");
     setMasterInfoContactSearch("");
     setMasterInfoContactResults([]);
     setMasterInfoSelectedContact(null);
@@ -1635,6 +1728,77 @@ export default function FilteredMattersPage() {
     setMasterInfoSelectedContact(null);
     setMasterCourtOptionsError("");
   }
+
+  function openMasterCloseLawsuitDialog() {
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+    if (!masterLawsuitId || masterClosing) return;
+    setMasterCloseResult(null);
+    setMasterCloseReason("");
+    setMasterCloseDialogOpen(true);
+  }
+
+  function closeMasterCloseLawsuitDialog() {
+    if (masterClosing) return;
+    setMasterCloseDialogOpen(false);
+    setMasterCloseReason("");
+    setMasterCloseResult(null);
+  }
+
+  async function handleMasterCloseLawsuit() {
+    const masterLawsuitId = currentMasterLawsuitIdForDocumentPreview();
+    if (!masterLawsuitId || !masterCloseReason || masterClosing) return;
+
+    setMasterClosing(true);
+    setMasterCloseResult(null);
+
+    try {
+      const response = await fetch("/api/lawsuits/close", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          masterLawsuitId,
+          closeReason: masterCloseReason,
+        }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok || !json?.ok) {
+        setMasterCloseResult({
+          ok: false,
+          error: json?.error || "Close Lawsuit failed.",
+          details: json,
+        });
+        return;
+      }
+
+      setMasterCloseResult(json);
+      setMasterCloseDialogOpen(false);
+      setMasterCloseReason("");
+      await loadMasterLawsuitMetadata();
+      window.location.reload();
+    } catch (error: any) {
+      setMasterCloseResult({
+        ok: false,
+        error: error?.message || String(error),
+      });
+    } finally {
+      setMasterClosing(false);
+    }
+  }
+
+  const masterCloseReasonOptions = [
+    "PAID VOLUNTARY",
+    "PAID AFTER SETTLEMENT",
+    "PAID AFTER JUDGMENT",
+    "DISCONTINUED WITH PREJUDICE",
+    "DISCONTINUED WITHOUT PREJUDICE",
+    "PER CLIENT",
+    "ADMIN CLOSE",
+  ];
+
 
   useEffect(() => {
     if (!masterInfoEditDialog) return;
@@ -8177,16 +8341,16 @@ function masterSettlementDateFiledValue(): string {
                       justifyContent: "center",
                       justifySelf: "center",
                       padding: "12px 24px",
-                      border: "2px solid #16a34a",
+                      border: masterFinalStatusDisplayValue() === "Closed" ? "2px solid #dc2626" : "2px solid #16a34a",
                       borderRadius: 999,
-                      background: "#dcfce7",
-                      color: "#14532d",
+                      background: masterFinalStatusDisplayValue() === "Closed" ? "#fee2e2" : "#dcfce7",
+                      color: masterFinalStatusDisplayValue() === "Closed" ? "#991b1b" : "#14532d",
                       fontSize: 34,
                       lineHeight: 1,
                       fontWeight: 950,
                       letterSpacing: "-0.01em",
                       whiteSpace: "nowrap",
-                      boxShadow: "0 10px 30px rgba(22, 163, 74, 0.18)",
+                      boxShadow: masterFinalStatusDisplayValue() === "Closed" ? "0 10px 30px rgba(220, 38, 38, 0.18)" : "0 10px 30px rgba(22, 163, 74, 0.18)",
                     }}
                   >
                     {value}
@@ -8200,16 +8364,19 @@ function masterSettlementDateFiledValue(): string {
                       marginTop: 6,
                       padding: "4px 12px",
                       borderRadius: 999,
-                      background: "#16a34a",
+                      background: masterFinalStatusDisplayValue() === "Closed" ? "#dc2626" : "#16a34a",
                       color: "#fff",
                       fontSize: 13,
                       fontWeight: 950,
                       letterSpacing: "0.08em",
                       textTransform: "uppercase",
-                      boxShadow: "0 4px 12px rgba(22, 163, 74, 0.25)",
+                      boxShadow:
+                        masterFinalStatusDisplayValue() === "Closed"
+                          ? "0 4px 12px rgba(220, 38, 38, 0.25)"
+                          : "0 4px 12px rgba(22, 163, 74, 0.25)",
                     }}
                   >
-                    Open
+                    {masterFinalStatusDisplayValue()}
                   </span>
 
                   <span
@@ -9227,6 +9394,78 @@ function masterSettlementDateFiledValue(): string {
                   </section>
 
                   <section
+                    data-barsh-master-status-section="true"
+                    style={{
+                      display: "grid",
+                      gap: 10,
+                      padding: 12,
+                      borderTop: "1px solid #cbd5e1",
+                      borderBottom: "1px solid #cbd5e1",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderRadius: 0,
+                      background: "#f8fafc",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 950,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "#1e3a8a",
+                      }}
+                    >
+                      Status
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                        gap: 12,
+                        alignItems: "stretch",
+                      }}
+                    >
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Status</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterDetailedStatusDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("status", "Status", masterDetailedStatusDisplayValue())}
+                          title="Open Status edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#1d4ed8",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Final Status</span>
+                        <strong
+                          style={{
+                            ...masterSummaryCardValueStyle,
+                            color: masterFinalStatusDisplayValue() === "Closed" ? "#991b1b" : "#166534",
+                          }}
+                        >
+                          {masterFinalStatusDisplayValue()}
+                        </strong>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Closed Reason</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterClosedReasonDisplayValue()}</strong>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section
                     style={{
                       display: "grid",
                       gap: 10,
@@ -9615,23 +9854,126 @@ function masterSettlementDateFiledValue(): string {
 
                       <button
                         type="button"
-                        disabled
-                        title="Close Lawsuit workflow will be wired after payment/settlement safety checks."
+                        onClick={openMasterCloseLawsuitDialog}
+                        disabled={masterClosing || !currentMasterLawsuitIdForDocumentPreview()}
+                        title="Close this lawsuit locally and mark all child matters Closed with reason Closed Lawsuit."
                         style={{
                           width: "100%",
                           minWidth: 0,
                           height: 44,
                           border: "1px solid #dc2626",
                           borderRadius: 999,
-                          background: "#dc2626",
-                          color: "#fff",
+                          background: masterClosing || !currentMasterLawsuitIdForDocumentPreview() ? "#f3f4f6" : "#dc2626",
+                          color: masterClosing || !currentMasterLawsuitIdForDocumentPreview() ? "#64748b" : "#fff",
                           fontSize: 12,
                           fontWeight: 950,
-                          cursor: "pointer",
+                          cursor: masterClosing || !currentMasterLawsuitIdForDocumentPreview() ? "not-allowed" : "pointer",
                         }}
                       >
-                        Close Lawsuit
+                        {masterClosing ? "Closing..." : "Close Lawsuit"}
                       </button>
+
+                      {masterCloseDialogOpen && (
+                        <div
+                          role="dialog"
+                          aria-modal="true"
+                          aria-label="Close Lawsuit"
+                          style={{
+                            position: "fixed",
+                            inset: 0,
+                            zIndex: 50000,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: 24,
+                            background: "rgba(15, 23, 42, 0.58)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "min(520px, calc(100vw - 48px))",
+                              border: "1px solid #fecaca",
+                              borderRadius: 18,
+                              background: "#fff",
+                              boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+                              padding: 20,
+                            }}
+                          >
+                            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Close Lawsuit</h2>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#475569", marginBottom: 16 }}>
+                              This will close lawsuit <strong>{currentMasterLawsuitIdForDocumentPreview()}</strong> locally.
+                              All child matters in the lawsuit will be marked <strong>Closed</strong> with Closed Reason <strong>Closed Lawsuit</strong>.
+                            </div>
+
+                            <label style={{ display: "grid", gap: 6, fontWeight: 900, marginBottom: 16 }}>
+                              <span>Closed Reason for Lawsuit</span>
+                              <select
+                                value={masterCloseReason}
+                                onChange={(event) => setMasterCloseReason(event.target.value)}
+                                disabled={masterClosing}
+                                style={{
+                                  height: 42,
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 10,
+                                  padding: "0 10px",
+                                  fontWeight: 800,
+                                  background: "#fff",
+                                }}
+                              >
+                                <option value="">Select Closed Reason</option>
+                                {masterCloseReasonOptions.map((reason) => (
+                                  <option key={reason} value={reason}>
+                                    {reason}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            {masterCloseResult && !masterCloseResult.ok && (
+                              <div style={{ color: "#991b1b", fontWeight: 800, marginBottom: 12 }}>
+                                {clean(masterCloseResult.error) || "Close Lawsuit failed."}
+                              </div>
+                            )}
+
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={closeMasterCloseLawsuitDialog}
+                                disabled={masterClosing}
+                                style={{
+                                  minWidth: 96,
+                                  height: 38,
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 10,
+                                  background: "#f8fafc",
+                                  color: "#334155",
+                                  fontWeight: 900,
+                                  cursor: masterClosing ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleMasterCloseLawsuit}
+                                disabled={masterClosing || !masterCloseReason}
+                                style={{
+                                  minWidth: 132,
+                                  height: 38,
+                                  border: "1px solid #dc2626",
+                                  borderRadius: 10,
+                                  background: masterClosing || !masterCloseReason ? "#fecaca" : "#dc2626",
+                                  color: "#fff",
+                                  fontWeight: 900,
+                                  cursor: masterClosing || !masterCloseReason ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {masterClosing ? "Closing..." : "Close Lawsuit"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {renderMasterViewDocumentsPopup()}
                       {renderMasterDocumentHistoryPopup()}
@@ -10355,7 +10697,46 @@ function masterSettlementDateFiledValue(): string {
                       </strong>
                     </div>
 
-                    {masterInfoFieldKind(masterInfoEditDialog.field) === "court" ? (
+                    {masterInfoFieldKind(masterInfoEditDialog.field) === "status" ? (
+                      <label
+                        style={{
+                          display: "grid",
+                          gap: 7,
+                          fontSize: 12,
+                          fontWeight: 950,
+                          color: "#334155",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        New Status
+                        <select
+                          ref={masterInfoPrimaryInputRef as any}
+                          value={masterInfoEditValue}
+                          onChange={(event) => setMasterInfoEditValue(event.target.value)}
+                          style={{
+                            width: "100%",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 12,
+                            padding: "11px 12px",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontSize: 15,
+                            fontWeight: 850,
+                            outline: "none",
+                            textTransform: "none",
+                            letterSpacing: 0,
+                          }}
+                        >
+                          <option value="">Select Status...</option>
+                          {BARSH_MATTER_STATUS_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : masterInfoFieldKind(masterInfoEditDialog.field) === "court" ? (
                       <div style={{ display: "grid", gap: 10 }}>
                         <label
                           style={{
@@ -12490,6 +12871,7 @@ function masterSettlementDateFiledValue(): string {
                   {sortableClaimResultsHeader("Claim Amount", "claimAmount", rightThStyle)}
                   {sortableClaimResultsHeader("Balance", "balance", rightThStyle)}
                   {sortableClaimResultsHeader("Status", "status")}
+                  {sortableClaimResultsHeader("Final Status", "finalStatus")}
                 </tr>
               </thead>
               <tbody>
@@ -12574,6 +12956,26 @@ function masterSettlementDateFiledValue(): string {
                     <td style={rightTdStyle}>{money(row.claimAmount)}</td>
                     <td style={rightTdStyle}>{money(row.balancePresuit)}</td>
                     <td style={tdStyle}>{row.status || "—"}</td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minWidth: 54,
+                          padding: "4px 10px",
+                          borderRadius: 999,
+                          border: row.finalStatus === "Closed" ? "1px solid #fecaca" : "1px solid #bbf7d0",
+                          background: row.finalStatus === "Closed" ? "#fef2f2" : "#dcfce7",
+                          color: row.finalStatus === "Closed" ? "#991b1b" : "#166534",
+                          fontSize: 12,
+                          fontWeight: 950,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row.finalStatus}
+                      </span>
+                    </td>
 
                   </tr>
                 ))}

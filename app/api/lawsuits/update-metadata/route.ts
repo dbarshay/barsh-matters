@@ -198,13 +198,32 @@ export async function POST(req: NextRequest) {
       customAmountSought,
     });
 
+    const existingOptions =
+      existing.lawsuitOptions && typeof existing.lawsuitOptions === "object" && !Array.isArray(existing.lawsuitOptions)
+        ? (existing.lawsuitOptions as Record<string, any>)
+        : {};
+
+    const nextStatus = text(
+      body?.status ||
+        body?.matterStatus ||
+        body?.matter_status ||
+        existingOptions.status ||
+        existingOptions.matterStatus ||
+        existingOptions.matter_status ||
+        existingOptions.workflowStatus ||
+        existingOptions.workflow_status
+    );
+
     const lawsuitOptions = {
-      ...(existing.lawsuitOptions && typeof existing.lawsuitOptions === "object"
-        ? existing.lawsuitOptions
-        : {}),
+      ...existingOptions,
       source: "local-lawsuit-metadata-update",
       noClioRead: true,
       noClioWrite: true,
+      status: nextStatus,
+      matterStatus: nextStatus,
+      matter_status: nextStatus,
+      workflowStatus: nextStatus,
+      workflow_status: nextStatus,
       venue: text(body?.venue),
       venueSelection: text(body?.venueSelection),
       venueOther: text(body?.venueOther),

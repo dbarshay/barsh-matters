@@ -14,20 +14,42 @@ function requireText(label, haystack, needle) {
   }
 }
 
-requireText("direct modal union includes claimAmount", page, '"claimAmount" | "dos" | "denialReason" | "status" | "finalStatus"');
+requireText("direct modal union includes claimAmount", page, '"claimAmount" | "dos" | "denialReason" | "status"');
 requireText("claim amount input state exists", page, "const [claimAmountInput, setClaimAmountInput] = useState(\"\");");
 requireText("open claim amount dialog exists", page, "function openClaimAmountEditDialog()");
 requireText("save claim amount dialog exists", page, "async function saveClaimAmountEditDialog()");
 requireText("claim amount uses update-direct-field", page, 'field: "claimAmount"');
 requireText("claim amount card inserted", page, 'title="Edit Claim Amount."');
 
-requireText("route direct field includes claimAmount", route, 'type DirectField = "claimAmount" | "dos" | "denialReason" | "status" | "finalStatus";');
+requireText("route direct field includes claimAmount", route, 'type DirectField = "claimAmount" | "dos" | "denialReason" | "status";');
 requireText("route label includes claim amount", route, 'if (field === "claimAmount") return "Claim Amount";');
 requireText("route parses claim amount", route, 'if (field === "claimAmount") {');
 requireText("route updates claim_amount", route, "claim_amount: claimAmount");
 requireText("route updates balance_presuit", route, "balance_presuit: balance");
 requireText("route updates balance_amount", route, "balance_amount: balance");
-requireText("route supported fields includes claimAmount", route, '["claimAmount", "dos", "denialReason", "status", "finalStatus"]');
+requireText("route supported fields includes claimAmount", route, '["claimAmount", "dos", "denialReason", "status"]');
+
+requireText("Final Status is displayed read-only", page, "<span>Final Status</span>");
+requireText("Closed Reason is displayed read-only", page, "<span>Closed Reason</span>");
+
+if (page.includes('openPicklistEditDialog("finalStatus")')) {
+  console.error("FAIL: Final Status must not be directly editable from summary cards.");
+  process.exit(1);
+}
+console.log("PASS: Final Status is not directly editable from summary cards");
+
+if (page.includes('openPicklistEditDialog("closedReason")')) {
+  console.error("FAIL: Closed Reason must not be directly editable from summary cards.");
+  process.exit(1);
+}
+console.log("PASS: Closed Reason is not directly editable from summary cards");
+
+if (route.includes('"finalStatus"') || route.includes('"closedReason"')) {
+  console.error("FAIL: update-direct-field must not support Final Status or Closed Reason direct edits.");
+  process.exit(1);
+}
+console.log("PASS: update-direct-field direct edit route excludes Final Status and Closed Reason");
+
 
 const claimAmountSpanIndex = page.indexOf('<span>Claim Amount</span>');
 const dateOfServiceSpanIndex = page.indexOf('<span>Date of Service</span>');

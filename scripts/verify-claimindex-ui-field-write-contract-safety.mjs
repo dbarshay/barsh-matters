@@ -210,8 +210,6 @@ const directFieldWrites = [
   ["denialReason", "denial_reason"],
   ["status", "matter_stage_name"],
   ["status", "status"],
-  ["finalStatus", "close_reason"],
-  ["finalStatus", "final_status"],
 ];
 
 for (const [uiField, claimIndexField] of directFieldWrites) {
@@ -222,6 +220,8 @@ for (const [uiField, claimIndexField] of directFieldWrites) {
 mustContain("direct route updates ClaimIndex transactionally", directRoute, "tx.claimIndex.update");
 mustContain("direct route uses field-specific ClaimIndex update data", directRoute, "data: claimIndexUpdateData(field, nextValue, existing)");
 mustContain("direct route audit records ClaimIndex storage", directRoute, 'storage: "ClaimIndex"');
+mustNotContain("direct route must not support Final Status direct edits", directRoute, '"finalStatus"');
+mustNotContain("direct route must not support Closed Reason direct edits", directRoute, '"closedReason"');
 mustContain("direct route returns claimIndexUpdated true", directRoute, "claimIndexUpdated: true");
 mustContain("direct route is local-only no Clio write", directRoute, "noClioWrite: true");
 mustContain("direct route is local-only no Clio read", directRoute, "noClioRead: true");

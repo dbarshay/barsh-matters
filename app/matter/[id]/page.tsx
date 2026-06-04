@@ -1,5 +1,7 @@
 "use client";
 
+import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
+
 const DIRECT_MATTER_SETTLEMENTS_ENABLED = false;
 
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -1504,7 +1506,7 @@ const activeGroupKey =
   const [paymentShowVoided, setPaymentShowVoided] = useState(true);
   const [expandedPaymentReceiptId, setExpandedPaymentReceiptId] = useState<number | null>(null);
   const [paymentClosePromptOpen, setPaymentClosePromptOpen] = useState(false);
-  const [directFieldEditModal, setDirectFieldEditModal] = useState<"claimAmount" | "dos" | "denialReason" | "status" | "finalStatus" | null>(null);
+  const [directFieldEditModal, setDirectFieldEditModal] = useState<"claimAmount" | "dos" | "denialReason" | "status" | null>(null);
   const [directFieldEditLoading, setDirectFieldEditLoading] = useState(false);
   const [directFieldEditResult, setDirectFieldEditResult] = useState<any>(null);
   const [directFieldPicklistsLoading, setDirectFieldPicklistsLoading] = useState(false);
@@ -1905,11 +1907,25 @@ const activeGroupKey =
   }
 
   function matterIsClosedForPayment(): boolean {
-    return String(matter?.status || "").trim().toLowerCase() === "closed";
+    const rawFinalStatus = textValue(matter?.finalStatus || matter?.final_status).toLowerCase();
+    if (rawFinalStatus === "closed") return true;
+    if (rawFinalStatus === "open") return false;
+    return !!textValue(matter?.closeReason || matter?.close_reason);
   }
 
   function matterHasFinalStatusForPayment(): boolean {
-    return !!String(matter?.closeReason || "").trim();
+    return !!textValue(matter?.finalStatus || matter?.final_status);
+  }
+
+  function directMatterFinalStatusDisplayValue(): "Open" | "Closed" {
+    const rawFinalStatus = textValue(matter?.finalStatus || matter?.final_status).toLowerCase();
+    if (rawFinalStatus === "closed") return "Closed";
+    if (rawFinalStatus === "open") return "Open";
+    return textValue(matter?.closeReason || matter?.close_reason) ? "Closed" : "Open";
+  }
+
+  function directMatterIsClosedForDisplay(): boolean {
+    return directMatterFinalStatusDisplayValue() === "Closed";
   }
 
   function paymentCloseMatterAvailable(): boolean {
@@ -2487,13 +2503,9 @@ function openClaimAmountEditDialog() {
     }
   }
 
-  function picklistOptionsForDirectField(field: "denialReason" | "status" | "finalStatus"): any[] {
+  function picklistOptionsForDirectField(field: "denialReason" | "status"): any[] {
     if (field === "denialReason") {
       return directFieldPicklists?.denialReason?.options || directFieldPicklists?.denialReasons || [];
-    }
-
-    if (field === "finalStatus") {
-      return directFieldPicklists?.closeReason?.options || directFieldPicklists?.closeReasons || [];
     }
 
     return directFieldPicklists?.status?.options || directFieldPicklists?.status || directFieldPicklists?.matterStages || [];
@@ -2534,12 +2546,7 @@ function openClaimAmountEditDialog() {
         new Set(
           [
             currentStatus,
-            "INTAKE - NEW BILLING TO REVIEW",
-            "VERIFICATION - 1st RESPONSE SENT",
-            "READY FOR ARBITRATION/LITIGATION",
-            "Open",
-            "Pending",
-            "Closed",
+            ...BARSH_MATTER_STATUS_OPTIONS,
           ].filter(Boolean)
         )
       ).map((label) => ({
@@ -2575,7 +2582,7 @@ function openClaimAmountEditDialog() {
     }
   }
 
-  async function openPicklistEditDialog(field: "denialReason" | "status" | "finalStatus") {
+  async function openPicklistEditDialog(field: "denialReason" | "status") {
     setDirectFieldEditResult(null);
     setDirectFieldEditModal(field);
 
@@ -2591,31 +2598,24 @@ function openClaimAmountEditDialog() {
       setMatterStageInput(findOptionValueByLabel(options, textValue(matter?.matterStage?.name)));
     }
 
-    if (field === "finalStatus") {
-      const options = picklists?.closeReason?.options || picklists?.closeReasons || [];
-      setFinalStatusInput(findOptionValueByLabel(options, textValue(matter?.closeReason)));
-    }
   }
 
-  function directPicklistFieldLabel(field: "denialReason" | "status" | "finalStatus"): string {
+  function directPicklistFieldLabel(field: "denialReason" | "status"): string {
     if (field === "denialReason") return "Denial Reason";
-    if (field === "status") return "Status";
-    return "Closed Reason";
+    return "Status";
   }
 
-  function directPicklistInputValue(field: "denialReason" | "status" | "finalStatus"): string {
+  function directPicklistInputValue(field: "denialReason" | "status"): string {
     if (field === "denialReason") return denialReasonInput;
-    if (field === "status") return matterStageInput;
-    return finalStatusInput;
+    return matterStageInput;
   }
 
-  function setDirectPicklistInputValue(field: "denialReason" | "status" | "finalStatus", value: string) {
+  function setDirectPicklistInputValue(field: "denialReason" | "status", value: string) {
     if (field === "denialReason") setDenialReasonInput(value);
     if (field === "status") setMatterStageInput(value);
-    if (field === "finalStatus") setFinalStatusInput(value);
   }
 
-  async function savePicklistEditDialog(field: "denialReason" | "status" | "finalStatus") {
+  async function savePicklistEditDialog(field: "denialReason" | "status") {
     const value = directPicklistInputValue(field);
 
     if (!value) {
@@ -2646,11 +2646,6 @@ function openClaimAmountEditDialog() {
       if (field === "status") {
         body.statusValue = selectedLabel || value;
         body.statusLabel = selectedLabel || value;
-      }
-
-      if (field === "finalStatus") {
-        body.finalStatusValue = value;
-        body.finalStatusLabel = selectedLabel;
       }
 
       const response = await fetch("/api/matters/update-direct-field", {
@@ -8002,10 +7997,10 @@ function openClaimAmountEditDialog() {
                 alignItems: "center",
                 gap: 6,
                 padding: "7px 11px",
-                border: "1px solid #86efac",
+                border: directMatterIsClosedForDisplay() ? "1px solid #fecaca" : "1px solid #86efac",
                 borderRadius: 999,
-                background: "#dcfce7",
-                color: "#14532d",
+                background: directMatterIsClosedForDisplay() ? "#fef2f2" : "#dcfce7",
+                color: directMatterIsClosedForDisplay() ? "#991b1b" : "#166534",
                 fontSize: 12,
                 fontWeight: 900,
                 whiteSpace: "nowrap",
@@ -8554,6 +8549,7 @@ function openClaimAmountEditDialog() {
           <div
             style={{
               width: "min(560px, calc(100vw - 48px))",
+              boxSizing: "border-box",
               border: "1px solid #cbd5e1",
               borderRadius: 18,
               background: "#fff",
@@ -8575,6 +8571,9 @@ function openClaimAmountEditDialog() {
                 onChange={(event) => setDirectPicklistInputValue(directFieldEditModal, event.target.value)}
                 disabled={directFieldPicklistsLoading || directFieldEditLoading}
                 style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
                   height: 42,
                   border: "1px solid #cbd5e1",
                   borderRadius: 10,
@@ -9027,6 +9026,21 @@ function openClaimAmountEditDialog() {
           <div className="barsh-direct-matter-main">
 <div className="barsh-direct-matter-detail-grid">
               <div className="barsh-direct-summary-column">
+                <div
+                  className="barsh-direct-section-title"
+                  style={{
+                    color: "#334155",
+                    fontSize: 12,
+                    fontWeight: 950,
+                    letterSpacing: "0.08em",
+                    margin: "0 0 2px",
+                    padding: "0 4px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Claim Information
+                </div>
+
                 <a
                   className="barsh-direct-summary-card barsh-direct-summary-link-card"
                   href={`/matters?patient=${encodeURIComponent(textValue(matter?.patient?.name || matter?.patient))}`}
@@ -9189,7 +9203,7 @@ function openClaimAmountEditDialog() {
                 </a>
               </div>
 
-              <div className="barsh-direct-summary-column">
+              <div className="barsh-direct-summary-column" style={{ paddingTop: 28 }}>
                 <div className="barsh-direct-summary-card">
                   <div
                     className="barsh-direct-summary-label"
@@ -9282,7 +9296,29 @@ function openClaimAmountEditDialog() {
                 </div>
               </div>
 
-              <div className="barsh-direct-summary-column">
+              <div
+                className="barsh-direct-summary-column barsh-direct-claim-status-column"
+                style={{
+                  borderLeft: "1px solid #94a3b8",
+                  paddingLeft: 14,
+                  height: 470,
+                }}
+              >
+                <div
+                  className="barsh-direct-section-title"
+                  style={{
+                    color: "#334155",
+                    fontSize: 12,
+                    fontWeight: 950,
+                    letterSpacing: "0.08em",
+                    margin: "0 0 2px",
+                    padding: "0 4px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Claim Status
+                </div>
+
                 <div className="barsh-direct-summary-card">
                   <div
                     className="barsh-direct-summary-label"
@@ -9300,7 +9336,24 @@ function openClaimAmountEditDialog() {
                     </button>
                   </div>
                   <div className="barsh-direct-summary-value">
-                    {textValue(matter?.matterStage?.name) || "—"}
+                    {textValue(matter?.matterStage?.name || matter?.matterStageName || matter?.matter_stage_name || matter?.status) || "—"}
+                  </div>
+                </div>
+
+                <div className="barsh-direct-summary-card">
+                  <div
+                    className="barsh-direct-summary-label"
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}
+                  >
+                    <span>Final Status</span>
+                  </div>
+                  <div className="barsh-direct-summary-value">
+                    {(() => {
+                      const rawFinalStatus = textValue(matter?.finalStatus || matter?.final_status).toLowerCase();
+                      if (rawFinalStatus === "closed") return "Closed";
+                      if (rawFinalStatus === "open") return "Open";
+                      return textValue(matter?.closeReason || matter?.close_reason) ? "Closed" : "Open";
+                    })()}
                   </div>
                 </div>
 
@@ -9310,15 +9363,6 @@ function openClaimAmountEditDialog() {
                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}
                   >
                     <span>Closed Reason</span>
-                    <button
-                      type="button"
-                      onClick={() => openPicklistEditDialog("finalStatus")}
-                      disabled={directFieldEditLoading}
-                      title="Edit Closed Reason."
-                      style={{ border: "1px solid #fdba74", borderRadius: 999, background: "#fff7ed", color: "#c2410c", fontSize: 11, fontWeight: 900, padding: "3px 8px", cursor: directFieldEditLoading ? "not-allowed" : "pointer" }}
-                    >
-                      Edit
-                    </button>
                   </div>
                   <div className="barsh-direct-summary-value">
                     {textValue(matter?.closeReason || "") || "—"}
@@ -14456,8 +14500,8 @@ function openClaimAmountEditDialog() {
           <h2 style={{ marginTop: 0 }}>Close Matter</h2>
 
           <p style={{ marginBottom: 14 }}>
-            This will close matter <strong>{textValue(closeMatterTarget?.displayNumber)}</strong> in Clio
-            and write the selected Close Reason.
+            This will close matter <strong>{textValue(closeMatterTarget?.displayNumber)}</strong> locally
+            and write Final Status = Closed with the selected Closed Reason.
           </p>
 
           <label style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>

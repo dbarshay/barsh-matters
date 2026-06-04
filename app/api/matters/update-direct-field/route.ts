@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type DirectField = "claimAmount" | "dos" | "denialReason" | "status" | "finalStatus";
+type DirectField = "claimAmount" | "dos" | "denialReason" | "status";
 
 function textValue(value: unknown): string {
   return String(value ?? "").trim();
@@ -25,8 +25,7 @@ function labelForField(field: DirectField): string {
   if (field === "claimAmount") return "Claim Amount";
   if (field === "dos") return "Date of Service";
   if (field === "denialReason") return "Denial Reason";
-  if (field === "status") return "Status";
-  return "Closed Reason";
+  return "Status";
 }
 
 function priorValueForField(existing: any, field: DirectField) {
@@ -41,7 +40,6 @@ function priorValueForField(existing: any, field: DirectField) {
 
   if (field === "denialReason") return existing?.denial_reason || null;
   if (field === "status") return existing?.matter_stage_name || existing?.status || null;
-  if (field === "finalStatus") return existing?.final_status || existing?.close_reason || null;
 
   return null;
 }
@@ -120,12 +118,6 @@ async function newValueForField(field: DirectField, body: any) {
     return value;
   }
 
-  if (field === "finalStatus") {
-    const value = textValue(body?.finalStatusLabel || body?.finalStatusValue);
-    if (!value) throw new Error("Closed Reason is required.");
-    return referenceDisplayNameFromSubmittedValue("closed_reason", value);
-  }
-
   throw new Error("Unsupported direct matter field.");
 }
 
@@ -167,14 +159,6 @@ function claimIndexUpdateData(field: DirectField, value: any, existing?: any) {
     return {
       matter_stage_name: String(value),
       status: String(value),
-      indexed_at: new Date(),
-    };
-  }
-
-  if (field === "finalStatus") {
-    return {
-      close_reason: String(value),
-      final_status: String(value),
       indexed_at: new Date(),
     };
   }
@@ -224,15 +208,6 @@ function clientMatterPatch(field: DirectField, value: any, updated: any) {
     };
   }
 
-  if (field === "finalStatus") {
-    return {
-      closeReason: String(value),
-      close_reason: String(value),
-      finalStatus: String(value),
-      final_status: String(value),
-    };
-  }
-
   return {};
 }
 
@@ -249,7 +224,7 @@ export async function PATCH(request: Request) {
       return jsonError("Valid matterId is required.");
     }
 
-    const supported: DirectField[] = ["claimAmount", "dos", "denialReason", "status", "finalStatus"];
+    const supported: DirectField[] = ["claimAmount", "dos", "denialReason", "status"];
     if (!supported.includes(field)) {
       return jsonError("Unsupported direct matter field.");
     }

@@ -257,7 +257,14 @@
     "verify:admin-reference-data-adversary-attorney-safety": "node scripts/verify-admin-reference-data-adversary-attorney-safety.mjs",
     "verify:home-search-results-table-safety": "node scripts/verify-home-search-results-table-safety.mjs",
     "verify:claim-index-regular-search-lawsuit-metadata-safety": "node scripts/verify-claim-index-regular-search-lawsuit-metadata-safety.mjs",
-    "verify:claimindex-ui-field-write-contract-safety": "node scripts/verify-claimindex-ui-field-write-contract-safety.mjs"
+    "verify:claimindex-ui-field-write-contract-safety": "node scripts/verify-claimindex-ui-field-write-contract-safety.mjs",
+    "verify:local-close-workflows-safety": "node scripts/verify-local-close-workflows-safety.mjs",
+    "verify:master-status-section-safety": "node scripts/verify-master-status-section-safety.mjs",
+    "verify:shared-matter-status-options-safety": "node scripts/verify-shared-matter-status-options-safety.mjs",
+    "verify:matters-results-final-status-column-safety": "node scripts/verify-matters-results-final-status-column-safety.mjs",
+    "verify:direct-picker-modal-width-safety": "node scripts/verify-direct-picker-modal-width-safety.mjs",
+    "verify:direct-closed-header-display-safety": "node scripts/verify-direct-closed-header-display-safety.mjs",
+    "verify:direct-claim-status-section-layout-safety": "node scripts/verify-direct-claim-status-section-layout-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
