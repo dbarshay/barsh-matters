@@ -33,6 +33,10 @@ mustContain("Home results reads advanced actual values per row", home, "const va
 mustContain("Home results displays Court from local row values", home, 'advancedDisplayValue("Court", values.court)');
 mustContain("Home results displays Adversary Attorney from local row values", home, 'advancedDisplayValue("Adversary Attorney", values.adversaryAttorney)');
 mustContain("Home results displays Denial Reason from local row values", home, 'advancedDisplayValue("Denial Reason", values.denialReason)');
+mustContain("Home results derives Open/Closed status locally", home, 'function homeOpenClosedStatusFromMatter(m: any): "Open" | "Closed"');
+mustContain("Home results closes on local close reason", home, 'if (closeReason) return "Closed";');
+mustContain("Home results defaults status to Open", home, 'return "Open";');
+mustContain("Home results displays colored status badge", home, "function homeStatusBadgeStyle(status: \"Open\" | \"Closed\"): React.CSSProperties");
 mustContain("Home results keeps matter navigation", home, 'href={`/matter/${row.id}`}');
 
 mustContain("Home results Matter link uses table link style", home, "style={homeResultsMatterLinkStyle}");
@@ -86,6 +90,7 @@ mustNotContain("Home results must not keep old advanced grid style", home, "cons
 mustContain("Home MatterResult preserves Court", home, "court: advancedValues.court");
 mustContain("Home MatterResult preserves Adversary Attorney", home, "adversaryAttorney: advancedValues.adversaryAttorney");
 mustContain("Home MatterResult preserves Denial Reason", home, 'denialReason: advancedDisplayValue("Denial Reason", advancedValues.denialReason)');
+mustContain("Home MatterResult preserves Status", home, "status: homeOpenClosedStatusFromMatter(row)");
 mustContain("Home URL state supports insurer", home, "insurer: string;");
 mustContain("Home URL state supports lawsuit ID", home, "lawsuitId: string;");
 mustContain("Home URL state supports court", home, "court: string;");
@@ -106,8 +111,13 @@ mustContain("Home results have sortable Lawsuit ID header", home, 'homeSortableH
 mustContain("Home results have sortable Court header", home, 'homeSortableHeader("Court", "court")');
 mustContain("Home results have sortable Adversary Attorney header", home, 'homeSortableHeader("Adversary Attorney", "adversaryAttorney")');
 mustContain("Home results have sortable Denial Reason header", home, 'homeSortableHeader("Denial Reason", "denialReason")');
+mustContain("Home results have sortable Status header", home, 'homeSortableHeader("Status", "status")');
 mustContain("Home results render sorted rows", home, "sortedHomeResults.map");
 
+mustContain("Home Hide Closed toggle defaults off", home, "const [hideClosedHomeResults, setHideClosedHomeResults] = useState(false);");
+mustContain("Home Hide Closed filters only rendered rows", home, 'rows.filter((row) => row.status !== "Closed")');
+mustContain("Home Hide Closed recomputes sorted rows", home, "[results, homeTableSort, hideClosedHomeResults]");
+mustContain("Home Hide Closed label renders", home, "Hide Closed?");
 mustContain("Home popstate replays lawsuit ID linked filter", home, 'runFilteredSearchPage(urlState.lawsuitId, "Lawsuit ID", { updateUrl: false })');
 if (process.exitCode) {
   console.error("FAILURES=1");

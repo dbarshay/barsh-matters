@@ -19,6 +19,7 @@ type MatterResult = {
   court: string;
   adversaryAttorney: string;
   denialReason: string;
+  status: "Open" | "Closed";
 };
 
 type AdvancedPicklistOption = {
@@ -203,6 +204,45 @@ function finalStatusFromMatter(m: any) {
 
 function denialReasonFromMatter(m: any) {
   return clean(m?.denialReason ?? m?.denial_reason ?? "");
+}
+
+function homeOpenClosedStatusFromMatter(m: any): "Open" | "Closed" {
+  const closeReason = clean(
+    m?.closeReason ??
+      m?.close_reason ??
+      m?.closedReason ??
+      m?.closed_reason ??
+      ""
+  );
+  const rawStatus = clean(
+    statusFromMatter(m) ||
+      m?.matterStageName ||
+      m?.matter_stage_name ||
+      m?.matterStatus ||
+      m?.matter_status ||
+      ""
+  ).toLowerCase();
+
+  if (closeReason) return "Closed";
+  if (rawStatus.includes("closed") || rawStatus === "close" || rawStatus === "inactive") return "Closed";
+  return "Open";
+}
+
+function homeStatusBadgeStyle(status: "Open" | "Closed"): React.CSSProperties {
+  const closed = status === "Closed";
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 58,
+    borderRadius: 999,
+    padding: "3px 8px",
+    fontSize: 12,
+    fontWeight: 900,
+    color: closed ? "#991b1b" : "#166534",
+    background: closed ? "#fee2e2" : "#dcfce7",
+    border: `1px solid ${closed ? "#fecaca" : "#bbf7d0"}`,
+  };
 }
 
 const ADVANCED_SEARCH_FIELD_IDS = {
@@ -749,6 +789,7 @@ function toMatterResult(row: any, matchedBy: string, fallbackClaimNumber = ""): 
     court: advancedValues.court,
     adversaryAttorney: advancedValues.adversaryAttorney,
     denialReason: advancedDisplayValue("Denial Reason", advancedValues.denialReason),
+    status: homeOpenClosedStatusFromMatter(row),
   };
 }
 
@@ -1142,6 +1183,7 @@ export default function Home() {
     key: "matter",
     direction: "asc",
   });
+  const [hideClosedHomeResults, setHideClosedHomeResults] = useState(false);
   const [checkedLabel, setCheckedLabel] = useState("");
   const [suggestions, setSuggestions] = useState<MatterResult[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
@@ -1157,6 +1199,7 @@ export default function Home() {
     | "court"
     | "adversaryAttorney"
     | "denialReason"
+    | "status"
     | "matchedBy";
 
   function homeResultSortValue(row: MatterResult, key: HomeResultsSortKey) {
@@ -1169,12 +1212,16 @@ export default function Home() {
     if (key === "court") return row.court;
     if (key === "adversaryAttorney") return row.adversaryAttorney;
     if (key === "denialReason") return row.denialReason;
+    if (key === "status") return row.status;
     if (key === "matchedBy") return row.matchedBy;
     return "";
   }
 
   function sortHomeResults(rows: MatterResult[]) {
-    const sorted = [...rows];
+    const visibleRows = hideClosedHomeResults
+      ? rows.filter((row) => row.status !== "Closed")
+      : rows;
+    const sorted = [...visibleRows];
 
     sorted.sort((a, b) => {
       const av = String(homeResultSortValue(a, homeTableSort.key) ?? "").toLowerCase();
@@ -1210,7 +1257,7 @@ export default function Home() {
 
   const sortedHomeResults = useMemo(
     () => sortHomeResults(results),
-    [results, homeTableSort]
+    [results, homeTableSort, hideClosedHomeResults]
   );
 
   const resultLabel = useMemo(() => {
@@ -2542,8 +2589,27 @@ export default function Home() {
               )}
 
               {!loading && !error && results.length > 0 && (
-                <div style={homeResultsTableScrollStyle}>
-                  <table style={homeResultsTableStyle}>
+                <>
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      margin: "0 0 10px",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: "#334155",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={hideClosedHomeResults}
+                      onChange={(event) => setHideClosedHomeResults(event.target.checked)}
+                    />
+                    Hide Closed?
+                  </label>
+                  <div style={homeResultsTableScrollStyle}>
+                    <table style={homeResultsTableStyle}>
                     <thead>
                       <tr>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Matter", "matter")}</th>
@@ -2555,6 +2621,7 @@ export default function Home() {
                         <th style={homeResultsThStyle}>{homeSortableHeader("Court", "court")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Adversary Attorney", "adversaryAttorney")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Denial Reason", "denialReason")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Status", "status")}</th>
                         <th style={homeResultsThStyle}>{homeSortableHeader("Matched By", "matchedBy")}</th>
                       </tr>
                     </thead>
@@ -2694,13 +2761,17 @@ export default function Home() {
                                 "—"
                               )}
                             </td>
+                            <td style={homeResultsTdStyle}>
+                              <span style={homeStatusBadgeStyle(row.status)}>{row.status}</span>
+                            </td>
                             <td style={homeResultsTdStyle}>{row.matchedBy || checkedLabel || "—"}</td>
                           </tr>
                         );
                       })}
                     </tbody>
-                  </table>
-                </div>
+                    </table>
+                  </div>
+                </>
               )}
             </section>
           )}
