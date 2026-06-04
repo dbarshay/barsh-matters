@@ -9024,7 +9024,34 @@ function openClaimAmountEditDialog() {
             <section className="barsh-matter-top-workspace barsh-direct-matter-top-workspace">
         <div className="barsh-direct-matter-summary-grid">
           <div className="barsh-direct-matter-main">
-<div className="barsh-direct-matter-detail-grid">
+<div
+              className="barsh-direct-matter-detail-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) 520px",
+                gap: 16,
+                alignItems: "start",
+              }}
+            >
+              <div
+                className="barsh-direct-claim-info-status-layout"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) 340px",
+                  gap: 14,
+                  alignItems: "start",
+                  paddingTop: 12,
+                }}
+              >
+                <div
+                  className="barsh-direct-left-info-column"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                    gap: 12,
+                    alignItems: "start",
+                  }}
+                >
               <div className="barsh-direct-summary-column">
                 <div
                   className="barsh-direct-section-title"
@@ -9296,14 +9323,35 @@ function openClaimAmountEditDialog() {
                 </div>
               </div>
 
+                </div>
+
               <div
                 className="barsh-direct-summary-column barsh-direct-claim-status-column"
                 style={{
-                  borderLeft: "1px solid #94a3b8",
-                  paddingLeft: 14,
+                  position: "relative",
+                  display: "grid",
+                  gap: 10,
+                  width: 340,
+                  maxWidth: "100%",
+                  justifySelf: "start",
+                  padding: "12px 0 0 12",
+                  alignSelf: "stretch",
+                  alignContent: "start",
+                  borderLeft: "none",
                   height: 470,
                 }}
               >
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: -7,
+                    top: 0,
+                    bottom: 0,
+                    width: 1,
+                    background: "#94a3b8",
+                  }}
+                />
                 <div
                   className="barsh-direct-section-title"
                   style={{
@@ -9369,10 +9417,12 @@ function openClaimAmountEditDialog() {
                   </div>
                 </div>
               </div>
+              </div>
 
               <div
                 className="barsh-direct-financial-bubble"
                 style={{
+                  marginTop: 12,
                   border: matterIsClosedForPayment()
                     ? "1px solid rgba(220, 38, 38, 0.28)"
                     : "1px solid rgba(22, 163, 74, 0.26)",
