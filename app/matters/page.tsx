@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider";
@@ -8225,35 +8226,7 @@ function masterSettlementDateFiledValue(): string {
 
 <div style={rightTopWrapStyle}>
             <div style={{ ...printButtonRowStyle, position: "relative" }}>
-              <button
-                type="button"
-                onClick={openAdministratorMenu}
-                title="Administrator functions require password access."
-                style={{
-                  ...printQueueButtonStyle,
-                  cursor: "pointer",
-                  opacity: 1,
-                }}
-              >
-                <span aria-hidden="true">🔐</span>
-                <span>Administrator</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/print-queue";
-                }}
-                title="Open Daily Print Queue."
-                style={{
-                  ...printQueueButtonStyle,
-                  cursor: "pointer",
-                  opacity: 1,
-                }}
-              >
-                <span aria-hidden="true">🖨️</span>
-                <span>Print Queue</span>
-              </button>
+              <BarshHeaderActions onAdministratorClick={openAdministratorMenu} />
             </div>
 
             <a href="/" style={bmLogoLinkStyle} title="Return to Barsh Matters entry screen">

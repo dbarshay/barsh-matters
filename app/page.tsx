@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 
 type SearchKind = "brl_matter" | "numeric_ambiguous" | "master" | "text";
 
@@ -2113,58 +2114,7 @@ export default function Home() {
           </div>
 <div style={rightTopWrapStyle}>
             <div style={{ ...printButtonRowStyle, position: "relative" }}>
-              <button
-                type="button"
-                onClick={openAdministratorMenu}
-                title="Administrator functions require password access."
-                style={{
-                  ...printQueueButtonStyle,
-                  cursor: "pointer",
-                  opacity: 1,
-                }}
-              >
-                <span aria-hidden="true">🔐</span>
-                <span>Administrator</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/print-queue";
-                }}
-                title="Open Daily Print Queue."
-                style={{
-                  ...printQueueButtonStyle,
-                  cursor: "pointer",
-                  opacity: 1,
-                }}
-              >
-                <span aria-hidden="true">🖨️</span>
-                <span>Print Queue</span>
-              </button>
-              <a
-                href="/lawsuits"
-                title="Open lawsuit aggregation and local master lawsuit management."
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "7px 11px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 999,
-                  background: "#f8fafc",
-                  color: "#475569",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
-                  textDecoration: "none",
-                }}
-              >
-                <span>Create Lawsuit</span>
-              </a>
-
+              <BarshHeaderActions onAdministratorClick={openAdministratorMenu} />
             </div>
 
             <a href="/" style={bmLogoLinkStyle} title="Return to Barsh Matters entry screen">

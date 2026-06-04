@@ -4,6 +4,7 @@ const DIRECT_MATTER_SETTLEMENTS_ENABLED = false;
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 function num(v: any) {
@@ -3140,7 +3141,17 @@ function openClaimAmountEditDialog() {
     try {
       const selectedMatterIds = selectedRows.map((r) => Number(r.id));
       const amountSoughtMode =
-        lawsuitOptions.amountSoughtMode === "claim_amount" ? "claim_amount" : "balance_presuit";
+        lawsuitOptions.amountSoughtMode === "custom"
+          ? "custom"
+          : lawsuitOptions.amountSoughtMode === "claim_amount"
+          ? "claim_amount"
+          : "balance_presuit";
+      const selectedVenue =
+        lawsuitOptions.venue === "Other"
+          ? lawsuitOptions.venueOther.trim()
+          : lawsuitOptions.venue.trim();
+      const customAmountSought =
+        amountSoughtMode === "custom" ? parseMoneyInput(lawsuitOptions.customAmountSought) : null;
 
       const previewRes = await fetch("/api/lawsuits/local-generation-preview", {
         method: "POST",
@@ -3151,6 +3162,9 @@ function openClaimAmountEditDialog() {
         body: JSON.stringify({
           matterIds: selectedMatterIds,
           amountSoughtMode,
+          customAmountSought,
+          venue: selectedVenue,
+          venueSelection: selectedVenue,
         }),
       });
 
@@ -3176,7 +3190,10 @@ function openClaimAmountEditDialog() {
           confirm: "create-local-lawsuit",
           matterIds: selectedMatterIds,
           amountSoughtMode,
-          notes: lawsuitOptions.notes.trim() || "Created from Direct Matter local-first lawsuit generation workflow.",
+          customAmountSought,
+          venue: selectedVenue,
+          venueSelection: selectedVenue,
+          notes: lawsuitOptions.notes.trim() || "Created from Start Lawsuit individual matter workflow.",
         }),
       });
 
@@ -7406,6 +7423,32 @@ function openClaimAmountEditDialog() {
     textValue(packetPreview?.packet?.masterLawsuitId) ||
     textValue(matter?.masterLawsuitId);
 
+  const startLawsuitSelectedMatterSummary = useMemo(() => {
+    const selectedMatterRows = rows.filter((row: any) => selected.includes(Number(row.id)));
+    const selectedClaimTotal = selectedMatterRows.reduce((sum, row) => sum + num(row.claimAmount), 0);
+    const selectedPaymentTotal = selectedMatterRows.reduce((sum, row) => sum + num(row.paymentVoluntary), 0);
+    const selectedBalanceTotal = selectedClaimTotal - selectedPaymentTotal;
+
+    return {
+      count: selectedMatterRows.length,
+      claimTotal: selectedClaimTotal,
+      balanceTotal: selectedBalanceTotal,
+      displayNumbers: selectedMatterRows
+        .map((row: any) => textValue(row.displayNumber || row.display_number || row.id))
+        .filter(Boolean),
+    };
+  }, [rows, selected]);
+
+  function startLawsuitAmountForMode(): number {
+    if (lawsuitOptions.amountSoughtMode === "claim_amount") {
+      return startLawsuitSelectedMatterSummary.claimTotal;
+    }
+    if (lawsuitOptions.amountSoughtMode === "custom") {
+      return parseMoneyInput(lawsuitOptions.customAmountSought) ?? 0;
+    }
+    return startLawsuitSelectedMatterSummary.balanceTotal;
+  }
+
   const settlementPreviewReady =
     !!settlementPreviewResult?.ok &&
     Array.isArray(settlementPreviewResult?.rows) &&
@@ -7619,6 +7662,144 @@ function openClaimAmountEditDialog() {
     void loadCurrentSettlementValues(tabMasterLawsuitId);
   }, [activeWorkspaceTab, tabMasterLawsuitId, currentSettlementValuesLoadedMasterId]);
 
+  const startLawsuitInputStyle: React.CSSProperties = {
+    padding: 8,
+    border: "1px solid #ccc",
+    borderRadius: 6,
+  };
+
+  const startLawsuitTableStyle: React.CSSProperties = {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: 13,
+  };
+
+  const startLawsuitThStyle: React.CSSProperties = {
+    textAlign: "left",
+    padding: "7px 8px",
+    borderBottom: "1px solid #ddd",
+    whiteSpace: "nowrap",
+  };
+
+  const startLawsuitThRightStyle: React.CSSProperties = {
+    ...startLawsuitThStyle,
+    textAlign: "right",
+  };
+
+  const startLawsuitTdStyle: React.CSSProperties = {
+    padding: "7px 8px",
+    borderBottom: "1px solid #eee",
+    verticalAlign: "top",
+  };
+
+  const startLawsuitTdRightStyle: React.CSSProperties = {
+    ...startLawsuitTdStyle,
+    textAlign: "right",
+    whiteSpace: "nowrap",
+  };
+
+  const startLawsuitModalBackdropStyle: React.CSSProperties = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 20000,
+    background: "rgba(15, 23, 42, 0.32)",
+  };
+
+  const startLawsuitModalStyle: React.CSSProperties = {
+    position: "absolute",
+    left: "calc(50% - min(590px, calc((100vw - 48px) / 2)) + 0px)",
+    top: 96,
+    width: "min(1180px, calc(100vw - 48px))",
+    height: "min(760px, calc(100vh - 96px))",
+    minWidth: 720,
+    minHeight: 480,
+    maxWidth: "calc(100vw - 24px)",
+    maxHeight: "calc(100vh - 24px)",
+    overflow: "auto",
+    resize: "both",
+    background: "#fff",
+    border: "1px solid #cbd5e1",
+    borderRadius: 12,
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.32)",
+    padding: 18,
+  };
+
+  const startLawsuitModalDragHandleStyle: React.CSSProperties = {
+    cursor: "default",
+    userSelect: "none",
+    margin: "-18px -18px 16px",
+    padding: "14px 18px",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    background: "#0f2a44",
+    boxShadow: "0 8px 18px rgba(15, 42, 68, 0.28)",
+  };
+
+  const startLawsuitModalTitleStyle: React.CSSProperties = {
+    margin: 0,
+    textAlign: "center",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    fontSize: 30,
+    lineHeight: 1.2,
+    fontWeight: 700,
+    color: "#fff",
+    letterSpacing: "0.02em",
+  };
+
+  const startLawsuitInlineFieldLabelStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 10,
+    fontSize: 12,
+    fontWeight: 900,
+    color: "#334155",
+  };
+
+  const startLawsuitAmountModePanelStyle: React.CSSProperties = {
+    border: "1px solid #cbd5e1",
+    background: "#f8fafc",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  };
+
+  const startLawsuitRadioLabelStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 7,
+    fontWeight: 800,
+    color: "#0f172a",
+  };
+
+  const startLawsuitModalButtonRowStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 10,
+  };
+
+  const startLawsuitSecondaryButtonStyle: React.CSSProperties = {
+    border: "1px solid #94a3b8",
+    background: "#fff",
+    color: "#334155",
+    borderRadius: 999,
+    padding: "9px 13px",
+    fontWeight: 900,
+    cursor: "pointer",
+  };
+
+  const startLawsuitPrimaryButtonStyle: React.CSSProperties = {
+    border: "1px solid #1e3a8a",
+    background: "#1e3a8a",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "9px 14px",
+    fontWeight: 950,
+    cursor: "pointer",
+  };
+
+
+
   return (
     <>
 
@@ -7743,35 +7924,7 @@ function openClaimAmountEditDialog() {
 </div>
 <div style={bmGlobalRightWrapStyle}>
           <div style={{ ...bmGlobalPrintButtonRowStyle, position: "relative" }}>
-            <button
-              type="button"
-              onClick={openAdministratorMenu}
-              title="Administrator functions require password access."
-              style={{
-                ...bmGlobalPrintQueueButtonStyle,
-                cursor: "pointer",
-                opacity: 1,
-              }}
-            >
-              <span aria-hidden="true">🔐</span>
-              <span>Administrator</span>
-            </button>
-
-            <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/print-queue";
-                }}
-                title="Open Daily Print Queue."
-                style={{
-                  ...bmGlobalPrintQueueButtonStyle,
-                  cursor: "pointer",
-                  opacity: 1,
-                }}
-              >
-                <span aria-hidden="true">🖨️</span>
-                <span>Print Queue</span>
-              </button>
+            <BarshHeaderActions onAdministratorClick={openAdministratorMenu} />
           </div>
 
           <a href="/" title="Return to Barsh Matters entry screen" style={bmGlobalLogoLinkStyle}>
@@ -13718,7 +13871,7 @@ function openClaimAmountEditDialog() {
               borderRadius: 4,
             }}
           >
-            <option value="">Select Venue</option>
+            <option value="">Choose Court</option>
             {VENUE_OPTIONS.map((venue) => (
               <option key={venue} value={venue}>
                 {venue}
@@ -13735,7 +13888,7 @@ function openClaimAmountEditDialog() {
                   venueOther: e.target.value,
                 }))
               }
-              placeholder="Enter venue"
+              placeholder="Enter court / venue"
               style={{
                 width: "100%",
                 padding: 10,
@@ -13931,228 +14084,192 @@ function openClaimAmountEditDialog() {
     )}
 
     {showLawsuitOptionsModal && (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.45)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}
-      >
-        <div
-          style={{
-            width: 560,
-            maxWidth: "calc(100vw - 32px)",
-            background: "#fff",
-            borderRadius: 8,
-            padding: 22,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Lawsuit Generation Options</h2>
-
-          <p style={{ marginBottom: 16, color: "#444" }}>
-            These options will be stored with the lawsuit and used for amount-sought calculation,
-            document packet metadata, and future document generation.
-          </p>
-
-          <label style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
-            Venue
-          </label>
-          <select
-            value={lawsuitOptions.venue}
-            onChange={(e) =>
-              setLawsuitOptions((prev) => ({
-                ...prev,
-                venue: e.target.value,
-                venueOther: e.target.value === "Other" ? prev.venueOther : "",
-              }))
-            }
-            style={{
-              width: "100%",
-              padding: 10,
-              marginBottom: 10,
-              border: "1px solid #bbb",
-              borderRadius: 4,
-            }}
+      <div style={startLawsuitModalBackdropStyle}>
+        <div style={startLawsuitModalStyle}>
+          <div
+            style={startLawsuitModalDragHandleStyle}
+            title="Create Lawsuit"
           >
-            <option value="">Select Venue</option>
-            {VENUE_OPTIONS.map((venue) => (
-              <option key={venue} value={venue}>
-                {venue}
-              </option>
-            ))}
-          </select>
+            <h2 style={startLawsuitModalTitleStyle}>Create Lawsuit</h2>
+          </div>
 
-          {lawsuitOptions.venue === "Other" && (
-            <input
-              value={lawsuitOptions.venueOther}
-              onChange={(e) =>
-                setLawsuitOptions((prev) => ({
-                  ...prev,
-                  venueOther: e.target.value,
-                }))
-              }
-              placeholder="Enter venue"
-              style={{
-                width: "100%",
-                padding: 10,
-                marginBottom: 14,
-                border: "1px solid #bbb",
-                borderRadius: 4,
-              }}
-            />
-          )}
-
-          <fieldset
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: 6,
-              padding: 12,
-              margin: "8px 0 14px",
-            }}
-          >
-            <legend style={{ fontWeight: 700, padding: "0 6px" }}>
-              Amount Sought
-            </legend>
-
-            <label style={{ display: "block", marginBottom: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(360px, 520px)", gap: 12, marginBottom: 12 }}>
+            <label style={startLawsuitInlineFieldLabelStyle}>
+              <span>Choose Court</span>
               <input
-                type="radio"
-                name="amountSoughtMode"
-                value="balance_presuit"
-                checked={lawsuitOptions.amountSoughtMode === "balance_presuit"}
-                onChange={() =>
-                  setLawsuitOptions((prev) => ({
-                    ...prev,
-                    amountSoughtMode: "balance_presuit",
-                    customAmountSought: "",
-                  }))
-                }
-                style={{ marginRight: 8 }}
-              />
-              Balance (Presuit) — default
-            </label>
-
-            <label style={{ display: "block", marginBottom: 8 }}>
-              <input
-                type="radio"
-                name="amountSoughtMode"
-                value="claim_amount"
-                checked={lawsuitOptions.amountSoughtMode === "claim_amount"}
-                onChange={() =>
-                  setLawsuitOptions((prev) => ({
-                    ...prev,
-                    amountSoughtMode: "claim_amount",
-                    customAmountSought: "",
-                  }))
-                }
-                style={{ marginRight: 8 }}
-              />
-              Claim Amount
-            </label>
-
-            <label style={{ display: "block", marginBottom: 8 }}>
-              <input
-                type="radio"
-                name="amountSoughtMode"
-                value="custom"
-                checked={lawsuitOptions.amountSoughtMode === "custom"}
-                onChange={() =>
-                  setLawsuitOptions((prev) => ({
-                    ...prev,
-                    amountSoughtMode: "custom",
-                  }))
-                }
-                style={{ marginRight: 8 }}
-              />
-              Custom Amount
-            </label>
-
-            {lawsuitOptions.amountSoughtMode === "custom" && (
-              <input
-                value={lawsuitOptions.customAmountSought}
+                list="barsh-start-lawsuit-court-options"
+                value={lawsuitOptions.venue}
                 onChange={(e) =>
                   setLawsuitOptions((prev) => ({
                     ...prev,
-                    customAmountSought: e.target.value,
+                    venue: e.target.value,
+                    venueOther: e.target.value === "Other" ? prev.venueOther : "",
                   }))
                 }
-                placeholder="Enter total lawsuit amount sought"
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  marginTop: 2,
-                  border: "1px solid #bbb",
-                  borderRadius: 4,
-                }}
+                placeholder="Select or enter court"
+                style={{ ...startLawsuitInputStyle, width: 360 }}
               />
-            )}
-          </fieldset>
+            </label>
+          </div>
 
-          <label style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
-            Index / AAA Number
+          <div style={startLawsuitAmountModePanelStyle}>
+            <div style={{ fontWeight: 900, marginBottom: 8 }}>
+              Lawsuit Amount <span style={{ color: "#dc2626" }}>*</span>
+            </div>
+
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+              <label style={startLawsuitRadioLabelStyle}>
+                <input
+                  type="radio"
+                  name="amountSoughtMode"
+                  value="claim_amount"
+                  checked={lawsuitOptions.amountSoughtMode === "claim_amount"}
+                  onChange={() =>
+                    setLawsuitOptions((prev) => ({
+                      ...prev,
+                      amountSoughtMode: "claim_amount",
+                      customAmountSought: "",
+                    }))
+                  }
+                />
+                Billed Amount ({money(startLawsuitSelectedMatterSummary.claimTotal)})
+              </label>
+
+              <label style={startLawsuitRadioLabelStyle}>
+                <input
+                  type="radio"
+                  name="amountSoughtMode"
+                  value="balance_presuit"
+                  checked={lawsuitOptions.amountSoughtMode === "balance_presuit"}
+                  onChange={() =>
+                    setLawsuitOptions((prev) => ({
+                      ...prev,
+                      amountSoughtMode: "balance_presuit",
+                      customAmountSought: "",
+                    }))
+                  }
+                />
+                Balance ({money(startLawsuitSelectedMatterSummary.balanceTotal)})
+              </label>
+
+              <label style={startLawsuitRadioLabelStyle}>
+                <input
+                  type="radio"
+                  name="amountSoughtMode"
+                  value="custom"
+                  checked={lawsuitOptions.amountSoughtMode === "custom"}
+                  onChange={() =>
+                    setLawsuitOptions((prev) => ({
+                      ...prev,
+                      amountSoughtMode: "custom",
+                    }))
+                  }
+                />
+                Other
+              </label>
+
+              {lawsuitOptions.amountSoughtMode === "custom" && (
+                <input
+                  value={lawsuitOptions.customAmountSought}
+                  onChange={(e) =>
+                    setLawsuitOptions((prev) => ({
+                      ...prev,
+                      customAmountSought: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter lawsuit amount"
+                  style={{ ...startLawsuitInputStyle, width: 180 }}
+                />
+              )}
+            </div>
+
+            <div style={{ marginTop: 8, fontSize: 13, color: "#334155" }}>
+              Selected Lawsuit Amount: <strong>{money(startLawsuitAmountForMode())}</strong>
+            </div>
+          </div>
+
+          <datalist id="barsh-start-lawsuit-court-options">
+            {VENUE_OPTIONS.map((venue) => (
+              <option key={venue} value={venue} />
+            ))}
+          </datalist>
+
+          <div style={{ marginBottom: 10, fontWeight: 900 }}>
+            Selected Matters: {startLawsuitSelectedMatterSummary.count} · Selected Lawsuit Amount: {money(startLawsuitAmountForMode())}
+          </div>
+
+          <div style={{ maxHeight: 260, overflow: "auto", border: "1px solid #e5e7eb", borderRadius: 8, marginBottom: 12 }}>
+            <table style={startLawsuitTableStyle}>
+              <thead>
+                <tr>
+                  <th style={startLawsuitThStyle}>Matter</th>
+                  <th style={startLawsuitThStyle}>Patient</th>
+                  <th style={startLawsuitThStyle}>Provider</th>
+                  <th style={startLawsuitThStyle}>Insurer</th>
+                  <th style={startLawsuitThRightStyle}>Claim Amount</th>
+                  <th style={startLawsuitThRightStyle}>Payment</th>
+                  <th style={startLawsuitThRightStyle}>Balance</th>
+                  <th style={startLawsuitThStyle}>Denial Reason</th>
+                  <th style={startLawsuitThStyle}>Filing Status</th>
+                  <th style={startLawsuitThStyle}>Matter Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows
+                  .filter((row: any) => selected.includes(Number(row.id)))
+                  .map((row: any) => (
+                    <tr key={`start-lawsuit-review-${Number(row.id)}`}>
+                      <td style={startLawsuitTdStyle}>{textValue(row.displayNumber || row.display_number || row.id)}</td>
+                      <td style={startLawsuitTdStyle}>{textValue(row.patient) || "—"}</td>
+                      <td style={startLawsuitTdStyle}>{providerValue(row) || "—"}</td>
+                      <td style={startLawsuitTdStyle}>{insurerValue(row) || "—"}</td>
+                      <td style={startLawsuitTdRightStyle}>{money(num(row.claimAmount))}</td>
+                      <td style={startLawsuitTdRightStyle}>{money(num(row.paymentVoluntary))}</td>
+                      <td style={startLawsuitTdRightStyle}>{money(num(row.claimAmount) - num(row.paymentVoluntary))}</td>
+                      <td style={startLawsuitTdStyle}>{denialReasonValue(row) || "—"}</td>
+                      <td style={startLawsuitTdStyle}>{textValue(row.masterLawsuitId) || "Not Filed"}</td>
+                      <td style={startLawsuitTdStyle}>
+                        <span style={{ color: String(row.closeReason || "").trim() ? "#dc2626" : "#15803d", fontWeight: 900 }}>
+                          {String(row.closeReason || "").trim() ? "Closed" : "Open"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+
+          <label style={{ display: "grid", gap: 5, fontSize: 12, fontWeight: 900, color: "#334155", marginBottom: 12 }}>
+            <span>Lawsuit Notes</span>
+            <textarea
+              value={lawsuitOptions.notes}
+              onChange={(e) =>
+                setLawsuitOptions((prev) => ({
+                  ...prev,
+                  notes: e.target.value,
+                }))
+              }
+              placeholder="Optional"
+              rows={3}
+              style={{
+                ...startLawsuitInputStyle,
+                resize: "vertical",
+              }}
+            />
           </label>
-          <input
-            value={lawsuitOptions.indexAaaNumber}
-            onChange={(e) =>
-              setLawsuitOptions((prev) => ({
-                ...prev,
-                indexAaaNumber: e.target.value,
-              }))
-            }
-            placeholder="Optional"
-            style={{
-              width: "100%",
-              padding: 10,
-              marginBottom: 14,
-              border: "1px solid #bbb",
-              borderRadius: 4,
-            }}
-          />
 
-          <label style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
-            Additional Metadata / Notes
-          </label>
-          <textarea
-            value={lawsuitOptions.notes}
-            onChange={(e) =>
-              setLawsuitOptions((prev) => ({
-                ...prev,
-                notes: e.target.value,
-              }))
-            }
-            placeholder="Optional"
-            rows={3}
-            style={{
-              width: "100%",
-              padding: 10,
-              marginBottom: 18,
-              border: "1px solid #bbb",
-              borderRadius: 4,
-              resize: "vertical",
-            }}
-          />
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div style={startLawsuitModalButtonRowStyle}>
             <button
+              type="button"
               onClick={() => setShowLawsuitOptionsModal(false)}
               disabled={submitting}
-              style={{
-                padding: "8px 12px",
-                border: "1px solid #aaa",
-                background: "#fff",
-                borderRadius: 4,
-                cursor: submitting ? "not-allowed" : "pointer",
-              }}
+              style={startLawsuitSecondaryButtonStyle}
             >
               Cancel
             </button>
 
             <button
+              type="button"
               onClick={submitAggregationWithOptions}
               disabled={
                 submitting ||
@@ -14160,31 +14277,22 @@ function openClaimAmountEditDialog() {
                   parseMoneyInput(lawsuitOptions.customAmountSought) === null)
               }
               style={{
-                padding: "8px 12px",
-                border: "1px solid #0070f3",
-                background:
+                ...startLawsuitPrimaryButtonStyle,
+                opacity:
                   submitting ||
                   (lawsuitOptions.amountSoughtMode === "custom" &&
                     parseMoneyInput(lawsuitOptions.customAmountSought) === null)
-                    ? "#f3f4f6"
-                    : "#0070f3",
-                color:
-                  submitting ||
-                  (lawsuitOptions.amountSoughtMode === "custom" &&
-                    parseMoneyInput(lawsuitOptions.customAmountSought) === null)
-                    ? "#666"
-                    : "#fff",
-                borderRadius: 4,
+                    ? 0.45
+                    : 1,
                 cursor:
                   submitting ||
                   (lawsuitOptions.amountSoughtMode === "custom" &&
                     parseMoneyInput(lawsuitOptions.customAmountSought) === null)
                     ? "not-allowed"
                     : "pointer",
-                fontWeight: 700,
               }}
             >
-              {submitting ? "Generating..." : "Confirm"}
+              {submitting ? "Working..." : "Confirm Create Lawsuit"}
             </button>
           </div>
         </div>

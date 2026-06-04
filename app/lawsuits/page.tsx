@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import * as XLSX from "xlsx";
 
 type Matter = any;
@@ -885,6 +886,19 @@ export default function LawsuitsPage() {
             alignItems: "flex-start",
           }}
         >
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: -270,
+              display: "flex",
+              justifyContent: "flex-start",
+              alignItems: "center",
+            }}
+          >
+            <BarshHeaderActions />
+          </div>
+
           <a href="/" title="Return to Barsh Matters entry screen" style={{ display: "inline-flex", textDecoration: "none" }}>
             <img
               src="/barsh-matters-cropped-transparent.png"

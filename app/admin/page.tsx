@@ -1,5 +1,8 @@
 "use client";
 
+import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
+
 import React from "react";
 
 const adminCards = [
@@ -58,6 +61,17 @@ export default function AdminHomePage() {
       }}
     >
       <div style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gap: 18 }}>
+        <section
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 16,
+          }}
+        >
+          <BarshHeaderQuickNav />
+          <BarshHeaderActions />
+        </section>
         <header
           style={{
             background: "#fff",

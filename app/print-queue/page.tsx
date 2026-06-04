@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
+import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 
 type PrintQueueStatus = "" | "queued" | "printed" | "hold" | "skipped";
 
@@ -400,38 +401,13 @@ export default function PrintQueuePage() {
             style={{
               position: "absolute",
               top: 0,
-              left: -86,
+              left: -270,
               display: "flex",
               justifyContent: "flex-start",
               alignItems: "center",
             }}
           >
-            <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/print-queue";
-                }}
-                title="Open Daily Print Queue."
-                style={{
-                  display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "7px 11px",
-                border: "1px solid #cbd5e1",
-                borderRadius: 999,
-                background: "#f8fafc",
-                color: "#475569",
-                fontSize: 12,
-                fontWeight: 800,
-                whiteSpace: "nowrap",
-                cursor: "pointer",
-                opacity: 1,
-              }}
-              >
-                <span aria-hidden="true">🖨️</span>
-                <span>Print Queue</span>
-              </button>
+            <BarshHeaderActions />
           </div>
 
           <a href="/" title="Return to Barsh Matters entry screen" style={{ display: "inline-flex", textDecoration: "none" }}>
