@@ -13,6 +13,10 @@ function compact(v: any) {
   return clean(v).toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
+function objectValue(value: unknown): Record<string, any> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, any>) : {};
+}
+
 function dateVariants(v: any) {
   const raw = clean(v);
   if (!raw) return [];
@@ -35,6 +39,12 @@ function dateVariants(v: any) {
   }
 
   return Array.from(out).filter(Boolean);
+}
+
+function includesText(value: unknown, query: unknown) {
+  const needle = clean(query).toLowerCase();
+  if (!needle) return true;
+  return clean(value).toLowerCase().includes(needle);
 }
 
 function contains(field: string, value: string): Prisma.ClaimIndexWhereInput {
@@ -106,6 +116,39 @@ const CLOSE_REASON_LABELS: Record<string, string> = {
   "12497825": "TRANSFERRED TO LB",
 };
 
+async function attachLocalLawsuitMetadata(rows: any[]) {
+  const masterIds = Array.from(new Set(rows.map((row) => clean(row?.master_lawsuit_id ?? row?.masterLawsuitId)).filter(Boolean)));
+  if (!masterIds.length) return rows;
+
+  const lawsuits = await prisma.lawsuit.findMany({
+    where: {
+      masterLawsuitId: { in: masterIds },
+    },
+    select: {
+      masterLawsuitId: true,
+      lawsuitOptions: true,
+    },
+  });
+
+  const byMasterId = new Map(lawsuits.map((lawsuit) => [clean(lawsuit.masterLawsuitId), lawsuit]));
+
+  return rows.map((row) => {
+    const lawsuit = byMasterId.get(clean(row?.master_lawsuit_id ?? row?.masterLawsuitId));
+    if (!lawsuit) return row;
+
+    const lawsuitAny = lawsuit as any;
+    const lawsuitOptions = objectValue(lawsuitAny.lawsuitOptions);
+
+    return {
+      ...row,
+      adversary_attorney: lawsuitOptions.adversaryAttorney || null,
+      adversaryAttorney: lawsuitOptions.adversaryAttorney || null,
+      selected_adversary_attorney_details: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
+      selectedAdversaryAttorneyDetails: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
+    };
+  });
+}
+
 const DENIAL_REASON_LABELS: Record<string, string> = {
   "12497975": "Medical Necessity (IME)",
   "12497990": "Medical Necessity (Peer Review)",
@@ -136,6 +179,7 @@ export async function GET(req: NextRequest) {
   const indexAaaNumber = clean(params.get("indexAaaNumber"));
   const dateOpenedFrom = clean(params.get("dateOpenedFrom"));
   const dateOpenedTo = clean(params.get("dateOpenedTo"));
+  const adversaryAttorney = clean(params.get("adversaryAttorney"));
   const dosStart = clean(params.get("dosStart"));
   const dosEnd = clean(params.get("dosEnd"));
   const denialReason = clean(params.get("denialReason"));
@@ -232,11 +276,18 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  const rowsWithMetadata = await attachLocalLawsuitMetadata(rows);
+  const finalRows = adversaryAttorney
+    ? rowsWithMetadata.filter((row: any) =>
+        includesText(row.adversaryAttorney || row.adversary_attorney, adversaryAttorney)
+      )
+    : rowsWithMetadata;
+
   return NextResponse.json({
     ok: true,
     action: "advanced-search-candidates",
-    count: rows.length,
-    rows,
+    count: finalRows.length,
+    rows: finalRows,
     source: "ClaimIndex/local Barsh Matters candidate narrowing.  Final display uses local data only.",
     safety: {
       readOnly: true,

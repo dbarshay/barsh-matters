@@ -35,6 +35,7 @@ type AdvancedSearchFields = {
   accidentDate: string;
   serviceType: string;
   court: string;
+  adversaryAttorney: string;
   dosStart: string;
   dosEnd: string;
   denialReason: string;
@@ -76,6 +77,7 @@ function emptyAdvancedSearchFields(): AdvancedSearchFields {
     accidentDate: "",
     serviceType: "",
     court: "",
+    adversaryAttorney: "",
     dosStart: "",
     dosEnd: "",
     denialReason: "",
@@ -156,6 +158,16 @@ function insurerName(m: any) {
       m?.insurer
   );
 }
+
+function adversaryAttorneyName(m: any) {
+  return nameLike(
+    m?.adversaryAttorney ??
+      m?.adversary_attorney ??
+      m?.adversaryAttorneyName ??
+      m?.adversary_attorney_name
+  );
+}
+
 
 function claimNumberFromMatter(m: any, fallbackClaimNumber = "") {
   return clean(
@@ -548,6 +560,7 @@ function advancedActualValuesFromMatter(row: any) {
         customFieldIdValue(row, ADVANCED_SEARCH_FIELD_IDS.serviceType)
       ) || supportedFieldValueFromMatter(row, ["serviceType", "service_type"]),
     court: supportedFieldValueFromMatter(row, ["court", "courtName", "court_name", "venue", "venueSelection", "venue_selection"]),
+    adversaryAttorney: supportedFieldValueFromMatter(row, ["adversaryAttorney", "adversary_attorney", "adversaryAttorneyName", "adversary_attorney_name"]),
     dosStart:
       supportedFieldValueFromMatter(row, ["dosStart", "dos_start_display"]) ||
       formatDateForDisplay(customFieldIdValue(row, ADVANCED_SEARCH_FIELD_IDS.dosStart)) ||
@@ -576,6 +589,7 @@ function compactAdvancedActualValueSummary(row: any) {
 
   const pairs = [
     ["Court", values.court],
+    ["Adversary Attorney", values.adversaryAttorney],
     ["Date Opened", values.dateOpened],
     ["Policy", values.policyNumber],
     ["Date of Loss", values.dateOfLoss],
@@ -839,6 +853,7 @@ async function fetchAdvancedCandidateRows(fields: AdvancedSearchFields, limit = 
     ["indexAaaNumber", fields.indexAaaNumber],
     ["dateOpenedFrom", fields.dateOpenedFrom],
     ["dateOpenedTo", fields.dateOpenedTo],
+    ["adversaryAttorney", fields.adversaryAttorney],
     ["dosStart", fields.dosStart],
     ["dosEnd", fields.dosEnd],
     ["denialReason", fields.denialReason],
@@ -1102,6 +1117,7 @@ export default function Home() {
   const [providerReferenceOptions, setProviderReferenceOptions] = useState<any[]>([]);
   const [insurerReferenceOptions, setInsurerReferenceOptions] = useState<any[]>([]);
   const [courtReferenceOptions, setCourtReferenceOptions] = useState<any[]>([]);
+  const [adversaryAttorneyReferenceOptions, setAdversaryAttorneyReferenceOptions] = useState<any[]>([]);
   const [advancedFields, setAdvancedFields] = useState<AdvancedSearchFields>(() =>
     emptyAdvancedSearchFields()
   );
@@ -1356,25 +1372,29 @@ export default function Home() {
 
   async function loadSearchReferenceOptions() {
     try {
-      const [providerResponse, insurerResponse, courtResponse] = await Promise.all([
+      const [providerResponse, insurerResponse, courtResponse, adversaryAttorneyResponse] = await Promise.all([
         fetch("/api/reference-data/options?type=provider_client", { cache: "no-store" }),
         fetch("/api/reference-data/options?type=insurer_company", { cache: "no-store" }),
         fetch("/api/reference-data/options?type=court_venue", { cache: "no-store" }),
+        fetch("/api/reference-data/options?type=adversary_attorney", { cache: "no-store" }),
       ]);
 
-      const [providerJson, insurerJson, courtJson] = await Promise.all([
+      const [providerJson, insurerJson, courtJson, adversaryAttorneyJson] = await Promise.all([
         providerResponse.json().catch(() => ({})),
         insurerResponse.json().catch(() => ({})),
         courtResponse.json().catch(() => ({})),
+        adversaryAttorneyResponse.json().catch(() => ({})),
       ]);
 
       setProviderReferenceOptions(Array.isArray(providerJson?.options) ? providerJson.options : []);
       setInsurerReferenceOptions(Array.isArray(insurerJson?.options) ? insurerJson.options : []);
       setCourtReferenceOptions(Array.isArray(courtJson?.options) ? courtJson.options : []);
+      setAdversaryAttorneyReferenceOptions(Array.isArray(adversaryAttorneyJson?.options) ? adversaryAttorneyJson.options : []);
     } catch {
       setProviderReferenceOptions([]);
       setInsurerReferenceOptions([]);
       setCourtReferenceOptions([]);
+      setAdversaryAttorneyReferenceOptions([]);
     }
   }
 
@@ -1774,6 +1794,7 @@ export default function Home() {
       )) return false;
     }
     if (!supportedFieldMatches(row, fields.court, ["court", "courtName", "court_name", "venue", "venueSelection", "venue_selection"])) return false;
+    if (!supportedFieldMatches(row, fields.adversaryAttorney, ["adversaryAttorney", "adversary_attorney", "adversaryAttorneyName", "adversary_attorney_name"])) return false;
 
     if (!customFieldDateIdMatches(row, ADVANCED_SEARCH_FIELD_IDS.dosStart, fields.dosStart)) return false;
     if (!customFieldDateIdMatches(row, ADVANCED_SEARCH_FIELD_IDS.dosEnd, fields.dosEnd)) return false;
@@ -2634,6 +2655,17 @@ export default function Home() {
                     />
                   </label>
 
+                    <label style={structuredFieldStyle}>
+                      <span style={labelStyle}>Adversary Attorney</span>
+                      <input
+                        value={advancedFields.adversaryAttorney}
+                        onChange={(e) => updateAdvancedField("adversaryAttorney", e.target.value)}
+                        placeholder="Adversary Attorney"
+                        style={inputStyle}
+                        list="barsh-advanced-adversary-attorney-reference-options"
+                      />
+                    </label>
+
                   <label style={structuredFieldStyle}>
                     <span style={labelStyle}>DOS Start</span>
                     <input
@@ -2741,6 +2773,13 @@ export default function Home() {
                     const value = referenceOptionLabel(option);
                     if (!value) return null;
                     return <option key={`advanced-court-reference-${option.id || value}-${index}`} value={value} />;
+                  })}
+                </datalist>
+                <datalist id="barsh-advanced-adversary-attorney-reference-options">
+                  {adversaryAttorneyReferenceOptions.map((option, index) => {
+                    const value = String(option?.displayName || option?.name || option?.value || "").trim();
+                    if (!value) return null;
+                    return <option key={`advanced-adversary-attorney-reference-${option.id || value}-${index}`} value={value} />;
                   })}
                 </datalist>
 

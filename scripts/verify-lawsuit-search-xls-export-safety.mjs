@@ -29,6 +29,7 @@ mustInclude("exports matter value", "displayNumber(matter)");
 mustInclude("exports patient value", 'safeExportCell(val(matter, "patientName", "patient_name"))');
 mustInclude("exports provider value", 'safeExportCell(val(matter, "client_name", "clientName", "provider_name", "providerName"))');
 mustInclude("exports insurer value", "safeExportCell(insurerName(matter))");
+mustInclude("exports adversary attorney value", "safeExportCell(adversaryAttorneyName(matter))");
 mustInclude("exports master lawsuit value", "safeExportCell(masterId(matter))");
 
 const match = page.match(/const standardCaseExportHeaders = \[([\s\S]*?)\];/);
@@ -42,6 +43,7 @@ const expected = [
   "Provider",
   "Patient",
   "Insurer",
+  "Adversary Attorney",
   "Claim Number",
   "Date of Loss",
   "Court",

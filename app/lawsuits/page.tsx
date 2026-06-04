@@ -65,6 +65,15 @@ function insurerName(m: Matter) {
   );
 }
 
+function adversaryAttorneyName(m: Matter) {
+  return (
+    val(m, "adversaryAttorney", "adversary_attorney") ||
+    val(m, "adversaryAttorneyName", "adversary_attorney_name") ||
+    "—"
+  );
+}
+
+
 function moneyValue(v: unknown) {
   const n = Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
@@ -100,6 +109,7 @@ const standardCaseExportHeaders = [
   "Provider",
   "Patient",
   "Insurer",
+  "Adversary Attorney",
   "Claim Number",
   "Date of Loss",
   "Court",
@@ -183,6 +193,7 @@ type SortKey =
   | "patient"
   | "provider"
   | "insurer"
+  | "adversaryAttorney"
   | "claimAmount"
   | "payment"
   | "balance"
@@ -233,6 +244,7 @@ function lawsuitsSearchStateFromUrl() {
       patient: "",
       provider: "",
       insurer: "",
+      adversaryAttorney: "",
       indexAaaNumber: "",
       masterLawsuitId: "",
     };
@@ -245,6 +257,7 @@ function lawsuitsSearchStateFromUrl() {
     patient: params.get("patient") || "",
     provider: params.get("provider") || "",
     insurer: params.get("insurer") || "",
+    adversaryAttorney: params.get("adversaryAttorney") || "",
     indexAaaNumber: params.get("indexAaaNumber") || "",
     masterLawsuitId: params.get("masterLawsuitId") || "",
   };
@@ -255,6 +268,7 @@ function lawsuitsSearchStateHasAnyValue(state: {
   patient?: string;
   provider?: string;
   insurer?: string;
+  adversaryAttorney?: string;
   indexAaaNumber?: string;
   masterLawsuitId?: string;
 }) {
@@ -263,6 +277,7 @@ function lawsuitsSearchStateHasAnyValue(state: {
     String(state.patient || "").trim() ||
     String(state.provider || "").trim() ||
     String(state.insurer || "").trim() ||
+    String(state.adversaryAttorney || "").trim() ||
     String(state.indexAaaNumber || "").trim() ||
     String(state.masterLawsuitId || "").trim()
   );
@@ -412,6 +427,7 @@ export default function LawsuitsPage() {
       patient: string;
       provider: string;
       insurer: string;
+      adversaryAttorney: string;
       indexAaaNumber: string;
       masterLawsuitId: string;
     }> = {},
@@ -423,6 +439,7 @@ export default function LawsuitsPage() {
     const nextPatient = hasOverride("patient") ? String(overrides.patient ?? "") : patient;
     const nextProvider = hasOverride("provider") ? String(overrides.provider ?? "") : provider;
     const nextInsurer = hasOverride("insurer") ? String(overrides.insurer ?? "") : insurer;
+    const nextAdversaryAttorney = hasOverride("adversaryAttorney") ? String(overrides.adversaryAttorney ?? "") : "";
     const nextIndexAaaNumber = hasOverride("indexAaaNumber") ? String(overrides.indexAaaNumber ?? "") : "";
     const nextMasterLawsuitId = hasOverride("masterLawsuitId") ? String(overrides.masterLawsuitId ?? "") : "";
 
@@ -443,6 +460,7 @@ export default function LawsuitsPage() {
       if (nextPatient.trim()) params.set("patient", nextPatient.trim());
       if (nextProvider.trim()) params.set("provider", nextProvider.trim());
       if (nextInsurer.trim()) params.set("insurer", nextInsurer.trim());
+      if (nextAdversaryAttorney.trim()) params.set("adversaryAttorney", nextAdversaryAttorney.trim());
       if (nextIndexAaaNumber.trim()) params.set("indexAaaNumber", nextIndexAaaNumber.trim());
       if (nextMasterLawsuitId.trim()) params.set("masterLawsuitId", nextMasterLawsuitId.trim());
 
@@ -514,7 +532,7 @@ export default function LawsuitsPage() {
   }, []);
 
   function searchLinkedField(
-    field: "claim" | "patient" | "provider" | "insurer" | "indexAaaNumber" | "masterLawsuitId",
+    field: "claim" | "patient" | "provider" | "insurer" | "adversaryAttorney" | "indexAaaNumber" | "masterLawsuitId",
     value: unknown
   ) {
     const cleaned = String(value ?? "").trim();
@@ -547,6 +565,11 @@ export default function LawsuitsPage() {
       return;
     }
 
+    if (field === "adversaryAttorney") {
+      void search({ ...clearedVisibleFields, adversaryAttorney: cleaned });
+      return;
+    }
+
     if (field === "indexAaaNumber") {
       void search({ ...clearedVisibleFields, indexAaaNumber: cleaned });
       return;
@@ -569,6 +592,7 @@ export default function LawsuitsPage() {
         safeExportCell(val(matter, "client_name", "clientName", "provider_name", "providerName")),
         safeExportCell(val(matter, "patientName", "patient_name")),
         safeExportCell(insurerName(matter)),
+        safeExportCell(adversaryAttorneyName(matter)),
         safeExportCell(getClaimNumber(group)),
         pickAny(matter, ["dateOfLoss", "date_of_loss"]),
         pickAny(matter, ["court", "courtVenue", "court_venue"]),
@@ -794,6 +818,7 @@ export default function LawsuitsPage() {
     if (key === "patient") return val(m, "patientName", "patient_name");
     if (key === "provider") return val(m, "client_name", "clientName", "provider_name", "providerName");
     if (key === "insurer") return insurerName(m);
+    if (key === "adversaryAttorney") return adversaryAttorneyName(m);
     if (key === "claimAmount") return moneyValue(val(m, "claimAmount", "claim_amount"));
     if (key === "payment") return paymentAmount(m);
     if (key === "balance") return moneyValue(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"));
@@ -1061,6 +1086,7 @@ export default function LawsuitsPage() {
                         <th style={thRight}>{sortableHeader("Balance", "balance", thRight)}</th>
                         <th style={th}>{sortableHeader("Denial Reason", "denialReason")}</th>
                         <th style={th}>{sortableHeader("Court", "court")}</th>
+                        <th style={th}>{sortableHeader("Adversary Attorney", "adversaryAttorney")}</th>
                         <th style={th}>{sortableHeader("Filing Status", "filingStatus")}</th>
                         <th style={th}>{sortableHeader("Index Number", "indexNumber")}</th>
                         <th style={th}>{sortableHeader("Matter Status", "matterStatus")}</th>
@@ -1131,6 +1157,16 @@ export default function LawsuitsPage() {
                             <td style={tdRight}>{money(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"))}</td>
                             <td style={td}>{denialReason(m)}</td>
                             <td style={td}>{courtVenue(m)}</td>
+                            <td style={td}>
+                              <button
+                                type="button"
+                                onClick={() => searchLinkedField("adversaryAttorney", adversaryAttorneyName(m))}
+                                style={fieldTextFilterLink}
+                                title="Show all matters for this adversary attorney"
+                              >
+                                {adversaryAttorneyName(m) || "—"}
+                              </button>
+                            </td>
                             <td style={td}>
                               {hasMaster ? (
                                 masterTargetHref(m) ? (
@@ -1328,6 +1364,7 @@ export default function LawsuitsPage() {
                     <th style={thRight}>Payment</th>
                     <th style={thRight}>Balance</th>
                     <th style={th}>Denial Reason</th>
+                    <th style={th}>Adversary Attorney</th>
                     <th style={th}>Filing Status</th>
                     <th style={th}>Matter Status</th>
                   </tr>
@@ -1343,6 +1380,7 @@ export default function LawsuitsPage() {
                       <td style={tdRight}>{money(paymentAmount(m))}</td>
                       <td style={tdRight}>{money(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"))}</td>
                       <td style={td}>{denialReason(m)}</td>
+                      <td style={td}>{adversaryAttorneyName(m) || "—"}</td>
                       <td style={td}>{masterId(m) || "Not Filed"}</td>
                       <td style={td}><span style={matterStatusStyle(m)}>{matterStatus(m)}</span></td>
                     </tr>

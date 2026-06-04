@@ -45,6 +45,16 @@ function cleanText(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function objectValue(value: unknown): Record<string, any> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, any>) : {};
+}
+
+function includesText(value: unknown, query: unknown) {
+  const needle = cleanText(query).toLowerCase();
+  if (!needle) return true;
+  return cleanText(value).toLowerCase().includes(needle);
+}
+
 function displayVenue(lawsuit: any) {
   return (
     cleanText(lawsuit?.venue) ||
@@ -79,6 +89,7 @@ async function attachLocalLawsuitMetadata(rows: any[]) {
       clioMasterMatterId: true,
       clioMasterDisplayNumber: true,
       clioMasterMatterDescription: true,
+      lawsuitOptions: true,
     },
   });
 
@@ -87,6 +98,9 @@ async function attachLocalLawsuitMetadata(rows: any[]) {
   return rows.map((row) => {
     const lawsuit = byMasterId.get(cleanText(row.master_lawsuit_id));
     if (!lawsuit) return row;
+
+    const lawsuitAny = lawsuit as any;
+    const lawsuitOptions = objectValue(lawsuitAny.lawsuitOptions);
 
     const courtVenue = displayVenue(lawsuit);
     const lawsuitIndexNumber = cleanText(lawsuit.indexAaaNumber);
@@ -105,6 +119,10 @@ async function attachLocalLawsuitMetadata(rows: any[]) {
       clio_master_display_number: lawsuit.clioMasterDisplayNumber || null,
       clioMasterMatterDescription: lawsuit.clioMasterMatterDescription || null,
       clio_master_matter_description: lawsuit.clioMasterMatterDescription || null,
+      adversary_attorney: lawsuitOptions.adversaryAttorney || null,
+      adversaryAttorney: lawsuitOptions.adversaryAttorney || null,
+      selected_adversary_attorney_details: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
+      selectedAdversaryAttorneyDetails: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
     };
   });
 }
@@ -120,7 +138,8 @@ export async function GET(req: NextRequest) {
     indexAaaNumber: clean(req.nextUrl.searchParams.get("indexAaaNumber")),
   };
 
-  const hasAnySelector = Object.values(params).some(Boolean);
+  const adversaryAttorneyFilter = clean(req.nextUrl.searchParams.get("adversaryAttorney"));
+  const hasAnySelector = Object.values(params).some(Boolean) || Boolean(adversaryAttorneyFilter);
 
   if (!hasAnySelector) {
     return NextResponse.json(
@@ -143,7 +162,12 @@ export async function GET(req: NextRequest) {
     select: CLAIM_INDEX_SELECT,
   });
 
-  const rows = attachMasterFlags(await attachLocalLawsuitMetadata(claimIndexRows));
+  const rowsWithMetadata = attachMasterFlags(await attachLocalLawsuitMetadata(claimIndexRows));
+  const rows = adversaryAttorneyFilter
+    ? rowsWithMetadata.filter((row: any) =>
+        includesText(row.adversaryAttorney || row.adversary_attorney, adversaryAttorneyFilter)
+      )
+    : rowsWithMetadata;
 
   const groups = groupByClaim(rows);
 
