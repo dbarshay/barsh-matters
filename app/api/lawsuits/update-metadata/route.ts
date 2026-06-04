@@ -211,6 +211,11 @@ export async function POST(req: NextRequest) {
       amountSoughtMode,
       customAmountSought,
       indexAaaNumber: text(body?.indexAaaNumber),
+      adversaryAttorney: text(body?.adversaryAttorney),
+      selectedAdversaryAttorneyDetails:
+        body?.selectedAdversaryAttorneyDetails && typeof body.selectedAdversaryAttorneyDetails === "object"
+          ? body.selectedAdversaryAttorneyDetails
+          : null,
       notes: text(body?.lawsuitNotes || body?.notes),
     };
 

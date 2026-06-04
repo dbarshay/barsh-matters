@@ -1436,6 +1436,10 @@ export default function FilteredMattersPage() {
       return clean(options?.dateFiled);
     }
 
+    if (field === "adversaryAttorney") {
+      return clean(options?.adversaryAttorney);
+    }
+
     if (field === "filingFee") {
       return clean(options?.filingFee);
     }
@@ -1460,6 +1464,10 @@ export default function FilteredMattersPage() {
     if (override !== undefined) return formatMasterDateDisplay(override);
 
     return formatMasterDateDisplay(masterLocalMetadataValue("dateFiled") || "—");
+  }
+
+  function masterAdversaryAttorneyDisplayValue(): string {
+    return masterInfoDisplayValue("adversaryAttorney", masterLocalMetadataValue("adversaryAttorney") || "—");
   }
 
   function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "otherCourtCosts"): string {
@@ -1497,6 +1505,8 @@ export default function FilteredMattersPage() {
       indexAaaNumber: clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber),
       dateOfLoss: clean(options?.dateOfLoss),
       dateFiled: clean(options?.dateFiled),
+      adversaryAttorney: clean(options?.adversaryAttorney),
+      selectedAdversaryAttorneyDetails: options?.selectedAdversaryAttorneyDetails || null,
       filingFee: clean(options?.filingFee),
       serviceFee: clean(options?.serviceFee),
       otherCourtCosts: clean(options?.otherCourtCosts),
@@ -1513,6 +1523,10 @@ export default function FilteredMattersPage() {
     if (field === "indexAaaNumber") payload.indexAaaNumber = after;
     if (field === "dateOfLoss") payload.dateOfLoss = after;
     if (field === "dateFiled") payload.dateFiled = after;
+    if (field === "adversaryAttorney") {
+      payload.adversaryAttorney = after;
+      payload.selectedAdversaryAttorneyDetails = masterInfoSelectedContact?.details || null;
+    }
     if (field === "filingFee") payload.filingFee = after;
     if (field === "serviceFee") payload.serviceFee = after;
     if (field === "otherCourtCosts") payload.otherCourtCosts = after;
@@ -1521,7 +1535,7 @@ export default function FilteredMattersPage() {
   }
 
   function masterInfoFieldPersistsLocally(field: string): boolean {
-    return ["court", "indexAaaNumber", "dateOfLoss", "dateFiled", "filingFee", "serviceFee", "otherCourtCosts"].includes(field);
+    return ["court", "indexAaaNumber", "dateOfLoss", "dateFiled", "adversaryAttorney", "filingFee", "serviceFee", "otherCourtCosts"].includes(field);
   }
 
   function masterInfoMoneyNumber(field: string, fallback: any): number {
@@ -1532,7 +1546,7 @@ export default function FilteredMattersPage() {
   }
 
   function masterInfoFieldKind(field: string): "contact" | "date" | "money" | "court" | "text" {
-    if (["provider", "patient", "insurer"].includes(field)) return "contact";
+    if (["provider", "patient", "insurer", "adversaryAttorney"].includes(field)) return "contact";
     if (["court", "venue", "venueSelection"].includes(field)) return "court";
     if (["dateOfLoss", "dateFiled"].includes(field)) return "date";
     if (["filingFee", "serviceFee", "otherCourtCosts"].includes(field)) return "money";
@@ -1540,9 +1554,10 @@ export default function FilteredMattersPage() {
     return "text";
   }
 
-  function masterInfoContactType(field: string): "person" | "insurer_company" | "provider_client" | "all" {
+  function masterInfoContactType(field: string): "person" | "insurer_company" | "provider_client" | "adversary_attorney" | "all" {
     if (field === "patient") return "person";
     if (field === "insurer") return "insurer_company";
+    if (field === "adversaryAttorney") return "adversary_attorney";
     if (field === "provider") return "provider_client";
 
     return "all";
@@ -9081,6 +9096,46 @@ function masterSettlementDateFiledValue(): string {
                           type="button"
                           onClick={() => openMasterInfoEditDialog("court", "Court", masterCourtDisplayValue())}
                           title="Open Court edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#1d4ed8",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Adversary Attorney</span>
+                        <strong style={masterSummaryCardValueStyle}>
+                          {clean(masterAdversaryAttorneyDisplayValue()) && masterAdversaryAttorneyDisplayValue() !== "—" ? (
+                            <button
+                              type="button"
+                              onClick={() => openMasterInfoEditDialog("adversaryAttorney", "Adversary Attorney", masterAdversaryAttorneyDisplayValue())}
+                              className="barsh-filter-field-link"
+                              style={{
+                                ...fieldLinkStyle,
+                                border: 0,
+                                background: "transparent",
+                                padding: 0,
+                                margin: 0,
+                                cursor: "pointer",
+                                font: "inherit",
+                              }}
+                            >
+                              {masterAdversaryAttorneyDisplayValue()}
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("adversaryAttorney", "Adversary Attorney", masterAdversaryAttorneyDisplayValue())}
+                          title="Open Adversary Attorney edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
                             borderColor: "#93c5fd",

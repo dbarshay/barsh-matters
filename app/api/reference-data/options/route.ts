@@ -60,6 +60,16 @@ const TYPE_ALIASES: Record<string, string> = {
   transaction_statuses: "transaction_status",
   payment_status: "transaction_status",
   payment_statuses: "transaction_status",
+
+  adversary_attorney: "adversary_attorney",
+  adversary_attorneys: "adversary_attorney",
+  adversary: "adversary_attorney",
+  adversary_firm: "adversary_attorney",
+  adversary_firms: "adversary_attorney",
+  defense_attorney: "adversary_attorney",
+  defense_attorneys: "adversary_attorney",
+  defense_firm: "adversary_attorney",
+  defense_firms: "adversary_attorney",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -72,6 +82,7 @@ const TYPE_LABELS: Record<string, string> = {
   closed_reason: "Closed Reasons / Final Statuses",
   transaction_type: "Transaction Types",
   transaction_status: "Transaction Statuses",
+  adversary_attorney: "Adversary Attorneys",
 };
 
 function textValue(value: unknown): string {
