@@ -16,6 +16,9 @@ type MatterResult = {
   masterLawsuitId: string;
   claimAmount: any;
   matchedBy: string;
+  court: string;
+  adversaryAttorney: string;
+  denialReason: string;
 };
 
 type AdvancedPicklistOption = {
@@ -731,6 +734,8 @@ function toMatterResult(row: any, matchedBy: string, fallbackClaimNumber = ""): 
   const id = matterId(row);
   if (!id) return null;
 
+  const advancedValues = advancedActualValuesFromMatter(row);
+
   return {
     id,
     displayNumber: displayNumber(row),
@@ -741,6 +746,9 @@ function toMatterResult(row: any, matchedBy: string, fallbackClaimNumber = ""): 
     masterLawsuitId: masterLawsuitId(row),
     claimAmount: row?.claimAmount ?? row?.claim_amount,
     matchedBy,
+    court: advancedValues.court,
+    adversaryAttorney: advancedValues.adversaryAttorney,
+    denialReason: advancedDisplayValue("Denial Reason", advancedValues.denialReason),
   };
 }
 
@@ -1028,6 +1036,11 @@ type HomeSearchUrlState = {
   patient: string;
   claim: string;
   provider: string;
+  insurer: string;
+  lawsuitId: string;
+  court: string;
+  adversaryAttorney: string;
+  denialReason: string;
 };
 
 function homeSearchStateFromUrl(): HomeSearchUrlState {
@@ -1036,6 +1049,11 @@ function homeSearchStateFromUrl(): HomeSearchUrlState {
       patient: "",
       claim: "",
       provider: "",
+      insurer: "",
+      lawsuitId: "",
+      court: "",
+      adversaryAttorney: "",
+      denialReason: "",
     };
   }
 
@@ -1045,11 +1063,25 @@ function homeSearchStateFromUrl(): HomeSearchUrlState {
     patient: params.get("patient") || "",
     claim: params.get("claim") || "",
     provider: params.get("provider") || "",
+    insurer: params.get("insurer") || "",
+    lawsuitId: params.get("lawsuitId") || "",
+    court: params.get("court") || "",
+    adversaryAttorney: params.get("adversaryAttorney") || "",
+    denialReason: params.get("denialReason") || "",
   };
 }
 
 function homeSearchStateHasAnyValue(state: HomeSearchUrlState) {
-  return Boolean(state.patient || state.claim || state.provider);
+  return Boolean(
+    state.patient ||
+      state.claim ||
+      state.provider ||
+      state.insurer ||
+      state.lawsuitId ||
+      state.court ||
+      state.adversaryAttorney ||
+      state.denialReason
+  );
 }
 
 function homeSearchUrlForState(state: HomeSearchUrlState) {
@@ -1058,6 +1090,11 @@ function homeSearchUrlForState(state: HomeSearchUrlState) {
   if (state.patient) params.set("patient", state.patient);
   if (state.claim) params.set("claim", state.claim);
   if (state.provider) params.set("provider", state.provider);
+  if (state.insurer) params.set("insurer", state.insurer);
+  if (state.lawsuitId) params.set("lawsuitId", state.lawsuitId);
+  if (state.court) params.set("court", state.court);
+  if (state.adversaryAttorney) params.set("adversaryAttorney", state.adversaryAttorney);
+  if (state.denialReason) params.set("denialReason", state.denialReason);
 
   return params.toString() ? `/?${params.toString()}` : "/";
 }
@@ -1101,10 +1138,80 @@ export default function Home() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<MatterResult[]>([]);
+  const [homeTableSort, setHomeTableSort] = useState<{ key: HomeResultsSortKey; direction: "asc" | "desc" }>({
+    key: "matter",
+    direction: "asc",
+  });
   const [checkedLabel, setCheckedLabel] = useState("");
   const [suggestions, setSuggestions] = useState<MatterResult[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionLabel, setSuggestionLabel] = useState("");
+
+  type HomeResultsSortKey =
+    | "matter"
+    | "patient"
+    | "provider"
+    | "insurer"
+    | "claimNumber"
+    | "lawsuitId"
+    | "court"
+    | "adversaryAttorney"
+    | "denialReason"
+    | "matchedBy";
+
+  function homeResultSortValue(row: MatterResult, key: HomeResultsSortKey) {
+    if (key === "matter") return row.displayNumber || row.id;
+    if (key === "patient") return row.patient;
+    if (key === "provider") return row.provider;
+    if (key === "insurer") return row.insurer;
+    if (key === "claimNumber") return row.claimNumber;
+    if (key === "lawsuitId") return row.masterLawsuitId;
+    if (key === "court") return row.court;
+    if (key === "adversaryAttorney") return row.adversaryAttorney;
+    if (key === "denialReason") return row.denialReason;
+    if (key === "matchedBy") return row.matchedBy;
+    return "";
+  }
+
+  function sortHomeResults(rows: MatterResult[]) {
+    const sorted = [...rows];
+
+    sorted.sort((a, b) => {
+      const av = String(homeResultSortValue(a, homeTableSort.key) ?? "").toLowerCase();
+      const bv = String(homeResultSortValue(b, homeTableSort.key) ?? "").toLowerCase();
+      const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" });
+      return homeTableSort.direction === "asc" ? cmp : -cmp;
+    });
+
+    return sorted;
+  }
+
+  function homeSortableHeader(label: string, key: HomeResultsSortKey) {
+    const active = homeTableSort.key === key;
+    const direction = active ? homeTableSort.direction : "asc";
+
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          setHomeTableSort((current) =>
+            current.key === key
+              ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+              : { key, direction: "asc" }
+          )
+        }
+        style={homeResultsHeaderButtonStyle}
+        title={`Sort by ${label}`}
+      >
+        {label} {active ? (direction === "asc" ? "▲" : "▼") : ""}
+      </button>
+    );
+  }
+
+  const sortedHomeResults = useMemo(
+    () => sortHomeResults(results),
+    [results, homeTableSort]
+  );
 
   const resultLabel = useMemo(() => {
     if (!searched || loading || error) return "";
@@ -1156,16 +1263,27 @@ export default function Home() {
     function applyHomeSearchStateFromUrl() {
       const urlState = homeSearchStateFromUrl();
 
-      setPatientSearchInput(urlState.patient);
-      setClaimSearchInput(urlState.claim);
-      setProviderSearchInput(urlState.provider);
-
       if (homeSearchStateHasAnyValue(urlState)) {
-        void runMainCombinedSearch(urlState, { updateUrl: false });
-        return;
-      }
+        setPatientSearchInput(urlState.patient);
+        setClaimSearchInput(urlState.claim);
+        setProviderSearchInput(urlState.provider);
 
-      resetSearch({ updateUrl: false });
+        if (urlState.insurer) {
+          void runFilteredSearchPage(urlState.insurer, "Insurer", { updateUrl: false });
+        } else if (urlState.lawsuitId) {
+          void runFilteredSearchPage(urlState.lawsuitId, "Lawsuit ID", { updateUrl: false });
+        } else if (urlState.court) {
+          void runFilteredSearchPage(urlState.court, "Court", { updateUrl: false });
+        } else if (urlState.adversaryAttorney) {
+          void runFilteredSearchPage(urlState.adversaryAttorney, "Adversary Attorney", { updateUrl: false });
+        } else if (urlState.denialReason) {
+          void runFilteredSearchPage(urlState.denialReason, "Denial Reason", { updateUrl: false });
+        } else {
+          void runMainCombinedSearch(urlState, { updateUrl: false });
+        }
+      } else {
+        resetSearch({ updateUrl: false });
+      }
     }
 
     applyHomeSearchStateFromUrl();
@@ -1475,33 +1593,66 @@ export default function Home() {
     }
   }
 
-  function filteredSearchUrl(
-    nextQuery: string,
-    target: "Patient" | "Provider" | "Insurer" | "Claim number"
-  ) {
+  type HomeLinkedFilterTarget =
+    | "Patient"
+    | "Provider"
+    | "Insurer"
+    | "Claim number"
+    | "Lawsuit ID"
+    | "Court"
+    | "Adversary Attorney"
+    | "Denial Reason";
+
+  function homeLinkedFilterState(nextQuery: string, target: HomeLinkedFilterTarget): HomeSearchUrlState {
     const q = clean(nextQuery);
-    const params = new URLSearchParams();
 
-    if (target === "Patient") {
-      params.set("patient", q);
-    } else if (target === "Provider") {
-      params.set("provider", q);
-    } else if (target === "Insurer") {
-      params.set("insurer", q);
-    } else {
-      params.set("claim", q);
-    }
+    return {
+      patient: target === "Patient" ? q : "",
+      claim: target === "Claim number" ? q : "",
+      provider: target === "Provider" ? q : "",
+      insurer: target === "Insurer" ? q : "",
+      lawsuitId: target === "Lawsuit ID" ? q : "",
+      court: target === "Court" ? q : "",
+      adversaryAttorney: target === "Adversary Attorney" ? q : "",
+      denialReason: target === "Denial Reason" ? q : "",
+    };
+  }
 
-    return `/matters?${params.toString()}`;
+  function linkedSearchButtonTitle(target: HomeLinkedFilterTarget) {
+    if (target === "Claim number") return "Show all matters for this claim number";
+    if (target === "Lawsuit ID") return "Show all matters for this lawsuit ID";
+    if (target === "Adversary Attorney") return "Show all matters for this adversary attorney";
+    if (target === "Denial Reason") return "Show all matters for this denial reason";
+    return `Show all matters for this ${target.toLowerCase()}`;
+  }
+
+  function runHomeLinkedFilter(nextQuery: string, target: HomeLinkedFilterTarget) {
+    const q = clean(nextQuery);
+    if (!q) return;
+    void runFilteredSearchPage(q, target);
   }
 
   async function runFilteredSearchPage(
     nextQuery: string,
-    target: "Patient" | "Provider" | "Insurer" | "Claim number"
+    target: HomeLinkedFilterTarget,
+    options: { updateUrl?: boolean; replaceUrl?: boolean } = {}
   ) {
     const q = clean(nextQuery);
 
     if (!q) return;
+
+    if (typeof window !== "undefined" && options.updateUrl !== false) {
+      const nextUrl = homeSearchUrlForState(homeLinkedFilterState(q, target));
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+      if (nextUrl !== currentUrl) {
+        if (options.replaceUrl) {
+          window.history.replaceState({ barshMattersHomeSearch: true }, "", nextUrl);
+        } else {
+          window.history.pushState({ barshMattersHomeSearch: true }, "", nextUrl);
+        }
+      }
+    }
 
     setQuery(q);
     setLoading(true);
@@ -1540,12 +1691,39 @@ export default function Home() {
           const mappedRow = toMatterResult(row, "Insurer");
           if (mappedRow) mapped.push(mappedRow);
         }
-      } else {
+      } else if (target === "Claim number") {
         const rows = await fetchFastRows(`/api/claim-index/search?claim=${encodeURIComponent(q)}`);
 
         for (const row of rows) {
           if (!exactOrContains(claimNumberFromMatter(row), q)) continue;
           const mappedRow = toMatterResult(row, "Claim number", q);
+          if (mappedRow) mapped.push(mappedRow);
+        }
+      } else if (target === "Lawsuit ID") {
+        const rows = await fetchFastRows(`/api/claim-index/by-master?masterLawsuitId=${encodeURIComponent(q)}`);
+
+        for (const row of rows) {
+          const mappedRow = toMatterResult(row, "Lawsuit ID");
+          if (mappedRow) mapped.push(mappedRow);
+        }
+      } else {
+        const params = new URLSearchParams();
+        params.set("limit", "250");
+
+        if (target === "Court") params.set("court", q);
+        if (target === "Adversary Attorney") params.set("adversaryAttorney", q);
+        if (target === "Denial Reason") params.set("denialReason", q);
+
+        const rows = await fetchFastRows(`/api/advanced-search/candidates?${params.toString()}`);
+
+        for (const row of rows) {
+          const values = advancedActualValuesFromMatter(row);
+
+          if (target === "Court" && !exactOrContains(values.court, q)) continue;
+          if (target === "Adversary Attorney" && !exactOrContains(values.adversaryAttorney, q)) continue;
+          if (target === "Denial Reason" && !exactOrContains(advancedDisplayValue("Denial Reason", values.denialReason), q)) continue;
+
+          const mappedRow = toMatterResult(row, target);
           if (mappedRow) mapped.push(mappedRow);
         }
       }
@@ -1992,6 +2170,11 @@ export default function Home() {
           patient,
           claim,
           provider,
+          insurer: "",
+          lawsuitId: "",
+          court: "",
+          adversaryAttorney: "",
+          denialReason: "",
         });
         const currentUrl = `${window.location.pathname}${window.location.search}`;
 
@@ -2363,21 +2546,27 @@ export default function Home() {
                   <table style={homeResultsTableStyle}>
                     <thead>
                       <tr>
-                        <th style={homeResultsThStyle}>Matter</th>
-                        <th style={homeResultsThStyle}>Patient</th>
-                        <th style={homeResultsThStyle}>Provider</th>
-                        <th style={homeResultsThStyle}>Insurer</th>
-                        <th style={homeResultsThStyle}>Claim Number</th>
-                        <th style={homeResultsThStyle}>Lawsuit ID</th>
-                        <th style={homeResultsThStyle}>Court</th>
-                        <th style={homeResultsThStyle}>Adversary Attorney</th>
-                        <th style={homeResultsThStyle}>Denial Reason</th>
-                        <th style={homeResultsThStyle}>Matched By</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Matter", "matter")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Patient", "patient")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Provider", "provider")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Insurer", "insurer")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Claim Number", "claimNumber")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Lawsuit ID", "lawsuitId")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Court", "court")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Adversary Attorney", "adversaryAttorney")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Denial Reason", "denialReason")}</th>
+                        <th style={homeResultsThStyle}>{homeSortableHeader("Matched By", "matchedBy")}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {results.map((row) => {
+                      {sortedHomeResults.map((row) => {
                         const values = advancedActualValuesFromMatter(row);
+                        const courtValue = row.court || advancedDisplayValue("Court", values.court);
+                        const adversaryAttorneyValue =
+                          row.adversaryAttorney || advancedDisplayValue("Adversary Attorney", values.adversaryAttorney);
+                        const denialReasonValue =
+                          row.denialReason || advancedDisplayValue("Denial Reason", values.denialReason);
+
                         return (
                           <tr key={row.id}>
                             <td style={homeResultsTdStyle}>
@@ -2387,28 +2576,124 @@ export default function Home() {
                             </td>
                             <td style={homeResultsTdStyle}>
                               {row.patient ? (
-                                <a href={filteredSearchUrl(row.patient, "Patient")} className="barsh-field-link" style={resultFieldLinkStyle}>
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(row.patient, "Patient")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Patient")}
+                                >
                                   {row.patient}
-                                </a>
+                                </button>
                               ) : (
                                 "—"
                               )}
                             </td>
                             <td style={homeResultsTdStyle}>
                               {row.provider ? (
-                                <a href={filteredSearchUrl(row.provider, "Provider")} className="barsh-field-link" style={resultFieldLinkStyle}>
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(row.provider, "Provider")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Provider")}
+                                >
                                   {row.provider}
-                                </a>
+                                </button>
                               ) : (
                                 "—"
                               )}
                             </td>
-                            <td style={homeResultsTdStyle}>{row.insurer || "—"}</td>
-                            <td style={homeResultsTdStyle}>{row.claimNumber || values.claim || "—"}</td>
-                            <td style={homeResultsTdStyle}>{row.masterLawsuitId || "Not Filed"}</td>
-                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Court", values.court) || "—"}</td>
-                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Adversary Attorney", values.adversaryAttorney) || "—"}</td>
-                            <td style={homeResultsTdStyle}>{advancedDisplayValue("Denial Reason", values.denialReason) || "—"}</td>
+                            <td style={homeResultsTdStyle}>
+                              {row.insurer ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(row.insurer, "Insurer")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Insurer")}
+                                >
+                                  {row.insurer}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td style={homeResultsTdStyle}>
+                              {row.claimNumber || values.claim ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(row.claimNumber || values.claim, "Claim number")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Claim number")}
+                                >
+                                  {row.claimNumber || values.claim}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td style={homeResultsTdStyle}>
+                              {row.masterLawsuitId ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(row.masterLawsuitId, "Lawsuit ID")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Lawsuit ID")}
+                                >
+                                  {row.masterLawsuitId}
+                                </button>
+                              ) : (
+                                "Not Filed"
+                              )}
+                            </td>
+                            <td style={homeResultsTdStyle}>
+                              {courtValue ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(courtValue, "Court")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Court")}
+                                >
+                                  {courtValue}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td style={homeResultsTdStyle}>
+                              {adversaryAttorneyValue ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(adversaryAttorneyValue, "Adversary Attorney")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Adversary Attorney")}
+                                >
+                                  {adversaryAttorneyValue}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td style={homeResultsTdStyle}>
+                              {denialReasonValue ? (
+                                <button
+                                  type="button"
+                                  onClick={() => runHomeLinkedFilter(denialReasonValue, "Denial Reason")}
+                                  className="barsh-field-link"
+                                  style={homeResultsFieldButtonStyle}
+                                  title={linkedSearchButtonTitle("Denial Reason")}
+                                >
+                                  {denialReasonValue}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                             <td style={homeResultsTdStyle}>{row.matchedBy || checkedLabel || "—"}</td>
                           </tr>
                         );
@@ -3534,6 +3819,32 @@ const homeResultsMatterLinkStyle: React.CSSProperties = {
   fontSize: "inherit",
   fontWeight: 850,
   textDecoration: "none",
+};
+
+const homeResultsFieldButtonStyle: React.CSSProperties = {
+  appearance: "none",
+  border: 0,
+  background: "transparent",
+  color: "#2563eb",
+  cursor: "pointer",
+  font: "inherit",
+  fontSize: "inherit",
+  fontWeight: 800,
+  padding: 0,
+  textAlign: "left",
+  textDecoration: "none",
+};
+
+const homeResultsHeaderButtonStyle: React.CSSProperties = {
+  appearance: "none",
+  border: 0,
+  background: "transparent",
+  color: "inherit",
+  cursor: "pointer",
+  font: "inherit",
+  fontWeight: 950,
+  padding: 0,
+  textAlign: "left",
 };
 
 

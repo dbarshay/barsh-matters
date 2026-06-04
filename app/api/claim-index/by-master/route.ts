@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { attachLocalLawsuitMetadataToClaimRows } from "@/lib/claimIndexLawsuitMetadata";
 
 export async function GET(req: NextRequest) {
   const masterLawsuitId = (req.nextUrl.searchParams.get("masterLawsuitId") || "").trim();
@@ -21,6 +22,8 @@ export async function GET(req: NextRequest) {
     ],
   });
 
+  const rowsWithMetadata = await attachLocalLawsuitMetadataToClaimRows(rows);
+
   return NextResponse.json({
     ok: true,
     action: "claim-index-by-master",
@@ -29,8 +32,8 @@ export async function GET(req: NextRequest) {
     noDatabaseRecordsChanged: true,
     noDocumentsGenerated: true,
     noPrintQueueRecordsChanged: true,
-    count: rows.length,
+    count: rowsWithMetadata.length,
     masterLawsuitId,
-    rows,
+    rows: rowsWithMetadata,
   });
 }

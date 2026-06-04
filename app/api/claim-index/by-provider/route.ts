@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { attachLocalLawsuitMetadataToClaimRows } from "@/lib/claimIndexLawsuitMetadata";
 import { buildClaimIndexWhere, CLAIM_INDEX_SELECT } from "@/lib/claimIndexQuery";
 
 export async function GET(req: NextRequest) {
@@ -20,9 +21,11 @@ export async function GET(req: NextRequest) {
     select: CLAIM_INDEX_SELECT,
   });
 
+  const rowsWithMetadata = await attachLocalLawsuitMetadataToClaimRows(rows);
+
   return NextResponse.json({
     ok: true,
-    count: rows.length,
-    rows,
+    count: rowsWithMetadata.length,
+    rows: rowsWithMetadata,
   });
 }

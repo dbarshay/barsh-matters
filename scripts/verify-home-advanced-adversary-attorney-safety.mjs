@@ -52,13 +52,21 @@ if (!(courtIndex >= 0 && adversaryIndex > courtIndex && dosStartIndex > adversar
 
 mustContain("candidate route reads adversaryAttorney param", candidates, 'const adversaryAttorney = clean(params.get("adversaryAttorney"));');
 mustContain("candidate route attaches lawsuit metadata", candidates, "attachLocalLawsuitMetadata");
-mustContain("candidate route attaches adversary attorney metadata", candidates, "adversary_attorney: lawsuitOptions.adversaryAttorney || null");
+mustContain("candidate route attaches adversary attorney metadata", candidates, "adversary_attorney: lawsuitOptions.adversaryAttorney || row.adversary_attorney || null");
 mustContain("candidate route filters adversary attorney locally", candidates, "includesText(row.adversaryAttorney || row.adversary_attorney, adversaryAttorney)");
 mustContain("candidate route returns finalRows", candidates, "rows: finalRows");
 mustContain("candidate route remains read-only", candidates, "noDatabaseRecordsChanged: true");
 mustNotContain("candidate route must not call Clio", candidates, "clioFetch");
 mustNotContain("candidate route must not use ClaimIndex rebuild wording", candidates, "ClaimIndex rebuild");
 
+mustContain("candidate route parses lawsuitMatters child ids", candidates, "parseMatterIdsFromLawsuitMatters");
+mustContain("candidate route selects lawsuitMatters", candidates, "lawsuitMatters: true");
+mustContain("candidate route selects venue", candidates, "venue: true");
+mustContain("candidate route selects venueSelection", candidates, "venueSelection: true");
+mustContain("candidate route selects venueOther", candidates, "venueOther: true");
+mustContain("candidate route attaches court metadata", candidates, "court_venue: courtVenue");
+mustContain("candidate route accepts court param", candidates, 'const court = clean(params.get("court"));');
+mustContain("candidate route filters court locally", candidates, "includesText(row.court || row.courtVenue || row.court_venue, court)");
 if (process.exitCode) {
   console.error("FAILURES=1");
   process.exit(1);

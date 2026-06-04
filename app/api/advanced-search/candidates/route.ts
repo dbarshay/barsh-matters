@@ -47,6 +47,25 @@ function includesText(value: unknown, query: unknown) {
   return clean(value).toLowerCase().includes(needle);
 }
 
+function displayVenue(lawsuit: any) {
+  return (
+    clean(lawsuit?.venue) ||
+    clean(lawsuit?.venueSelection) ||
+    clean(lawsuit?.venueOther)
+  );
+}
+
+function parseMatterIdsFromLawsuitMatters(value: unknown) {
+  return Array.from(
+    new Set(
+      String(value ?? "")
+        .match(/\d+/g)
+        ?.map((item) => Number(item))
+        .filter((item) => Number.isFinite(item) && item > 0) || []
+    )
+  );
+}
+
 function contains(field: string, value: string): Prisma.ClaimIndexWhereInput {
   return {
     [field]: {
@@ -117,34 +136,77 @@ const CLOSE_REASON_LABELS: Record<string, string> = {
 };
 
 async function attachLocalLawsuitMetadata(rows: any[]) {
-  const masterIds = Array.from(new Set(rows.map((row) => clean(row?.master_lawsuit_id ?? row?.masterLawsuitId)).filter(Boolean)));
-  if (!masterIds.length) return rows;
+  const masterIds = Array.from(
+    new Set(rows.map((row) => clean(row?.master_lawsuit_id ?? row?.masterLawsuitId)).filter(Boolean))
+  );
+
+  const matterIds = Array.from(
+    new Set(
+      rows
+        .map((row) => Number(row?.matter_id ?? row?.matterId))
+        .filter((item) => Number.isFinite(item) && item > 0)
+    )
+  );
+
+  if (!masterIds.length && !matterIds.length) return rows;
+
+  const whereClauses: any[] = [];
+
+  if (masterIds.length) {
+    whereClauses.push({ masterLawsuitId: { in: masterIds } });
+  }
+
+  for (const matterId of matterIds) {
+    whereClauses.push({ lawsuitMatters: { contains: String(matterId) } });
+  }
 
   const lawsuits = await prisma.lawsuit.findMany({
     where: {
-      masterLawsuitId: { in: masterIds },
+      OR: whereClauses,
     },
     select: {
       masterLawsuitId: true,
+      lawsuitMatters: true,
+      venue: true,
+      venueSelection: true,
+      venueOther: true,
       lawsuitOptions: true,
     },
   });
 
   const byMasterId = new Map(lawsuits.map((lawsuit) => [clean(lawsuit.masterLawsuitId), lawsuit]));
+  const byMatterId = new Map<number, any>();
+
+  for (const lawsuit of lawsuits) {
+    for (const matterId of parseMatterIdsFromLawsuitMatters(lawsuit.lawsuitMatters)) {
+      byMatterId.set(matterId, lawsuit);
+    }
+  }
 
   return rows.map((row) => {
-    const lawsuit = byMasterId.get(clean(row?.master_lawsuit_id ?? row?.masterLawsuitId));
+    const lawsuit =
+      byMasterId.get(clean(row?.master_lawsuit_id ?? row?.masterLawsuitId)) ||
+      byMatterId.get(Number(row?.matter_id ?? row?.matterId));
+
     if (!lawsuit) return row;
 
     const lawsuitAny = lawsuit as any;
     const lawsuitOptions = objectValue(lawsuitAny.lawsuitOptions);
+    const courtVenue = displayVenue(lawsuit);
 
     return {
       ...row,
-      adversary_attorney: lawsuitOptions.adversaryAttorney || null,
-      adversaryAttorney: lawsuitOptions.adversaryAttorney || null,
-      selected_adversary_attorney_details: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
-      selectedAdversaryAttorneyDetails: lawsuitOptions.selectedAdversaryAttorneyDetails || null,
+      master_lawsuit_id: row.master_lawsuit_id || lawsuit.masterLawsuitId || null,
+      masterLawsuitId: row.masterLawsuitId || lawsuit.masterLawsuitId || null,
+      court_venue: courtVenue || row.court_venue || row.courtVenue || row.court || null,
+      courtVenue: courtVenue || row.courtVenue || row.court_venue || row.court || null,
+      court: courtVenue || row.court || row.courtVenue || row.court_venue || null,
+      adversary_attorney: lawsuitOptions.adversaryAttorney || row.adversary_attorney || null,
+      adversaryAttorney: lawsuitOptions.adversaryAttorney || row.adversaryAttorney || null,
+      selected_adversary_attorney_details:
+        lawsuitOptions.selectedAdversaryAttorneyDetails || row.selected_adversary_attorney_details || null,
+      selectedAdversaryAttorneyDetails:
+        lawsuitOptions.selectedAdversaryAttorneyDetails || row.selectedAdversaryAttorneyDetails || null,
     };
   });
 }
@@ -179,6 +241,7 @@ export async function GET(req: NextRequest) {
   const indexAaaNumber = clean(params.get("indexAaaNumber"));
   const dateOpenedFrom = clean(params.get("dateOpenedFrom"));
   const dateOpenedTo = clean(params.get("dateOpenedTo"));
+  const court = clean(params.get("court"));
   const adversaryAttorney = clean(params.get("adversaryAttorney"));
   const dosStart = clean(params.get("dosStart"));
   const dosEnd = clean(params.get("dosEnd"));
@@ -277,11 +340,19 @@ export async function GET(req: NextRequest) {
   });
 
   const rowsWithMetadata = await attachLocalLawsuitMetadata(rows);
-  const finalRows = adversaryAttorney
-    ? rowsWithMetadata.filter((row: any) =>
-        includesText(row.adversaryAttorney || row.adversary_attorney, adversaryAttorney)
-      )
-    : rowsWithMetadata;
+  let finalRows = rowsWithMetadata;
+
+  if (court) {
+    finalRows = finalRows.filter((row: any) =>
+      includesText(row.court || row.courtVenue || row.court_venue, court)
+    );
+  }
+
+  if (adversaryAttorney) {
+    finalRows = finalRows.filter((row: any) =>
+      includesText(row.adversaryAttorney || row.adversary_attorney, adversaryAttorney)
+    );
+  }
 
   return NextResponse.json({
     ok: true,
