@@ -249,6 +249,7 @@
     "verify:unified-topline-header-safety": "node scripts/verify-unified-topline-header-safety.mjs",
     "seed:adversary-attorneys-reference": "node scripts/seed-adversary-attorneys-reference.mjs",
     "verify:adversary-attorney-reference-safety": "node scripts/verify-adversary-attorney-reference-safety.mjs",
+    "verify:adversary-attorney-document-merge-data-safety": "node scripts/verify-adversary-attorney-document-merge-data-safety.mjs",
     "normalize:provider-client-display-names": "node scripts/normalize-provider-client-display-names.mjs",
     "verify:provider-client-display-normalization-safety": "node scripts/verify-provider-client-display-normalization-safety.mjs"
   },

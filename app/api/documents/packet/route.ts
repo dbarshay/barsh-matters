@@ -5,6 +5,15 @@ function clean(value: unknown): string {
   return String(value || "").trim();
 }
 
+function detailText(details: Record<string, any>, keys: string[]): string {
+  for (const key of keys) {
+    const value = clean(details[key]);
+    if (value) return value;
+  }
+  return "";
+}
+
+
 function upper(value: unknown): string {
   return clean(value).toUpperCase();
 }
@@ -328,7 +337,39 @@ export async function GET(req: NextRequest) {
     referenceData.court?.details ||
     null;
 
+  const lawsuitAny = lawsuit as any;
+  const adversaryAttorneyDetails =
+    lawsuitAny?.selectedAdversaryAttorneyDetails &&
+    typeof lawsuitAny.selectedAdversaryAttorneyDetails === "object" &&
+    !Array.isArray(lawsuitAny.selectedAdversaryAttorneyDetails)
+      ? (lawsuitAny.selectedAdversaryAttorneyDetails as Record<string, any>)
+      : {};
+  const adversaryAttorneyName =
+    clean(lawsuitAny?.adversaryAttorney) ||
+    detailText(adversaryAttorneyDetails, [
+      "displayName",
+      "display_name",
+      "displayFirmName",
+      "display_firm_name",
+      "firmName",
+      "firm_name",
+      "name",
+    ]);
+  const adversaryAttorneyFirmName =
+    detailText(adversaryAttorneyDetails, [
+      "firmName",
+      "firm_name",
+      "displayFirmName",
+      "display_firm_name",
+      "displayName",
+      "display_name",
+      "name",
+    ]) || adversaryAttorneyName;
+
   const templateFields = compactObject({
+    adversaryAttorney: adversaryAttorneyName,
+    adversaryAttorneyName,
+    adversaryAttorneyFirmName,
     masterLawsuitId,
     providerName: provider.value,
     patientName: patient.value,
@@ -360,6 +401,10 @@ export async function GET(req: NextRequest) {
       clio: false,
     },
     uiFields: {
+      adversaryAttorney: adversaryAttorneyName,
+      adversaryAttorneyName,
+      adversaryAttorneyFirmName,
+      uiAdversaryAttorneyName: adversaryAttorneyName,
       courtName: lawsuit?.venue || "",
       courtSelection: lawsuit?.venueSelection || "",
       courtOther: lawsuit?.venueOther || "",
@@ -379,7 +424,15 @@ export async function GET(req: NextRequest) {
       claimNumber: claimNumber.value,
       treatingProviderNames,
     },
-    referenceData,
+    referenceData: {
+      ...referenceData,
+      adversaryAttorney: {
+        name: adversaryAttorneyName,
+        firmName: adversaryAttorneyFirmName,
+        details: adversaryAttorneyDetails,
+      },
+      adversaryAttorneyDetails,
+    },
     templateFields,
   };
 
