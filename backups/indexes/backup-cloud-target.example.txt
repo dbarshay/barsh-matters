@@ -4,7 +4,15 @@
 # Copy this file to:
 #   backups/indexes/CLOUD_TARGET.txt
 #
-# Then place one local synced folder path inside CLOUD_TARGET.txt, for example:
-#   /Users/dbarshay/Library/CloudStorage/OneDrive-BarshayRizzoLopez/Barsh Matters Backups/indexes
+# Then place one local synced folder path inside CLOUD_TARGET.txt.
 #
-# The actual CLOUD_TARGET.txt file is ignored by Git.
+# Dropbox example:
+#   /Users/<mac-user>/Dropbox/Barsh Matters Backups/indexes
+#
+# Dropbox CloudStorage example:
+#   /Users/<mac-user>/Library/CloudStorage/Dropbox/Barsh Matters Backups/indexes
+#
+# OneDrive example:
+#   /Users/<mac-user>/Library/CloudStorage/OneDrive-BarshayRizzoLopez/Barsh Matters Backups/indexes
+#
+# The actual CLOUD_TARGET.txt file is ignored by Git because it is machine-specific.
