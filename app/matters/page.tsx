@@ -494,8 +494,13 @@ export default function FilteredMattersPage() {
   const [masterPaymentTransactionOptionsLoading, setMasterPaymentTransactionOptionsLoading] = useState(false);
   const [masterPaymentCheckDateInput, setMasterPaymentCheckDateInput] = useState("");
   const [masterPaymentCheckNumberInput, setMasterPaymentCheckNumberInput] = useState("");
+  const [masterPaymentAllocationMethodInput, setMasterPaymentAllocationMethodInput] = useState("proportional_by_balance");
+  const [masterPaymentSelectedOnlyInput, setMasterPaymentSelectedOnlyInput] = useState(false);
+  const [masterPaymentSelectedRowIds, setMasterPaymentSelectedRowIds] = useState<Record<string, boolean>>({});
+  const [masterPaymentManualAllocationInputs, setMasterPaymentManualAllocationInputs] = useState<Record<string, string>>({});
   const [masterPaymentPosting, setMasterPaymentPosting] = useState(false);
   const [masterPaymentPostResult, setMasterPaymentPostResult] = useState<any>(null);
+  const [masterPaymentClosePromptOpen, setMasterPaymentClosePromptOpen] = useState(false);
   const [masterPaymentReceiptsLoading, setMasterPaymentReceiptsLoading] = useState(false);
   const [masterPaymentReceipts, setMasterPaymentReceipts] = useState<any[]>([]);
   const [masterPaymentReceiptsError, setMasterPaymentReceiptsError] = useState("");
@@ -506,19 +511,19 @@ export default function FilteredMattersPage() {
   const [masterCloseResult, setMasterCloseResult] = useState<any>(null);
 
   const fallbackMasterPaymentTransactionTypeOptions = [
-    "Collection Payment",
-    "Voluntary Payment",
     "Attorney Fee",
-    "Filing Fee Collected",
+    "Collection Payment",
     "Filing Fee Billed",
-    "Index Fee Collected",
+    "Filing Fee Collected",
     "Index Fee Billed",
+    "Index Fee Collected",
     "Interest",
-    "PreC to Provider",
-    "Service Fee Collected",
-    "Service Fee Billed",
-    "Other Court Fees Collected",
     "Other Court Fees Billed",
+    "Other Court Fees Collected",
+    "PreC to Provider",
+    "Service Fee Billed",
+    "Service Fee Collected",
+    "Voluntary Payment",
   ];
 
   const fallbackMasterPaymentTransactionStatusOptions = [
@@ -531,8 +536,7 @@ export default function FilteredMattersPage() {
   }
 
   function masterPaymentTransactionTypeDropdownOptions(): string[] {
-    const loaded = masterPaymentTransactionTypeOptions.map(masterReferenceOptionDisplayName).filter(Boolean);
-    return loaded.length ? loaded : fallbackMasterPaymentTransactionTypeOptions;
+    return fallbackMasterPaymentTransactionTypeOptions;
   }
 
   function masterPaymentTransactionStatusDropdownOptions(): string[] {
@@ -587,40 +591,155 @@ export default function FilteredMattersPage() {
     setMasterPaymentTransactionStatusInput("Show on Remittance");
     setMasterPaymentCheckDateInput("");
     setMasterPaymentCheckNumberInput("");
+    setMasterPaymentAllocationMethodInput("proportional_by_balance");
+    setMasterPaymentSelectedOnlyInput(false);
+    setMasterPaymentSelectedRowIds({});
+    setMasterPaymentManualAllocationInputs({});
+  }
+
+  function masterPaymentRowKey(row: any): string {
+    return String(
+      row?.rowId ??
+        row?.id ??
+        row?.matterId ??
+        row?.matter_id ??
+        row?.displayNumber ??
+        row?.display_number ??
+        ""
+    );
+  }
+
+  function masterPaymentManualAllocationValue(rowKey: string): number {
+    const cleaned = String(masterPaymentManualAllocationInputs[rowKey] || "").replace(/[$,\s]/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
   }
 
   function masterPaymentAllocationRows(): any[] {
     const amount = masterPaymentPreviewAmountValue();
-    const billRows = masterWorkspaceBillRows(masterSettlementDetailRows);
-    const billTotal = masterWorkspaceBillTotal(masterSettlementDetailRows);
-    let remaining = amount;
+    const rows = masterWorkspaceBillRows(masterSettlementDetailRows);
 
-    return billRows.map((row: any) => {
-      const rowId = Number(row?.matterId || row?.matter_id || row?.id || 0);
-      const displayNumber = clean(row?.displayNumber || row?.display_number);
-      const billAmount = masterWorkspaceBillAmount(row);
+    const preparedRows = rows.map((row: any) => {
+      const rowKey = masterPaymentRowKey(row);
+      const billAmount = Number(row?.claimAmount ?? row?.claim_amount ?? row?.amount ?? 0) || 0;
       const currentPayments = Number(row?.paymentVoluntary ?? row?.payment_voluntary ?? 0) || 0;
       const currentBalance = Math.max(billAmount - currentPayments, 0);
-      const proportionalAllocation =
-        billTotal > 0
-          ? Math.min(amount * (billAmount / billTotal), currentBalance)
-          : 0;
-      const paymentToPost = Math.max(Math.min(proportionalAllocation, remaining), 0);
-      remaining = Math.max(remaining - paymentToPost, 0);
+      const selected = !!masterPaymentSelectedRowIds[rowKey];
 
       return {
-        row,
-        rowId,
-        matterId: rowId,
-        displayNumber,
+        ...row,
+        rowKey,
+        rowId: row?.rowId ?? row?.id ?? row?.matterId ?? row?.matter_id ?? row?.displayNumber ?? row?.display_number,
+        matterId: row?.matterId ?? row?.matter_id ?? row?.id,
+        displayNumber: row?.displayNumber ?? row?.display_number,
         billAmount,
         currentPayments,
         currentBalance,
+        selected,
+        allocationEligible: currentBalance > 0 && (!masterPaymentSelectedOnlyInput || selected),
+      };
+    });
+
+    const totalEligibleBalance = preparedRows
+      .filter((item: any) => item.allocationEligible)
+      .reduce((sum: number, item: any) => sum + item.currentBalance, 0);
+
+    let remaining = Math.min(amount, totalEligibleBalance);
+
+    return preparedRows.map((item: any, index: number) => {
+      let paymentToPost = 0;
+
+      if (item.allocationEligible && masterPaymentAllocationMethodInput === "manual") {
+        paymentToPost = Math.max(masterPaymentManualAllocationValue(item.rowKey), 0);
+      } else if (item.allocationEligible) {
+        const rawAllocation =
+          totalEligibleBalance > 0 && amount > 0
+            ? amount * (item.currentBalance / totalEligibleBalance)
+            : 0;
+
+        paymentToPost = Math.min(rawAllocation, item.currentBalance, remaining);
+        paymentToPost = Math.max(Math.round(paymentToPost * 100) / 100, 0);
+
+        const isLastEligibleRow =
+          item.currentBalance > 0 &&
+          preparedRows
+            .slice(index + 1)
+            .every((next: any) => !next.allocationEligible || next.currentBalance <= 0);
+
+        if (isLastEligibleRow) {
+          paymentToPost = Math.min(Math.round(remaining * 100) / 100, item.currentBalance);
+        }
+
+        remaining = Math.max(Math.round((remaining - paymentToPost) * 100) / 100, 0);
+      }
+
+      return {
+        ...item,
+        allocationBase: masterPaymentAllocationMethodInput === "manual" ? "manual" : "current-balance",
+        allocationPercent:
+          totalEligibleBalance > 0 && item.allocationEligible
+            ? (item.currentBalance / totalEligibleBalance) * 100
+            : 0,
         paymentToPost,
-        expectedBalance: Math.max(currentBalance - paymentToPost, 0),
+        expectedBalance: Math.max(item.currentBalance - Math.min(paymentToPost, item.currentBalance), 0),
+        allocationExceedsBalance: paymentToPost > item.currentBalance + 0.005,
       };
     });
   }
+
+  function masterPaymentAllocationTotalValue(): number {
+    return masterPaymentAllocationRows().reduce(
+      (sum: number, item: any) => sum + (Number(item?.paymentToPost) || 0),
+      0
+    );
+  }
+
+  function masterPaymentUnallocatedAmountValue(): number {
+    return Math.round((masterPaymentPreviewAmountValue() - masterPaymentAllocationTotalValue()) * 100) / 100;
+  }
+
+  function masterPaymentAllocationHasOverage(): boolean {
+    return masterPaymentAllocationRows().some((item: any) => !!item.allocationExceedsBalance);
+  }
+
+  function masterPaymentSelectedOnlyHasEligibleSelection(): boolean {
+    if (!masterPaymentSelectedOnlyInput) return true;
+    return masterPaymentAllocationRows().some((item: any) => item.selected && item.currentBalance > 0);
+  }
+
+  function masterPaymentAllocationValidationMessage(): string {
+    const amount = masterPaymentPreviewAmountValue();
+    const allocated = masterPaymentAllocationTotalValue();
+
+    if (amount <= 0) return "Enter a payment amount before allocating.";
+    if (!masterPaymentSelectedOnlyHasEligibleSelection()) return "Select at least one child matter with an open balance.";
+    if (masterPaymentAllocationHasOverage()) return "One or more allocations exceed the child matter's current balance.";
+    if (Math.abs(allocated - amount) >= 0.005) {
+      return `Allocate the full payment amount before posting.  Allocated: ${money(allocated)} / Payment Amount: ${money(amount)}.`;
+    }
+
+    return "";
+  }
+
+  function masterPaymentRequiredFieldsComplete(): boolean {
+    return (
+      masterPaymentPreviewAmountValue() > 0 &&
+      !!String(masterPaymentDateInput || "").trim() &&
+      !!String(masterPaymentTransactionTypeInput || "").trim() &&
+      !!String(masterPaymentTransactionStatusInput || "").trim() &&
+      !!String(masterPaymentCheckDateInput || "").trim() &&
+      !!String(masterPaymentCheckNumberInput || "").trim()
+    );
+  }
+
+  function masterPaymentAllocationComplete(): boolean {
+    return !masterPaymentAllocationValidationMessage();
+  }
+
+  function masterPaymentSubmitDisabled(): boolean {
+    return masterPaymentPosting || !masterPaymentRequiredFieldsComplete() || !masterPaymentAllocationComplete();
+  }
+
 
   async function loadMasterPaymentReceipts() {
     const billRows = masterWorkspaceBillRows(masterSettlementDetailRows);
@@ -688,9 +807,23 @@ export default function FilteredMattersPage() {
       return;
     }
 
+    if (!masterPaymentRequiredFieldsComplete()) {
+      setMasterPaymentPostResult({ ok: false, error: "Complete all required payment fields before posting." });
+      return;
+    }
+
     const allocations = masterPaymentAllocationRows().filter((item) => item.paymentToPost > 0.005);
     if (allocations.length === 0) {
       setMasterPaymentPostResult({ ok: false, error: "No eligible bill balance was found for this lawsuit payment." });
+      return;
+    }
+
+    const allocationValidationMessage = masterPaymentAllocationValidationMessage();
+    if (allocationValidationMessage) {
+      setMasterPaymentPostResult({
+        ok: false,
+        error: allocationValidationMessage,
+      });
       return;
     }
 
@@ -763,6 +896,7 @@ export default function FilteredMattersPage() {
 
       resetMasterPaymentPreviewForm();
       setMasterPaymentFormOpen(false);
+      setMasterPaymentClosePromptOpen(true);
     } catch (error: any) {
       setMasterPaymentPostResult({
         ok: false,
@@ -1532,6 +1666,29 @@ export default function FilteredMattersPage() {
     const n = Number(String(raw || "").replace(/[^0-9.-]/g, ""));
 
     return Number.isFinite(n) && n !== 0 ? money(n) : "$0.00";
+  }
+
+  function masterStaticLawsuitAmountValue(): number {
+    const directAmountSought = Number(
+      String(masterLocalMetadataValue("amountSought") || "").replace(/[$,\s]/g, "")
+    );
+    if (Number.isFinite(directAmountSought) && directAmountSought > 0) return directAmountSought;
+
+    const options = masterLawsuitOptions();
+
+    const optionAmountSought = Number(
+      String(options?.amountSought ?? options?.amount_sought ?? "").replace(/[$,\s]/g, "")
+    );
+    if (Number.isFinite(optionAmountSought) && optionAmountSought > 0) return optionAmountSought;
+
+    const customAmountSought = Number(
+      String(options?.customAmountSought ?? options?.custom_amount_sought ?? "").replace(/[$,\s]/g, "")
+    );
+    if (Number.isFinite(customAmountSought) && customAmountSought > 0) return customAmountSought;
+
+    return masterWorkspaceBillRows(masterSettlementDetailRows).reduce((sum: number, row: any) => {
+      return sum + (Number(row?.claimAmount ?? row?.claim_amount ?? row?.amount ?? 0) || 0);
+    }, 0);
   }
 
   function masterCourtCostsDisplayValue(): string {
@@ -3719,9 +3876,9 @@ function masterSettlementDateFiledValue(): string {
     );
   }, [masterSettlementDetailRows]);
 
-  const masterPaymentSummary = useMemo(() => {
+  const masterPaymentSummary = (() => {
     const billRows = masterWorkspaceBillRows(masterSettlementDetailRows);
-    const lawsuitAmount = masterWorkspaceBillTotal(masterSettlementDetailRows);
+    const lawsuitAmount = masterStaticLawsuitAmountValue();
 
     const paymentsPosted = billRows.reduce(
       (sum: number, row: any) => sum + (Number(row?.paymentVoluntary ?? row?.payment_voluntary ?? 0) || 0),
@@ -3734,7 +3891,7 @@ function masterSettlementDateFiledValue(): string {
       balancePresuit: Math.max(lawsuitAmount - paymentsPosted, 0),
       billCount: billRows.length,
     };
-  }, [masterSettlementDetailRows]);
+  })();
 
   useEffect(() => {
     if (kind !== "master" || activeMasterWorkspaceTab !== "payments") return;
@@ -3744,6 +3901,56 @@ function masterSettlementDateFiledValue(): string {
   const masterPaymentVisibleReceipts = masterPaymentShowVoided
     ? masterPaymentReceipts
     : masterPaymentReceipts.filter((receipt: any) => !receipt?.voided);
+
+  function masterPaymentReceiptPostingContext(receipt: any): string {
+    const snapshot = receipt?.safetySnapshot || {};
+    return clean(
+      snapshot?.postingContext ||
+        snapshot?.posting?.postingContext ||
+        snapshot?.sourcePostingContext ||
+        ""
+    );
+  }
+
+  function masterPaymentReceiptIsLawsuitAllocation(receipt: any): boolean {
+    const context = masterPaymentReceiptPostingContext(receipt).toLowerCase();
+    const description = clean(receipt?.description).toLowerCase();
+    return context === "lawsuit-allocation" || description.includes("lawsuit payment");
+  }
+
+  function masterLawsuitPaymentAmountForRow(row: any): number {
+    const matterId = Number(row?.matterId || row?.matter_id || row?.id || 0);
+    const displayNumber = clean(row?.displayNumber || row?.display_number);
+
+    return masterPaymentReceipts
+      .filter((receipt: any) => !receipt?.voided && receipt?.posted !== false)
+      .filter((receipt: any) => masterPaymentReceiptIsLawsuitAllocation(receipt))
+      .filter((receipt: any) => {
+        const receiptMatterId = Number(receipt?.matterId || 0);
+        const receiptDisplayNumber = clean(receipt?.displayNumber || receipt?.sourceDisplayNumber);
+        return (!!matterId && receiptMatterId === matterId) || (!!displayNumber && receiptDisplayNumber === displayNumber);
+      })
+      .reduce((sum: number, receipt: any) => sum + (Number(receipt?.paymentAmount) || 0), 0);
+  }
+
+  function masterLawsuitBillAmountForRow(row: any): number {
+    const directClaimAmount = Number(row?.claimAmount ?? row?.claim_amount);
+    if (Number.isFinite(directClaimAmount) && directClaimAmount > 0) return directClaimAmount;
+
+    const currentBalance = Number(row?.balancePresuit ?? row?.balance_presuit ?? row?.balance);
+    if (Number.isFinite(currentBalance)) {
+      return currentBalance + masterLawsuitPaymentAmountForRow(row);
+    }
+
+    return masterWorkspaceBillAmount(row);
+  }
+
+  function masterLawsuitBalanceAmountForRow(row: any): number {
+    const explicitBalance = Number(row?.balancePresuit ?? row?.balance_presuit ?? row?.balance);
+    if (Number.isFinite(explicitBalance)) return explicitBalance;
+
+    return Math.max(masterLawsuitBillAmountForRow(row) - masterLawsuitPaymentAmountForRow(row), 0);
+  }
 
   const masterPaymentActiveReceiptCount = masterPaymentReceipts.filter((receipt: any) => !receipt?.voided).length;
 
@@ -10330,6 +10537,64 @@ function masterSettlementDateFiledValue(): string {
               </div>
             )}
 
+            {masterPaymentClosePromptOpen && activeMasterWorkspaceTab === "payments" && (
+              <div
+                style={{
+                  margin: "12px 0",
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: "1px solid #bfdbfe",
+                  background: "#eff6ff",
+                  color: "#1e3a8a",
+                  boxShadow: "0 12px 28px rgba(37, 99, 235, 0.16)",
+                }}
+              >
+                <div style={{ fontSize: 15, fontWeight: 950 }}>
+                  Payment activity was saved. Do you want to review closing this lawsuit now?
+                </div>
+                <div style={{ marginTop: 6, fontSize: 13, fontWeight: 750, color: "#334155" }}>
+                  Closing remains separate from payment posting. Use this only when the lawsuit and eligible child matters are ready to be closed after payment confirmation.
+                </div>
+                <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => setMasterPaymentClosePromptOpen(false)}
+                    style={{
+                      minWidth: 120,
+                      height: 38,
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 10,
+                      background: "#ffffff",
+                      color: "#334155",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Not Now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMasterPaymentClosePromptOpen(false);
+                      setActiveMasterWorkspaceTab("close_paid_settlements");
+                    }}
+                    style={{
+                      minWidth: 190,
+                      height: 38,
+                      border: "1px solid #2563eb",
+                      borderRadius: 10,
+                      background: "#2563eb",
+                      color: "#ffffff",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Review Close Workflow
+                  </button>
+                </div>
+              </div>
+            )}
+
             {masterNoteDeleteTarget && activeMasterWorkspaceTab === "payments" && (
               <div
                 role="dialog"
@@ -12615,8 +12880,10 @@ function masterSettlementDateFiledValue(): string {
                     }}
                   >
                     <div>Payment Amount: {money(masterPaymentPreviewAmountValue())}</div>
-                    <div>Expected Payments Posted: {money(masterPaymentSummary.paymentsPosted + masterPaymentPreviewAmountValue())}</div>
-                    <div>Expected Balance Presuit: {money(Math.max(masterPaymentSummary.balancePresuit - masterPaymentPreviewAmountValue(), 0))}</div>
+                    <div>Allocated to Child Matters: {money(masterPaymentAllocationTotalValue())}</div>
+                    <div>Remaining to Allocate: {money(Math.max(masterPaymentUnallocatedAmountValue(), 0))}</div>
+                    <div>Expected Payments Posted: {money(masterPaymentSummary.paymentsPosted + masterPaymentAllocationTotalValue())}</div>
+                    <div>Expected Balance Presuit: {money(Math.max(masterPaymentSummary.balancePresuit - masterPaymentAllocationTotalValue(), 0))}</div>
                     <div
                       style={{
                         gridColumn: "1 / -1",
@@ -12629,6 +12896,75 @@ function masterSettlementDateFiledValue(): string {
                       }}
                     >
                       This posts local Barsh Matters payment receipts to the child bill matters.
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      margin: "0 18px 12px",
+                      border: "1px solid #dbe4f0",
+                      borderRadius: 14,
+                      padding: 12,
+                      background: "#f8fafc",
+                      display: "grid",
+                      gridTemplateColumns: "minmax(220px, 1fr) minmax(220px, 1fr)",
+                      gap: 12,
+                      alignItems: "end",
+                    }}
+                  >
+                    <label className="barsh-direct-payment-field">
+                      <span>Allocation Method *</span>
+                      <select
+                        value={masterPaymentAllocationMethodInput}
+                        onChange={(event) => {
+                          setMasterPaymentAllocationMethodInput(event.target.value);
+                          setMasterPaymentPostResult(null);
+                        }}
+                      >
+                        <option value="proportional_by_balance">Proportional by Balance</option>
+                        <option value="manual">Manual Allocation</option>
+                      </select>
+                    </label>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 12,
+                        background: "#ffffff",
+                        fontSize: 13,
+                        fontWeight: 850,
+                        color: "#334155",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={masterPaymentSelectedOnlyInput}
+                        onChange={(event) => {
+                          setMasterPaymentSelectedOnlyInput(event.target.checked);
+                          setMasterPaymentPostResult(null);
+                        }}
+                      />
+                      Selected Child Matters Only
+                    </label>
+
+                    <div
+                      style={{
+                        gridColumn: "1 / -1",
+                        padding: "8px 10px",
+                        border: masterPaymentAllocationValidationMessage() ? "1px solid #fca5a5" : "1px solid #bbf7d0",
+                        borderRadius: 10,
+                        background: masterPaymentAllocationValidationMessage() ? "#fef2f2" : "#f0fdf4",
+                        color: masterPaymentAllocationValidationMessage() ? "#991b1b" : "#166534",
+                        fontSize: 12,
+                        fontWeight: 850,
+                      }}
+                    >
+                      {masterPaymentAllocationValidationMessage() ||
+                        "Allocation is complete. Posted payments cannot be edited; void and repost if correction is needed."}
                     </div>
                   </div>
 
@@ -12653,7 +12989,7 @@ function masterSettlementDateFiledValue(): string {
                         color: "#475569",
                       }}
                     >
-                      Allocation Preview
+                      Allocation Preview · {masterPaymentAllocationMethodInput === "manual" ? "Manual Allocation" : "Proportional by Balance"}
                     </div>
 
                     <div style={{ overflowX: "auto" }}>
@@ -12668,23 +13004,42 @@ function masterSettlementDateFiledValue(): string {
                       >
                         <thead>
                           <tr style={{ background: "#e2e8f0" }}>
+                            {masterPaymentSelectedOnlyInput && (
+                              <th style={{ textAlign: "center", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Selected</th>
+                            )}
                             <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Matter</th>
                             <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Provider</th>
                             <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Patient</th>
                             <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
-                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Allocation %</th>
-                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Payment To Post</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Balance Allocation %</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Allocation</th>
                             <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Expected Balance</th>
                           </tr>
                         </thead>
                         <tbody>
                           {masterPaymentAllocationRows().map((item: any) => {
-                            const row = item.row;
-                            const billTotal = masterWorkspaceBillTotal(masterSettlementDetailRows);
-                            const allocationPercent = billTotal > 0 ? (item.billAmount / billTotal) * 100 : 0;
+                            const row = item;
+                            const allocationPercent = Number(item.allocationPercent || 0);
 
                             return (
                               <tr key={`master-payment-popup-${item.displayNumber || item.rowId}`}>
+                                {masterPaymentSelectedOnlyInput && (
+                                  <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "center" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={!!masterPaymentSelectedRowIds[item.rowKey]}
+                                      disabled={item.currentBalance <= 0}
+                                      onChange={(event) => {
+                                        setMasterPaymentSelectedRowIds((current) => ({
+                                          ...current,
+                                          [item.rowKey]: event.target.checked,
+                                        }));
+                                        setMasterPaymentPostResult(null);
+                                      }}
+                                      title={item.currentBalance <= 0 ? "This child matter has no open balance." : "Include this child matter in the allocation."}
+                                    />
+                                  </td>
+                                )}
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
                                   {item.displayNumber || item.rowId}
                                 </td>
@@ -12700,8 +13055,40 @@ function masterSettlementDateFiledValue(): string {
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right" }}>
                                   {allocationPercent.toFixed(2)}%
                                 </td>
-                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: "#166534" }}>
-                                  {money(item.paymentToPost)}
+                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: item.allocationExceedsBalance ? "#991b1b" : "#166534" }}>
+                                  {masterPaymentAllocationMethodInput === "manual" ? (
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={masterPaymentManualAllocationInputs[item.rowKey] || ""}
+                                      onChange={(event) => {
+                                        const value = event.target.value;
+                                        setMasterPaymentManualAllocationInputs((current) => ({
+                                          ...current,
+                                          [item.rowKey]: value,
+                                        }));
+                                        setMasterPaymentPostResult(null);
+                                      }}
+                                      onBlur={() => {
+                                        setMasterPaymentManualAllocationInputs((current) => ({
+                                          ...current,
+                                          [item.rowKey]: formatMasterPaymentAmountInput(current[item.rowKey] || ""),
+                                        }));
+                                      }}
+                                      disabled={masterPaymentSelectedOnlyInput && !item.selected}
+                                      placeholder="0.00"
+                                      style={{
+                                        width: 96,
+                                        textAlign: "right",
+                                        border: item.allocationExceedsBalance ? "1px solid #dc2626" : "1px solid #cbd5e1",
+                                        borderRadius: 8,
+                                        padding: "5px 7px",
+                                        fontWeight: 900,
+                                      }}
+                                    />
+                                  ) : (
+                                    money(item.paymentToPost)
+                                  )}
                                 </td>
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950 }}>
                                   {money(item.expectedBalance)}
@@ -12768,19 +13155,24 @@ function masterSettlementDateFiledValue(): string {
 
                     <button
                       type="button"
-                      disabled={masterPaymentPosting}
+                      disabled={masterPaymentSubmitDisabled()}
                       onClick={postMasterPaymentLocally}
-                      title="Post local Barsh Matters payment receipts to the child bill matters."
+                      title={
+                        masterPaymentSubmitDisabled() && !masterPaymentPosting
+                          ? "Complete all required payment fields and allocate the full payment amount before posting."
+                          : "Post local Barsh Matters payment receipts to the child bill matters."
+                      }
                       style={{
                         minWidth: 190,
                         height: 44,
                         border: "1px solid #16a34a",
                         borderRadius: 12,
-                        background: masterPaymentPosting ? "#bbf7d0" : "#16a34a",
-                        color: masterPaymentPosting ? "#166534" : "#ffffff",
+                        background: masterPaymentSubmitDisabled() ? "#bbf7d0" : "#16a34a",
+                        color: masterPaymentSubmitDisabled() ? "#166534" : "#ffffff",
                         fontWeight: 950,
                         fontSize: 15,
-                        cursor: masterPaymentPosting ? "not-allowed" : "pointer",
+                        cursor: masterPaymentSubmitDisabled() ? "not-allowed" : "pointer",
+                        opacity: masterPaymentSubmitDisabled() ? 0.72 : 1,
                       }}
                     >
                       {masterPaymentPosting ? "Posting..." : "Post Payment"}
@@ -12808,6 +13200,7 @@ function masterSettlementDateFiledValue(): string {
                       <th style={masterSettlementThStyle}>Denial Reason</th>
                       <th style={masterSettlementRightThStyle}>Bill Amount</th>
                       <th style={masterSettlementRightThStyle}>Pre-Suit Payment</th>
+                      <th style={masterSettlementRightThStyle}>Lawsuit Payment</th>
                       <th style={masterSettlementRightThStyle}>Balance</th>
                       <th style={masterSettlementThStyle}>Insurer</th>
                       <th style={masterSettlementThStyle}>Claim Number</th>
@@ -12816,9 +13209,11 @@ function masterSettlementDateFiledValue(): string {
                   <tbody>
                     {masterWorkspaceBillRows(masterSettlementDetailRows).map((row: any) => {
                       const rowId = clean(row.id);
-                      const billAmount = masterWorkspaceBillAmount(row);
-                      const balanceAmount = Number(row.balancePresuit ?? row.balance_presuit ?? row.balance ?? billAmount) || 0;
-                      const preSuitPaymentAmount = Math.max(billAmount - balanceAmount, 0);
+                      const billAmount = masterLawsuitBillAmountForRow(row);
+                      const balanceAmount = masterLawsuitBalanceAmountForRow(row);
+                      const lawsuitPaymentAmount = masterLawsuitPaymentAmountForRow(row);
+                      const totalPaymentAmount = Math.max(billAmount - balanceAmount, 0);
+                      const preSuitPaymentAmount = Math.max(totalPaymentAmount - lawsuitPaymentAmount, 0);
                       const dosStart = clean(row.dosStart ?? row.dos_start ?? row.serviceStart ?? row.service_start ?? "");
                       const dosEnd = clean(row.dosEnd ?? row.dos_end ?? row.serviceEnd ?? row.service_end ?? "");
                       const dosLabel =
@@ -12866,6 +13261,7 @@ function masterSettlementDateFiledValue(): string {
                           <td style={masterSettlementTdStyle}>{denialReason || "—"}</td>
                           <td style={masterSettlementMoneyTdStyle}>{money(billAmount)}</td>
                           <td style={masterSettlementMoneyTdStyle}>{money(preSuitPaymentAmount)}</td>
+                          <td style={masterSettlementMoneyTdStyle}>{money(lawsuitPaymentAmount)}</td>
                           <td style={masterSettlementMoneyTdStyle}>{money(balanceAmount)}</td>
                           <td style={masterSettlementTdStyle}>
                             {insurer ? (
@@ -12902,22 +13298,35 @@ function masterSettlementDateFiledValue(): string {
                       <td style={masterSettlementTdStyle}></td>
                       <td style={masterSettlementTdStyle}></td>
                       <td style={masterSettlementTdStyle}></td>
-                      <td style={masterSettlementMoneyTdStyle}>{money(masterWorkspaceBillTotal(masterSettlementDetailRows))}</td>
                       <td style={masterSettlementMoneyTdStyle}>
                         {money(
                           masterWorkspaceBillRows(masterSettlementDetailRows).reduce((sum: number, row: any) => {
-                            const billAmount = masterWorkspaceBillAmount(row);
-                            const balanceAmount = Number(row.balancePresuit ?? row.balance_presuit ?? row.balance ?? billAmount) || 0;
-                            return sum + Math.max(billAmount - balanceAmount, 0);
+                            return sum + masterLawsuitBillAmountForRow(row);
                           }, 0)
                         )}
                       </td>
                       <td style={masterSettlementMoneyTdStyle}>
                         {money(
                           masterWorkspaceBillRows(masterSettlementDetailRows).reduce((sum: number, row: any) => {
-                            const billAmount = masterWorkspaceBillAmount(row);
-                            const balanceAmount = Number(row.balancePresuit ?? row.balance_presuit ?? row.balance ?? billAmount) || 0;
-                            return sum + balanceAmount;
+                            const billAmount = masterLawsuitBillAmountForRow(row);
+                            const balanceAmount = masterLawsuitBalanceAmountForRow(row);
+                            const lawsuitPaymentAmount = masterLawsuitPaymentAmountForRow(row);
+                            const totalPaymentAmount = Math.max(billAmount - balanceAmount, 0);
+                            return sum + Math.max(totalPaymentAmount - lawsuitPaymentAmount, 0);
+                          }, 0)
+                        )}
+                      </td>
+                      <td style={masterSettlementMoneyTdStyle}>
+                        {money(
+                          masterWorkspaceBillRows(masterSettlementDetailRows).reduce((sum: number, row: any) => {
+                            return sum + masterLawsuitPaymentAmountForRow(row);
+                          }, 0)
+                        )}
+                      </td>
+                      <td style={masterSettlementMoneyTdStyle}>
+                        {money(
+                          masterWorkspaceBillRows(masterSettlementDetailRows).reduce((sum: number, row: any) => {
+                            return sum + masterLawsuitBalanceAmountForRow(row);
                           }, 0)
                         )}
                       </td>
