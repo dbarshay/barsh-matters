@@ -497,6 +497,9 @@ export default function AdminClaimIndexPage() {
               <h2 style={{ margin: 0, fontSize: 20 }}>Results</h2>
               <div style={{ color: "#64748b", marginTop: 4 }}>{message}</div>
             </div>
+              <a href="/admin/claim-index/audit" style={secondaryButtonStyle}>
+                Data-Quality Audit
+              </a>
             <a href="/admin" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>
               ← Back to Admin Home
             </a>

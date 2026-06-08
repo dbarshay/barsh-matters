@@ -14,6 +14,13 @@ const adminCards = [
     icon: "🔎",
   },
   {
+    label: "ClaimIndex Audit",
+    href: "/admin/claim-index/audit",
+    description:
+      "Read-only data-quality and restore-confidence audit for local ClaimIndex identity, status, lawsuit grouping, and financial fields.",
+    icon: "🧪",
+  },
+  {
     label: "Lawsuit Cleanup / Deaggregate",
     href: "/admin/lawsuit-cleanup",
     description:
