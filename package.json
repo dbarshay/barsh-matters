@@ -37,6 +37,7 @@
     "verify:admin-claim-index-audit-safety": "node scripts/verify-admin-claim-index-audit-safety.mjs",
     "verify:admin-claim-index-viewer-safety": "node scripts/verify-admin-claim-index-viewer-safety.mjs",
     "verify:admin-custom-template-import-ui-safety": "node scripts/verify-admin-custom-template-import-ui-safety.mjs",
+    "verify:admin-document-readiness-audit-safety": "node scripts/verify-admin-document-readiness-audit-safety.mjs",
     "verify:admin-document-template-import-ui-safety": "node scripts/verify-admin-document-template-import-ui-safety.mjs",
     "verify:admin-document-template-repository-page": "node scripts/verify-admin-document-template-repository-page.mjs",
     "verify:admin-duplicate-settlement-tickler-cleanup-preview-safety": "node scripts/verify-admin-duplicate-settlement-tickler-cleanup-preview-safety.mjs",

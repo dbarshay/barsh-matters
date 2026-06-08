@@ -7,43 +7,53 @@ import React, { useEffect, useMemo, useState } from "react";
 
 type Severity = "critical" | "warning" | "info";
 
-type LawsuitAuditRow = {
-  id: number;
+type ReadinessRow = {
   masterLawsuitId: string;
-  claimNumber?: string | null;
-  lawsuitMatters?: string | null;
+  clioMasterMatterId?: number | null;
+  clioMasterDisplayNumber?: string | null;
   venue?: string | null;
   venueSelection?: string | null;
   venueOther?: string | null;
+  selectedCourtDetailsPresent?: boolean;
+  adversaryAttorney?: string | null;
+  selectedAdversaryAttorneyDetailsPresent?: boolean;
   indexAaaNumber?: string | null;
+  dateFiled?: string | null;
+  dateOfLoss?: string | null;
   amountSoughtMode?: string | null;
   amountSought?: number | null;
   customAmountSought?: number | null;
-  clioMasterMatterId?: number | null;
-  clioMasterDisplayNumber?: string | null;
-  clioMasterMappedAt?: string | null;
-  clioMasterMappingSource?: string | null;
+  childCount?: number;
+  childDisplayNumbers?: string[];
+  childMatterIds?: number[];
   finalStatus?: string | null;
   closeReason?: string | null;
-  parsedChildMatterIds?: number[];
-  parsedChildDisplayNumbers?: string[];
-  linkedClaimIndexChildCount?: number;
   issue_detail?: string | null;
 };
 
-type ClaimIndexChildRow = {
+type ChildPreview = {
   matter_id: number;
   display_number?: string | null;
   patient_name?: string | null;
   provider_name?: string | null;
   client_name?: string | null;
+  treating_provider?: string | null;
   insurer_name?: string | null;
   claim_number_raw?: string | null;
+  claim_number_normalized?: string | null;
   claim_amount?: number | null;
+  payment_amount?: number | null;
   balance_amount?: number | null;
+  bill_number?: string | null;
+  dos_start?: string | null;
+  dos_end?: string | null;
+  date_of_loss?: string | null;
+  policy_number?: string | null;
+  denial_reason?: string | null;
   final_status?: string | null;
   close_reason?: string | null;
   master_lawsuit_id?: string | null;
+  issue_detail?: string | null;
 };
 
 type AuditCheck = {
@@ -53,8 +63,8 @@ type AuditCheck = {
   status: "pass" | "review";
   count: number;
   description: string;
-  sampleRows: LawsuitAuditRow[];
-  sampleChildRows?: ClaimIndexChildRow[];
+  sampleRows: ReadinessRow[];
+  sampleChildRows?: ChildPreview[];
 };
 
 type CountBucket = {
@@ -69,11 +79,12 @@ type AuditResult = {
   generatedAt?: string;
   summary?: {
     localLawsuitCount: number;
-    linkedClaimIndexChildCount: number;
-    localLawsuitsWithLinkedChildren: number;
-    localLawsuitsWithoutLinkedChildren: number;
-    mappedMasterClioShellCount: number;
-    unmappedMasterClioShellCount: number;
+    linkedChildMatterCount: number;
+    localDocumentTemplateCount: number;
+    localDocumentTemplateVersionCount: number;
+    localDocumentTemplateMergeFieldCount: number;
+    finalizedDocumentRecordCount: number;
+    printQueueItemCount: number;
     checksRun: number;
     checksWithFindings: number;
     criticalIssues: number;
@@ -81,12 +92,12 @@ type AuditResult = {
     infoIssues: number;
   };
   counts?: {
-    finalStatus: CountBucket[];
-    closeReason: CountBucket[];
-    amountSoughtMode: CountBucket[];
     venue: CountBucket[];
+    amountSoughtMode: CountBucket[];
+    adversaryAttorney: CountBucket[];
     masterClioShellMapping: CountBucket[];
-    childLinkPresence: CountBucket[];
+    selectedCourtDetails: CountBucket[];
+    adversaryAttorneyDetails: CountBucket[];
   };
   checks?: AuditCheck[];
   safety?: string;
@@ -194,37 +205,33 @@ function exportAuditCsv(result: AuditResult) {
     "Description",
     "Master Lawsuit ID",
     "Venue",
+    "Adversary Attorney",
     "Amount Mode",
-    "Amount Sought",
-    "Custom Amount",
-    "Final Status",
-    "Close Reason",
-    "Clio Master Matter ID",
-    "Clio Master Display Number",
-    "Linked ClaimIndex Child Count",
-    "Parsed Child Matter IDs",
-    "Parsed Child Display Numbers",
+    "Index/AAA Number",
+    "Clio Master",
+    "Child Count",
     "Issue Detail",
     "Child Matter ID",
     "Child Display Number",
     "Child Patient",
     "Child Provider",
-    "Child Final Status",
-    "Child Close Reason",
+    "Child Insurer",
+    "Child Claim Number",
+    "Child Claim Amount",
+    "Child DOS",
+    "Child Detail",
   ];
 
   const rows = (result.checks || []).flatMap((check) => {
-    const lawsuitRows = check.sampleRows?.length ? check.sampleRows : [null];
-    const childRows = check.sampleChildRows?.length ? check.sampleChildRows : [null];
-
     if (check.sampleChildRows?.length && !check.sampleRows?.length) {
-      return childRows.map((child) => [
+      return check.sampleChildRows.map((child) => [
         check.id,
         check.label,
         check.severity,
         statusText(check),
         check.count,
         check.description,
+        child.master_lawsuit_id,
         "",
         "",
         "",
@@ -232,21 +239,21 @@ function exportAuditCsv(result: AuditResult) {
         "",
         "",
         "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        child?.matter_id,
-        child?.display_number,
-        child?.patient_name,
-        child?.provider_name || child?.client_name,
-        child?.final_status,
-        child?.close_reason,
+        child.matter_id,
+        child.display_number,
+        child.patient_name,
+        child.provider_name || child.client_name || child.treating_provider,
+        child.insurer_name,
+        child.claim_number_raw || child.claim_number_normalized,
+        child.claim_amount,
+        `${child.dos_start || ""}${child.dos_end && child.dos_end !== child.dos_start ? ` - ${child.dos_end}` : ""}`,
+        child.issue_detail,
       ]);
     }
 
-    return lawsuitRows.map((row) => [
+    const sampleRows = check.sampleRows?.length ? check.sampleRows : [null];
+
+    return sampleRows.map((row) => [
       check.id,
       check.label,
       check.severity,
@@ -254,18 +261,16 @@ function exportAuditCsv(result: AuditResult) {
       check.count,
       check.description,
       row?.masterLawsuitId,
-      row?.venueSelection || row?.venue,
+      row?.venueSelection || row?.venue || row?.venueOther,
+      row?.adversaryAttorney,
       row?.amountSoughtMode,
-      row?.amountSought,
-      row?.customAmountSought,
-      row?.finalStatus,
-      row?.closeReason,
-      row?.clioMasterMatterId,
-      row?.clioMasterDisplayNumber,
-      row?.linkedClaimIndexChildCount,
-      row?.parsedChildMatterIds || [],
-      row?.parsedChildDisplayNumbers || [],
+      row?.indexAaaNumber,
+      row?.clioMasterDisplayNumber || row?.clioMasterMatterId,
+      row?.childCount,
       row?.issue_detail,
+      "",
+      "",
+      "",
       "",
       "",
       "",
@@ -280,7 +285,7 @@ function exportAuditCsv(result: AuditResult) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `lawsuit-master-data-quality-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `document-generation-readiness-audit-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -330,26 +335,26 @@ function CountTable({ title, rows }: { title: string; rows: CountBucket[] }) {
   );
 }
 
-export default function AdminLawsuitAuditPage() {
+export default function AdminDocumentReadinessAuditPage() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("Loading Lawsuit/master data-quality audit...");
+  const [message, setMessage] = useState("Loading Document Generation Readiness Audit...");
 
   async function loadAudit() {
     setLoading(true);
-    setMessage("Auditing local Lawsuit/master data quality...");
+    setMessage("Auditing local document-generation readiness...");
     try {
-      const response = await fetch("/api/admin/lawsuits/audit", { cache: "no-store" });
+      const response = await fetch("/api/admin/document-readiness/audit", { cache: "no-store" });
       const data = (await response.json()) as AuditResult;
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Admin Lawsuit/master data-quality audit failed.");
+        throw new Error(data.error || "Admin Document Generation Readiness Audit failed.");
       }
       setResult(data);
       setMessage(
         `Audit complete: ${data.summary?.checksWithFindings ?? 0} of ${data.summary?.checksRun ?? 0} check(s) have findings.`
       );
     } catch (err: any) {
-      setMessage(err?.message || "Admin Lawsuit/master data-quality audit failed.");
+      setMessage(err?.message || "Admin Document Generation Readiness Audit failed.");
       setResult(null);
     } finally {
       setLoading(false);
@@ -364,7 +369,7 @@ export default function AdminLawsuitAuditPage() {
   const checksWithFindings = checks.filter((check) => check.count > 0);
 
   return (
-    <main data-barsh-admin-lawsuit-audit="read-only" style={pageStyle}>
+    <main data-barsh-admin-document-readiness-audit="read-only" style={pageStyle}>
       <div style={{ maxWidth: 1360, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
           <BarshHeaderQuickNav />
@@ -375,11 +380,12 @@ export default function AdminLawsuitAuditPage() {
           <div style={{ fontSize: 13, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Administrator · Read-only
           </div>
-          <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Lawsuit / Master Data-Quality Audit</h1>
+          <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Document Generation Readiness Audit</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
-            Read-only restore-confidence audit of local Lawsuit/master metadata and linked ClaimIndex child rows.
-            This page checks master IDs, child membership, amount/venue metadata, master Clio shell mapping, and close-status consistency.
-            It does not edit, restore, deaggregate, delete, call Clio, generate documents, send email, print, queue, or write to the database.
+            Read-only local audit for document-generation readiness. It checks master lawsuit metadata, court/venue details,
+            adversary attorney details, linked child matter fields, master Clio shell mapping, and local template/finalization
+            records. It does not call Clio, call Graph, create working documents, generate documents, finalize documents,
+            upload documents, send email, print, queue, restore data, update records, delete records, or write to the database.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void loadAudit()} disabled={loading} style={buttonStyle}>
@@ -393,8 +399,8 @@ export default function AdminLawsuitAuditPage() {
             >
               Export Audit CSV
             </button>
-            <a href="/admin/document-readiness/audit" style={secondaryButtonStyle}>
-              Document Readiness Audit
+            <a href="/admin/lawsuits/audit" style={secondaryButtonStyle}>
+              Lawsuit / Master Audit
             </a>
             <a href="/admin/claim-index/audit" style={secondaryButtonStyle}>
               ClaimIndex Audit
@@ -416,20 +422,21 @@ export default function AdminLawsuitAuditPage() {
           <>
             <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
               <SummaryCard label="Local lawsuits" value={result.summary?.localLawsuitCount ?? 0} />
-              <SummaryCard label="Linked child rows" value={result.summary?.linkedClaimIndexChildCount ?? 0} note="ClaimIndex rows with master_lawsuit_id" />
+              <SummaryCard label="Linked child rows" value={result.summary?.linkedChildMatterCount ?? 0} />
+              <SummaryCard label="Template versions" value={result.summary?.localDocumentTemplateVersionCount ?? 0} note={`${result.summary?.localDocumentTemplateCount ?? 0} templates`} />
               <SummaryCard label="Checks with findings" value={result.summary?.checksWithFindings ?? 0} note={`${result.summary?.checksRun ?? 0} checks run`} />
               <SummaryCard label="Critical issues" value={result.summary?.criticalIssues ?? 0} />
               <SummaryCard label="Warnings" value={result.summary?.warningIssues ?? 0} />
-              <SummaryCard label="Mapped Clio shells" value={result.summary?.mappedMasterClioShellCount ?? 0} note={`${result.summary?.unmappedMasterClioShellCount ?? 0} unmapped`} />
+              <SummaryCard label="Finalizations" value={result.summary?.finalizedDocumentRecordCount ?? 0} note={`${result.summary?.printQueueItemCount ?? 0} print queue item(s)`} />
             </section>
 
             <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-              <CountTable title="Counts by lawsuit finalStatus" rows={result.counts?.finalStatus || []} />
-              <CountTable title="Counts by lawsuit closeReason" rows={result.counts?.closeReason || []} />
-              <CountTable title="Counts by amountSoughtMode" rows={result.counts?.amountSoughtMode || []} />
               <CountTable title="Counts by venue" rows={result.counts?.venue || []} />
+              <CountTable title="Counts by amountSoughtMode" rows={result.counts?.amountSoughtMode || []} />
+              <CountTable title="Counts by adversary attorney" rows={result.counts?.adversaryAttorney || []} />
               <CountTable title="Master Clio shell mapping" rows={result.counts?.masterClioShellMapping || []} />
-              <CountTable title="Child link presence" rows={result.counts?.childLinkPresence || []} />
+              <CountTable title="Court details" rows={result.counts?.selectedCourtDetails || []} />
+              <CountTable title="Adversary details" rows={result.counts?.adversaryAttorneyDetails || []} />
             </section>
 
             <section style={cardStyle}>
@@ -438,7 +445,7 @@ export default function AdminLawsuitAuditPage() {
                 {checks.map((check) => (
                   <article
                     key={check.id}
-                    data-barsh-admin-lawsuit-audit-check={check.id}
+                    data-barsh-admin-document-readiness-audit-check={check.id}
                     style={{
                       border: "1px solid #e5e7eb",
                       borderRadius: 18,
@@ -470,30 +477,24 @@ export default function AdminLawsuitAuditPage() {
                             <tr>
                               <th style={thStyle}>Master Lawsuit</th>
                               <th style={thStyle}>Venue</th>
+                              <th style={thStyle}>Adversary</th>
                               <th style={thStyle}>Amount Mode</th>
-                              <th style={thStyle}>Amount</th>
-                              <th style={thStyle}>Final Status</th>
-                              <th style={thStyle}>Close Reason</th>
+                              <th style={thStyle}>Index/AAA</th>
                               <th style={thStyle}>Clio Shell</th>
-                              <th style={thStyle}>Linked Children</th>
-                              <th style={thStyle}>Parsed Child IDs</th>
-                              <th style={thStyle}>Parsed Display #s</th>
+                              <th style={thStyle}>Children</th>
                               <th style={thStyle}>Detail</th>
                             </tr>
                           </thead>
                           <tbody>
                             {check.sampleRows.map((row) => (
-                              <tr key={`${check.id}-${row.id}-${row.issue_detail || ""}`}>
+                              <tr key={`${check.id}-${row.masterLawsuitId}-${row.issue_detail || ""}`}>
                                 <td style={tdStyle}>{row.masterLawsuitId}</td>
-                                <td style={tdStyle}>{row.venueSelection || row.venue || ""}</td>
+                                <td style={tdStyle}>{row.venueSelection || row.venue || row.venueOther || ""}</td>
+                                <td style={tdStyle}>{row.adversaryAttorney || ""}</td>
                                 <td style={tdStyle}>{row.amountSoughtMode || ""}</td>
-                                <td style={tdStyle}>{money(row.amountSought || row.customAmountSought)}</td>
-                                <td style={tdStyle}>{row.finalStatus || ""}</td>
-                                <td style={tdStyle}>{row.closeReason || ""}</td>
+                                <td style={tdStyle}>{row.indexAaaNumber || ""}</td>
                                 <td style={tdStyle}>{row.clioMasterDisplayNumber || row.clioMasterMatterId || ""}</td>
-                                <td style={tdStyle}>{row.linkedClaimIndexChildCount ?? ""}</td>
-                                <td style={tdStyle}>{(row.parsedChildMatterIds || []).join(", ")}</td>
-                                <td style={tdStyle}>{(row.parsedChildDisplayNumbers || []).join(", ")}</td>
+                                <td style={tdStyle}>{row.childCount ?? ""}</td>
                                 <td style={tdStyle}>{row.issue_detail || ""}</td>
                               </tr>
                             ))}
@@ -502,7 +503,7 @@ export default function AdminLawsuitAuditPage() {
                       </div>
                     ) : check.sampleChildRows?.length ? (
                       <div style={{ overflowX: "auto", border: "1px solid #e5e7eb", borderRadius: 14 }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1120 }}>
                           <thead>
                             <tr>
                               <th style={thStyle}>Matter ID</th>
@@ -510,26 +511,26 @@ export default function AdminLawsuitAuditPage() {
                               <th style={thStyle}>Master Lawsuit</th>
                               <th style={thStyle}>Patient</th>
                               <th style={thStyle}>Provider</th>
+                              <th style={thStyle}>Insurer</th>
                               <th style={thStyle}>Claim #</th>
-                              <th style={thStyle}>Final Status</th>
-                              <th style={thStyle}>Close Reason</th>
                               <th style={thStyle}>Claim Amount</th>
-                              <th style={thStyle}>Balance</th>
+                              <th style={thStyle}>DOS</th>
+                              <th style={thStyle}>Detail</th>
                             </tr>
                           </thead>
                           <tbody>
                             {check.sampleChildRows.map((row) => (
-                              <tr key={`${check.id}-${row.matter_id}`}>
+                              <tr key={`${check.id}-${row.matter_id}-${row.issue_detail || ""}`}>
                                 <td style={tdStyle}>{row.matter_id}</td>
                                 <td style={tdStyle}>{row.display_number || ""}</td>
                                 <td style={tdStyle}>{row.master_lawsuit_id || ""}</td>
                                 <td style={tdStyle}>{row.patient_name || ""}</td>
-                                <td style={tdStyle}>{row.provider_name || row.client_name || ""}</td>
-                                <td style={tdStyle}>{row.claim_number_raw || ""}</td>
-                                <td style={tdStyle}>{row.final_status || ""}</td>
-                                <td style={tdStyle}>{row.close_reason || ""}</td>
+                                <td style={tdStyle}>{row.provider_name || row.client_name || row.treating_provider || ""}</td>
+                                <td style={tdStyle}>{row.insurer_name || ""}</td>
+                                <td style={tdStyle}>{row.claim_number_raw || row.claim_number_normalized || ""}</td>
                                 <td style={tdStyle}>{money(row.claim_amount)}</td>
-                                <td style={tdStyle}>{money(row.balance_amount)}</td>
+                                <td style={tdStyle}>{row.dos_start || ""}{row.dos_end && row.dos_end !== row.dos_start ? ` - ${row.dos_end}` : ""}</td>
+                                <td style={tdStyle}>{row.issue_detail || ""}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -545,13 +546,13 @@ export default function AdminLawsuitAuditPage() {
 
             {checksWithFindings.length ? (
               <section style={{ ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" }}>
-                <strong>Review note:</strong> This page reports findings only. It intentionally provides no fix, restore,
-                edit, delete, deaggregate, Clio, document, email, print, or queue controls.
+                <strong>Review note:</strong> This page reports findings only. It intentionally provides no fix, edit,
+                restore, Clio, Graph, document generation, finalization, upload, email, print, queue, delete, or write controls.
               </section>
             ) : null}
 
             <section style={{ ...cardStyle, color: "#475569", lineHeight: 1.45 }}>
-              API safety message: {result.safety || "Read-only Lawsuit/master data-quality audit. No write actions are available."}
+              API safety message: {result.safety || "Read-only Document Generation Readiness Audit. No write actions are available."}
             </section>
           </>
         ) : null}

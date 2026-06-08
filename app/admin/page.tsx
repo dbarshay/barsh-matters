@@ -28,6 +28,13 @@ const adminCards = [
     icon: "⚖️",
   },
   {
+    label: "Document Readiness Audit",
+    href: "/admin/document-readiness/audit",
+    description:
+      "Read-only audit for document-generation readiness across local master metadata, child matter fields, templates, and final delivery prerequisites.",
+    icon: "🧾",
+  },
+  {
     label: "Lawsuit Cleanup / Deaggregate",
     href: "/admin/lawsuit-cleanup",
     description:
