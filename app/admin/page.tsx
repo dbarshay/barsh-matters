@@ -54,6 +54,12 @@ const adminCards = [
       "Search local Barsh Matters ticklers by type, status, due date, matter, lawsuit, and workflow context.",
   },
   {
+    label: "Clients",
+    href: "/admin/clients",
+    description:
+      "Review local client/provider records, imported client fields, child matters, and child-matter-based invoicing/remittance previews.",
+  },
+  {
     label: "Reference Data Import",
     href: "/admin/reference-data",
     description:

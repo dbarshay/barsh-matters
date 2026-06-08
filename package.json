@@ -276,7 +276,8 @@
     "verify:unified-topline-header-safety": "node scripts/verify-unified-topline-header-safety.mjs",
     "verify:vercel-background-email-cron-safety": "node scripts/verify-vercel-background-email-cron-safety.mjs",
     "verify:verifier-contract-locks": "node scripts/verify-verifier-contract-locks.mjs",
-    "verify:lawsuit-post-payment-workflow-safety": "node scripts/verify-lawsuit-post-payment-workflow-safety.mjs"
+    "verify:lawsuit-post-payment-workflow-safety": "node scripts/verify-lawsuit-post-payment-workflow-safety.mjs",
+    "verify:admin-clients-interface-safety": "node scripts/verify-admin-clients-interface-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
