@@ -50,6 +50,7 @@
     "verify:admin-lawsuit-cleanup-history-safety": "node scripts/verify-admin-lawsuit-cleanup-history-safety.mjs",
     "verify:admin-lawsuit-cleanup-preview-safety": "node scripts/verify-admin-lawsuit-cleanup-preview-safety.mjs",
     "verify:admin-proxy-clean-redirect-safety": "node scripts/verify-admin-proxy-clean-redirect-safety.mjs",
+    "verify:admin-readiness-dashboard-safety": "node scripts/verify-admin-readiness-dashboard-safety.mjs",
     "verify:admin-reference-data-adversary-attorney-safety": "node scripts/verify-admin-reference-data-adversary-attorney-safety.mjs",
     "verify:admin-scheduled-backup-health-safety": "node scripts/verify-admin-scheduled-backup-health-safety.mjs",
     "verify:admin-template-custom-import-demoted-safety": "node scripts/verify-admin-template-custom-import-demoted-safety.mjs",

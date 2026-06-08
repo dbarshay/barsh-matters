@@ -7,6 +7,13 @@ import React from "react";
 
 const adminCards = [
   {
+    label: "Readiness Dashboard",
+    href: "/admin/readiness-dashboard",
+    description:
+      "Single read-only dashboard for ClaimIndex, Lawsuit/master, and document-generation readiness audit status.",
+    icon: "📊",
+  },
+  {
     label: "ClaimIndex Viewer",
     href: "/admin/claim-index",
     description:
