@@ -7,6 +7,13 @@ import React from "react";
 
 const adminCards = [
   {
+    label: "ClaimIndex Viewer",
+    href: "/admin/claim-index",
+    description:
+      "Read-only audit/search view of the local ClaimIndex table for backup, restore, and data-confidence review.",
+    icon: "🔎",
+  },
+  {
     label: "Lawsuit Cleanup / Deaggregate",
     href: "/admin/lawsuit-cleanup",
     description:

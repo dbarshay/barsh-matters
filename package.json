@@ -269,7 +269,8 @@
     "verify:admin-backup-prisma-model-archive-coverage": "node scripts/verify-admin-backup-prisma-model-archive-coverage.mjs",
     "verify:dropbox-backup-mirror-safety": "node scripts/verify-dropbox-backup-mirror-safety.mjs",
     "verify:dedicated-mac-backup-readiness": "node scripts/verify-dedicated-mac-backup-readiness.mjs",
-    "verify:dedicated-mac-handoff-package": "node scripts/verify-dedicated-mac-handoff-package.mjs"
+    "verify:dedicated-mac-handoff-package": "node scripts/verify-dedicated-mac-handoff-package.mjs",
+    "verify:admin-claim-index-viewer-safety": "node scripts/verify-admin-claim-index-viewer-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
