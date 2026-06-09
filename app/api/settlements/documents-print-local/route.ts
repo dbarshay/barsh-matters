@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -39,11 +40,7 @@ function money(value: unknown): string {
 }
 
 function dateOnly(value: unknown): string {
-  const raw = clean(value);
-  if (!raw) return "—";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString("en-US");
+  return formatDateOnlyForDisplay(value) || "—";
 }
 
 function rowHtml(label: string, value: unknown) {

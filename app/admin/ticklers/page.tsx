@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
@@ -54,13 +55,7 @@ function text(value: unknown): string {
 }
 
 function formatDate(value: unknown): string {
-  const raw = text(value);
-  if (!raw) return "—";
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) return `${match[2]}/${match[3]}/${match[1]}`;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return raw;
-  return parsed.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+  return formatDateOnlyForDisplay(value) || "—";
 }
 
 function kindLabel(value: unknown): string {

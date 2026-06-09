@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -95,30 +96,7 @@ function money(value: unknown) {
 }
 
 function dateOnly(value: unknown) {
-  const text = clean(value);
-  if (!text) return "";
-
-  const isoDateOnlyMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
-  if (isoDateOnlyMatch) {
-    const [, year, month, day] = isoDateOnlyMatch;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const dottedDateMatch = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (dottedDateMatch) {
-    const [, month, day, year] = dottedDateMatch;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const slashDateMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slashDateMatch) {
-    const [, month, day, year] = slashDateMatch;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return text;
-  return date.toLocaleDateString();
+  return formatDateOnlyForDisplay(value);
 }
 
 function dateTime(value: unknown) {

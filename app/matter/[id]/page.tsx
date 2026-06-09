@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
 
 const DIRECT_MATTER_SETTLEMENTS_ENABLED = false;
@@ -22,18 +23,7 @@ function money(v: any) {
 }
 
 function formatDate(v?: string) {
-  const raw = String(v || "").trim();
-  if (!raw) return "";
-
-  const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (ymd) return `${Number(ymd[2])}/${Number(ymd[3])}/${ymd[1]}`;
-
-  const mdy = raw.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
-  if (mdy) return `${Number(mdy[1])}/${Number(mdy[2])}/${mdy[3]}`;
-
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString("en-US");
+  return formatDateOnlyForDisplay(v);
 }
 
 function formatDOS(start?: string, end?: string) {

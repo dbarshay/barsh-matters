@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -40,10 +41,7 @@ function money(value: unknown) {
 }
 
 function dateOnly(value: unknown) {
-  if (!value) return "";
-  const date = new Date(String(value));
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString();
+  return formatDateOnlyForDisplay(value);
 }
 
 export default function AdminInvoiceSearchPage() {

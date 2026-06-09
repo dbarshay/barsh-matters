@@ -1,5 +1,4 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
 
 const mustExist = [
   "lib/dateOnlyDisplay.ts",
@@ -39,9 +38,16 @@ for (const file of patchedFiles) {
   if (!text.includes('from "@/lib/dateOnlyDisplay"')) {
     fail("patched file does not import shared date utility", { file });
   }
+  if (!text.includes("formatDateOnlyForDisplay")) {
+    fail("patched file does not use shared date utility", { file });
+  }
 }
 
 const forbiddenExact = [
+  {
+    file: "app/admin/clients/[id]/invoice/page.tsx",
+    text: "const date = new Date(String(value));\n  if (Number.isNaN(date.getTime())) return String(value);\n  return date.toLocaleDateString();",
+  },
   {
     file: "app/admin/clients/[id]/page.tsx",
     text: "const date = new Date(String(value));\n  if (Number.isNaN(date.getTime())) return String(value);\n  return date.toLocaleDateString();",

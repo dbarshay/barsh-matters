@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -54,10 +55,7 @@ function money(value: unknown) {
 }
 
 function dateOnly(value: unknown) {
-  if (!value) return "";
-  const date = new Date(String(value));
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString();
+  return formatDateOnlyForDisplay(value);
 }
 
 function asPlainObject(value: unknown): Record<string, unknown> {
