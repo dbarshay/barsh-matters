@@ -689,7 +689,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
 
       <section style={{ ...cardStyle, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>1. Preview</h2>
+        <h2 style={{ marginTop: 0 }}>1. Preview Invoice</h2>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 10, alignItems: "end" }}>
           <label style={{ fontWeight: 800 }}>
@@ -704,7 +704,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <label style={{ fontWeight: 800 }}>
             Transaction Type
             <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
-                            <option value="">All</option>
+              <option value="">All</option>
               <option value="Voluntary Payment">Voluntary Payment</option>
               <option value="Collection Payment">Collection Payment</option>
               <option value="Interest">Interest</option>
@@ -740,7 +740,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         {!preview ? (
           <p style={{ color: "#64748b" }}>No preview loaded.</p>
         ) : (
-          <>            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(360px, 1fr))", gap: 24, marginBottom: 14 }}>
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(360px, 1fr))", gap: 24, marginBottom: 14 }}>
               <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
                 <strong>Number of Principal / Interest Payments Received:</strong>
                 <span style={{ whiteSpace: "nowrap" }}>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
