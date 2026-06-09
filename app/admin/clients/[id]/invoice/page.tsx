@@ -672,11 +672,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <label style={{ fontWeight: 800 }}>
             Transaction Type
             <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
-              <option value="">All</option>
-              <option value="Collection Payment">Collection Payment</option>
+                            <option value="">All</option>
               <option value="Voluntary Payment">Voluntary Payment</option>
+              <option value="Collection Payment">Collection Payment</option>
               <option value="Interest">Interest</option>
-              <option value="Other Court Fees Collected">Other Court Fees Collected</option>
               <option value="Index Fee">Index Fee</option>
               <option value="Service Fee">Service Fee</option>
               <option value="Other Court Costs">Other Court Costs</option>

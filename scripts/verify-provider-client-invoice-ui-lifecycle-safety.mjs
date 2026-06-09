@@ -55,7 +55,6 @@ mustContain("invoice page", invoicePage, '<option value="">All</option>');
 mustContain("invoice page", invoicePage, '<option value="">All</option>');
 mustContain("invoice page", invoicePage, "Collection Payment");
 mustContain("invoice page", invoicePage, "Voluntary Payment");
-mustContain("invoice page", invoicePage, "Other Court Fees Collected");
 mustContain("invoice page", invoicePage, "compactInfoLabelStyle");
 mustContain("invoice page", invoicePage, "WC Principal");
 mustContain("invoice page", invoicePage, "WC Interest");
@@ -152,6 +151,13 @@ if (invoicePage.includes('<option value="Filing Fee Collected">Filing Fee Collec
   failures += 1;
 } else {
   console.log("PASS: invoice page Filing Fee Collected transaction-type option removed");
+}
+
+if (invoicePage.includes("Other Court Fees Collected")) {
+  console.error("FAIL: invoice page still contains Other Court Fees Collected transaction-type option");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page Other Court Fees Collected transaction-type option removed");
 }
 
 if (failures) {
