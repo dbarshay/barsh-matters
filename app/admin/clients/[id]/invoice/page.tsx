@@ -714,14 +714,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <p style={{ color: "#64748b" }}>No preview loaded.</p>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(260px, 1fr))", gap: 12, marginBottom: 14 }}>
-              <div>
-                <strong>Number of Principal / Interest Payments Received</strong><br />
-                {principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(320px, 1fr))", gap: 24, marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "baseline" }}>
+                <strong>Number of Principal / Interest Payments Received</strong>
+                <span style={{ textAlign: "right", whiteSpace: "nowrap" }}>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
               </div>
-              <div>
-                <strong>Number of Costs Payments Received</strong><br />
-                {costPaymentCount} — {money(costPaymentTotal)}
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "baseline" }}>
+                <strong>Number of Costs Payments Received</strong>
+                <span style={{ textAlign: "right", whiteSpace: "nowrap" }}>{costPaymentCount} — {money(costPaymentTotal)}</span>
               </div>
             </div>
 
