@@ -63,6 +63,10 @@ for (const needle of [
   "previewRemitToProvider",
   "showRemitToProvider",
   "remitTotal",
+  "isCostsReceivedTable",
+  "showBilledAndRetainerColumns",
+  "hideForCostsReceived: true",
+  "colSpan={isCostsReceivedTable ? activeColumns.length - 1 : 11}",
 ]) {
   mustContain("invoice page", page, needle);
 }
