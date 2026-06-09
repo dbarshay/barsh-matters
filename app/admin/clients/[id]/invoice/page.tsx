@@ -621,12 +621,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     { key: "insurer", label: "Insurer" },
     { key: "caseType", label: "Case Type", width: 56 },
     { key: "description", label: "Type" },
-    { key: "sortDate", label: "Date Posted" },
-    { key: "checkDate", label: "Check Date" },
-    { key: "checkNumber", label: "Check Number" },
-    { key: "billedAmount", label: "Billed Amount", align: "right", hideForCostsReceived: true },
-    { key: "amount", label: "Payment Amount", align: "right" },
-    { key: "retainerFee", label: "Retainer Fee", align: "right", hideForCostsReceived: true },
+    { key: "sortDate", label: "Date Posted", expendedLabel: "Date Incurred" },
+    { key: "checkDate", label: "Check Date", hideForExpended: true },
+    { key: "checkNumber", label: "Check Number", hideForExpended: true },
+    { key: "billedAmount", label: "Billed Amount", align: "right", hideForCostsReceived: true, hideForExpended: true },
+    { key: "amount", label: "Payment Amount", expendedLabel: "Amount Expended", align: "right" },
+    { key: "retainerFee", label: "Retainer Fee", align: "right", hideForCostsReceived: true, hideForExpended: true },
     { key: "remitToProvider", label: "Remit to Provider", align: "right", principalOnly: true },
   ];
 
@@ -687,11 +687,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const retainerTotal = lines.reduce((sum: number, line: any) => sum + Number(line?.retainerFee || 0), 0);
     const remitTotal = lines.reduce((sum: number, line: any) => sum + previewRemitToProvider(line), 0);
     const isCostsReceivedTable = title === "Costs Received";
+    const isFeesCostsExpendedTable = title === "Fees and Costs Expended";
     const showRemitToProvider = title === "Principal / Interest Received";
-    const showBilledAndRetainerColumns = !isCostsReceivedTable;
+    const showBilledAndRetainerColumns = !isCostsReceivedTable && !isFeesCostsExpendedTable;
+    const showCheckColumns = !isFeesCostsExpendedTable;
     const activeColumns = previewTableColumns.filter((column) => {
       if (column.principalOnly && !showRemitToProvider) return false;
       if (column.hideForCostsReceived && isCostsReceivedTable) return false;
+      if (column.hideForExpended && isFeesCostsExpendedTable) return false;
       return true;
     });
     const sortedLines = sortPreviewLines(title, lines);
@@ -721,7 +724,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {column.label}{activeSort?.field === column.key ? (activeSort.direction === "asc" ? " ▲" : " ▼") : ""}
+                    {(isFeesCostsExpendedTable && column.expendedLabel) ? column.expendedLabel : column.label}{activeSort?.field === column.key ? (activeSort.direction === "asc" ? " ▲" : " ▼") : ""}
                   </th>
                 ))}
               </tr>
@@ -739,8 +742,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0", width: 56 }}>{line.caseType || "—"}</td>
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{previewLineDisplayType(line)}</td>
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{dateOnly(line.sortDate) || "—"}</td>
-                  <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{dateOnly(line.checkDate) || "—"}</td>
-                  <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{line.checkNumber || "—"}</td>
+                  {showCheckColumns && (
+                    <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{dateOnly(line.checkDate) || "—"}</td>
+                  )}
+                  {showCheckColumns && (
+                    <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }}>{line.checkNumber || "—"}</td>
+                  )}
                   {showBilledAndRetainerColumns && (
                     <td style={{ ...tdStyle, border: "1px solid #e2e8f0", textAlign: "right" }}>{money(line.billedAmount)}</td>
                   )}
@@ -763,7 +770,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               <tr>
                 <td
                   style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }}
-                  colSpan={isCostsReceivedTable ? activeColumns.length - 1 : 11}
+                  colSpan={(isCostsReceivedTable || isFeesCostsExpendedTable) ? activeColumns.length - 1 : 11}
                 >
                   Total
                 </td>

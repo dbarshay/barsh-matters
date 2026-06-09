@@ -66,7 +66,12 @@ for (const needle of [
   "isCostsReceivedTable",
   "showBilledAndRetainerColumns",
   "hideForCostsReceived: true",
-  "colSpan={isCostsReceivedTable ? activeColumns.length - 1 : 11}",
+  "colSpan={(isCostsReceivedTable || isFeesCostsExpendedTable) ? activeColumns.length - 1 : 11}",
+  "isFeesCostsExpendedTable",
+  "showCheckColumns",
+  "hideForExpended: true",
+  "Date Incurred",
+  "Amount Expended",
 ]) {
   mustContain("invoice page", page, needle);
 }
