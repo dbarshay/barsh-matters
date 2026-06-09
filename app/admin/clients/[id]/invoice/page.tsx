@@ -33,6 +33,15 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
   fontSize: 13,
 };
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "5px 8px",
+  borderRadius: 8,
+  border: "1px solid #d1d5db",
+  background: "#fff",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
 
 const filterControlStyle: React.CSSProperties = {
   display: "block",
@@ -599,6 +608,16 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const costPaymentCount = costPaymentPreviewLines.length;
   const costPaymentTotal = costPaymentPreviewLines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
   const detailInvoice = invoiceDetail?.invoice;
+  const selectedInvoiceId = detailInvoice?.id || invoiceDetail?.invoiceId || null;
+  const isInvoiceDetailOpen = (invoice: any) => invoiceDetailVisible && selectedInvoiceId && String(selectedInvoiceId) === String(invoice?.id);
+  const toggleInvoiceDetail = (invoice: any) => {
+    if (isInvoiceDetailOpen(invoice)) {
+      setInvoiceDetailVisible(false);
+      setInvoiceDetail(null);
+      return;
+    }
+    loadInvoiceDetail(invoice.id);
+  };
   const detailLines = Array.isArray(detailInvoice?.lines) ? detailInvoice.lines : [];
 
   const historyCsvRows = useMemo(
@@ -843,7 +862,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                   <td style={{ ...tdStyle, textAlign: "right" }}>{money(invoice.invoicePackageTotal)}</td>
                   <td style={tdStyle}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <button type="button" onClick={() => loadInvoiceDetail(invoice.id)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #2563eb", background: "#fff", color: "#2563eb", fontWeight: 900 }}>View</button>
+                      <button type="button" onClick={() => toggleInvoiceDetail(invoice)} style={secondaryButtonStyle}>{isInvoiceDetailOpen(invoice) ? "Hide" : "View"}</button>
                       {invoice.status === "draft" && (
                         <button type="button" onClick={() => finalizeInvoice(invoice)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #166534", background: "#166534", color: "#fff", fontWeight: 900 }}>Finalize</button>
                       )}
