@@ -924,18 +924,18 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <p style={{ color: "#64748b" }}>No preview loaded.</p>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(260px, 1fr))", gap: 24, marginBottom: 14 }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                <strong>Number of Principal / Interest Payments Received:</strong>
-                <span style={{ whiteSpace: "nowrap" }}>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(230px, 1fr))", gap: 16, marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
+                <strong>Principal / Interest Payments:</strong>
+                <span>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                <strong>Number of Costs Payments Received:</strong>
-                <span style={{ whiteSpace: "nowrap" }}>{costsReceivedPaymentCount} — {money(costsReceivedPaymentTotal)}</span>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
+                <strong>Costs Received:</strong>
+                <span>{costsReceivedPaymentCount} — {money(costsReceivedPaymentTotal)}</span>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                <strong>Number of Costs Expended:</strong>
-                <span style={{ whiteSpace: "nowrap" }}>{feesCostsExpendedCount} — {money(feesCostsExpendedTotal)}</span>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
+                <strong>Costs Expended:</strong>
+                <span>{feesCostsExpendedCount} — {money(feesCostsExpendedTotal)}</span>
               </div>
             </div>
 

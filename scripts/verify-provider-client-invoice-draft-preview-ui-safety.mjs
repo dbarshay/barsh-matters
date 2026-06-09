@@ -120,9 +120,9 @@ if (page.includes("includeAlreadyInvoiced") || page.includes("confirmIncludeAlre
 }
 
 mustContain("invoice page", page, "Review Invoice");
-mustContain("invoice page", page, "Number of Principal / Interest Payments Received");
-mustContain("invoice page", page, "Number of Costs Payments Received");
-mustContain("invoice page", page, "Number of Costs Expended");
+mustContain("invoice page", page, "Principal / Interest Payments:");
+mustContain("invoice page", page, "Costs Received:");
+mustContain("invoice page", page, "Costs Expended:");
 mustContain("invoice page", page, "principalInterestPaymentCount");
 mustContain("invoice page", page, "principalInterestPaymentTotal");
 mustContain("invoice page", page, "costPaymentCount");
