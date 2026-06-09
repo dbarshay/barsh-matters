@@ -290,7 +290,8 @@
     "verify:provider-client-invoice-finalize-safety": "node scripts/verify-provider-client-invoice-finalize-safety.mjs",
     "verify:provider-client-invoice-lifecycle-backend-safety": "node scripts/verify-provider-client-invoice-lifecycle-backend-safety.mjs",
     "verify:provider-client-invoice-ui-lifecycle-safety": "node scripts/verify-provider-client-invoice-ui-lifecycle-safety.mjs",
-    "verify:date-only-display-safety": "node scripts/verify-date-only-display-safety.mjs"
+    "verify:date-only-display-safety": "node scripts/verify-date-only-display-safety.mjs",
+    "verify:provider-client-invoice-step2-review-tables-safety": "node scripts/verify-provider-client-invoice-step2-review-tables-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
