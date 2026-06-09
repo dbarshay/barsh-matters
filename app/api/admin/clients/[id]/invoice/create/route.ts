@@ -22,6 +22,19 @@ function jsonOrNull(value: unknown) {
   return value as any;
 }
 
+function lineValue(line: any, keys: string[]): unknown {
+  for (const key of keys) {
+    if (line && Object.prototype.hasOwnProperty.call(line, key)) return line[key];
+
+    const snapshot = line?.rowSnapshot;
+    if (snapshot && typeof snapshot === "object" && Object.prototype.hasOwnProperty.call(snapshot, key)) {
+      return snapshot[key];
+    }
+  }
+
+  return null;
+}
+
 function providerInitials(value: unknown): string {
   const text = clean(value)
     .replace(/&/g, " and ")
@@ -71,10 +84,14 @@ async function uniqueInvoiceNumber(base: string): Promise<string> {
 }
 
 function normalizedLine(line: any) {
+  const sourceTable = clean(line?.sourceTable) || null;
+  const sourceId = clean(line?.sourceId) || null;
+  const retainerValue = lineValue(line, ["retainer", "retainerFee", "retainerAmount"]);
+
   return {
     lineType: clean(line?.lineType) || "line",
-    sourceId: clean(line?.sourceId) || null,
-    sourceTable: clean(line?.sourceTable) || null,
+    sourceId,
+    sourceTable,
     sortDate: clean(line?.sortDate) || null,
     matter: clean(line?.matter) || null,
     patient: clean(line?.patient) || null,
@@ -82,8 +99,30 @@ function normalizedLine(line: any) {
     insurer: clean(line?.insurer) || null,
     lawsuit: clean(line?.lawsuit) || null,
     description: clean(line?.description) || null,
+
+    dateOfLoss: clean(lineValue(line, ["dateOfLoss", "dateOfLossDisplay", "dol", "lossDate"])) || null,
+    dateOfService: clean(lineValue(line, ["dateOfService", "dateOfServiceDisplay", "dos", "serviceDate"])) || null,
+    dosEnd: clean(lineValue(line, ["dosEnd", "dateOfServiceEnd", "dateOfServiceEndDisplay", "serviceDateEnd"])) || null,
+    caseType: clean(lineValue(line, ["caseType", "case_type", "matterCaseType"])) || null,
+    checkDate: clean(lineValue(line, ["checkDate", "checkDateDisplay", "paymentCheckDate", "transactionDate"])) || null,
+    checkNumber: clean(lineValue(line, ["checkNumber", "checkNo", "paymentCheckNumber"])) || null,
+
+    billedAmount: moneyNumber(lineValue(line, ["billedAmount", "billed_amount", "billAmount"])),
     amount: moneyNumber(line?.amount),
     retainerFee: moneyNumber(line?.retainerFee),
+    retainer: moneyNumber(retainerValue),
+
+    sourceType: clean(lineValue(line, ["sourceType", "source_type"])) || sourceTable || null,
+    sourceMatterId: clean(lineValue(line, ["sourceMatterId", "matterId", "matter_id", "clioMatterId"])) || null,
+    sourceMatterDisplayNumber:
+      clean(lineValue(line, ["sourceMatterDisplayNumber", "matterDisplayNumber", "displayNumber", "matterNumber"])) ||
+      clean(line?.matter) ||
+      null,
+    sourcePaymentReceiptId:
+      clean(lineValue(line, ["sourcePaymentReceiptId", "paymentReceiptId", "matterPaymentReceiptId", "receiptId"])) ||
+      (sourceTable === "MatterPaymentReceipt" ? sourceId : null),
+    sourceSettlementId: clean(lineValue(line, ["sourceSettlementId", "settlementId"])) || null,
+
     rowSnapshot: jsonOrNull(line?.rowSnapshot ?? line),
   };
 }

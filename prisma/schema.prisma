@@ -357,11 +357,11 @@ model ProviderClientInvoice {
   filterSnapshot Json?
   totalsSnapshot Json?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  finalizedAt DateTime?
-  voidedAt    DateTime?
-  voidReason  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  finalizedAt   DateTime?
+  voidedAt      DateTime?
+  voidReason    String?
   auditSnapshot Json?
 
   lines ProviderClientInvoiceLine[]
@@ -373,22 +373,35 @@ model ProviderClientInvoice {
 }
 
 model ProviderClientInvoiceLine {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  lineType    String
-  sourceId    String?
-  sourceTable String?
-  sortDate    String?
-  matter      String?
-  patient     String?
-  provider    String?
-  insurer     String?
-  lawsuit     String?
-  description String?
-  amount      Float    @default(0)
-  retainerFee Float    @default(0)
-  rowSnapshot Json?
-  createdAt   DateTime @default(now())
+  id                        String   @id @default(cuid())
+  invoiceId                 String
+  lineType                  String
+  sourceId                  String?
+  sourceTable               String?
+  sortDate                  String?
+  matter                    String?
+  patient                   String?
+  provider                  String?
+  insurer                   String?
+  lawsuit                   String?
+  description               String?
+  amount                    Float    @default(0)
+  retainerFee               Float    @default(0)
+  rowSnapshot               Json?
+  dateOfLoss                String?
+  dateOfService             String?
+  dosEnd                    String?
+  caseType                  String?
+  checkDate                 String?
+  checkNumber               String?
+  billedAmount              Float    @default(0)
+  retainer                  Float    @default(0)
+  sourceType                String?
+  sourceMatterId            String?
+  sourceMatterDisplayNumber String?
+  sourcePaymentReceiptId    String?
+  sourceSettlementId        String?
+  createdAt                 DateTime @default(now())
 
   invoice ProviderClientInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
@@ -867,10 +880,9 @@ model DocumentTemplateMergeField {
   @@index([source])
 }
 
-
 model ProviderClientInvoiceAudit {
-  id                  String   @id @default(cuid())
-  invoiceId           String
+  id                   String   @id @default(cuid())
+  invoiceId            String
   providerClientInfoId String?
   referenceEntityId    String?
   providerDisplayName  String?
