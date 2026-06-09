@@ -119,6 +119,45 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const totals = preview?.totalsSnapshot || {};
     const filters = preview?.filters || {};
     const invoiceNumber = await uniqueInvoiceNumber(safeInvoiceNumberBase(preview?.invoiceNumberCandidate, preview?.providerDisplayName || preview?.clientSnapshot?.displayName));
+    const receiptLineSourceIds: number[] = Array.from(
+      new Set<number>(
+        lines
+          .filter((line: any) => clean(line?.sourceTable) === "MatterPaymentReceipt")
+          .map((line: any) => Number(clean(line?.sourceId)))
+          .filter((value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value))
+      )
+    );
+
+    const receiptRowsMarkedWithAnotherInvoiceId = receiptLineSourceIds.length
+      ? await prisma.matterPaymentReceipt.findMany({
+          where: {
+            id: { in: receiptLineSourceIds },
+            invoiceId: { not: null },
+            NOT: [{ invoiceId: "" }],
+          },
+          select: {
+            id: true,
+            invoiceId: true,
+            displayNumber: true,
+            transactionType: true,
+            paymentAmount: true,
+            transactionDate: true,
+          },
+          orderBy: { id: "asc" },
+        })
+      : [];
+
+    if (receiptRowsMarkedWithAnotherInvoiceId.length && body?.confirmIncludeAlreadyInvoiced !== true) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Invoice draft includes receipt rows already assigned to another invoice. Refresh ordinary preview or confirm admin include-already-invoiced mode.",
+          receiptRowsMarkedWithAnotherInvoiceId,
+        },
+        { status: 409 }
+      );
+    }
+
     const normalizedLines = lines.map(normalizedLine);
 
     const created = await prisma.$transaction(async (tx) => {
@@ -153,6 +192,27 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           invoiceId: invoice.id,
           ...line,
         })),
+      });
+
+      await tx.providerClientInvoiceAudit.create({
+        data: {
+          invoiceId: invoice.id,
+          providerClientInfoId: invoice.providerClientInfoId,
+          referenceEntityId: invoice.referenceEntityId,
+          providerDisplayName: invoice.providerDisplayName,
+          eventType: "invoice.draft_created",
+          eventSummary: "Local draft invoice created from frozen invoice preview.",
+          details: {
+            lineCount: normalizedLines.length,
+            receiptLineSourceIds,
+            receiptRowsMarkedWithAnotherInvoiceId: receiptRowsMarkedWithAnotherInvoiceId.length,
+            invoicePackageTotal: moneyNumber(totals?.invoicePackageTotal),
+            noReceiptRowsMarked: true,
+            noClioRecordsChanged: true,
+            noClaimIndexRecordsChanged: true,
+            noRemittanceRecordsChanged: true,
+          },
+        },
       });
 
       return tx.providerClientInvoice.findUnique({

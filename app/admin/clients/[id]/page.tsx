@@ -726,6 +726,9 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         <Link href="/admin" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
           Admin Home
         </Link>
+        <Link href="/admin/invoices" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
+          Global Invoice Search
+        </Link>
       </div>
 
       {error && (

@@ -29,7 +29,13 @@ console.log("=== VERIFY PROVIDER CLIENT INVOICE CREATE PREVIEW SAFETY ===");
 
 mustContain("route", route, "export async function GET");
 mustContain("route", route, "provider-client-invoice-create-preview");
-mustContain("route", route, "mode: \"read-only-preview\"");
+mustContain("route", route, 'mode: includeAlreadyInvoiced ? "read-only-preview-admin-include-already-invoiced" : "read-only-preview"');
+mustContain("route", route, "includeAlreadyInvoiced");
+mustContain("route", route, "Ordinary mode excludes MatterPaymentReceipt rows already assigned to an invoiceId");
+mustContain("route", route, "Admin include-already-invoiced mode is diagnostic only");
+mustContain("route", route, "receiptMarkDiagnostics");
+mustContain("route", route, "excludedAlreadyInvoicedReceiptRowCount");
+mustContain("route", route, "includedAlreadyInvoicedReceiptRowCount");
 mustContain("route", route, "invoiceDraftPreview");
 mustContain("route", route, "invoiceNumberCandidate");
 mustContain("route", route, "status: \"draft-preview\"");

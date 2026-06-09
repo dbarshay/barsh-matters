@@ -80,7 +80,13 @@ export async function GET(
     const receiptLineSourceIdsMissing = receiptLineSourceIds.filter((id) => !receiptRowIdsFound.has(id));
     const receiptRowsMarkedWithThisInvoiceId = receiptRows.filter((row) => row.invoiceId === invoiceId);
     const receiptRowsMarkedWithAnotherInvoiceId = receiptRows.filter((row) => row.invoiceId && row.invoiceId !== invoiceId);
-    const receiptRowsUnmarked = receiptRows.filter((row) => !row.invoiceId);
+    const receiptRowsUnmarked = receiptRows.filter((row) => !clean(row.invoiceId));
+
+    const auditEvents = await prisma.providerClientInvoiceAudit.findMany({
+      where: { invoiceId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -88,6 +94,7 @@ export async function GET(
       mode: "read-only",
       safety: "Read-only invoice detail. This route does not create, finalize, update, void, remit, print, email, queue, mutate source payment rows, update ClaimIndex, or mutate Clio.",
       invoice,
+      auditEvents,
       verification: {
         lineCount: invoice.lines.length,
         receiptLineSourceIds,
@@ -106,7 +113,8 @@ export async function GET(
           markStatus: row.invoiceId === invoiceId ? "this_invoice" : row.invoiceId ? "another_invoice" : "unmarked",
         })),
         isDraft: invoice.status === "draft",
-        isFinalized: Boolean(invoice.finalizedAt),
+        isFinalized: Boolean(invoice.finalizedAt) && invoice.status === "finalized",
+        isVoided: invoice.status === "voided",
       },
     });
   } catch (error: any) {

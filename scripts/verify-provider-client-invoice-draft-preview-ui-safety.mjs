@@ -4,6 +4,8 @@ import fs from "fs";
 const pagePath = "app/admin/clients/[id]/invoice/page.tsx";
 const packagePath = "package.json";
 const page = fs.readFileSync(pagePath, "utf8");
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+
 let failures = 0;
 
 function pass(message) {
@@ -27,24 +29,47 @@ function mustNotContain(label, text, needle) {
 
 console.log("=== VERIFY PROVIDER CLIENT INVOICE DRAFT PREVIEW UI SAFETY ===");
 
-mustContain("invoice page", page, "invoiceDraftPreview");
-mustContain("invoice page", page, "invoiceDraftPreviewLoading");
-mustContain("invoice page", page, "prepareInvoiceDraftPreview");
-mustContain("invoice page", page, "/invoice/create-preview?");
-mustContain("invoice page", page, "Review Invoice Package");
-mustContain("invoice page", page, "Invoice Package Review");
-mustContain("invoice page", page, "Package Snapshot:");
-mustContain("invoice page", page, "Review the invoice header and frozen line snapshot");
-mustContain("invoice page", page, "Package Total");
-mustContain("invoice page", page, "Retainer Fee");
-mustContain("invoice page", page, "Read-only");
+for (const needle of [
+  "preview",
+  "loadingPreview",
+  "loadPreview",
+  "/invoice/create-preview?",
+  "Review Invoice Package",
+  "Invoice Candidate",
+  "Receipt Rows",
+  "Excluded Already Invoiced",
+  "Included Already Invoiced",
+  "Package Total",
+  "Retainer Fee",
+  "receiptMarkDiagnostics",
+  "includeAlreadyInvoiced",
+  "Admin mode: include already-invoiced receipt rows for diagnostics",
+  "Admin review mode is active. Already-invoiced receipt rows may be included.",
+  "No eligible invoice lines in this preview.",
+]) {
+  mustContain("invoice page", page, needle);
+}
 
-mustNotContain("invoice page", page, "providerClientInvoice.create");
-mustNotContain("invoice page", page, "providerClientInvoiceLine.create");
-mustNotContain("invoice page", page, "matterPaymentReceipt.updateMany");
-mustNotContain("invoice page", page, "Create Invoice is enabled");
+for (const needle of [
+  "createDraftInvoice",
+  "confirmCreateInvoiceDraft",
+  "confirmIncludeAlreadyInvoiced",
+  "Draft invoice created. Receipt rows are not yet marked as invoiced.",
+]) {
+  mustContain("invoice page", page, needle);
+}
 
-const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+for (const stale of [
+  "providerClientInvoice.create",
+  "providerClientInvoiceLine.create",
+  "matterPaymentReceipt.updateMany",
+  "Create Invoice is enabled",
+  "Invoice Workflow Status",
+  "Finalize printable/exportable package",
+]) {
+  mustNotContain("invoice page", page, stale);
+}
+
 const expectedScript = "node scripts/verify-provider-client-invoice-draft-preview-ui-safety.mjs";
 if (pkg.scripts?.["verify:provider-client-invoice-draft-preview-ui-safety"] === expectedScript) {
   pass("package.json: verifier script registered");
@@ -57,4 +82,4 @@ if (failures) {
   process.exit(1);
 }
 
-console.log("\nRESULT: provider client invoice draft-preview UI safety PASSED");
+console.log("\nPASS: provider client invoice draft-preview UI safety passed");

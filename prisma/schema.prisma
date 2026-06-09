@@ -362,6 +362,7 @@ model ProviderClientInvoice {
   finalizedAt DateTime?
   voidedAt    DateTime?
   voidReason  String?
+  auditSnapshot Json?
 
   lines ProviderClientInvoiceLine[]
 
@@ -864,4 +865,23 @@ model DocumentTemplateMergeField {
   @@unique([templateId, key])
   @@index([templateId])
   @@index([source])
+}
+
+
+model ProviderClientInvoiceAudit {
+  id                  String   @id @default(cuid())
+  invoiceId           String
+  providerClientInfoId String?
+  referenceEntityId    String?
+  providerDisplayName  String?
+  eventType            String
+  eventSummary         String?
+  details              Json?
+  createdAt            DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([providerClientInfoId])
+  @@index([referenceEntityId])
+  @@index([eventType])
+  @@index([createdAt])
 }

@@ -14,6 +14,14 @@ function intId(value: unknown): number | null {
   return Number.isSafeInteger(numeric) ? numeric : null;
 }
 
+function resultMode(isReceiptMarkRepair: boolean): string {
+  return isReceiptMarkRepair ? "local-finalized-receipt-mark-repair" : "local-finalized";
+}
+
+function resultEventType(mode: string): string {
+  return mode === "local-finalized-receipt-mark-repair" ? "invoice.finalize_repair" : "invoice.finalized";
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string; invoiceId: string }> | { id: string; invoiceId: string } }
@@ -99,6 +107,39 @@ export async function POST(
       OR: [{ invoiceId: null }, { invoiceId: "" }],
     };
 
+    const receiptRowsMarkedWithAnotherInvoiceId = receiptIds.length
+      ? await prisma.matterPaymentReceipt.findMany({
+          where: {
+            id: { in: receiptIds },
+            invoiceId: { not: null },
+            NOT: [
+              { invoiceId: "" },
+              { invoiceId: invoice.id },
+            ],
+          },
+          select: {
+            id: true,
+            invoiceId: true,
+            displayNumber: true,
+            transactionType: true,
+            paymentAmount: true,
+            transactionDate: true,
+          },
+          orderBy: { id: "asc" },
+        })
+      : [];
+
+    if (!isReceiptMarkRepair && receiptRowsMarkedWithAnotherInvoiceId.length) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Invoice includes receipt rows already assigned to another invoice. Rebuild the draft from the ordinary preview or use admin diagnostics before proceeding.",
+          receiptRowsMarkedWithAnotherInvoiceId,
+        },
+        { status: 409 }
+      );
+    }
+
     const unmarkedReceiptCount = receiptIds.length
       ? await prisma.matterPaymentReceipt.count({ where: unmarkedReceiptWhere })
       : 0;
@@ -133,6 +174,26 @@ export async function POST(
             data: { invoiceId: invoice.id },
           })
         : { count: 0 };
+
+      await tx.providerClientInvoiceAudit.create({
+        data: {
+          invoiceId: invoice.id,
+          providerClientInfoId: invoice.providerClientInfoId,
+          referenceEntityId: invoice.referenceEntityId,
+          providerDisplayName: invoice.providerDisplayName,
+          eventType: resultEventType(resultMode(isReceiptMarkRepair)),
+          eventSummary: isReceiptMarkRepair
+            ? "Finalized invoice receipt-mark repair completed."
+            : "Draft invoice finalized and included payment receipt rows were marked.",
+          details: {
+            receiptLineSourceIds: receiptIds,
+            receiptRowsMarkedWithThisInvoiceId: receiptUpdate.count,
+            noClioRecordsChanged: true,
+            noClaimIndexRecordsChanged: true,
+            noRemittanceRecordsChanged: true,
+          },
+        },
+      });
 
       return {
         invoice: updatedInvoice,

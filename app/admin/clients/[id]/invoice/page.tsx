@@ -3,24 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type DetailResponse = {
-  client?: any;
-  remittance?: {
-    receiptError?: string;
-    count: number;
-    activeTotal: number;
-    voidedTotal: number;
-    totalsByType: { transactionType: string; amount: number }[];
-    rows: any[];
-  };
-  costsExpended?: {
-    count: number;
-    total: number;
-    rows: any[];
-  };
-  error?: string;
-};
-
 const pageStyle: React.CSSProperties = {
   maxWidth: 1500,
   margin: "0 auto",
@@ -52,183 +34,54 @@ const tdStyle: React.CSSProperties = {
   fontSize: 13,
 };
 
-const invoiceThStyle: React.CSSProperties = {
-  ...thStyle,
-  textAlign: "center",
-  border: "1px solid #e2e8f0",
-  padding: "6px 5px",
-  fontSize: 11,
-  lineHeight: 1.15,
-  whiteSpace: "normal",
-  overflowWrap: "break-word",
-};
-
-const invoiceTdStyle: React.CSSProperties = {
-  ...tdStyle,
-  border: "1px solid #e2e8f0",
-  padding: "6px 5px",
-  fontSize: 11,
-  lineHeight: 1.15,
-  whiteSpace: "normal",
-  overflowWrap: "break-word",
-};
-
-const invoiceTotalTdStyle: React.CSSProperties = {
-  ...invoiceTdStyle,
-  background: "#f8fafc",
-  fontWeight: 950,
-};
+function clean(value: unknown): string {
+  return String(value ?? "").trim();
+}
 
 function money(value: unknown) {
   const numeric = Number(value || 0);
   return numeric.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
-function numberFromPercent(value: unknown) {
-  const text = String(value ?? "").trim();
-  if (!text) return 0;
-
-  const normalized = text.replace("%", "").trim();
-  const numeric = Number(normalized);
-  if (!Number.isFinite(numeric)) return 0;
-
-  return numeric / 100;
-}
-
-
 function dateOnly(value: unknown) {
   if (!value) return "";
-  const text = String(value).trim();
-
-  const isoDateOnly = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoDateOnly) {
-    const [, year, month, day] = isoDateOnly;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const isoDateTime = text.match(/^(\d{4})-(\d{2})-(\d{2})T/);
-  if (isoDateTime) {
-    const [, year, month, day] = isoDateTime;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const dotted = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-  if (dotted) {
-    const [, month, day, year] = dotted;
-    return `${Number(month)}/${Number(day)}/${year}`;
-  }
-
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return text;
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleDateString();
 }
 
-function percentNumber(value: unknown) {
-  const text = String(value ?? "").trim();
-  if (!text) return 0;
-  const numeric = Number(text.replace(/[$,%\s,]/g, ""));
-  if (!Number.isFinite(numeric)) return 0;
-  return numeric / 100;
+function dateTime(value: unknown) {
+  if (!value) return "";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
 }
 
-function asPlainObject(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return value as Record<string, unknown>;
-}
-
-function detailEntries(details: unknown): { field: string; value: string; source: string }[] {
-  const root = asPlainObject(details);
-  const hidden = asPlainObject(root._hiddenImportFields);
-  const rows: { field: string; value: string; source: string }[] = [];
-
-  for (const [key, value] of Object.entries(root)) {
-    if (key === "_hiddenImportFields") continue;
-    const text = String(value ?? "").trim();
-    if (!text) continue;
-    rows.push({ field: key, value: text, source: "Imported" });
-  }
-
-  for (const [key, value] of Object.entries(hidden)) {
-    const text = String(value ?? "").trim();
-    if (!text) continue;
-    rows.push({ field: key, value: text, source: "Hidden Import" });
-  }
-
-  return rows;
-}
-
-function findDetailValue(details: unknown, keys: string[]) {
-  const entries = detailEntries(details);
-  const compact = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  const wanted = keys.map(compact);
-
-  for (const key of wanted) {
-    const exact = entries.find((entry) => compact(entry.field) === key);
-    if (exact) return exact.value;
-  }
-
-  for (const key of wanted) {
-    const fuzzy = entries.find((entry) => compact(entry.field).includes(key));
-    if (fuzzy) return fuzzy.value;
-  }
-
-  return "";
-}
-
-function isFeeRecoveryTransactionType(value: unknown) {
-  const type = String(value ?? "").toLowerCase();  
-
+function statusBadge(status: unknown) {
+  const value = clean(status).toLowerCase() || "draft";
+  const style =
+    value === "finalized"
+      ? { color: "#166534", background: "#dcfce7", border: "#86efac" }
+      : value === "voided"
+        ? { color: "#991b1b", background: "#fee2e2", border: "#fecaca" }
+        : { color: "#854d0e", background: "#fef9c3", border: "#fde68a" };
 
   return (
-    type.includes("filing fee") ||
-    type.includes("court fee") ||
-    type.includes("court fees") ||
-    type.includes("other court fees")
+    <span
+      style={{
+        color: style.color,
+        background: style.background,
+        border: `1px solid ${style.border}`,
+        borderRadius: 999,
+        padding: "3px 9px",
+        fontWeight: 900,
+        whiteSpace: "nowrap",
+        textTransform: "capitalize",
+      }}
+    >
+      {value}
+    </span>
   );
-}
-
-function retainerFeeForReceipt(row: any, client: any) {
-  if (isFeeRecoveryTransactionType(row?.transactionType)) return 0;
-
-  const details = client?.details || {};
-  const hidden =
-    details?._hiddenImportFields &&
-    typeof details._hiddenImportFields === "object" &&
-    !Array.isArray(details._hiddenImportFields)
-      ? details._hiddenImportFields
-      : {};
-
-  function providerDefault(keys: string[]): string {
-    for (const key of keys) {
-      const directValue = details?.[key] ?? client?.[key];
-      if (directValue !== null && directValue !== undefined && String(directValue).trim()) return String(directValue).trim();
-
-      const hiddenValue = hidden?.[key];
-      if (hiddenValue !== null && hiddenValue !== undefined && String(hiddenValue).trim()) return String(hiddenValue).trim();
-    }
-
-    return "";
-  }
-
-  const amount = Number(row?.amount || 0);
-  const type = String(row?.transactionType || "").toLowerCase();
-  const rate = type.includes("interest")
-    ? numberFromPercent(providerDefault(["retainerNfInterest", "hidden_retainer_interest_percent", "hidden_retainer_nf_interest_percent", "retainer_nf_interest_percent"]))
-    : numberFromPercent(providerDefault(["retainerNfPrincipal", "hidden_retainer_principal_nf_percent", "retainer_nf_principal_percent"]));
-
-  return amount * rate;
-}
-
-function displayDate(value: unknown) {
-  return dateOnly(value) || "—";
-}
-
-function displayDateRange(start: unknown, end: unknown) {
-  const startText = dateOnly(start);
-  const endText = dateOnly(end);
-  if (!startText && !endText) return "—";
-  if (!endText || startText === endText) return startText || "—";
-  return `${startText} - ${endText}`;
 }
 
 function csvEscape(value: unknown) {
@@ -250,937 +103,641 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function AdminClientInvoicePage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+function safeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export default function ProviderClientInvoiceWorkflowPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const [id, setId] = useState("");
-  const [data, setData] = useState<DetailResponse | null>(null);
-  const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("posted");
-  const [transactionType, setTransactionType] = useState("All");
+  const [transactionType, setTransactionType] = useState("");
+  const [postingContext, setPostingContext] = useState("");
+  const [checkNumber, setCheckNumber] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [hasPreviewed, setHasPreviewed] = useState(false);
-  const [invoiceDraftPreview, setInvoiceDraftPreview] = useState<any>(null);
-  const [invoiceDraftPreviewLoading, setInvoiceDraftPreviewLoading] = useState(false);
+  const [includeAlreadyInvoiced, setIncludeAlreadyInvoiced] = useState(false);
+
+  const [preview, setPreview] = useState<any>(null);
   const [createdInvoice, setCreatedInvoice] = useState<any>(null);
-  const [createInvoiceLoading, setCreateInvoiceLoading] = useState(false);
-  const [finalizeInvoiceLoading, setFinalizeInvoiceLoading] = useState(false);
-  const [finalizedInvoice, setFinalizedInvoice] = useState<any>(null);
-  const [sortField, setSortField] = useState("datePosted");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [invoiceDetail, setInvoiceDetail] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+  const [voiding, setVoiding] = useState(false);
 
   useEffect(() => {
     Promise.resolve(params).then((resolved) => setId(resolved.id));
   }, [params]);
 
-  function invoiceFilterQueryString() {
-    const query = new URLSearchParams();
-    query.set("status", statusFilter);
-    if (transactionType.trim() && transactionType !== "All") query.set("transactionType", transactionType.trim());
-    if (dateFrom) query.set("dateFrom", dateFrom);
-    if (dateTo) query.set("dateTo", dateTo);
-    return query.toString();
-  }
-
-  async function loadDetail(clientId: string) {
+  async function loadHistory(clientId = id) {
     if (!clientId) return;
-    setError("");
-    const queryString = invoiceFilterQueryString();
-
-    const res = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}?${queryString}`, { cache: "no-store" });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json?.error || "Could not load invoice screen.");
-    setData(json);
-  }
-
-  async function prepareInvoiceDraftPreview() {
-    if (!id) return;
-    setError("");
-    setInvoiceDraftPreviewLoading(true);
+    setLoadingHistory(true);
 
     try {
-      const queryString = invoiceFilterQueryString();
-      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/create-preview?${queryString}`, { cache: "no-store" });
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}/invoice`, { cache: "no-store" });
       const json = await res.json();
-      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not prepare invoice draft preview.");
-      setInvoiceDraftPreview(json.invoiceDraftPreview || null);
-      setCreatedInvoice(null);
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not load invoice history.");
+      setHistory(json.invoices || []);
     } catch (err: any) {
-      setError(err?.message || "Could not prepare invoice draft preview.");
+      setError(err?.message || "Could not load invoice history.");
     } finally {
-      setInvoiceDraftPreviewLoading(false);
+      setLoadingHistory(false);
     }
   }
 
-  async function createInvoiceDraft() {
-    if (!id || !invoiceDraftPreview) return;
+  useEffect(() => {
+    if (!id) return;
+    loadHistory(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  function previewQuery() {
+    const query = new URLSearchParams();
+    query.set("status", statusFilter);
+    if (transactionType.trim()) query.set("transactionType", transactionType.trim());
+    if (postingContext.trim()) query.set("postingContext", postingContext.trim());
+    if (checkNumber.trim()) query.set("checkNumber", checkNumber.trim());
+    if (dateFrom) query.set("dateFrom", dateFrom);
+    if (dateTo) query.set("dateTo", dateTo);
+    if (includeAlreadyInvoiced) query.set("includeAlreadyInvoiced", "true");
+    return query;
+  }
+
+  async function loadPreview() {
+    if (!id) return;
+    setLoadingPreview(true);
     setError("");
-    setCreateInvoiceLoading(true);
+    setMessage("");
+    setPreview(null);
+    setCreatedInvoice(null);
+
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/create-preview?${previewQuery().toString()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not build invoice preview.");
+
+      setPreview(json.invoiceDraftPreview);
+      setMessage(
+        includeAlreadyInvoiced
+          ? "Admin preview loaded. Already-invoiced receipt rows may be included for diagnostics."
+          : "Preview loaded. Already-invoiced receipt rows are excluded by default."
+      );
+    } catch (err: any) {
+      setError(err?.message || "Could not build invoice preview.");
+    } finally {
+      setLoadingPreview(false);
+    }
+  }
+
+  async function createDraftInvoice() {
+    if (!id || !preview) return;
+    setCreatingDraft(true);
+    setError("");
+    setMessage("");
 
     try {
       const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        cache: "no-store",
         body: JSON.stringify({
           confirmCreateInvoiceDraft: true,
-          invoiceDraftPreview,
+          confirmIncludeAlreadyInvoiced: includeAlreadyInvoiced,
+          invoiceDraftPreview: preview,
         }),
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not create draft invoice.");
-      setCreatedInvoice(json.invoice || null);
-      setFinalizedInvoice(null);
+
+      setCreatedInvoice(json.invoice);
+      setInvoiceDetail(null);
+      setMessage("Draft invoice created. Receipt rows are not yet marked as invoiced. Review the frozen package before finalizing.");
+      await loadHistory();
     } catch (err: any) {
       setError(err?.message || "Could not create draft invoice.");
     } finally {
-      setCreateInvoiceLoading(false);
+      setCreatingDraft(false);
     }
   }
 
-  async function finalizeInvoice() {
-    const invoiceId = createdInvoice?.id;
-    if (!id || !invoiceId || finalizedInvoice) return;
+  async function loadInvoiceDetail(invoiceId: string) {
+    if (!id || !invoiceId) return;
+    setError("");
+    setMessage("");
 
-    const confirmed = window.confirm(`Finalize invoice ${createdInvoice?.invoiceNumber || invoiceId}? This will lock the invoice and mark included payment receipt rows with this invoice id.`);
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not load invoice detail.");
+
+      setInvoiceDetail(json);
+      if (json.invoice?.status === "draft") setCreatedInvoice(json.invoice);
+      setMessage("Invoice detail loaded.");
+    } catch (err: any) {
+      setError(err?.message || "Could not load invoice detail.");
+    }
+  }
+
+  async function finalizeInvoice(invoiceArg?: any) {
+    const invoice = invoiceArg || createdInvoice || invoiceDetail?.invoice;
+    const invoiceId = invoice?.id;
+    if (!id || !invoiceId) return;
+
+    const confirmed = window.confirm(
+      `Finalize invoice ${invoice?.invoiceNumber || invoiceId}? This will mark included payment receipt rows with this invoice ID and exclude them from future ordinary previews.`
+    );
     if (!confirmed) return;
 
+    setFinalizing(true);
     setError("");
-    setFinalizeInvoiceLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}/finalize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({
-          confirmFinalizeInvoice: true,
-        }),
+        body: JSON.stringify({ confirmFinalizeInvoice: true }),
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not finalize invoice.");
-      setFinalizedInvoice(json.invoice || null);
-      setCreatedInvoice(json.invoice || createdInvoice);
+
+      setCreatedInvoice(json.invoice);
+      setMessage("Invoice finalized. Included receipt rows are now marked with this invoice ID and excluded from future invoice previews by default.");
+      await loadInvoiceDetail(invoiceId);
+      await loadHistory();
     } catch (err: any) {
       setError(err?.message || "Could not finalize invoice.");
     } finally {
-      setFinalizeInvoiceLoading(false);
+      setFinalizing(false);
     }
   }
 
-  useEffect(() => {
-    if (!id) return;
-    loadDetail(id).catch((err) => setError(err?.message || "Could not load invoice screen."));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  async function voidInvoice(invoiceArg?: any) {
+    const invoice = invoiceArg || invoiceDetail?.invoice;
+    const invoiceId = invoice?.id;
+    if (!id || !invoiceId) return;
 
-  useEffect(() => {
-    setHasPreviewed(false);
-    setInvoiceDraftPreview(null);
-    setCreatedInvoice(null);
-    setFinalizedInvoice(null);
-  }, [statusFilter, transactionType, dateFrom, dateTo]);
+    const voidReason = window.prompt(
+      `Void invoice ${invoice?.invoiceNumber || invoiceId}? Enter the void reason. Receipt rows currently marked with this exact invoice ID will be released.`
+    );
+    if (!voidReason || !voidReason.trim()) return;
 
-  const client = data?.client;
-  const remittanceRows = data?.remittance?.rows || [];
-  const costsExpendedRows = data?.costsExpended?.rows || [];
+    setVoiding(true);
+    setError("");
+    setMessage("");
 
-  const clientDetails = client?.details || {};
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}/void`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmVoidInvoice: true, voidReason: voidReason.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not void invoice.");
 
-  function detailValue(keys: string[]): string {
-    const hidden =
-      (clientDetails as any)?._hiddenImportFields &&
-      typeof (clientDetails as any)._hiddenImportFields === "object" &&
-      !Array.isArray((clientDetails as any)._hiddenImportFields)
-        ? (clientDetails as any)._hiddenImportFields
-        : {};
-
-    for (const key of keys) {
-      const directValue = (clientDetails as any)?.[key];
-      if (directValue !== null && directValue !== undefined && String(directValue).trim()) return String(directValue).trim();
-
-      const hiddenValue = hidden?.[key];
-      if (hiddenValue !== null && hiddenValue !== undefined && String(hiddenValue).trim()) return String(hiddenValue).trim();
+      setMessage("Invoice voided. Receipt rows marked with this invoice ID were released for future invoicing.");
+      await loadInvoiceDetail(invoiceId);
+      await loadHistory();
+    } catch (err: any) {
+      setError(err?.message || "Could not void invoice.");
+    } finally {
+      setVoiding(false);
     }
-
-    return "";
   }
 
-  function invoiceInfoDisplay(value: unknown): string {
-    const text = String(value ?? "").trim();
-    return text || "—";
-  }
+  function printableInvoice() {
+    const detail = invoiceDetail;
+    const invoice = detail?.invoice;
+    if (!invoice) return;
 
-  function normalizeInvoiceAddress(value: unknown): string {
-    const text = String(value ?? "").trim();
-    if (!text) return "";
-
-    function normalizeWord(word: string): string {
-      const upper = word.toUpperCase();
-      if (["PO", "P.O.", "PC", "P.C.", "LLC", "PLLC", "LLP", "MD", "DO", "NP", "PA"].includes(upper)) return upper.replace("P.O.", "PO");
-      if (/^\d/.test(word)) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    }
-
-    return text
-      .split(/\n+/g)
-      .map((line) =>
-        line
-          .trim()
-          .split(/\s+/g)
-          .map(normalizeWord)
-          .join(" ")
-          .replace(/^PO Box\b/i, "PO Box")
+    const lines = Array.isArray(invoice.lines) ? invoice.lines : [];
+    const rows = lines
+      .map(
+        (line: any) => `
+      <tr>
+        <td>${safeHtml(dateOnly(line.sortDate))}</td>
+        <td>${safeHtml(line.matter || "")}</td>
+        <td>${safeHtml(line.patient || "")}</td>
+        <td>${safeHtml(line.provider || "")}</td>
+        <td>${safeHtml(line.description || "")}</td>
+        <td style="text-align:right;">${safeHtml(money(line.amount))}</td>
+        <td style="text-align:right;">${safeHtml(money(line.retainerFee))}</td>
+      </tr>`
       )
-      .filter(Boolean)
-      .join("\n");
-  }
+      .join("");
 
-  function invoicePercentDisplay(value: unknown): string {
-    const text = String(value ?? "").trim();
-    if (!text) return "—";
+    const html = `<!doctype html>
+<html>
+<head>
+  <title>Invoice ${safeHtml(invoice.invoiceNumber)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
+    h1 { margin-bottom: 4px; }
+    .muted { color: #64748b; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 18px; font-size: 12px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; }
+    .totals { margin-top: 18px; width: 420px; margin-left: auto; }
+    .totals div { display: flex; justify-content: space-between; padding: 5px 0; }
+    .total { font-weight: 800; border-top: 2px solid #0f172a; margin-top: 8px; padding-top: 8px; }
+    @media print { button { display: none; } body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <h1>Provider Client Invoice</h1>
+  <div class="muted">Invoice Number: ${safeHtml(invoice.invoiceNumber)} | Status: ${safeHtml(invoice.status)} | Created: ${safeHtml(dateOnly(invoice.createdAt))} | Finalized: ${safeHtml(dateOnly(invoice.finalizedAt))}</div>
+  <div class="grid">
+    <div class="card">
+      <strong>Provider / Client</strong><br />
+      ${safeHtml(invoice.providerDisplayName)}<br />
+      ${safeHtml(invoice.clientSnapshot?.address).replace(/\n/g, "<br />")}
+    </div>
+    <div class="card">
+      <strong>Receipt Marking</strong><br />
+      Rows found: ${safeHtml(detail.verification?.receiptRowsFound ?? 0)}<br />
+      Marked with this invoice: ${safeHtml(detail.verification?.receiptRowsMarkedWithThisInvoiceId ?? 0)}<br />
+      Marked with another invoice: ${safeHtml(detail.verification?.receiptRowsMarkedWithAnotherInvoiceId ?? 0)}<br />
+      Unmarked: ${safeHtml(detail.verification?.receiptRowsUnmarked ?? 0)}
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Matter</th><th>Patient</th><th>Provider</th><th>Description</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retainer Fee</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="totals">
+    <div><span>Principal / Interest</span><span>${safeHtml(money(invoice.principalInterestTotal))}</span></div>
+    <div><span>Filing Fee Payments</span><span>${safeHtml(money(invoice.filingFeePaymentTotal))}</span></div>
+    <div><span>Costs Expended</span><span>${safeHtml(money(invoice.costsExpendedTotal))}</span></div>
+    <div><span>Retainer Fee</span><span>${safeHtml(money(invoice.retainerFeeTotal))}</span></div>
+    <div class="total"><span>Invoice Package Total</span><span>${safeHtml(money(invoice.invoicePackageTotal))}</span></div>
+  </div>
+</body>
+</html>`;
 
-    const cleaned = text.replace(/%/g, "").trim();
-    const numeric = Number(cleaned);
-
-    if (!Number.isFinite(numeric)) return text.endsWith("%") ? text : `${text}%`;
-    return `${numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
-  }
-
-  function invoiceRetainerLine(label: string, principal: unknown, interest: unknown): string {
-    return `${label}: Principal ${invoicePercentDisplay(principal)} / Interest ${invoicePercentDisplay(interest)}`;
-  }
-
-  function invoiceRetainerCell(label: string, principal: unknown, interest: unknown) {
-    return (
-      <>
-        <strong>{label}</strong>: Principal {invoicePercentDisplay(principal)} / Interest {invoicePercentDisplay(interest)}
-      </>
-    );
-  }
-
-  function invoicePeriodLabel(): string {
-    if (dateFrom && dateTo) return `${displayDate(dateFrom)} – ${displayDate(dateTo)}`;
-    if (dateFrom) return `${displayDate(dateFrom)} forward`;
-    if (dateTo) return `Through ${displayDate(dateTo)}`;
-    return "All available posted local rows";
-  }
-
-  const invoiceInfoAddress = normalizeInvoiceAddress(detailValue(["hidden_address", "address", "Address", "client_address", "provider_address"]));
-  const invoiceInfoOwner = detailValue(["hidden_owner", "owner", "Owner", "assigned_owner", "account_owner", "client_owner"]);
-  const invoiceInfoProviderGroup = detailValue(["hidden_group_name", "hidden_provider_group_name", "group_name", "provider_group", "Provider Group", "Group Name"]);
-  const invoiceInfoPullCosts = detailValue(["hidden_pull_costs", "pull_costs", "Pull Costs", "Pull Cost"]);
-  const invoiceInfoRemit = detailValue(["hidden_remit", "remit", "Remit", "remit_type", "remit_account"]);
-  const invoiceInfoRetainerNFPrincipal = detailValue(["hidden_retainer_principal_nf_percent", "retainer_nf_principal_percent", "Retainer NF Principal", "Retainer Principal NF", "NF Principal", "Principal Fee Percent", "Principal Fee %"]);
-  const invoiceInfoRetainerNFInterest = detailValue(["hidden_retainer_interest_percent", "hidden_retainer_nf_interest_percent", "retainer_nf_interest_percent", "Retainer NF Interest", "Retainer Interest", "NF Interest", "Interest Fee Percent", "Interest Fee %"]);
-  const invoiceInfoRetainerWCPrincipal = detailValue(["hidden_retainer_wc_principal_percent", "hidden_retainer_principal_wc_percent", "retainer_wc_principal_percent", "Retainer WC Principal", "WC Principal"]);
-  const invoiceInfoRetainerWCInterest = detailValue(["hidden_retainer_wc_interest_percent", "retainer_wc_interest_percent", "Retainer WC Interest", "WC Interest"]);
-  const invoiceInfoRetainerLiensPrincipal = detailValue(["hidden_retainer_liens_principal_percent", "hidden_retainer_lien_principal_percent", "hidden_retainer_principal_liens_percent", "hidden_retainer_principal_lien_percent", "retainer_liens_principal_percent", "retainer_lien_principal_percent", "Retainer Liens Principal", "Retainer Lien Principal", "Liens Principal", "Lien Principal"]);
-  const invoiceInfoRetainerLiensInterest = detailValue(["hidden_retainer_liens_interest_percent", "hidden_retainer_lien_interest_percent", "retainer_liens_interest_percent", "retainer_lien_interest_percent", "Retainer Liens Interest", "Retainer Lien Interest", "Liens Interest", "Lien Interest"]);
-
-  function isFilingFeePayment(row: any) {
-    return isFeeRecoveryTransactionType(row?.transactionType);
-  }
-
-  function totalsForRows(rows: any[]) {
-    return rows.reduce(
-      (totals: { billedAmount: number; paymentAmount: number; retainerFee: number }, row: any) => ({
-        billedAmount: totals.billedAmount + Number(row?.billedAmount || 0),
-        paymentAmount: totals.paymentAmount + Number(row?.amount || 0),
-        retainerFee: totals.retainerFee + retainerFeeForReceipt(row, client),
-      }),
-      { billedAmount: 0, paymentAmount: 0, retainerFee: 0 }
-    );
-  }
-
-  const sortedRemittanceRows = useMemo(() => {
-    const valueForSort = (row: any) => {
-      switch (sortField) {
-        case "matter":
-          return String(row?.matter ?? "");
-        case "patient":
-          return String(row?.patient ?? "");
-        case "dateOfLoss":
-          return String(row?.dateOfLoss ?? "");
-        case "dateOfService":
-          return `${String(row?.dateOfService ?? "")} ${String(row?.dateOfServiceEnd ?? "")}`;
-        case "insurer":
-          return String(row?.insurer ?? "");
-        case "caseType":
-          return String(row?.caseType ?? "NF");
-        case "type":
-          return String(row?.transactionType ?? "");
-        case "datePosted":
-          return String(row?.transactionDate ?? "");
-        case "checkDate":
-          return String(row?.checkDate ?? "");
-        case "checkNumber":
-          return String(row?.checkNumber ?? "");
-        case "billedAmount":
-          return Number(row?.billedAmount || 0);
-        case "paymentAmount":
-          return Number(row?.amount || 0);
-        case "retainerFee":
-          return retainerFeeForReceipt(row, client);
-        default:
-          return String(row?.matter ?? "");
-      }
-    };
-
-    return [...remittanceRows].sort((a: any, b: any) => {
-      const aValue = valueForSort(a);
-      const bValue = valueForSort(b);
-
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-      }
-
-      const compare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
-      return sortDirection === "asc" ? compare : -compare;
-    });
-  }, [remittanceRows, sortField, sortDirection, client]);
-
-  const principalInterestRows = useMemo(
-    () => sortedRemittanceRows.filter((row: any) => !isFilingFeePayment(row)),
-    [sortedRemittanceRows]
-  );
-
-  const filingFeeRows = useMemo(
-    () => sortedRemittanceRows.filter((row: any) => isFilingFeePayment(row)),
-    [sortedRemittanceRows]
-  );
-
-  const principalInterestTotals = useMemo(
-    () => totalsForRows(principalInterestRows),
-    [principalInterestRows, client]
-  );
-
-  const filingFeeTotals = useMemo(
-    () => totalsForRows(filingFeeRows),
-    [filingFeeRows, client]
-  );
-
-  const sortedCostsExpendedRows = useMemo(() => {
-    const valueForSort = (row: any) => {
-      switch (sortField) {
-        case "matter":
-          return String(row?.matter ?? "");
-        case "patient":
-          return String(row?.patient ?? "");
-        case "dateOfLoss":
-          return String(row?.dateOfLoss ?? "");
-        case "dateOfService":
-          return `${String(row?.dateOfService ?? "")} ${String(row?.dateOfServiceEnd ?? "")}`;
-        case "insurer":
-          return String(row?.insurer ?? "");
-        case "caseType":
-          return String(row?.caseType ?? "NF");
-        case "type":
-          return String(row?.costType ?? "");
-        case "datePosted":
-          return String(row?.dateEntered ?? "");
-        case "paymentAmount":
-          return Number(row?.amount || 0);
-        default:
-          return String(row?.matter ?? "");
-      }
-    };
-
-    return [...costsExpendedRows].sort((a: any, b: any) => {
-      const aValue = valueForSort(a);
-      const bValue = valueForSort(b);
-
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-      }
-
-      const compare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
-      return sortDirection === "asc" ? compare : -compare;
-    });
-  }, [costsExpendedRows, sortField, sortDirection]);
-
-  const costsExpendedTotal = useMemo(
-    () => sortedCostsExpendedRows.reduce((sum: number, row: any) => sum + Number(row?.amount || 0), 0),
-    [sortedCostsExpendedRows]
-  );
-
-  const invoicePackageTotal = principalInterestTotals.paymentAmount + filingFeeTotals.paymentAmount + costsExpendedTotal;
-
-  const costsExpendedCsvRows = useMemo(
-    () =>
-      sortedCostsExpendedRows.map((row: any) => ({
-        Matter: row.matter,
-        Patient: row.patient,
-        "Date of Loss": row.dateOfLoss,
-        "Date of Service": displayDateRange(row.dateOfService, row.dateOfServiceEnd),
-        Insurer: row.insurer,
-        "Case Type": row.caseType || "NF",
-        "Cost/Fee Type": row.costType,
-        "Date Entered": row.dateEntered,
-        Amount: row.amount,
-        Source: row.source,
-      })),
-    [sortedCostsExpendedRows]
-  );
-
-  const remittanceCsvRows = useMemo(
-    () =>
-      sortedRemittanceRows.map((row: any) => ({
-        Matter: row.matter,
-        Patient: row.patient,
-        "Date of Loss": row.dateOfLoss,
-        "Date of Service": displayDateRange(row.dateOfService, row.dateOfServiceEnd),
-        Insurer: row.insurer,
-        "Case Type": row.caseType || "NF",
-        Type: row.transactionType,
-        "Date Posted": row.transactionDate,
-        "Check Date": row.checkDate,
-        "Check Number": row.checkNumber,
-        "Billed Amount": row.billedAmount,
-        "Payment Amount": row.amount,
-        "Retainer Fee": retainerFeeForReceipt(row, client),
-      })),
-    [sortedRemittanceRows, client]
-  );
-
-  function changeSort(field: string) {
-    if (sortField === field) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    if (!popup) {
+      setError("Browser blocked printable invoice window.");
       return;
     }
 
-    setSortField(field);
-    setSortDirection("asc");
+    popup.document.write(html);
+    popup.document.close();
   }
 
-  function sortableHeader(label: string, field: string, extraStyle?: React.CSSProperties) {
-    const active = sortField === field;
-    return (
-      <button
-        type="button"
-        onClick={() => changeSort(field)}
-        style={{
-          width: "100%",
-          border: 0,
-          background: "transparent",
-          padding: 0,
-          margin: 0,
-          textAlign: extraStyle?.textAlign || "center",
-          color: "inherit",
-          font: "inherit",
-          fontWeight: 950,
-          cursor: "pointer",
-        }}
-        title={`Sort by ${label}`}
-      >
-        {label}{active ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
-      </button>
-    );
-  }
+  const previewLines = Array.isArray(preview?.lines) ? preview.lines : [];
+  const previewTotals = preview?.totalsSnapshot || {};
+  const previewDiagnostics = preview?.receiptMarkDiagnostics || {};
+  const detailInvoice = invoiceDetail?.invoice;
+  const detailLines = Array.isArray(detailInvoice?.lines) ? detailInvoice.lines : [];
 
-  function paymentRowsTable(
-    title: string,
-    rows: any[],
-    totals: { billedAmount: number; paymentAmount: number; retainerFee: number },
-    emptyText: string,
-    options?: { feeRecovery?: boolean }
-  ) {
-    const feeRecovery = Boolean(options?.feeRecovery);
-
-    return (
-      <section style={{ ...cardStyle, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>{title}</h2>
-        <div style={{ overflowX: "visible", maxHeight: 560 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-            <thead>
-              <tr>
-                <th style={invoiceThStyle}>{sortableHeader("Matter", "matter")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Patient", "patient")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Date of Loss", "dateOfLoss")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Date of Service", "dateOfService")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Insurer", "insurer")}</th>
-                <th style={{ ...invoiceThStyle, width: 42, textAlign: "center" }}>{sortableHeader("Case Type", "caseType", { textAlign: "center" })}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Type", "type")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Date Posted", "datePosted")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Check Date", "checkDate")}</th>
-                <th style={invoiceThStyle}>{sortableHeader("Check Number", "checkNumber")}</th>
-                {!feeRecovery && <th style={invoiceThStyle}>{sortableHeader("Billed Amount", "billedAmount")}</th>}
-                <th style={invoiceThStyle}>{sortableHeader("Payment Amount", "paymentAmount")}</th>
-                {!feeRecovery && <th style={invoiceThStyle}>{sortableHeader("Retainer Fee", "retainerFee")}</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row: any) => (
-                <tr key={row.id || `${row.matter}-${row.createdAt}-${row.amount}`}>
-                  <td style={invoiceTdStyle}>{row.matter}</td>
-                  <td style={invoiceTdStyle}>{row.patient}</td>
-                  <td style={invoiceTdStyle}>{displayDate(row.dateOfLoss)}</td>
-                  <td style={invoiceTdStyle}>{displayDateRange(row.dateOfService, row.dateOfServiceEnd)}</td>
-                  <td style={invoiceTdStyle}>{row.insurer}</td>
-                  <td style={{ ...invoiceTdStyle, width: 42, textAlign: "center", whiteSpace: "nowrap" }}>{row.caseType || "NF"}</td>
-                  <td style={invoiceTdStyle}>{row.transactionType}</td>
-                  <td style={invoiceTdStyle}>{displayDate(row.transactionDate)}</td>
-                  <td style={invoiceTdStyle}>{displayDate(row.checkDate)}</td>
-                  <td style={invoiceTdStyle}>{row.checkNumber}</td>
-                  {!feeRecovery && <td style={invoiceTdStyle}>{money(row.billedAmount)}</td>}
-                  <td style={invoiceTdStyle}>{money(row.amount)}</td>
-                  {!feeRecovery && <td style={invoiceTdStyle}>{money(retainerFeeForReceipt(row, client))}</td>}
-                </tr>
-              ))}
-              {!rows.length && (
-                <tr>
-                  <td style={invoiceTdStyle} colSpan={feeRecovery ? 11 : 13}>
-                    {emptyText}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            {rows.length > 0 && (
-              <tfoot>
-                <tr>
-                  {feeRecovery ? (
-                    <>
-                      <td style={invoiceTotalTdStyle} colSpan={10}>
-                        Totals
-                      </td>
-                      <td style={invoiceTotalTdStyle}>{money(totals.paymentAmount)}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={invoiceTotalTdStyle} colSpan={10}>
-                        Totals
-                      </td>
-                      <td style={invoiceTotalTdStyle}>{money(totals.billedAmount)}</td>
-                      <td style={invoiceTotalTdStyle}>{money(totals.paymentAmount)}</td>
-                      <td style={invoiceTotalTdStyle}>{money(totals.retainerFee)}</td>
-                    </>
-                  )}
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </section>
-    );
-  }
-
-
-  function costsExpendedTable() {
-      return (
-        <section style={{ ...cardStyle, marginBottom: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Filing Fee and Costs Expended</h2>
-          <div style={{ overflowX: "visible", maxHeight: 560 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-              <thead>
-                <tr>
-                  <th style={invoiceThStyle}>{sortableHeader("Matter", "matter")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Patient", "patient")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Date of Loss", "dateOfLoss")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Date of Service", "dateOfService")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Insurer", "insurer")}</th>
-                  <th style={{ ...invoiceThStyle, width: 42, textAlign: "center" }}>{sortableHeader("Case Type", "caseType", { textAlign: "center" })}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Cost/Fee Type", "type")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Date Entered", "datePosted")}</th>
-                  <th style={invoiceThStyle}>{sortableHeader("Amount", "paymentAmount")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedCostsExpendedRows.map((row: any) => (
-                  <tr key={row.id || `${row.matter}-${row.costType}-${row.amount}`}>
-                    <td style={invoiceTdStyle}>{row.matter}</td>
-                    <td style={invoiceTdStyle}>{row.patient}</td>
-                    <td style={invoiceTdStyle}>{displayDate(row.dateOfLoss)}</td>
-                    <td style={invoiceTdStyle}>{displayDateRange(row.dateOfService, row.dateOfServiceEnd)}</td>
-                    <td style={invoiceTdStyle}>{row.insurer}</td>
-                    <td style={{ ...invoiceTdStyle, width: 42, textAlign: "center", whiteSpace: "nowrap" }}>{row.caseType || "NF"}</td>
-                    <td style={invoiceTdStyle}>{row.costType}</td>
-                    <td style={invoiceTdStyle}>{displayDate(row.dateEntered)}</td>
-                    <td style={invoiceTdStyle}>{money(row.amount)}</td>
-                  </tr>
-                ))}
-                {!sortedCostsExpendedRows.length && (
-                  <tr>
-                    <td style={invoiceTdStyle} colSpan={9}>
-                      No filing fees or costs expended found for the selected filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              {sortedCostsExpendedRows.length > 0 && (
-                <tfoot>
-                  <tr>
-                    <td style={invoiceTotalTdStyle} colSpan={8}>
-                      Totals
-                    </td>
-                    <td style={invoiceTotalTdStyle}>{money(costsExpendedTotal)}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </section>
-      );
-    }
+  const historyCsvRows = useMemo(
+    () =>
+      history.map((invoice) => ({
+        "Invoice Number": invoice.invoiceNumber,
+        Provider: invoice.providerDisplayName,
+        Status: invoice.status,
+        Created: invoice.createdAt,
+        Finalized: invoice.finalizedAt,
+        Voided: invoice.voidedAt,
+        "Line Count": invoice.lineCount,
+        "Receipt Rows": invoice.receiptRowCount,
+        "Invoice Total": invoice.invoicePackageTotal,
+      })),
+    [history]
+  );
 
   return (
     <main style={pageStyle}>
       <div style={{ marginBottom: 18, display: "flex", gap: 16, flexWrap: "wrap" }}>
-        <Link href={`/admin/clients/${encodeURIComponent(id)}`} style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
-          ← Provider Hub
+        <Link href={id ? `/admin/clients/${encodeURIComponent(id)}` : "/admin/clients"} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+          ← Main Client Info Page
         </Link>
-        <Link href="/admin/clients" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
-          Clients
+        <Link href="/admin/invoices" style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+          Global Invoice Search
         </Link>
-        <Link href="/admin" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
+        <Link href="/admin" style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
           Admin Home
         </Link>
       </div>
 
-      {error && (
-        <section style={{ ...cardStyle, borderColor: "#fecaca", color: "#b91c1c", marginBottom: 18 }}>
-          {error}
-        </section>
-      )}
-
       <section style={{ marginBottom: 22 }}>
-        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 900, textTransform: "uppercase" }}>
-          Provider Client Invoice Workflow
+        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>
+          Invoicing / Remittance
         </div>
-        <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>{client?.displayName || "Loading client..."}</h1>
+        <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>Provider Client Invoice Workflow</h1>
+        <p style={{ margin: 0, color: "#475569", maxWidth: 1120 }}>
+          Payment invoicing is child-matter based only. Lawsuit-page payments enter invoice reporting only through allocated child MatterPaymentReceipt rows. This workflow is local-only and does not call or mutate Clio.
+        </p>
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 14, padding: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1.2fr) minmax(360px, 1fr)", gap: 18, alignItems: "start" }}>
-          <div>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
-              Invoice Preview
-            </div>
-            <h2 style={{ margin: 0, fontSize: 24, lineHeight: 1.15 }}>{invoiceInfoDisplay(client?.displayName)}</h2>
-            <div style={{ whiteSpace: "pre-wrap", color: "#334155", fontWeight: 750, marginTop: 6, lineHeight: 1.3 }}>
-              {invoiceInfoDisplay(invoiceInfoAddress)}
-            </div>
-          </div>
-
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr", borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Status</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>Preview Only</div>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Date</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{displayDate(new Date().toISOString().slice(0, 10))}</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr", borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Period</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoicePeriodLabel()}</div>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Owner</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoOwner)}</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr" }}>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Group</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoProviderGroup)}</div>
-              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Remit / Costs</div>
-              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoRemit)} / {invoiceInfoDisplay(invoiceInfoPullCosts)}</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #e2e8f0", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "center" }}>
-          <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.35 }}>
-            <strong>Retainer Terms:</strong>{" "}
-            {invoiceRetainerLine("NF", invoiceInfoRetainerNFPrincipal, invoiceInfoRetainerNFInterest)} ·{" "}
-            {invoiceRetainerLine("WC", invoiceInfoRetainerWCPrincipal, invoiceInfoRetainerWCInterest)} ·{" "}
-            {invoiceRetainerLine("Liens", invoiceInfoRetainerLiensPrincipal, invoiceInfoRetainerLiensInterest)}
-          </div>
-          <div style={{ border: "1px solid #0f172a", borderRadius: 10, padding: "8px 12px", background: "#f8fafc", minWidth: 220, textAlign: "right" }}>
-            <div style={{ color: "#64748b", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Preview Package Total</div>
-            <div style={{ fontSize: 22, fontWeight: 950 }}>{money(invoicePackageTotal)}</div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(4, minmax(130px, 1fr))", gap: 8, fontSize: 13 }}>
-          <div><strong>Receipt Rows:</strong> {remittanceRows.length}</div>
-          <div><strong>Principal / Interest:</strong> {money(principalInterestTotals.paymentAmount)}</div>
-          <div><strong>Filing Fee Payments:</strong> {money(filingFeeTotals.paymentAmount)}</div>
-          <div><strong>Costs Expended:</strong> {money(costsExpendedTotal)}</div>
-        </div>
-
-      </section>
+      {error && <section style={{ ...cardStyle, borderColor: "#fecaca", color: "#b91c1c", marginBottom: 18 }}>{error}</section>}
+      {message && <section style={{ ...cardStyle, borderColor: "#bfdbfe", color: "#1d4ed8", marginBottom: 18 }}>{message}</section>}
 
       <section style={{ ...cardStyle, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>Invoicing / Remittance</h2>
-        {/*
-          Safety contract: Child-matter-based local payment reporting.
-          Lawsuit-page payments appear here only through allocated child MatterPaymentReceipt rows.
-          This screen previews invoice/remittance data only.
-          It does not create invoices, write remittances, or update Clio.
-        */}
+        <h2 style={{ marginTop: 0 }}>1. Preview</h2>
+        <p style={{ color: "#475569", marginTop: 0 }}>
+          Ordinary previews exclude receipt rows already assigned to an invoice. Admin mode can include already-invoiced rows for diagnostics only.
+        </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 12, alignItems: "end" }}>
-          <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(130px, 1fr))", gap: 10, alignItems: "end" }}>
+          <label style={{ fontWeight: 800 }}>
             Status
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }}>
-              <option value="posted">Posted only</option>
-              <option value="voided">Voided only</option>
-              <option value="all">All</option>
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-            Transaction Type
-            <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10, background: "#fff" }}>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }}>
+              <option value="posted">posted</option>
+              <option value="active">active</option>
+              <option value="voided">voided</option>
               <option value="All">All</option>
-              <option value="Direct Pay">Direct Pay</option>
-              <option value="Voluntary">Voluntary</option>
-              <option value="Collection">Collection</option>
-              <option value="Interest">Interest</option>
-              <option value="Attorney Fee">Attorney Fee</option>
-              <option value="Filing Fee">Filing Fee</option>
             </select>
           </label>
-          <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-            Date From
-            <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
+
+          <label style={{ fontWeight: 800 }}>
+            Transaction Type
+            <input value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
           </label>
-          <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
+
+          <label style={{ fontWeight: 800 }}>
+            Posting Context
+            <input value={postingContext} onChange={(event) => setPostingContext(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
+          </label>
+
+          <label style={{ fontWeight: 800 }}>
+            Check Number
+            <input value={checkNumber} onChange={(event) => setCheckNumber(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
+          </label>
+
+          <label style={{ fontWeight: 800 }}>
+            Date From
+            <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
+          </label>
+
+          <label style={{ fontWeight: 800 }}>
             Date To
-            <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
+            <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
           </label>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() =>
-                id &&
-                loadDetail(id)
-                  .then(() => setHasPreviewed(true))
-                  .catch((err) => setError(err?.message || "Could not refresh invoice screen."))
-              }
-              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #16a34a", background: "#16a34a", color: "#fff", fontWeight: 900 }}
-            >
-              1. Preview
-            </button>
+        <label style={{ display: "inline-flex", gap: 8, alignItems: "center", marginTop: 12, fontWeight: 900, color: includeAlreadyInvoiced ? "#991b1b" : "#334155" }}>
+          <input type="checkbox" checked={includeAlreadyInvoiced} onChange={(event) => setIncludeAlreadyInvoiced(event.target.checked)} />
+          Admin mode: include already-invoiced receipt rows for diagnostics
+        </label>
 
-            <span style={{ color: hasPreviewed ? "#16a34a" : "#94a3b8", fontWeight: 950 }}>→</span>
-
-            <button
-              type="button"
-              onClick={prepareInvoiceDraftPreview}
-              disabled={!hasPreviewed || invoiceDraftPreviewLoading}
-              title={!hasPreviewed ? "Preview must be loaded first." : ""}
-              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #16a34a", background: !hasPreviewed ? "#dcfce7" : "#16a34a", color: !hasPreviewed ? "#166534" : "#fff", fontWeight: 900, cursor: !hasPreviewed ? "not-allowed" : "pointer" }}
-            >
-              {invoiceDraftPreviewLoading ? "Preparing..." : "2. Review Invoice Package"}
-            </button>
-
-            <span style={{ color: invoiceDraftPreview ? "#16a34a" : "#94a3b8", fontWeight: 950 }}>→</span>
-
-            <button
-              type="button"
-              onClick={createInvoiceDraft}
-              disabled={!invoiceDraftPreview || createInvoiceLoading || !!createdInvoice}
-              title={!invoiceDraftPreview ? "Review Invoice Package must be completed first." : createdInvoice ? "Draft invoice has already been created." : ""}
-              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #16a34a", background: !invoiceDraftPreview ? "#dcfce7" : "#16a34a", color: !invoiceDraftPreview ? "#166534" : "#fff", fontWeight: 900, cursor: !invoiceDraftPreview || createdInvoice ? "not-allowed" : "pointer" }}
-            >
-              {createInvoiceLoading ? "Creating..." : createdInvoice ? `3. Draft Created: ${createdInvoice.invoiceNumber}` : "3. Create Draft Invoice"}
-            </button>
-
-            <span style={{ color: createdInvoice ? "#16a34a" : "#94a3b8", fontWeight: 950 }}>→</span>
-
-            <button
-              type="button"
-              onClick={finalizeInvoice}
-              disabled={!createdInvoice || finalizeInvoiceLoading || !!finalizedInvoice}
-              title={!createdInvoice ? "Create Draft Invoice must be completed first." : finalizedInvoice ? "Invoice has already been finalized." : "Finalize this local invoice and mark included payment receipt rows with this invoice id."}
-              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #16a34a", background: !createdInvoice ? "#dcfce7" : "#16a34a", color: !createdInvoice ? "#166534" : "#fff", fontWeight: 900, cursor: !createdInvoice || finalizedInvoice ? "not-allowed" : "pointer" }}
-            >
-              {finalizeInvoiceLoading ? "Finalizing..." : finalizedInvoice ? `4. Finalized: ${finalizedInvoice.invoiceNumber}` : "4. Finalize Invoice"}
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => downloadCsv(`${client?.displayName || "Client"} - Remittance Preview.csv`, [...remittanceCsvRows, ...costsExpendedCsvRows])}
-            disabled={![...remittanceCsvRows, ...costsExpendedCsvRows].length}
-            style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: [...remittanceCsvRows, ...costsExpendedCsvRows].length ? "#fff" : "#f1f5f9", fontWeight: 800, marginLeft: "auto" }}
-          >
+        <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button type="button" onClick={loadPreview} disabled={loadingPreview || !id} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontWeight: 900 }}>
+            {loadingPreview ? "Loading Preview..." : "Preview Invoice Package"}
+          </button>
+          <button type="button" onClick={() => downloadCsv("provider-client-invoice-history.csv", historyCsvRows)} disabled={!historyCsvRows.length} style={{ marginLeft: "auto", padding: "9px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 900 }}>
             Export CSV
           </button>
         </div>
-
       </section>
 
-      {invoiceDraftPreview && (
-        <section style={{ ...cardStyle, marginBottom: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-            <div>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
-                Invoice Package Review
-              </div>
-              <h2 style={{ margin: 0 }}>Package Snapshot: {invoiceDraftPreview.invoiceNumberCandidate}</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                Review the invoice header and frozen line snapshot before creating the invoice.
-              </p>
-            </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 220, textAlign: "right", background: "#f8fafc" }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Package Total</div>
-              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(invoiceDraftPreview?.totalsSnapshot?.invoicePackageTotal)}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(140px, 1fr))", gap: 10, marginBottom: 14 }}>
-            <div><strong>Lines:</strong> {invoiceDraftPreview?.totalsSnapshot?.lineCount ?? 0}</div>
-            <div><strong>Receipts:</strong> {invoiceDraftPreview?.totalsSnapshot?.receiptRowCount ?? 0}</div>
-            <div><strong>Principal / Interest:</strong> {money(invoiceDraftPreview?.totalsSnapshot?.principalInterestTotal)}</div>
-            <div><strong>Filing Fees:</strong> {money(invoiceDraftPreview?.totalsSnapshot?.filingFeePaymentTotal)}</div>
-            <div><strong>Costs:</strong> {money(invoiceDraftPreview?.totalsSnapshot?.costsExpendedTotal)}</div>
-            <div><strong>Retainer:</strong> {money(invoiceDraftPreview?.totalsSnapshot?.retainerFeeTotal)}</div>
-            <div><strong>Status:</strong> {invoiceDraftPreview?.status || "package-review"}</div>
-            <div><strong>Provider:</strong> {invoiceDraftPreview?.providerDisplayName || "—"}</div>
-            <div><strong>Period:</strong> {invoicePeriodLabel()}</div>
-            <div><strong>Mode:</strong> Read-only</div>
-          </div>
-
-          <div style={{ overflowX: "auto", maxHeight: 420 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1040 }}>
-              <thead>
-                <tr>
-                  <th style={invoiceThStyle}>Line Type</th>
-                  <th style={invoiceThStyle}>Matter</th>
-                  <th style={invoiceThStyle}>Patient</th>
-                  <th style={invoiceThStyle}>Insurer</th>
-                  <th style={invoiceThStyle}>Lawsuit</th>
-                  <th style={invoiceThStyle}>Description</th>
-                  <th style={invoiceThStyle}>Date</th>
-                  <th style={invoiceThStyle}>Amount</th>
-                  <th style={invoiceThStyle}>Retainer Fee</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(invoiceDraftPreview.lines || []).map((line: any) => (
-                  <tr key={`${line.lineType}-${line.sourceTable}-${line.sourceId}-${line.description}-${line.amount}`}>
-                    <td style={invoiceTdStyle}>{line.lineType}</td>
-                    <td style={invoiceTdStyle}>{line.matter}</td>
-                    <td style={invoiceTdStyle}>{line.patient}</td>
-                    <td style={invoiceTdStyle}>{line.insurer}</td>
-                    <td style={invoiceTdStyle}>{line.lawsuit}</td>
-                    <td style={invoiceTdStyle}>{line.description}</td>
-                    <td style={invoiceTdStyle}>{displayDate(line.sortDate)}</td>
-                    <td style={invoiceTdStyle}>{money(line.amount)}</td>
-                    <td style={invoiceTdStyle}>{money(line.retainerFee)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {createdInvoice && (
-        <section style={{ ...cardStyle, marginBottom: 18, border: "2px solid #16a34a", background: "#f0fdf4" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ color: "#166534", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
-                Draft Invoice Created
-              </div>
-              <h2 style={{ margin: 0 }}>{createdInvoice.invoiceNumber}</h2>
-              <p style={{ margin: "6px 0 0", color: "#166534", lineHeight: 1.45 }}>
-                Local draft invoice saved with frozen line snapshots. It is not finalized, not remitted, and source payment rows have not been marked invoiced.
-              </p>
-            </div>
-            <div style={{ border: "1px solid #86efac", borderRadius: 12, padding: 12, minWidth: 220, textAlign: "right", background: "#dcfce7" }}>
-              <div style={{ color: "#166534", fontSize: 12, fontWeight: 900 }}>Draft Total</div>
-              <div style={{ fontSize: 24, fontWeight: 950, color: "#14532d" }}>{money(createdInvoice.invoicePackageTotal)}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(140px, 1fr))", gap: 10, marginTop: 14 }}>
-            <div><strong>Status:</strong> {createdInvoice.status || "draft"}</div>
-            <div><strong>Lines:</strong> {(createdInvoice.lines || []).length}</div>
-            <div><strong>Receipts:</strong> {createdInvoice.receiptRowCount ?? 0}</div>
-            <div><strong>Principal / Interest:</strong> {money(createdInvoice.principalInterestTotal)}</div>
-            <div><strong>Filing Fees:</strong> {money(createdInvoice.filingFeePaymentTotal)}</div>
-            <div><strong>Costs:</strong> {money(createdInvoice.costsExpendedTotal)}</div>
-            <div><strong>Retainer:</strong> {money(createdInvoice.retainerFeeTotal)}</div>
-            <div><strong>Created:</strong> {displayDate(createdInvoice.createdAt)}</div>
-            <div><strong>Finalized:</strong> {finalizedInvoice ? displayDate(finalizedInvoice.finalizedAt) : "Not finalized"}</div>
-            <div><strong>Next Step:</strong> {finalizedInvoice ? "Export / Print / Remit" : "Finalize Invoice"}</div>
-          </div>
-        </section>
-      )}
-
-      {finalizedInvoice && (
-        <section style={{ ...cardStyle, marginBottom: 18, border: "2px solid #15803d", background: "#ecfdf5" }}>
-          <div style={{ color: "#166534", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
-            Invoice Finalized
-          </div>
-          <h2 style={{ margin: 0 }}>{finalizedInvoice.invoiceNumber}</h2>
-          <p style={{ margin: "6px 0 0", color: "#166534", lineHeight: 1.45 }}>
-            Local invoice is finalized. Included payment receipt rows are now marked with this invoice id. No Clio, ClaimIndex, document, email, print, queue, or remittance records were changed.
-          </p>
-        </section>
-      )}
-
-      {hasPreviewed && (
       <section style={{ ...cardStyle, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>Transaction Type Totals</h2>
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 14 }}>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 180 }}>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Active Total</div>
-            <div style={{ fontSize: 24, fontWeight: 950 }}>{money(data?.remittance?.activeTotal)}</div>
-          </div>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 180 }}>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Voided Total</div>
-            <div style={{ fontSize: 24, fontWeight: 950 }}>{money(data?.remittance?.voidedTotal)}</div>
-          </div>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 180 }}>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Receipt Rows</div>
-            <div style={{ fontSize: 24, fontWeight: 950 }}>{data?.remittance?.count ?? 0}</div>
-          </div>
+        <h2 style={{ marginTop: 0 }}>2. Review Invoice Package</h2>
+        {!preview ? (
+          <p style={{ color: "#64748b" }}>No preview loaded.</p>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
+              <div><strong>Invoice Candidate</strong><br />{preview.invoiceNumberCandidate || "—"}</div>
+              <div><strong>Receipt Rows</strong><br />{previewTotals.receiptRowCount || 0}</div>
+              <div><strong>Excluded Already Invoiced</strong><br />{previewDiagnostics.excludedAlreadyInvoicedReceiptRowCount || 0}</div>
+              <div><strong>Included Already Invoiced</strong><br />{previewDiagnostics.includedAlreadyInvoicedReceiptRowCount || 0}</div>
+              <div><strong>Package Total</strong><br />{money(previewTotals.invoicePackageTotal)}</div>
+            </div>
+
+            {includeAlreadyInvoiced && (
+              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: 12, marginBottom: 14, fontWeight: 800 }}>
+                Admin review mode is active. Already-invoiced receipt rows may be included. Do not use this mode for ordinary invoice creation.
+              </div>
+            )}
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Date</th>
+                    <th style={thStyle}>Matter</th>
+                    <th style={thStyle}>Patient</th>
+                    <th style={thStyle}>Provider</th>
+                    <th style={thStyle}>Type</th>
+                    <th style={thStyle}>Description</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Retainer Fee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewLines.slice(0, 250).map((line: any, index: number) => (
+                    <tr key={`${line.sourceTable}-${line.sourceId}-${index}`}>
+                      <td style={tdStyle}>{dateOnly(line.sortDate)}</td>
+                      <td style={tdStyle}>{line.matter || "—"}</td>
+                      <td style={tdStyle}>{line.patient || "—"}</td>
+                      <td style={tdStyle}>{line.provider || "—"}</td>
+                      <td style={tdStyle}>{line.lineType || "—"}</td>
+                      <td style={tdStyle}>{line.description || "—"}</td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>{money(line.amount)}</td>
+                      <td style={{ ...tdStyle, textAlign: "right" }}>{money(line.retainerFee)}</td>
+                    </tr>
+                  ))}
+                  {!previewLines.length && (
+                    <tr>
+                      <td style={tdStyle} colSpan={8}>No eligible invoice lines in this preview.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
+
+      <section style={{ ...cardStyle, marginBottom: 18 }}>
+        <h2 style={{ marginTop: 0 }}>3. Create Draft Invoice</h2>
+        <p style={{ color: "#475569" }}>
+          Draft invoices freeze the package lines but do not mark receipt rows as invoiced.
+        </p>
+        <button type="button" onClick={createDraftInvoice} disabled={!preview || creatingDraft} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #2563eb", background: preview ? "#2563eb" : "#94a3b8", color: "#fff", fontWeight: 900 }}>
+          {creatingDraft ? "Creating Draft..." : "Create Draft Invoice"}
+        </button>
+      </section>
+
+      <section style={{ ...cardStyle, marginBottom: 18 }}>
+        <h2 style={{ marginTop: 0 }}>4. Finalize Invoice</h2>
+        <p style={{ color: "#475569" }}>
+          Finalizing marks included MatterPaymentReceipt rows with this invoice ID. Finalized rows are excluded from future ordinary previews.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <button type="button" onClick={() => finalizeInvoice()} disabled={!createdInvoice || createdInvoice?.status !== "draft" || finalizing} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #166534", background: createdInvoice?.status === "draft" ? "#166534" : "#94a3b8", color: "#fff", fontWeight: 900 }}>
+            {finalizing ? "Finalizing..." : "Finalize Invoice"}
+          </button>
+          {createdInvoice && (
+            <span>
+              {statusBadge(createdInvoice.status)} <strong>{createdInvoice.invoiceNumber}</strong>
+            </span>
+          )}
         </div>
+      </section>
+
+      <section style={{ ...cardStyle, marginBottom: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+          <div>
+            <h2 style={{ marginTop: 0 }}>Invoice History</h2>
+            <p style={{ color: "#475569", marginTop: 0 }}>
+              View finalized invoice detail, finalize drafts, void finalized invoices, and print/save invoices as PDF.
+            </p>
+          </div>
+          <button type="button" onClick={() => loadHistory()} disabled={loadingHistory} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 900 }}>
+            {loadingHistory ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={thStyle}>Transaction Type</th>
-                <th style={thStyle}>Active Amount</th>
+                <th style={thStyle}>Invoice Number</th>
+                <th style={thStyle}>Status</th>
+                <th style={thStyle}>Created</th>
+                <th style={thStyle}>Finalized</th>
+                <th style={thStyle}>Voided</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Lines</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Receipts</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
+                <th style={thStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {(data?.remittance?.totalsByType || []).map((row) => (
-                <tr key={row.transactionType}>
-                  <td style={tdStyle}>{row.transactionType}</td>
-                  <td style={tdStyle}>{money(row.amount)}</td>
+              {history.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td style={tdStyle}><strong>{invoice.invoiceNumber}</strong></td>
+                  <td style={tdStyle}>{statusBadge(invoice.status)}</td>
+                  <td style={tdStyle}>{dateOnly(invoice.createdAt)}</td>
+                  <td style={tdStyle}>{dateOnly(invoice.finalizedAt) || "—"}</td>
+                  <td style={tdStyle}>{dateOnly(invoice.voidedAt) || "—"}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{invoice.lineCount}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{invoice.receiptRowCount}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{money(invoice.invoicePackageTotal)}</td>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => loadInvoiceDetail(invoice.id)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #2563eb", background: "#fff", color: "#2563eb", fontWeight: 900 }}>View</button>
+                      {invoice.status === "draft" && (
+                        <button type="button" onClick={() => finalizeInvoice(invoice)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #166534", background: "#166534", color: "#fff", fontWeight: 900 }}>Finalize</button>
+                      )}
+                      {invoice.status === "finalized" && (
+                        <button type="button" onClick={() => voidInvoice(invoice)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #991b1b", background: "#fff", color: "#991b1b", fontWeight: 900 }}>Void</button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {!data?.remittance?.totalsByType?.length && (
+              {!history.length && (
                 <tr>
-                  <td style={tdStyle} colSpan={2}>
-                    No active receipt totals found for the selected filters.
-                  </td>
+                  <td style={tdStyle} colSpan={9}>No invoices yet.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </section>
-      )}
 
-      {hasPreviewed && (
-        <>
-          {paymentRowsTable(
-            "Principal and Interest Payments",
-            principalInterestRows,
-            principalInterestTotals,
-            "No principal or interest payment rows found for the selected filters."
-          )}
-          {paymentRowsTable(
-            "Filing Fee Payments",
-            filingFeeRows,
-            filingFeeTotals,
-            "No filing fee payment rows found for the selected filters.",
-            { feeRecovery: true }
-          )}
-          {costsExpendedTable()}
-        </>
+      {invoiceDetail && (
+        <section style={{ ...cardStyle, marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ marginTop: 0 }}>Invoice Detail: {detailInvoice?.invoiceNumber}</h2>
+              <p style={{ color: "#475569", marginTop: 0 }}>
+                {detailInvoice?.status === "draft" && "Draft invoice created. Receipt rows are not yet marked as invoiced. Review the package before finalizing."}
+                {detailInvoice?.status === "finalized" && "Invoice finalized. Included receipt rows are marked with this invoice ID and excluded from future invoice previews by default."}
+                {detailInvoice?.status === "voided" && "Invoice voided. Receipt rows previously marked with this invoice ID were released for future invoicing. The voided invoice remains in history."}
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "start", flexWrap: "wrap" }}>
+              <button type="button" onClick={printableInvoice} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #0f172a", background: "#0f172a", color: "#fff", fontWeight: 900 }}>Print / Save PDF</button>
+              {detailInvoice?.status === "draft" && (
+                <button type="button" onClick={() => finalizeInvoice(detailInvoice)} disabled={finalizing} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #166534", background: "#166534", color: "#fff", fontWeight: 900 }}>Finalize</button>
+              )}
+              {detailInvoice?.status === "finalized" && (
+                <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #991b1b", background: "#fff", color: "#991b1b", fontWeight: 900 }}>Void</button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(140px, 1fr))", gap: 12, margin: "12px 0" }}>
+            <div><strong>Status</strong><br />{statusBadge(detailInvoice?.status)}</div>
+            <div><strong>Rows Found</strong><br />{invoiceDetail.verification?.receiptRowsFound ?? 0}</div>
+            <div><strong>Marked This Invoice</strong><br />{invoiceDetail.verification?.receiptRowsMarkedWithThisInvoiceId ?? 0}</div>
+            <div><strong>Marked Another Invoice</strong><br />{invoiceDetail.verification?.receiptRowsMarkedWithAnotherInvoiceId ?? 0}</div>
+            <div><strong>Unmarked</strong><br />{invoiceDetail.verification?.receiptRowsUnmarked ?? 0}</div>
+          </div>
+
+          <div style={{ overflowX: "auto", marginTop: 12 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Matter</th>
+                  <th style={thStyle}>Patient</th>
+                  <th style={thStyle}>Provider</th>
+                  <th style={thStyle}>Description</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Retainer Fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailLines.map((line: any) => (
+                  <tr key={line.id}>
+                    <td style={tdStyle}>{dateOnly(line.sortDate)}</td>
+                    <td style={tdStyle}>{line.matter || "—"}</td>
+                    <td style={tdStyle}>{line.patient || "—"}</td>
+                    <td style={tdStyle}>{line.provider || "—"}</td>
+                    <td style={tdStyle}>{line.description || "—"}</td>
+                    <td style={{ ...tdStyle, textAlign: "right" }}>{money(line.amount)}</td>
+                    <td style={{ ...tdStyle, textAlign: "right" }}>{money(line.retainerFee)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Invoice Audit History</h3>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Event</th>
+                  <th style={thStyle}>Summary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(invoiceDetail.auditEvents || []).map((event: any) => (
+                  <tr key={event.id}>
+                    <td style={tdStyle}>{dateTime(event.createdAt)}</td>
+                    <td style={tdStyle}>{event.eventType}</td>
+                    <td style={tdStyle}>{event.eventSummary || "—"}</td>
+                  </tr>
+                ))}
+                {!(invoiceDetail.auditEvents || []).length && (
+                  <tr>
+                    <td style={tdStyle} colSpan={3}>No audit events yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </main>
   );

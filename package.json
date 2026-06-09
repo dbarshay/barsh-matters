@@ -287,7 +287,9 @@
     "verify:provider-client-invoice-workflow-sequence-ui-safety": "node scripts/verify-provider-client-invoice-workflow-sequence-ui-safety.mjs",
     "verify:provider-client-invoice-detail-safety": "node scripts/verify-provider-client-invoice-detail-safety.mjs",
     "verify:provider-client-invoice-number-format-safety": "node scripts/verify-provider-client-invoice-number-format-safety.mjs",
-    "verify:provider-client-invoice-finalize-safety": "node scripts/verify-provider-client-invoice-finalize-safety.mjs"
+    "verify:provider-client-invoice-finalize-safety": "node scripts/verify-provider-client-invoice-finalize-safety.mjs",
+    "verify:provider-client-invoice-lifecycle-backend-safety": "node scripts/verify-provider-client-invoice-lifecycle-backend-safety.mjs",
+    "verify:provider-client-invoice-ui-lifecycle-safety": "node scripts/verify-provider-client-invoice-ui-lifecycle-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

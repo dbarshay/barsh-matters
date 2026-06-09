@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +143,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     const requestUrl = new URL(request.url);
+    const includeAlreadyInvoiced = requestUrl.searchParams.get("includeAlreadyInvoiced") === "true";
     const detailUrl = new URL(`/api/admin/clients/${encodeURIComponent(id)}`, requestUrl.origin);
 
     for (const key of ["status", "transactionType", "dateFrom", "dateTo", "checkNumber", "postingContext"]) {
@@ -164,7 +166,38 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const remittanceRows = Array.isArray(detail.remittance?.rows) ? detail.remittance.rows : [];
     const costsExpendedRows = Array.isArray(detail.costsExpended?.rows) ? detail.costsExpended.rows : [];
 
-    const receiptLines = remittanceRows.map((row: any) => receiptLine(row, client));
+    const receiptIds: number[] = Array.from(
+      new Set<number>(
+        remittanceRows
+          .map((row: any) => Number(String(row?.id || "").trim()))
+          .filter((value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value))
+      )
+    );
+
+    const receiptInvoiceMarks = receiptIds.length
+      ? await prisma.matterPaymentReceipt.findMany({
+          where: { id: { in: receiptIds } },
+          select: { id: true, invoiceId: true },
+        })
+      : [];
+
+    const invoiceIdByReceiptId = new Map(
+      receiptInvoiceMarks.map((row: any) => [row.id, clean(row.invoiceId)])
+    );
+
+    const eligibleRemittanceRows = includeAlreadyInvoiced
+      ? remittanceRows
+      : remittanceRows.filter((row: any) => {
+          const receiptId = Number(String(row?.id || "").trim());
+          return !invoiceIdByReceiptId.get(receiptId);
+        });
+
+    const excludedAlreadyInvoicedRows = remittanceRows.filter((row: any) => {
+      const receiptId = Number(String(row?.id || "").trim());
+      return Boolean(invoiceIdByReceiptId.get(receiptId));
+    });
+
+    const receiptLines = eligibleRemittanceRows.map((row: any) => receiptLine(row, client));
     const costLines = costsExpendedRows.map((row: any) => costLine(row));
     const lines = [...receiptLines, ...costLines];
 
@@ -172,7 +205,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const filingFeePaymentLines = receiptLines.filter((line: any) => line.lineType === "filing_fee_payment");
 
     const totalsSnapshot = {
-      receiptRowCount: remittanceRows.length,
+      receiptRowCount: eligibleRemittanceRows.length,
+      eligibleUnmarkedReceiptRowCount: eligibleRemittanceRows.length,
+      excludedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? 0 : excludedAlreadyInvoicedRows.length,
+      includedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? excludedAlreadyInvoicedRows.length : 0,
       lineCount: lines.length,
       principalInterestTotal: principalInterestLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
       filingFeePaymentTotal: filingFeePaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
@@ -211,8 +247,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     return NextResponse.json({
       ok: true,
       action: "provider-client-invoice-create-preview",
-      mode: "read-only-preview",
-      safety: "Read-only invoice create preview. This route does not create invoices, update MatterPaymentReceipt.invoiceId, write remittances, generate documents, send email, print, queue, update ClaimIndex, mutate Clio, or write any database rows.",
+      mode: includeAlreadyInvoiced ? "read-only-preview-admin-include-already-invoiced" : "read-only-preview",
+      safety: "Read-only invoice create preview. Ordinary mode excludes MatterPaymentReceipt rows already assigned to an invoiceId. Admin include-already-invoiced mode is diagnostic only. This route does not create invoices, update MatterPaymentReceipt.invoiceId, write remittances, generate documents, send email, print, queue, update ClaimIndex, mutate Clio, or write any database rows.",
       invoiceDraftPreview: {
         invoiceNumberCandidate: invoiceNumberCandidate(client.displayName),
         status: "draft-preview",
@@ -223,6 +259,24 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         clientSnapshot,
         totalsSnapshot,
         lines,
+        receiptMarkDiagnostics: {
+          includeAlreadyInvoiced,
+          sourceReceiptRowCount: remittanceRows.length,
+          eligibleUnmarkedReceiptRowCount: eligibleRemittanceRows.length,
+          excludedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? 0 : excludedAlreadyInvoicedRows.length,
+          includedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? excludedAlreadyInvoicedRows.length : 0,
+          alreadyInvoicedReceiptDetails: excludedAlreadyInvoicedRows.map((row: any) => {
+            const receiptId = Number(String(row?.id || "").trim());
+            return {
+              id: receiptId,
+              invoiceId: invoiceIdByReceiptId.get(receiptId) || "",
+              matter: clean(row?.matter),
+              patient: clean(row?.patient),
+              transactionType: clean(row?.transactionType),
+              amount: moneyNumber(row?.amount),
+            };
+          }),
+        },
       },
     });
   } catch (error: any) {
