@@ -268,7 +268,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const [transactionType, setTransactionType] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [includeAlreadyInvoiced, setIncludeAlreadyInvoiced] = useState(false);
 
   const [clientDetail, setClientDetail] = useState<any>(null);
   const [clientDetailLoading, setClientDetailLoading] = useState(false);
@@ -333,7 +332,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     if (transactionType.trim()) query.set("transactionType", transactionType.trim());
     if (dateFrom) query.set("dateFrom", dateFrom);
     if (dateTo) query.set("dateTo", dateTo);
-    if (includeAlreadyInvoiced) query.set("includeAlreadyInvoiced", "true");
     return query;
   }
 
@@ -351,11 +349,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not build invoice preview.");
 
       setPreview(json.invoiceDraftPreview);
-      setMessage(
-        includeAlreadyInvoiced
-          ? "Admin preview loaded. Already-invoiced receipt rows may be included for diagnostics."
-          : "Preview loaded. Already-invoiced receipt rows are excluded by default."
-      );
+      setMessage("Preview loaded.");
     } catch (err: any) {
       setError(err?.message || "Could not build invoice preview.");
     } finally {
@@ -375,7 +369,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           confirmCreateInvoiceDraft: true,
-          confirmIncludeAlreadyInvoiced: includeAlreadyInvoiced,
           invoiceDraftPreview: preview,
         }),
       });
@@ -665,16 +658,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
       <section style={{ ...cardStyle, marginBottom: 18 }}>
         <h2 style={{ marginTop: 0 }}>1. Preview</h2>
-        <p style={{ color: "#475569", marginTop: 0 }}>
-          Ordinary previews exclude receipt rows already assigned to an invoice. Admin mode can include already-invoiced rows for diagnostics only.
-        </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 10, alignItems: "end" }}>
           <label style={{ fontWeight: 800 }}>
             Status
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={filterControlStyle}>
               <option value="posted">posted</option>
-              <option value="active">active</option>
               <option value="voided">voided</option>
               <option value="All">All</option>
             </select>
@@ -706,11 +695,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           </label>
         </div>
 
-        <label style={{ display: "inline-flex", gap: 8, alignItems: "center", marginTop: 12, fontWeight: 900, color: includeAlreadyInvoiced ? "#991b1b" : "#334155" }}>
-          <input type="checkbox" checked={includeAlreadyInvoiced} onChange={(event) => setIncludeAlreadyInvoiced(event.target.checked)} />
-          Admin mode: include already-invoiced receipt rows for diagnostics
-        </label>
-
         <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button type="button" onClick={loadPreview} disabled={loadingPreview || !id} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontWeight: 900 }}>
             {loadingPreview ? "Loading Preview..." : "Preview Invoice Package"}
@@ -734,12 +718,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               <div><strong>Included Already Invoiced</strong><br />{previewDiagnostics.includedAlreadyInvoicedReceiptRowCount || 0}</div>
               <div><strong>Package Total</strong><br />{money(previewTotals.invoicePackageTotal)}</div>
             </div>
-
-            {includeAlreadyInvoiced && (
-              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: 12, marginBottom: 14, fontWeight: 800 }}>
-                Admin review mode is active. Already-invoiced receipt rows may be included. Do not use this mode for ordinary invoice creation.
-              </div>
-            )}
 
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>

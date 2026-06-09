@@ -71,7 +71,6 @@ mustContain("invoice page", invoicePage, "4. Finalize Invoice");
 mustContain("invoice page", invoicePage, "Invoice History");
 mustContain("invoice page", invoicePage, "Invoice Detail:");
 mustContain("invoice page", invoicePage, "Invoice Audit History");
-mustContain("invoice page", invoicePage, "Admin mode: include already-invoiced receipt rows for diagnostics");
 mustContain("invoice page", invoicePage, "Excluded Already Invoiced");
 mustContain("invoice page", invoicePage, "Included Already Invoiced");
 mustContain("invoice page", invoicePage, "Print / Save PDF");
@@ -81,7 +80,6 @@ mustContain("invoice page", invoicePage, "popup.focus()");
 mustContain("invoice page", invoicePage, "confirmCreateInvoiceDraft");
 mustContain("invoice page", invoicePage, "confirmFinalizeInvoice");
 mustContain("invoice page", invoicePage, "confirmVoidInvoice");
-mustContain("invoice page", invoicePage, "includeAlreadyInvoiced");
 mustContain("invoice page", invoicePage, "/api/admin/clients/${encodeURIComponent(id)}/invoice/create-preview");
 mustContain("invoice page", invoicePage, "/api/admin/clients/${encodeURIComponent(id)}/invoice/create");
 mustContain("invoice page", invoicePage, "/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}/finalize");
@@ -138,6 +136,13 @@ if (invoicePage.includes("Check Number") || invoicePage.includes("checkNumber") 
   failures += 1;
 } else {
   console.log("PASS: invoice page Check Number filter removed");
+}
+
+if (invoicePage.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || invoicePage.includes("Admin review mode is active") || invoicePage.includes("includeAlreadyInvoiced") || invoicePage.includes("confirmIncludeAlreadyInvoiced") || invoicePage.includes('<option value="active">active</option>')) {
+  console.error("FAIL: invoice page still contains Active/Admin preview UI remnants");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page Active/Admin preview UI removed");
 }
 
 if (failures) {

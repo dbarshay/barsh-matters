@@ -42,9 +42,6 @@ for (const needle of [
   "Package Total",
   "Retainer Fee",
   "receiptMarkDiagnostics",
-  "includeAlreadyInvoiced",
-  "Admin mode: include already-invoiced receipt rows for diagnostics",
-  "Admin review mode is active. Already-invoiced receipt rows may be included.",
   "No eligible invoice lines in this preview.",
 ]) {
   mustContain("invoice page", page, needle);
@@ -53,7 +50,6 @@ for (const needle of [
 for (const needle of [
   "createDraftInvoice",
   "confirmCreateInvoiceDraft",
-  "confirmIncludeAlreadyInvoiced",
   "Draft invoice created. Receipt rows are not yet marked as invoiced.",
 ]) {
   mustContain("invoice page", page, needle);
@@ -75,6 +71,20 @@ if (pkg.scripts?.["verify:provider-client-invoice-draft-preview-ui-safety"] === 
   pass("package.json: verifier script registered");
 } else {
   fail("package.json: verifier script is not registered");
+}
+
+if (page.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || page.includes("Admin review mode is active") || page.includes("includeAlreadyInvoiced") || page.includes("confirmIncludeAlreadyInvoiced") || page.includes('<option value="active">active</option>')) {
+  console.error("FAIL: invoice page still contains Active/Admin preview UI remnants");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page Active/Admin preview UI removed");
+}
+
+if (page.includes("includeAlreadyInvoiced") || page.includes("confirmIncludeAlreadyInvoiced") || page.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || page.includes("Admin review mode is active")) {
+  console.error("FAIL: invoice page still contains removed admin include-already-invoiced draft-preview UI");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page removed admin include-already-invoiced draft-preview UI");
 }
 
 if (failures) {

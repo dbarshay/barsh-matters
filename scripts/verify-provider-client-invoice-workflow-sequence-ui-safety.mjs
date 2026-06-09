@@ -39,7 +39,6 @@ for (const needle of [
   "Invoice History",
   "Invoice Detail:",
   "Invoice Audit History",
-  "Admin mode: include already-invoiced receipt rows for diagnostics",
   "Excluded Already Invoiced",
   "Included Already Invoiced",
   "Print / Save PDF",
@@ -63,8 +62,6 @@ for (const needle of [
   "confirmCreateInvoiceDraft",
   "confirmFinalizeInvoice",
   "confirmVoidInvoice",
-  "confirmIncludeAlreadyInvoiced",
-  "includeAlreadyInvoiced",
   "receiptMarkDiagnostics",
 ]) {
   mustContain("invoice page", invoicePage, needle);
@@ -92,6 +89,20 @@ for (const stale of [
 }
 
 mustContain("package.json", packageJson, "verify:provider-client-invoice-workflow-sequence-ui-safety");
+
+if (invoicePage.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || invoicePage.includes("Admin review mode is active") || invoicePage.includes("includeAlreadyInvoiced") || invoicePage.includes("confirmIncludeAlreadyInvoiced") || invoicePage.includes('<option value="active">active</option>')) {
+  console.error("FAIL: invoice page still contains Active/Admin preview UI remnants");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page Active/Admin preview UI removed");
+}
+
+if (invoicePage.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || invoicePage.includes("confirmIncludeAlreadyInvoiced") || invoicePage.includes("includeAlreadyInvoiced")) {
+  console.error("FAIL: invoice page still contains removed admin include-already-invoiced UI");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page removed admin include-already-invoiced UI");
+}
 
 if (failures) {
   console.error(`\nRESULT: provider client invoice workflow sequence UI safety FAILED (${failures})`);
