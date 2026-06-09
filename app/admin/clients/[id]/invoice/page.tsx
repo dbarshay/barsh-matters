@@ -274,6 +274,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const [preview, setPreview] = useState<any>(null);
   const [createdInvoice, setCreatedInvoice] = useState<any>(null);
   const [invoiceDetail, setInvoiceDetail] = useState<any>(null);
+  const [invoiceDetailVisible, setInvoiceDetailVisible] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -378,6 +379,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       setCreatedInvoice(json.invoice);
       setInvoiceDetail(null);
       setMessage("Draft invoice created. Receipt rows are not yet marked as invoiced. Review the frozen package before finalizing.");
+      setInvoiceDetailVisible(false);
+      setInvoiceDetail(null);
       await loadHistory();
     } catch (err: any) {
       setError(err?.message || "Could not create draft invoice.");
@@ -397,6 +400,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not load invoice detail.");
 
       setInvoiceDetail(json);
+      setInvoiceDetailVisible(true);
       if (json.invoice?.status === "draft") setCreatedInvoice(json.invoice);
       setMessage("Invoice detail loaded.");
     } catch (err: any) {
@@ -430,6 +434,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       setCreatedInvoice(json.invoice);
       setMessage("Invoice finalized. Included receipt rows are now marked with this invoice ID and excluded from future invoice previews by default.");
       await loadInvoiceDetail(invoiceId);
+      setInvoiceDetailVisible(false);
+      setInvoiceDetail(null);
       await loadHistory();
     } catch (err: any) {
       setError(err?.message || "Could not finalize invoice.");
@@ -463,6 +469,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
       setMessage("Invoice voided. Receipt rows marked with this invoice ID were released for future invoicing.");
       await loadInvoiceDetail(invoiceId);
+      setInvoiceDetailVisible(false);
+      setInvoiceDetail(null);
       await loadHistory();
     } catch (err: any) {
       setError(err?.message || "Could not void invoice.");
@@ -820,7 +828,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <tbody>
               {history.map((invoice) => (
                 <tr key={invoice.id}>
-                  <td style={tdStyle}><strong>{invoice.invoiceNumber}</strong></td>
+                  <td style={tdStyle}><strong><button
+                          type="button"
+                          onClick={() => loadInvoiceDetail(invoice.id)}
+                          style={{ border: 0, background: "transparent", padding: 0, color: "#2563eb", fontWeight: 800, cursor: "pointer" }}
+                        >
+                          {invoice.invoiceNumber}
+                        </button></strong></td>
                   <td style={tdStyle}>{statusBadge(invoice.status)}</td>
                   <td style={tdStyle}>{dateOnly(invoice.createdAt)}</td>
                   <td style={tdStyle}>{dateOnly(invoice.finalizedAt) || "—"}</td>
@@ -850,7 +864,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         </div>
       </section>
 
-      {invoiceDetail && (
+      {invoiceDetailVisible && invoiceDetail && (
         <section style={{ ...cardStyle, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
