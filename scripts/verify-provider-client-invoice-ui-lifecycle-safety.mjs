@@ -47,13 +47,17 @@ mustContain("invoice page", invoicePage, "providerPercentageRows");
 mustContain("invoice page", invoicePage, "providerBillingRows");
 mustContain("invoice page", invoicePage, "compactInfoGroupStyle");
 mustContain("invoice page", invoicePage, "filterControlStyle");
+mustContain("invoice page", invoicePage, "Transaction Type");
+mustContain("invoice page", invoicePage, '<option value="">All</option>');
+mustContain("invoice page", invoicePage, "Collection Payment");
+mustContain("invoice page", invoicePage, "Voluntary Payment");
+mustContain("invoice page", invoicePage, "Filing Fee Collected");
+mustContain("invoice page", invoicePage, "Other Court Fees Collected");
 mustContain("invoice page", invoicePage, "compactInfoLabelStyle");
 mustContain("invoice page", invoicePage, "WC Principal");
 mustContain("invoice page", invoicePage, "WC Interest");
 mustContain("invoice page", invoicePage, "Liens Principal");
 mustContain("invoice page", invoicePage, "Liens Interest");
-mustContain("invoice page", invoicePage, "All transaction types");
-mustContain("invoice page", invoicePage, "All posting contexts");
 mustContain("invoice page", invoicePage, "loadClientDetail");
 mustContain("invoice page", invoicePage, "NF Principal");
 mustContain("invoice page", invoicePage, "NF Interest");
@@ -119,6 +123,13 @@ if (invoicePage.includes('{ label: "Name", value: clientDetail?.displayName')) {
   failures += 1;
 } else {
   console.log("PASS: invoice page repeated provider Name row removed");
+}
+
+if (invoicePage.includes("Posting Context") || invoicePage.includes("postingContext") || invoicePage.includes("All posting contexts")) {
+  console.error("FAIL: invoice page still contains Posting Context filter");
+  failures += 1;
+} else {
+  console.log("PASS: invoice page Posting Context filter removed");
 }
 
 if (failures) {

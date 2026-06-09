@@ -266,7 +266,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const [id, setId] = useState("");
   const [statusFilter, setStatusFilter] = useState("posted");
   const [transactionType, setTransactionType] = useState("");
-  const [postingContext, setPostingContext] = useState("");
   const [checkNumber, setCheckNumber] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -333,7 +332,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const query = new URLSearchParams();
     query.set("status", statusFilter);
     if (transactionType.trim()) query.set("transactionType", transactionType.trim());
-    if (postingContext.trim()) query.set("postingContext", postingContext.trim());
     if (checkNumber.trim()) query.set("checkNumber", checkNumber.trim());
     if (dateFrom) query.set("dateFrom", dateFrom);
     if (dateTo) query.set("dateTo", dateTo);
@@ -673,7 +671,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           Ordinary previews exclude receipt rows already assigned to an invoice. Admin mode can include already-invoiced rows for diagnostics only.
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(130px, 1fr))", gap: 10, alignItems: "end" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(150px, 1fr))", gap: 10, alignItems: "end" }}>
           <label style={{ fontWeight: 800 }}>
             Status
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={filterControlStyle}>
@@ -686,12 +684,17 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
           <label style={{ fontWeight: 800 }}>
             Transaction Type
-            <input value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle} placeholder="All transaction types" />
-          </label>
-
-          <label style={{ fontWeight: 800 }}>
-            Posting Context
-            <input value={postingContext} onChange={(event) => setPostingContext(event.target.value)} style={filterControlStyle} placeholder="All posting contexts" />
+            <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
+              <option value="">All</option>
+              <option value="Collection Payment">Collection Payment</option>
+              <option value="Voluntary Payment">Voluntary Payment</option>
+              <option value="Interest">Interest</option>
+              <option value="Filing Fee Collected">Filing Fee Collected</option>
+              <option value="Other Court Fees Collected">Other Court Fees Collected</option>
+              <option value="Index Fee">Index Fee</option>
+              <option value="Service Fee">Service Fee</option>
+              <option value="Other Court Costs">Other Court Costs</option>
+            </select>
           </label>
 
           <label style={{ fontWeight: 800 }}>
