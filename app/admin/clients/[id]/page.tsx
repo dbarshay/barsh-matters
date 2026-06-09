@@ -245,6 +245,10 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [activeWorkflowPanel, setActiveWorkflowPanel] = useState<"" | "remittance" | "individual" | "lawsuits">("");
+  const [matterPanelSortField, setMatterPanelSortField] = useState("matter");
+  const [matterPanelSortDirection, setMatterPanelSortDirection] = useState<"asc" | "desc">("asc");
+  const [lawsuitPanelSortField, setLawsuitPanelSortField] = useState("lawsuit");
+  const [lawsuitPanelSortDirection, setLawsuitPanelSortDirection] = useState<"asc" | "desc">("asc");
   const [editingField, setEditingField] = useState<keyof typeof clientForm | null>(null);
   const [savingClient, setSavingClient] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -292,6 +296,22 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
   const client = data?.client;
   const remittanceRows = data?.remittance?.rows || [];
   const matterRows = data?.matters?.rows || [];
+  const matterPanelTotals = useMemo(
+    () =>
+      matterRows.reduce(
+        (totals: { count: number; lawsuitCount: number; billAmount: number; balance: number; openCount: number; closedCount: number }, row: any) => {
+          const status = String(row?.finalStatus || "").trim().toLowerCase();
+          totals.count += 1;
+          totals.billAmount += Number(row?.billAmount || 0);
+          totals.balance += Number(row?.balance || 0);
+          if (status === "closed") totals.closedCount += 1;
+          else totals.openCount += 1;
+          return totals;
+        },
+        { count: 0, lawsuitCount: 0, billAmount: 0, balance: 0, openCount: 0, closedCount: 0 }
+      ),
+    [matterRows]
+  );
   const lawsuitRows = useMemo(() => {
     const byLawsuit = new Map<string, any>();
     for (const row of matterRows) {
@@ -325,6 +345,150 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       insurers: Array.from(row.insurers).join(", "),
     }));
   }, [matterRows]);
+
+  const lawsuitPanelTotals = useMemo(
+    () =>
+      lawsuitRows.reduce(
+        (totals: { count: number; childMatterCount: number; billAmount: number; balance: number }, row: any) => ({
+          count: totals.count + 1,
+          childMatterCount: totals.childMatterCount + Number(row?.childMatterCount || 0),
+          billAmount: totals.billAmount + Number(row?.billAmount || 0),
+          balance: totals.balance + Number(row?.balance || 0),
+        }),
+        { count: 0, childMatterCount: 0, billAmount: 0, balance: 0 }
+      ),
+    [lawsuitRows]
+  );
+
+  const linkedLawsuitCount = lawsuitPanelTotals.count;
+
+  function providerPanelDateRange(row: any): string {
+    return [dateOnly(row?.dateOfService), dateOnly(row?.dateOfServiceEnd)].filter(Boolean).join(" – ");
+  }
+
+  function providerMatterHref(row: any): string {
+    const target = String(row?.matter || row?.displayNumber || row?.id || "").trim();
+    return target ? `/matter/${encodeURIComponent(target)}` : "";
+  }
+
+  function providerLawsuitHref(value: any): string {
+    const target = String(value || "").trim();
+    return target ? `/matters?master=${encodeURIComponent(target)}` : "";
+  }
+
+  function providerIndexedSearchHref(field: "patient" | "provider" | "insurer" | "claim", value: any): string {
+    const target = String(value || "").trim();
+    return target ? `/matters?${field}=${encodeURIComponent(target)}` : "";
+  }
+
+  function providerIndexedLink(field: "patient" | "provider" | "insurer" | "claim", value: any) {
+    const href = providerIndexedSearchHref(field, value);
+    const label = String(value || "").trim();
+
+    if (!href || !label) return label || "—";
+
+    return (
+      <Link href={href} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+        {label}
+      </Link>
+    );
+  }
+
+  function providerMatterSortValue(row: any, field: string): string | number {
+    switch (field) {
+      case "billAmount":
+      case "balance":
+        return Number(row?.[field] || 0);
+      case "dateOfService":
+        return `${String(row?.dateOfService || "")} ${String(row?.dateOfServiceEnd || "")}`.trim();
+      default:
+        return String(row?.[field] ?? "").toLowerCase();
+    }
+  }
+
+  function providerLawsuitSortValue(row: any, field: string): string | number {
+    switch (field) {
+      case "childMatterCount":
+      case "billAmount":
+      case "balance":
+        return Number(row?.[field] || 0);
+      default:
+        return String(row?.[field] ?? "").toLowerCase();
+    }
+  }
+
+  function compareProviderPanelValues(aValue: string | number, bValue: string | number, direction: "asc" | "desc"): number {
+    if (typeof aValue === "number" || typeof bValue === "number") {
+      const numericA = Number(aValue || 0);
+      const numericB = Number(bValue || 0);
+      return direction === "asc" ? numericA - numericB : numericB - numericA;
+    }
+
+    const compare = String(aValue || "").localeCompare(String(bValue || ""), undefined, { numeric: true, sensitivity: "base" });
+    return direction === "asc" ? compare : -compare;
+  }
+
+  const sortedMatterRows = useMemo(
+    () =>
+      [...matterRows].sort((a: any, b: any) =>
+        compareProviderPanelValues(providerMatterSortValue(a, matterPanelSortField), providerMatterSortValue(b, matterPanelSortField), matterPanelSortDirection)
+      ),
+    [matterRows, matterPanelSortField, matterPanelSortDirection]
+  );
+
+  const sortedLawsuitRows = useMemo(
+    () =>
+      [...lawsuitRows].sort((a: any, b: any) =>
+        compareProviderPanelValues(providerLawsuitSortValue(a, lawsuitPanelSortField), providerLawsuitSortValue(b, lawsuitPanelSortField), lawsuitPanelSortDirection)
+      ),
+    [lawsuitRows, lawsuitPanelSortField, lawsuitPanelSortDirection]
+  );
+
+  function changeMatterPanelSort(field: string) {
+    if (matterPanelSortField === field) {
+      setMatterPanelSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setMatterPanelSortField(field);
+    setMatterPanelSortDirection(field === "billAmount" || field === "balance" ? "desc" : "asc");
+  }
+
+  function changeLawsuitPanelSort(field: string) {
+    if (lawsuitPanelSortField === field) {
+      setLawsuitPanelSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setLawsuitPanelSortField(field);
+    setLawsuitPanelSortDirection(field === "childMatterCount" || field === "billAmount" || field === "balance" ? "desc" : "asc");
+  }
+
+  function matterPanelHeader(label: string, field: string) {
+    const active = matterPanelSortField === field;
+    return (
+      <button
+        type="button"
+        onClick={() => changeMatterPanelSort(field)}
+        style={{ border: 0, background: "transparent", padding: 0, margin: 0, font: "inherit", fontWeight: 950, color: "inherit", cursor: "pointer", textAlign: "left" }}
+      >
+        {label}{active ? (matterPanelSortDirection === "asc" ? " ▲" : " ▼") : ""}
+      </button>
+    );
+  }
+
+  function lawsuitPanelHeader(label: string, field: string) {
+    const active = lawsuitPanelSortField === field;
+    return (
+      <button
+        type="button"
+        onClick={() => changeLawsuitPanelSort(field)}
+        style={{ border: 0, background: "transparent", padding: 0, margin: 0, font: "inherit", fontWeight: 950, color: "inherit", cursor: "pointer", textAlign: "left" }}
+      >
+        {label}{active ? (lawsuitPanelSortDirection === "asc" ? " ▲" : " ▼") : ""}
+      </button>
+    );
+  }
 
   useEffect(() => {
     if (!client) return;
@@ -399,6 +563,37 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         "Void Reason": row.voidReason,
       })),
     [remittanceRows]
+  );
+
+  const matterCsvRows = useMemo(
+    () =>
+      matterRows.map((row: any) => ({
+        Matter: row.matter,
+        Patient: row.patient,
+        Provider: row.provider,
+        Insurer: row.insurer,
+        Lawsuit: row.lawsuit,
+        "Claim Number": row.claimNumber,
+        "Date of Service": providerPanelDateRange(row),
+        "Bill Amount": row.billAmount,
+        Balance: row.balance,
+        Status: row.finalStatus,
+      })),
+    [matterRows]
+  );
+
+  const lawsuitCsvRows = useMemo(
+    () =>
+      lawsuitRows.map((row: any) => ({
+        Lawsuit: row.lawsuit,
+        "Individual Matter Count": row.childMatterCount,
+        Providers: row.providers,
+        Patients: row.patients,
+        Insurers: row.insurers,
+        "Bill Amount": row.billAmount,
+        Balance: row.balance,
+      })),
+    [lawsuitRows]
   );
 
   function beginEdit(field: keyof typeof clientForm) {
@@ -883,38 +1078,102 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
       {activeWorkflowPanel === "individual" && (
         <section style={{ ...cardStyle, marginBottom: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Individual Matters</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Individual Matters</h2>
+              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                Matched local ClaimIndex child matters for this provider/client. Use this panel to review the child-matter population behind invoice/remittance reporting.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => downloadCsv(`${client?.displayName || "Client"} - Individual Matters.csv`, matterCsvRows)}
+              disabled={!matterCsvRows.length}
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: matterCsvRows.length ? "#fff" : "#f1f5f9", fontWeight: 800 }}
+            >
+              Export CSV
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Individual Matters</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{matterPanelTotals.count}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Linked Lawsuits</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{linkedLawsuitCount}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(matterPanelTotals.billAmount)}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Balance</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(matterPanelTotals.balance)}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Open / Closed</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{matterPanelTotals.openCount} / {matterPanelTotals.closedCount}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc", color: "#475569", lineHeight: 1.45 }}>
+            Invoice/remittance reporting remains child-matter based. Lawsuit-page payments must appear through allocated child MatterPaymentReceipt rows before they belong in provider reporting.
+          </div>
+
           <div style={{ overflowX: "auto", maxHeight: 420 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1120 }}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Matter</th>
-                  <th style={thStyle}>Patient</th>
-                  <th style={thStyle}>Provider</th>
-                  <th style={thStyle}>Insurer</th>
-                  <th style={thStyle}>Lawsuit</th>
-                  <th style={thStyle}>Claim #</th>
-                  <th style={thStyle}>DOS</th>
-                  <th style={thStyle}>Bill Amount</th>
-                  <th style={thStyle}>Balance</th>
-                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>{matterPanelHeader("Matter", "matter")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Patient", "patient")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Provider", "provider")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Insurer", "insurer")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Lawsuit", "lawsuit")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Claim #", "claimNumber")}</th>
+                  <th style={thStyle}>{matterPanelHeader("DOS", "dateOfService")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Bill Amount", "billAmount")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Balance", "balance")}</th>
+                  <th style={thStyle}>{matterPanelHeader("Status", "finalStatus")}</th>
                 </tr>
               </thead>
               <tbody>
-                {matterRows.map((row: any) => (
-                  <tr key={row.id || row.matter}>
-                    <td style={tdStyle}>{row.matter}</td>
-                    <td style={tdStyle}>{row.patient}</td>
-                    <td style={tdStyle}>{row.provider}</td>
-                    <td style={tdStyle}>{row.insurer}</td>
-                    <td style={tdStyle}>{row.lawsuit}</td>
-                    <td style={tdStyle}>{row.claimNumber}</td>
-                    <td style={tdStyle}>{dateOnly(row.dateOfService)}</td>
-                    <td style={tdStyle}>{money(row.billAmount)}</td>
-                    <td style={tdStyle}>{money(row.balance)}</td>
-                    <td style={tdStyle}>{row.finalStatus}</td>
-                  </tr>
-                ))}
+                {sortedMatterRows.map((row: any) => {
+                  const matterHref = providerMatterHref(row);
+                  const lawsuitHref = providerLawsuitHref(row.lawsuit);
+
+                  return (
+                    <tr key={row.id || row.matter}>
+                      <td style={tdStyle}>
+                        {matterHref ? (
+                          <Link href={matterHref} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+                            {row.matter}
+                          </Link>
+                        ) : (
+                          row.matter
+                        )}
+                      </td>
+                      <td style={tdStyle}>{providerIndexedLink("patient", row.patient)}</td>
+                      <td style={tdStyle}>{providerIndexedLink("provider", row.provider)}</td>
+                      <td style={tdStyle}>{providerIndexedLink("insurer", row.insurer)}</td>
+                      <td style={tdStyle}>
+                        {lawsuitHref ? (
+                          <Link href={lawsuitHref} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+                            {row.lawsuit}
+                          </Link>
+                        ) : (
+                          row.lawsuit
+                        )}
+                      </td>
+                      <td style={tdStyle}>{providerIndexedLink("claim", row.claimNumber)}</td>
+                      <td style={tdStyle}>{providerPanelDateRange(row)}</td>
+                      <td style={tdStyle}>{money(row.billAmount)}</td>
+                      <td style={tdStyle}>{money(row.balance)}</td>
+                      <td style={tdStyle}>{row.finalStatus}</td>
+                    </tr>
+                  );
+                })}
                 {!matterRows.length && (
                   <tr>
                     <td style={tdStyle} colSpan={10}>
@@ -930,35 +1189,83 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
       {activeWorkflowPanel === "lawsuits" && (
         <section style={{ ...cardStyle, marginBottom: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Lawsuit Matters</h2>
-          <p style={{ marginTop: -4, color: "#475569", lineHeight: 1.45 }}>
-            Lawsuit matters are summarized from this provider/client's matched individual matters. Payment reporting remains child-matter based.
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Lawsuit Matters</h2>
+              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                Lawsuit matters are summarized from this provider/client's matched individual matters. Payment reporting remains child-matter based.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => downloadCsv(`${client?.displayName || "Client"} - Lawsuit Matters.csv`, lawsuitCsvRows)}
+              disabled={!lawsuitCsvRows.length}
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: lawsuitCsvRows.length ? "#fff" : "#f1f5f9", fontWeight: 800 }}
+            >
+              Export CSV
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Lawsuits</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{lawsuitPanelTotals.count}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Child Matters</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{lawsuitPanelTotals.childMatterCount}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(lawsuitPanelTotals.billAmount)}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Balance</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(lawsuitPanelTotals.balance)}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc", color: "#475569", lineHeight: 1.45 }}>
+            This panel is a local summary grouped from matched child matters. It does not create lawsuits, edit lawsuit metadata, write payments, or update Clio.
+          </div>
+
           <div style={{ overflowX: "auto", maxHeight: 420 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Lawsuit</th>
-                  <th style={thStyle}>Individual Matter Count</th>
-                  <th style={thStyle}>Providers</th>
-                  <th style={thStyle}>Patients</th>
-                  <th style={thStyle}>Insurers</th>
-                  <th style={thStyle}>Bill Amount</th>
-                  <th style={thStyle}>Balance</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Lawsuit", "lawsuit")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Individual Matter Count", "childMatterCount")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Providers", "providers")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Patients", "patients")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Insurers", "insurers")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Bill Amount", "billAmount")}</th>
+                  <th style={thStyle}>{lawsuitPanelHeader("Balance", "balance")}</th>
                 </tr>
               </thead>
               <tbody>
-                {lawsuitRows.map((row: any) => (
-                  <tr key={row.lawsuit}>
-                    <td style={tdStyle}>{row.lawsuit}</td>
-                    <td style={tdStyle}>{row.childMatterCount}</td>
-                    <td style={tdStyle}>{row.providers}</td>
-                    <td style={tdStyle}>{row.patients}</td>
-                    <td style={tdStyle}>{row.insurers}</td>
-                    <td style={tdStyle}>{money(row.billAmount)}</td>
-                    <td style={tdStyle}>{money(row.balance)}</td>
-                  </tr>
-                ))}
+                {sortedLawsuitRows.map((row: any) => {
+                  const lawsuitHref = providerLawsuitHref(row.lawsuit);
+
+                  return (
+                    <tr key={row.lawsuit}>
+                      <td style={tdStyle}>
+                        {lawsuitHref ? (
+                          <Link href={lawsuitHref} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+                            {row.lawsuit}
+                          </Link>
+                        ) : (
+                          row.lawsuit
+                        )}
+                      </td>
+                      <td style={tdStyle}>{row.childMatterCount}</td>
+                      <td style={tdStyle}>{providerIndexedLink("provider", row.providers)}</td>
+                      <td style={tdStyle}>{providerIndexedLink("patient", row.patients)}</td>
+                      <td style={tdStyle}>{providerIndexedLink("insurer", row.insurers)}</td>
+                      <td style={tdStyle}>{money(row.billAmount)}</td>
+                      <td style={tdStyle}>{money(row.balance)}</td>
+                    </tr>
+                  );
+                })}
                 {!lawsuitRows.length && (
                   <tr>
                     <td style={tdStyle} colSpan={7}>

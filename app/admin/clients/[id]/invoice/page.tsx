@@ -190,11 +190,31 @@ function isFeeRecoveryTransactionType(value: unknown) {
 function retainerFeeForReceipt(row: any, client: any) {
   if (isFeeRecoveryTransactionType(row?.transactionType)) return 0;
 
+  const details = client?.details || {};
+  const hidden =
+    details?._hiddenImportFields &&
+    typeof details._hiddenImportFields === "object" &&
+    !Array.isArray(details._hiddenImportFields)
+      ? details._hiddenImportFields
+      : {};
+
+  function providerDefault(keys: string[]): string {
+    for (const key of keys) {
+      const directValue = details?.[key] ?? client?.[key];
+      if (directValue !== null && directValue !== undefined && String(directValue).trim()) return String(directValue).trim();
+
+      const hiddenValue = hidden?.[key];
+      if (hiddenValue !== null && hiddenValue !== undefined && String(hiddenValue).trim()) return String(hiddenValue).trim();
+    }
+
+    return "";
+  }
+
   const amount = Number(row?.amount || 0);
   const type = String(row?.transactionType || "").toLowerCase();
   const rate = type.includes("interest")
-    ? numberFromPercent(client?.retainerNfInterest)
-    : numberFromPercent(client?.retainerNfPrincipal);
+    ? numberFromPercent(providerDefault(["retainerNfInterest", "hidden_retainer_interest_percent", "hidden_retainer_nf_interest_percent", "retainer_nf_interest_percent"]))
+    : numberFromPercent(providerDefault(["retainerNfPrincipal", "hidden_retainer_principal_nf_percent", "retainer_nf_principal_percent"]));
 
   return amount * rate;
 }
@@ -274,6 +294,99 @@ export default function AdminClientInvoicePage({ params }: { params: Promise<{ i
   const client = data?.client;
   const remittanceRows = data?.remittance?.rows || [];
   const costsExpendedRows = data?.costsExpended?.rows || [];
+
+  const clientDetails = client?.details || {};
+
+  function detailValue(keys: string[]): string {
+    const hidden =
+      (clientDetails as any)?._hiddenImportFields &&
+      typeof (clientDetails as any)._hiddenImportFields === "object" &&
+      !Array.isArray((clientDetails as any)._hiddenImportFields)
+        ? (clientDetails as any)._hiddenImportFields
+        : {};
+
+    for (const key of keys) {
+      const directValue = (clientDetails as any)?.[key];
+      if (directValue !== null && directValue !== undefined && String(directValue).trim()) return String(directValue).trim();
+
+      const hiddenValue = hidden?.[key];
+      if (hiddenValue !== null && hiddenValue !== undefined && String(hiddenValue).trim()) return String(hiddenValue).trim();
+    }
+
+    return "";
+  }
+
+  function invoiceInfoDisplay(value: unknown): string {
+    const text = String(value ?? "").trim();
+    return text || "—";
+  }
+
+  function normalizeInvoiceAddress(value: unknown): string {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+
+    function normalizeWord(word: string): string {
+      const upper = word.toUpperCase();
+      if (["PO", "P.O.", "PC", "P.C.", "LLC", "PLLC", "LLP", "MD", "DO", "NP", "PA"].includes(upper)) return upper.replace("P.O.", "PO");
+      if (/^\d/.test(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }
+
+    return text
+      .split(/\n+/g)
+      .map((line) =>
+        line
+          .trim()
+          .split(/\s+/g)
+          .map(normalizeWord)
+          .join(" ")
+          .replace(/^PO Box\b/i, "PO Box")
+      )
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function invoicePercentDisplay(value: unknown): string {
+    const text = String(value ?? "").trim();
+    if (!text) return "—";
+
+    const cleaned = text.replace(/%/g, "").trim();
+    const numeric = Number(cleaned);
+
+    if (!Number.isFinite(numeric)) return text.endsWith("%") ? text : `${text}%`;
+    return `${numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
+  }
+
+  function invoiceRetainerLine(label: string, principal: unknown, interest: unknown): string {
+    return `${label}: Principal ${invoicePercentDisplay(principal)} / Interest ${invoicePercentDisplay(interest)}`;
+  }
+
+  function invoiceRetainerCell(label: string, principal: unknown, interest: unknown) {
+    return (
+      <>
+        <strong>{label}</strong>: Principal {invoicePercentDisplay(principal)} / Interest {invoicePercentDisplay(interest)}
+      </>
+    );
+  }
+
+  function invoicePeriodLabel(): string {
+    if (dateFrom && dateTo) return `${displayDate(dateFrom)} – ${displayDate(dateTo)}`;
+    if (dateFrom) return `${displayDate(dateFrom)} forward`;
+    if (dateTo) return `Through ${displayDate(dateTo)}`;
+    return "All available posted local rows";
+  }
+
+  const invoiceInfoAddress = normalizeInvoiceAddress(detailValue(["hidden_address", "address", "Address", "client_address", "provider_address"]));
+  const invoiceInfoOwner = detailValue(["hidden_owner", "owner", "Owner", "assigned_owner", "account_owner", "client_owner"]);
+  const invoiceInfoProviderGroup = detailValue(["hidden_group_name", "hidden_provider_group_name", "group_name", "provider_group", "Provider Group", "Group Name"]);
+  const invoiceInfoPullCosts = detailValue(["hidden_pull_costs", "pull_costs", "Pull Costs", "Pull Cost"]);
+  const invoiceInfoRemit = detailValue(["hidden_remit", "remit", "Remit", "remit_type", "remit_account"]);
+  const invoiceInfoRetainerNFPrincipal = detailValue(["hidden_retainer_principal_nf_percent", "retainer_nf_principal_percent", "Retainer NF Principal", "Retainer Principal NF", "NF Principal", "Principal Fee Percent", "Principal Fee %"]);
+  const invoiceInfoRetainerNFInterest = detailValue(["hidden_retainer_interest_percent", "hidden_retainer_nf_interest_percent", "retainer_nf_interest_percent", "Retainer NF Interest", "Retainer Interest", "NF Interest", "Interest Fee Percent", "Interest Fee %"]);
+  const invoiceInfoRetainerWCPrincipal = detailValue(["hidden_retainer_wc_principal_percent", "hidden_retainer_principal_wc_percent", "retainer_wc_principal_percent", "Retainer WC Principal", "WC Principal"]);
+  const invoiceInfoRetainerWCInterest = detailValue(["hidden_retainer_wc_interest_percent", "retainer_wc_interest_percent", "Retainer WC Interest", "WC Interest"]);
+  const invoiceInfoRetainerLiensPrincipal = detailValue(["hidden_retainer_liens_principal_percent", "hidden_retainer_lien_principal_percent", "hidden_retainer_principal_liens_percent", "hidden_retainer_principal_lien_percent", "retainer_liens_principal_percent", "retainer_lien_principal_percent", "Retainer Liens Principal", "Retainer Lien Principal", "Liens Principal", "Lien Principal"]);
+  const invoiceInfoRetainerLiensInterest = detailValue(["hidden_retainer_liens_interest_percent", "hidden_retainer_lien_interest_percent", "retainer_liens_interest_percent", "retainer_lien_interest_percent", "Retainer Liens Interest", "Retainer Lien Interest", "Liens Interest", "Lien Interest"]);
 
   function isFilingFeePayment(row: any) {
     return isFeeRecoveryTransactionType(row?.transactionType);
@@ -400,6 +513,8 @@ export default function AdminClientInvoicePage({ params }: { params: Promise<{ i
     () => sortedCostsExpendedRows.reduce((sum: number, row: any) => sum + Number(row?.amount || 0), 0),
     [sortedCostsExpendedRows]
   );
+
+  const invoicePackageTotal = principalInterestTotals.paymentAmount + filingFeeTotals.paymentAmount + costsExpendedTotal;
 
   const costsExpendedCsvRows = useMemo(
     () =>
@@ -644,6 +759,62 @@ export default function AdminClientInvoicePage({ params }: { params: Promise<{ i
         <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>{client?.displayName || "Loading client..."}</h1>
       </section>
 
+      <section style={{ ...cardStyle, marginBottom: 14, padding: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1.2fr) minmax(360px, 1fr)", gap: 18, alignItems: "start" }}>
+          <div>
+            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+              Invoice Preview
+            </div>
+            <h2 style={{ margin: 0, fontSize: 24, lineHeight: 1.15 }}>{invoiceInfoDisplay(client?.displayName)}</h2>
+            <div style={{ whiteSpace: "pre-wrap", color: "#334155", fontWeight: 750, marginTop: 6, lineHeight: 1.3 }}>
+              {invoiceInfoDisplay(invoiceInfoAddress)}
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr", borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Status</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>Preview Only</div>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Date</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{displayDate(new Date().toISOString().slice(0, 10))}</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr", borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Period</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoicePeriodLabel()}</div>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Owner</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoOwner)}</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px 1fr" }}>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Group</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoProviderGroup)}</div>
+              <div style={{ padding: "7px 9px", background: "#f8fafc", color: "#64748b", fontWeight: 900 }}>Remit / Costs</div>
+              <div style={{ padding: "7px 9px", fontWeight: 850 }}>{invoiceInfoDisplay(invoiceInfoRemit)} / {invoiceInfoDisplay(invoiceInfoPullCosts)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #e2e8f0", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "center" }}>
+          <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.35 }}>
+            <strong>Retainer Terms:</strong>{" "}
+            {invoiceRetainerLine("NF", invoiceInfoRetainerNFPrincipal, invoiceInfoRetainerNFInterest)} ·{" "}
+            {invoiceRetainerLine("WC", invoiceInfoRetainerWCPrincipal, invoiceInfoRetainerWCInterest)} ·{" "}
+            {invoiceRetainerLine("Liens", invoiceInfoRetainerLiensPrincipal, invoiceInfoRetainerLiensInterest)}
+          </div>
+          <div style={{ border: "1px solid #0f172a", borderRadius: 10, padding: "8px 12px", background: "#f8fafc", minWidth: 220, textAlign: "right" }}>
+            <div style={{ color: "#64748b", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Preview Package Total</div>
+            <div style={{ fontSize: 22, fontWeight: 950 }}>{money(invoicePackageTotal)}</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(4, minmax(130px, 1fr))", gap: 8, fontSize: 13 }}>
+          <div><strong>Receipt Rows:</strong> {remittanceRows.length}</div>
+          <div><strong>Principal / Interest:</strong> {money(principalInterestTotals.paymentAmount)}</div>
+          <div><strong>Filing Fee Payments:</strong> {money(filingFeeTotals.paymentAmount)}</div>
+          <div><strong>Costs Expended:</strong> {money(costsExpendedTotal)}</div>
+        </div>
+
+      </section>
+
       <section style={{ ...cardStyle, marginBottom: 18 }}>
         <h2 style={{ marginTop: 0 }}>Invoicing / Remittance</h2>
         {/*
@@ -705,6 +876,71 @@ export default function AdminClientInvoicePage({ params }: { params: Promise<{ i
           >
             Export CSV
           </button>
+        </div>
+
+        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, background: "#f8fafc" }}>
+          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 }}>
+            Invoice Workflow Status
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "start" }}>
+              <div style={{ minWidth: 28, height: 28, borderRadius: 999, background: hasPreviewed ? "#dcfce7" : "#e2e8f0", color: "#0f172a", fontWeight: 950, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                1
+              </div>
+              <div>
+                <div style={{ fontWeight: 900 }}>Preview invoice/remittance data</div>
+                <div style={{ color: "#475569", lineHeight: 1.45 }}>
+                  {hasPreviewed
+                    ? "Preview is loaded from local child-matter payment rows and lawsuit cost metadata linked back through the provider's child matter context."
+                    : "Select filters and click Preview to load the read-only invoice/remittance package."}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, alignItems: "start" }}>
+              <div style={{ minWidth: 28, height: 28, borderRadius: 999, background: "#e2e8f0", color: "#0f172a", fontWeight: 950, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                2
+              </div>
+              <div>
+                <div style={{ fontWeight: 900 }}>Create invoice record</div>
+                <div style={{ color: "#475569", lineHeight: 1.45 }}>
+                  Not enabled yet. This step will require a local invoice model with invoice number, status, selected filters, included child payment rows, included lawsuit cost rows, and totals snapshot.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, alignItems: "start" }}>
+              <div style={{ minWidth: 28, height: 28, borderRadius: 999, background: "#e2e8f0", color: "#0f172a", fontWeight: 950, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                3
+              </div>
+              <div>
+                <div style={{ fontWeight: 900 }}>Finalize printable/exportable package</div>
+                <div style={{ color: "#475569", lineHeight: 1.45 }}>
+                  Not enabled yet. Finalization should only become available after a local invoice record exists and the included rows are locked or snapshotted.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              disabled
+              title="Create Invoice is intentionally disabled until a local invoice persistence model is added."
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#f1f5f9", color: "#64748b", fontWeight: 800, cursor: "not-allowed" }}
+            >
+              Create Invoice
+            </button>
+            <button
+              type="button"
+              disabled
+              title="Finalize is intentionally disabled until invoice creation and row snapshotting exist."
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#f1f5f9", color: "#64748b", fontWeight: 800, cursor: "not-allowed" }}
+            >
+              Finalize Package
+            </button>
+          </div>
+
         </div>
       </section>
 

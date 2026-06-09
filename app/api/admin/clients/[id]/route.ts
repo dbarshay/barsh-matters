@@ -199,7 +199,11 @@ function claimBillAmount(row: any): number {
 }
 
 function claimBalance(row: any): number {
-  return moneyNumber(row.balance ?? row.current_balance ?? row.currentBalance);
+  return moneyNumber(row.balance_amount ?? row.balanceAmount ?? row.balance_presuit ?? row.balancePresuit ?? row.balance ?? row.current_balance ?? row.currentBalance);
+}
+
+function claimNumber(row: any): string {
+  return clean(row.claim_number_raw || row.claimNumberRaw || row.claim_number_normalized || row.claimNumberNormalized || row.claim_number || row.claimNumber);
 }
 
 function claimDateOfLoss(row: any): string {
@@ -857,9 +861,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       provider: claimProvider(claim),
       insurer: claimInsurer(claim),
       lawsuit: clean(claim.master_lawsuit_id || claim.masterLawsuitId),
-      claimNumber: clean(claim.claim_number || claim.claimNumber),
+      claimNumber: claimNumber(claim),
       billNumber: clean(claim.bill_number || claim.billNumber),
-      dateOfService: formatDateValue(claim.date_of_service || claim.dateOfService || claim.dos),
+      dateOfService: claimDateOfService(claim),
+      dateOfServiceEnd: claimDateOfServiceEnd(claim),
       billAmount: claimBillAmount(claim),
       balance: claimBalance(claim),
       finalStatus: clean(claim.final_status || claim.finalStatus || claim.status),

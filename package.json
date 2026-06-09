@@ -278,7 +278,8 @@
     "verify:verifier-contract-locks": "node scripts/verify-verifier-contract-locks.mjs",
     "verify:lawsuit-post-payment-workflow-safety": "node scripts/verify-lawsuit-post-payment-workflow-safety.mjs",
     "verify:admin-clients-interface-safety": "node scripts/verify-admin-clients-interface-safety.mjs",
-    "verify:admin-client-remittance-source-safety": "node scripts/verify-admin-client-remittance-source-safety.mjs"
+    "verify:admin-client-remittance-source-safety": "node scripts/verify-admin-client-remittance-source-safety.mjs",
+    "verify:provider-invoice-retainer-calculation-safety": "node scripts/verify-provider-invoice-retainer-calculation-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
