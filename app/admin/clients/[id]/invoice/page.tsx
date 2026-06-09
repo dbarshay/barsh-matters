@@ -627,11 +627,17 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     { key: "billedAmount", label: "Billed Amount", align: "right" },
     { key: "amount", label: "Payment Amount", align: "right" },
     { key: "retainerFee", label: "Retainer Fee", align: "right" },
+    { key: "remitToProvider", label: "Remit to Provider", align: "right", principalOnly: true },
   ];
+
+  function previewRemitToProvider(line: any): number {
+    return Number(line?.amount || 0) - Number(line?.retainerFee || 0);
+  }
 
   function previewSortValue(line: any, field: string): string | number {
     if (field === "description") return String(line?.description || line?.lineType || "").toLowerCase();
     if (field === "dateOfService") return String(line?.dateOfService || line?.dateOfServiceEnd || "");
+    if (field === "remitToProvider") return previewRemitToProvider(line);
     if (field === "billedAmount" || field === "amount" || field === "retainerFee") return Number(line?.[field] || 0);
     return String(line?.[field] ?? "").toLowerCase();
   }
@@ -665,6 +671,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
   function renderPreviewLineTable(title: string, lines: any[], emptyMessage: string) {
     const total = lines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
+    const retainerTotal = lines.reduce((sum: number, line: any) => sum + Number(line?.retainerFee || 0), 0);
+    const remitTotal = lines.reduce((sum: number, line: any) => sum + previewRemitToProvider(line), 0);
+    const showRemitToProvider = title === "Principal / Interest Received";
+    const activeColumns = previewTableColumns.filter((column) => showRemitToProvider || !column.principalOnly);
     const sortedLines = sortPreviewLines(title, lines);
     const activeSort = previewTableSort?.table === title ? previewTableSort : null;
 
@@ -677,7 +687,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
-                {previewTableColumns.map((column) => (
+                {activeColumns.map((column) => (
                   <th
                     key={column.key}
                     onClick={() => togglePreviewTableSort(title, column.key)}
@@ -715,23 +725,32 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0", textAlign: "right" }}>{money(line.billedAmount)}</td>
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0", textAlign: "right" }}>{money(line.amount)}</td>
                   <td style={{ ...tdStyle, border: "1px solid #e2e8f0", textAlign: "right" }}>{money(line.retainerFee)}</td>
+                  {showRemitToProvider && (
+                    <td style={{ ...tdStyle, border: "1px solid #e2e8f0", textAlign: "right" }}>{money(previewRemitToProvider(line))}</td>
+                  )}
                 </tr>
               ))}
               {!lines.length && (
                 <tr>
-                  <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }} colSpan={13}>{emptyMessage}</td>
+                  <td style={{ ...tdStyle, border: "1px solid #e2e8f0" }} colSpan={activeColumns.length}>{emptyMessage}</td>
                 </tr>
               )}
             </tbody>
             <tfoot>
               <tr>
-                <td style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }} colSpan={11}>
+                <td
+                  style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }}
+                  colSpan={showRemitToProvider ? 11 : 11}
+                >
                   Total
                 </td>
                 <td style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }}>{money(total)}</td>
                 <td style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }}>
-                  {money(lines.reduce((sum: number, line: any) => sum + Number(line?.retainerFee || 0), 0))}
+                  {money(retainerTotal)}
                 </td>
+                {showRemitToProvider && (
+                  <td style={{ ...tdStyle, border: "1px solid #cbd5e1", fontWeight: 900, textAlign: "right" }}>{money(remitTotal)}</td>
+                )}
               </tr>
             </tfoot>
           </table>

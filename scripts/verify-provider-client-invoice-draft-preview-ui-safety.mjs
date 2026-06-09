@@ -50,12 +50,16 @@ for (const needle of [
   "No fees or costs expended in this preview.",
   "line.description || line.lineType || \"—\"",
   "<tfoot>",
-  "colSpan={11}",
+  "colSpan={activeColumns.length}",
   "previewTableSort",
   "setPreviewTableSort",
   "sortPreviewLines",
   "togglePreviewTableSort",
   "activeSort.direction",
+  "Remit to Provider",
+  "previewRemitToProvider",
+  "showRemitToProvider",
+  "remitTotal",
 ]) {
   mustContain("invoice page", page, needle);
 }
