@@ -695,7 +695,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
         <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button type="button" onClick={loadPreview} disabled={loadingPreview || !id} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", fontWeight: 900 }}>
-            {loadingPreview ? "Loading Preview..." : "Preview Invoice Package"}
+            {loadingPreview ? "Loading Preview..." : "Preview Invoice"}
           </button>
           <button type="button" onClick={() => downloadCsv("provider-client-invoice-history.csv", historyCsvRows)} disabled={!historyCsvRows.length} style={{ marginLeft: "auto", padding: "9px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 900 }}>
             Export CSV
