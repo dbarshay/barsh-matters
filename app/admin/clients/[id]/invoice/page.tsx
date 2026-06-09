@@ -713,15 +713,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         {!preview ? (
           <p style={{ color: "#64748b" }}>No preview loaded.</p>
         ) : (
-          <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(320px, 1fr))", gap: 24, marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "baseline" }}>
-                <strong>Number of Principal / Interest Payments Received</strong>
-                <span style={{ textAlign: "right", whiteSpace: "nowrap" }}>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
+          <>            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(360px, 1fr))", gap: 24, marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <strong>Number of Principal / Interest Payments Received:</strong>
+                <span style={{ whiteSpace: "nowrap" }}>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "baseline" }}>
-                <strong>Number of Costs Payments Received</strong>
-                <span style={{ textAlign: "right", whiteSpace: "nowrap" }}>{costPaymentCount} — {money(costPaymentTotal)}</span>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <strong>Number of Costs Payments Received:</strong>
+                <span style={{ whiteSpace: "nowrap" }}>{costPaymentCount} — {money(costPaymentTotal)}</span>
               </div>
             </div>
 
