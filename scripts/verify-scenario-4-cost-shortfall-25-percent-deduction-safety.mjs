@@ -145,7 +145,7 @@ mustContain(
 mustContain(
   "on-screen Scenario 4 deduction cap",
   invoicePage,
-  "summary.costBalanceThisRemittancePeriod < 0 && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
 );
 
 mustContain(

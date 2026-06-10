@@ -305,7 +305,8 @@
     "verify:scenario-2-negative-cost-balance-cost-excess-safety": "node scripts/verify-scenario-2-negative-cost-balance-cost-excess-safety.mjs",
     "verify:scenario-3-negative-cost-balance-cleared-excess-added-safety": "node scripts/verify-scenario-3-negative-cost-balance-cleared-excess-added-safety.mjs",
     "verify:scenario-4-cost-shortfall-25-percent-deduction-safety": "node scripts/verify-scenario-4-cost-shortfall-25-percent-deduction-safety.mjs",
-    "verify:scenario-5-prior-negative-balance-additional-shortfall-safety": "node scripts/verify-scenario-5-prior-negative-balance-additional-shortfall-safety.mjs"
+    "verify:scenario-5-prior-negative-balance-additional-shortfall-safety": "node scripts/verify-scenario-5-prior-negative-balance-additional-shortfall-safety.mjs",
+    "verify:scenario-6-shortfall-fully-deducted-within-cap-safety": "node scripts/verify-scenario-6-shortfall-fully-deducted-within-cap-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

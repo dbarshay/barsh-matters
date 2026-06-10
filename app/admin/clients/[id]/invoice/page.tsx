@@ -591,7 +591,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const summaryRetainerFee = Number(invoice.retainerFeeTotal || 0);
     const summaryNetRemitToProvider = summaryPrincipalInterestReceived - summaryRetainerFee;
     const printableCostSummary = invoiceCostSummaryValues(invoice);
-    const printableCostDeductionCapHtml = printableCostSummary.costBalanceThisRemittancePeriod < 0
+    const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAddedToLedger)
       ? `<div><span>25% Deduction Cap</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionCap))}</span></div>`
       : "";
     const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAppliedToLedger)
@@ -925,7 +925,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <div><strong>Principal / Interest Received</strong><br />{money(summary.principalInterestTotal)}</div>
           <div><strong>Retainer Fee</strong><br />{money(summary.retainerFeeTotal)}</div>
           <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Net Remit Before Costs</strong><br /><strong>{money(summary.baseNetRemitToProvider)}</strong></div>
-          {summary.costBalanceThisRemittancePeriod < 0 && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
           <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
           <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
           <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>
