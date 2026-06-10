@@ -56,7 +56,7 @@ mustInclude("route requires Transaction Status", route, "Transaction Status is r
 mustInclude("route requires Transaction Date", route, "Transaction Date is required.");
 mustInclude("route requires Check Date", route, "Check Date is required.");
 mustInclude("route requires Check Number", route, "Check Number is required.");
-mustInclude("route blocks overpayment against current Balance", route, "paymentAmount > before.balancePresuit + 0.005");
+mustInclude("route blocks non-cost-recovery overpayment against current Balance", route, "!isCostRecoveryPayment && claimAmount > 0 && paymentAmount > before.balancePresuit + 0.005");
 mustNotInclude("route no clamped after-balance overpayment check", route, "after.balancePresuit < -0.005");
 mustInclude("route PATCH disabled", route, "export async function PATCH()");
 mustInclude("route PATCH correction instruction", route, "Void the payment and post a corrected payment.");
@@ -65,6 +65,8 @@ mustNotInclude("route no edit-payment response action", route, 'action: "edit-pa
 
 mustInclude("lawsuit allocation passes explicit context", mattersPage, 'postingContext: "lawsuit-allocation"');
 mustInclude("lawsuit screen uses Post Payment wording", mattersPage, "Post Payment");
+mustInclude("lawsuit UI routes cost recovery to first child", mattersPage, "costRecoveryTargetRowKey");
+mustInclude("lawsuit UI distinguishes interest from cost recovery", mattersPage, "isMasterPaymentCostRecoveryTransactionType");
 
 if (process.exitCode) process.exit(process.exitCode);
 console.log("PASS: direct Post Payment workflow safety checks passed.");

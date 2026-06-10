@@ -5,6 +5,7 @@ const files = {
   page: "app/admin/clients/[id]/invoice/page.tsx",
   finalizeRoute: "app/api/admin/clients/[id]/invoice/[invoiceId]/finalize/route.ts",
   detailRoute: "app/api/admin/clients/[id]/invoice/[invoiceId]/route.ts",
+  schema: "prisma/schema.prisma",
   packageJson: "package.json",
 };
 
@@ -153,6 +154,38 @@ mustNotContain("printable invoice", page, "Net Remit to Provider (A - B)");
 mustContain("printable invoice", page, "Principal / Interest Received");
 mustContain("printable invoice", page, "Retainer Fee");
 mustContain("printable invoice", page, "Net Remit to Provider");
+mustContain("schema", text(files.schema), "costBalanceThisRemittancePeriod");
+mustContain("schema", text(files.schema), "netRemitToProviderTotal");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceThisRemittancePeriod = moneyNumber(filingFeePaymentTotal - costsExpendedTotal)");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceDeductionCap = moneyNumber(Math.max(0, baseNetRemitToProvider * 0.25))");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceLedgerAfter");
+mustContain("create route", text("app/api/admin/clients/[id]/invoice/create/route.ts"), "costBalanceThisRemittancePeriod: moneyNumber(totals?.costBalanceThisRemittancePeriod)");
+mustContain("create route", text("app/api/admin/clients/[id]/invoice/create/route.ts"), "netRemitToProviderTotal: moneyNumber(totals?.netRemitToProviderTotal)");
+mustContain("invoice page", page, "function invoiceCostSummaryValues");
+mustContain("invoice page", page, "Cost Balance During This Remittance Period");
+mustContain("invoice page", page, "Cost Balance Ledger");
+mustContain("invoice page", page, "Final Net Remit to Provider");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceAppliedToLedger");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceReimbursementToProvider");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceDeductionApplied");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceAddedToLedger");
+mustContain("invoice page", page, "Costs Expended During This Remittance Period");
+mustContain("invoice page", page, "Costs Received During This Remittance Period");
+mustContain("invoice page", page, "Cost Balance Applied to Ledger");
+mustNotContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceThisRemittancePeriod = moneyNumber(costsExpendedTotal - filingFeePaymentTotal)");
+mustNotContain("invoice page", page, "Cost Balance This Remittance Period = Total Costs Expended minus Costs Received");
+mustContain("invoice page", page, "Cost Balance Added to Net Remit");
+mustContain("invoice page", page, "Cost Deduction Applied");
+mustContain("invoice page", page, "costBalanceReimbursementToProvider");
+mustContain("invoice page", page, "costBalanceDeductionApplied");
+mustNotContain("invoice page", page, "<strong>Cost Adjustment to Net Remit</strong>");
+mustNotContain("printable invoice", page, "<span>Cost Adjustment to Net Remit</span>");
+mustContain("invoice page", page, "{renderCostBalanceSummary(previewTotals)}");
+mustContain("invoice page", page, "{renderCostBalanceSummary(detailInvoice)}");
+mustContain("invoice page", page, "{ label: \"Cost Balance Ledger\", value: displayedCostBalanceLedger }");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "excludedAlreadyInvoicedReceiptRowCount");
+mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "lineCount: lines.length");
+mustContain("invoice page", page, "latestFinalizedCostBalanceLedger");
 mustNotContain("printable invoice", page, "<div><span>Costs Received</span><span>${safeHtml(money(invoice.filingFeePaymentTotal))}</span></div>");
 mustNotContain("printable invoice", page, "<div><span>Costs Expended</span><span>${safeHtml(money(invoice.costsExpendedTotal))}</span></div>");
 mustNotContain("printable invoice", page, "<div class=\"total\"><span>Invoice Total</span><span>${safeHtml(money(invoice.invoicePackageTotal))}</span></div>");

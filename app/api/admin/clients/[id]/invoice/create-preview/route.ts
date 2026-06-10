@@ -220,17 +220,58 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const principalInterestLines = receiptLines.filter((line: any) => line.lineType === "receipt");
     const filingFeePaymentLines = receiptLines.filter((line: any) => line.lineType === "filing_fee_payment");
 
+    const priorFinalizedInvoice = await prisma.providerClientInvoice.findFirst({
+      where: { referenceEntityId: id, status: "finalized" },
+      orderBy: [{ finalizedAt: "desc" }, { createdAt: "desc" }],
+      select: { costBalanceLedgerAfter: true },
+    });
+
+    const principalInterestTotal = principalInterestLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+    const filingFeePaymentTotal = filingFeePaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+    const costsExpendedTotal = costLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+    const retainerFeeTotal = receiptLines.reduce((sum: number, line: any) => sum + moneyNumber(line.retainerFee), 0);
+    const invoicePackageTotal = lines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+
+    const baseNetRemitToProvider = moneyNumber(principalInterestTotal - retainerFeeTotal);
+    const costBalanceThisRemittancePeriod = moneyNumber(filingFeePaymentTotal - costsExpendedTotal);
+    const costBalanceLedgerBefore = moneyNumber(Math.max(0, Number(priorFinalizedInvoice?.costBalanceLedgerAfter || 0)));
+    const costBalanceDeductionCap = moneyNumber(Math.max(0, baseNetRemitToProvider * 0.25));
+    const currentPeriodPositiveCostBalance = moneyNumber(Math.max(0, costBalanceThisRemittancePeriod));
+    const currentPeriodNegativeCostBalance = moneyNumber(Math.max(0, -costBalanceThisRemittancePeriod));
+    const costBalanceAppliedToLedger = moneyNumber(Math.min(currentPeriodPositiveCostBalance, costBalanceLedgerBefore));
+    const costBalanceReimbursementToProvider = moneyNumber(Math.max(0, currentPeriodPositiveCostBalance - costBalanceAppliedToLedger));
+    const costBalanceDeductionApplied = moneyNumber(Math.min(currentPeriodNegativeCostBalance, costBalanceDeductionCap));
+    const costBalanceAddedToLedger = moneyNumber(Math.max(0, currentPeriodNegativeCostBalance - costBalanceDeductionApplied));
+    const costBalanceLedgerAfter = moneyNumber(Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger + costBalanceAddedToLedger));
+    const costBalanceLedgerChange = moneyNumber(costBalanceLedgerAfter - costBalanceLedgerBefore);
+    const costBalanceAdjustmentToNetRemit = moneyNumber(costBalanceReimbursementToProvider - costBalanceDeductionApplied);
+    const netRemitToProviderTotal = moneyNumber(baseNetRemitToProvider + costBalanceAdjustmentToNetRemit);
+
     const totalsSnapshot = {
       receiptRowCount: eligibleRemittanceRows.length,
       eligibleUnmarkedReceiptRowCount: eligibleRemittanceRows.length,
       excludedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? 0 : excludedAlreadyInvoicedRows.length,
       includedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? excludedAlreadyInvoicedRows.length : 0,
       lineCount: lines.length,
-      principalInterestTotal: principalInterestLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
-      filingFeePaymentTotal: filingFeePaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
-      costsExpendedTotal: costLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
-      retainerFeeTotal: receiptLines.reduce((sum: number, line: any) => sum + moneyNumber(line.retainerFee), 0),
-      invoicePackageTotal: lines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0),
+      totalLines: lines.length,
+      principalInterestTotal,
+      filingFeePaymentTotal,
+      costsExpendedTotal,
+      retainerFeeTotal,
+      invoicePackageTotal,
+      baseNetRemitToProvider,
+      costBalanceThisRemittancePeriod,
+      costBalanceDeductionCap,
+      costBalanceAppliedToLedger,
+      costBalanceReimbursementToProvider,
+      costBalanceDeductionApplied,
+      costBalanceAddedToLedger,
+      costBalanceAdjustmentToNetRemit,
+      costBalanceLedgerBefore,
+      costBalanceLedgerChange,
+      costBalanceLedgerAfter,
+      netRemitToProviderTotal,
+      costBalanceFormula: "Cost Balance During This Remittance Period = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. Negative balances are deducted from Net Remit Before Costs up to the 25% cap and the excess is carried forward in the Cost Balance Ledger. Positive balances first reduce the Cost Balance Ledger and only the excess is added to Net Remit Before Costs.",
     };
 
     const clientSnapshot = {

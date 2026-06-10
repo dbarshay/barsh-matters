@@ -590,6 +590,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const summaryPrincipalInterestReceived = Number(invoice.principalInterestTotal || 0);
     const summaryRetainerFee = Number(invoice.retainerFeeTotal || 0);
     const summaryNetRemitToProvider = summaryPrincipalInterestReceived - summaryRetainerFee;
+    const printableCostSummary = invoiceCostSummaryValues(invoice);
+    const summaryFinalNetRemitToProvider = printableCostSummary.netRemitToProviderTotal;
 
     function normalizeAddressDisplayLine(line: any): string {
       const text = String(line || "").trim().replace(/\s+/g, " ");
@@ -746,7 +748,16 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <div class="totals">
     <div><span>Principal / Interest Received</span><span>${safeHtml(money(summaryPrincipalInterestReceived))}</span></div>
     <div><span>Retainer Fee</span><span>${safeHtml(money(summaryRetainerFee))}</span></div>
-    <div class="total"><span>Net Remit to Provider</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>
+    <div><span>Net Remit Before Costs</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>
+    <div><span>Costs Expended During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costsExpendedTotal))}</span></div>
+    <div><span>Costs Received During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.filingFeePaymentTotal))}</span></div>
+    <div><span>Cost Balance During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costBalanceThisRemittancePeriod))}</span></div>
+    <div><span>Cost Balance Applied to Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span></div>
+    <div><span>25% Deduction Cap</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionCap))}</span></div>
+    <div><span>Cost Balance Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>
+    <div><span>Cost Deduction Applied</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionApplied))}</span></div>
+    <div><span>Cost Balance Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span></div>
+    <div class="total"><span>Final Net Remit to Provider</span><span>${safeHtml(money(summaryFinalNetRemitToProvider))}</span></div>
   </div>
 
   <div class="footer">
@@ -784,13 +795,16 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     { label: "Liens Interest", value: percentDisplay(findDetailValue(providerClientDetails, ["hidden_retainer_liens_interest_percent", "hidden_retainer_lien_interest_percent", "retainer_liens_interest_percent", "retainer_lien_interest_percent", "Retainer Liens Interest", "Retainer Lien Interest"])) || "—" },
   ];
 
+  const previewTotals = preview?.totalsSnapshot || {};
+  const latestFinalizedCostBalanceLedger = history.find((invoice: any) => invoice?.status === "finalized")?.costBalanceLedgerAfter;
+  const displayedCostBalanceLedger = money(Number(previewTotals.costBalanceLedgerAfter ?? invoiceDetail?.invoice?.costBalanceLedgerAfter ?? latestFinalizedCostBalanceLedger ?? 0));
   const providerBillingRows = [
     { label: "Pull Costs", value: findDetailValue(providerClientDetails, ["hidden_pull_costs", "pull_costs", "Pull Costs", "Pull Cost"]) || "—" },
     { label: "Remit", value: findDetailValue(providerClientDetails, ["hidden_remit", "remit", "Remit", "remit_type", "remit_account"]) || "—" },
+    { label: "Cost Balance Ledger", value: displayedCostBalanceLedger },
   ];
 
   const previewLines = Array.isArray(preview?.lines) ? preview.lines : [];
-  const previewTotals = preview?.totalsSnapshot || {};
   const previewDiagnostics = preview?.receiptMarkDiagnostics || {};
   const principalInterestPreviewLines = previewLines.filter((line: any) => line?.lineType === "receipt");
   const costsReceivedPreviewLines = previewLines.filter((line: any) => line?.lineType === "filing_fee_payment");
@@ -834,6 +848,75 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   function invoiceReceiptLineCount(invoice: any): number {
     const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
     return lines.filter((line: any) => clean(line?.sourceTable) === "MatterPaymentReceipt").length;
+  }
+
+  function invoiceCostSummaryValues(source: any) {
+    const totals = source?.totalsSnapshot || source || {};
+    const principalInterestTotal = Number(totals.principalInterestTotal || 0);
+    const retainerFeeTotal = Number(totals.retainerFeeTotal || 0);
+    const filingFeePaymentTotal = Number(totals.filingFeePaymentTotal || 0);
+    const costsExpendedTotal = Number(totals.costsExpendedTotal || 0);
+    const baseNetRemitToProvider = Number(totals.baseNetRemitToProvider ?? (principalInterestTotal - retainerFeeTotal));
+    const costBalanceThisRemittancePeriod = Number(totals.costBalanceThisRemittancePeriod ?? (filingFeePaymentTotal - costsExpendedTotal));
+    const costBalanceLedgerBefore = Number(totals.costBalanceLedgerBefore || 0);
+    const costBalanceDeductionCap = Number(totals.costBalanceDeductionCap ?? Math.max(0, baseNetRemitToProvider * 0.25));
+    const currentPeriodPositiveCostBalance = Math.max(0, costBalanceThisRemittancePeriod);
+    const currentPeriodNegativeCostBalance = Math.max(0, -costBalanceThisRemittancePeriod);
+    const costBalanceAppliedToLedger = Number(totals.costBalanceAppliedToLedger ?? Math.min(currentPeriodPositiveCostBalance, Math.max(0, costBalanceLedgerBefore)));
+    const costBalanceReimbursementToProvider = Number(totals.costBalanceReimbursementToProvider ?? Math.max(0, currentPeriodPositiveCostBalance - costBalanceAppliedToLedger));
+    const costBalanceDeductionApplied = Number(totals.costBalanceDeductionApplied ?? Math.min(currentPeriodNegativeCostBalance, costBalanceDeductionCap));
+    const costBalanceAddedToLedger = Number(totals.costBalanceAddedToLedger ?? Math.max(0, currentPeriodNegativeCostBalance - costBalanceDeductionApplied));
+    const costBalanceAdjustmentToNetRemit = Number(totals.costBalanceAdjustmentToNetRemit ?? (costBalanceReimbursementToProvider - costBalanceDeductionApplied));
+    const costBalanceLedgerAfter = Number(totals.costBalanceLedgerAfter ?? Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger + costBalanceAddedToLedger));
+    const costBalanceLedgerChange = Number(totals.costBalanceLedgerChange ?? (costBalanceLedgerAfter - costBalanceLedgerBefore));
+    const netRemitToProviderTotal = Number(totals.netRemitToProviderTotal ?? (baseNetRemitToProvider + costBalanceAdjustmentToNetRemit));
+
+    return {
+      principalInterestTotal,
+      retainerFeeTotal,
+      filingFeePaymentTotal,
+      costsExpendedTotal,
+      baseNetRemitToProvider,
+      costBalanceThisRemittancePeriod,
+      costBalanceDeductionCap,
+      costBalanceAppliedToLedger,
+      costBalanceReimbursementToProvider,
+      costBalanceDeductionApplied,
+      costBalanceAddedToLedger,
+      costBalanceAdjustmentToNetRemit,
+      costBalanceLedgerBefore,
+      costBalanceLedgerChange,
+      costBalanceLedgerAfter,
+      netRemitToProviderTotal,
+    };
+  }
+
+  function renderCostBalanceSummary(source: any) {
+    const summary = invoiceCostSummaryValues(source);
+    return (
+      <section style={{ marginTop: 18, border: "2px solid #94a3b8", borderRadius: 14, padding: 14, background: "#f8fafc" }}>
+        <h3 style={{ margin: "0 0 10px", fontWeight: 950 }}>Remittance Summary</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 10 }}>
+          <div><strong>Principal / Interest Received</strong><br />{money(summary.principalInterestTotal)}</div>
+          <div><strong>Retainer Fee</strong><br />{money(summary.retainerFeeTotal)}</div>
+          <div><strong>Net Remit Before Costs</strong><br />{money(summary.baseNetRemitToProvider)}</div>
+          <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>
+          <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
+          <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
+          <div><strong>Cost Balance During This Remittance Period</strong><br />{money(summary.costBalanceThisRemittancePeriod)}</div>
+          <div><strong>Cost Balance Applied to Ledger</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>
+          <div><strong>Cost Balance Ledger Before</strong><br />{money(summary.costBalanceLedgerBefore)}</div>
+          <div><strong>Cost Balance Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>
+          <div><strong>Cost Deduction Applied</strong><br />{money(summary.costBalanceDeductionApplied)}</div>
+          <div><strong>Cost Balance Ledger Change</strong><br />{money(summary.costBalanceLedgerChange)}</div>
+          <div><strong>Cost Balance Ledger</strong><br />{money(summary.costBalanceLedgerAfter)}</div>
+          <div><strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}</div>
+        </div>
+        <p style={{ margin: "10px 0 0", color: "#475569", fontSize: 12 }}>
+          Cost Balance During This Remittance Period = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. Negative balances are deducted from Net Remit Before Costs up to the 25% cap, with the excess carried forward in the Cost Balance Ledger. Positive balances first reduce the Cost Balance Ledger, and only the excess is added to Net Remit Before Costs.
+        </p>
+      </section>
+    );
   }
 
   function previewLineDisplayType(line: any): string {
@@ -1158,6 +1241,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               feesCostsExpendedPreviewLines,
               "No fees or costs expended in this preview."
             )}
+
+            {renderCostBalanceSummary(previewTotals)}
           </>
         )}
       </section>
@@ -1262,7 +1347,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               <h2 style={{ marginTop: 0 }}>Invoice Detail: {detailInvoice?.invoiceNumber}</h2>
               <p style={{ color: "#475569", marginTop: 0 }}>
                 {detailInvoice?.status === "draft" && "Draft invoice created. Receipt rows are not yet marked as invoiced. Review the frozen package before finalizing."}
-                {detailInvoice?.status === "finalized" && "Invoice finalized. Included receipt rows are marked with this invoice ID and excluded from future invoice previews by default. The invoice review/output remains based on frozen invoice lines."}
+                {detailInvoice?.status === "finalized" && "Invoice finalized. Included receipt rows are now marked with this invoice ID and excluded from future invoice previews by default. The invoice review/output remains based on frozen invoice lines."}
                 {detailInvoice?.status === "voided" && "Invoice voided. Receipt rows previously marked with this invoice ID were released for future invoicing. The voided invoice remains in history."}
               </p>
             </div>
@@ -1326,6 +1411,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               </tbody>
             </table>
           </div>
+
+          {renderCostBalanceSummary(detailInvoice)}
 
           <h3>Invoice Audit History</h3>
           <div style={{ overflowX: "auto" }}>

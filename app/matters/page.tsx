@@ -572,6 +572,29 @@ export default function FilteredMattersPage() {
     void loadMasterPaymentTransactionReferenceOptions();
   }, []);
 
+  function isMasterPaymentCostRecoveryTransactionType(value: unknown): boolean {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    return [
+      "filing fee collected",
+      "index fee collected",
+      "service fee collected",
+      "other court costs collected",
+      "other court fees collected",
+    ].includes(normalized);
+  }
+
+  function isMasterPaymentBalanceCapExemptTransactionType(value: unknown): boolean {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (normalized === "interest" || normalized === "interest payment" || normalized.includes("interest collected")) return true;
+    return [
+      "filing fee collected",
+      "index fee collected",
+      "service fee collected",
+      "other court costs collected",
+      "other court fees collected",
+    ].includes(normalized);
+  }
+
   function masterPaymentPreviewAmountValue(): number {
     const cleaned = String(masterPaymentAmountInput || "").replace(/[$,\s]/g, "");
     const n = Number(cleaned);
@@ -618,6 +641,8 @@ export default function FilteredMattersPage() {
 
   function masterPaymentAllocationRows(): any[] {
     const amount = masterPaymentPreviewAmountValue();
+    const balanceCapExempt = isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput);
+    const costRecoveryPayment = isMasterPaymentCostRecoveryTransactionType(masterPaymentTransactionTypeInput);
     const rows = masterWorkspaceBillRows(masterSettlementDetailRows);
 
     const preparedRows = rows.map((row: any) => {
@@ -637,38 +662,53 @@ export default function FilteredMattersPage() {
         currentPayments,
         currentBalance,
         selected,
-        allocationEligible: currentBalance > 0 && (!masterPaymentSelectedOnlyInput || selected),
+        allocationWeight: balanceCapExempt ? Math.max(currentBalance, 1) : currentBalance,
+        allocationEligible: (balanceCapExempt || currentBalance > 0) && (!masterPaymentSelectedOnlyInput || selected),
       };
     });
 
+    const costRecoveryTargetRowKey = costRecoveryPayment
+      ? preparedRows.find((item: any) => !masterPaymentSelectedOnlyInput || item.selected)?.rowKey || ""
+      : "";
+
+    if (costRecoveryTargetRowKey) {
+      for (const item of preparedRows) {
+        item.allocationEligible = item.rowKey === costRecoveryTargetRowKey;
+        item.allocationWeight = item.allocationEligible ? 1 : 0;
+      }
+    }
+
     const totalEligibleBalance = preparedRows
       .filter((item: any) => item.allocationEligible)
-      .reduce((sum: number, item: any) => sum + item.currentBalance, 0);
+      .reduce((sum: number, item: any) => sum + item.allocationWeight, 0);
 
-    let remaining = Math.min(amount, totalEligibleBalance);
+    let remaining = balanceCapExempt ? amount : Math.min(amount, totalEligibleBalance);
 
     return preparedRows.map((item: any, index: number) => {
       let paymentToPost = 0;
 
-      if (item.allocationEligible && masterPaymentAllocationMethodInput === "manual") {
+      if (costRecoveryPayment && item.allocationEligible) {
+        paymentToPost = Math.max(Math.round(remaining * 100) / 100, 0);
+        remaining = Math.max(Math.round((remaining - paymentToPost) * 100) / 100, 0);
+      } else if (item.allocationEligible && masterPaymentAllocationMethodInput === "manual") {
         paymentToPost = Math.max(masterPaymentManualAllocationValue(item.rowKey), 0);
       } else if (item.allocationEligible) {
         const rawAllocation =
           totalEligibleBalance > 0 && amount > 0
-            ? amount * (item.currentBalance / totalEligibleBalance)
+            ? amount * (item.allocationWeight / totalEligibleBalance)
             : 0;
 
-        paymentToPost = Math.min(rawAllocation, item.currentBalance, remaining);
+        paymentToPost = balanceCapExempt ? Math.min(rawAllocation, remaining) : Math.min(rawAllocation, item.currentBalance, remaining);
         paymentToPost = Math.max(Math.round(paymentToPost * 100) / 100, 0);
 
         const isLastEligibleRow =
-          item.currentBalance > 0 &&
+          item.allocationEligible &&
           preparedRows
             .slice(index + 1)
-            .every((next: any) => !next.allocationEligible || next.currentBalance <= 0);
+            .every((next: any) => !next.allocationEligible);
 
         if (isLastEligibleRow) {
-          paymentToPost = Math.min(Math.round(remaining * 100) / 100, item.currentBalance);
+          paymentToPost = balanceCapExempt ? Math.round(remaining * 100) / 100 : Math.min(Math.round(remaining * 100) / 100, item.currentBalance);
         }
 
         remaining = Math.max(Math.round((remaining - paymentToPost) * 100) / 100, 0);
@@ -679,11 +719,11 @@ export default function FilteredMattersPage() {
         allocationBase: masterPaymentAllocationMethodInput === "manual" ? "manual" : "current-balance",
         allocationPercent:
           totalEligibleBalance > 0 && item.allocationEligible
-            ? (item.currentBalance / totalEligibleBalance) * 100
+            ? (item.allocationWeight / totalEligibleBalance) * 100
             : 0,
         paymentToPost,
-        expectedBalance: Math.max(item.currentBalance - Math.min(paymentToPost, item.currentBalance), 0),
-        allocationExceedsBalance: paymentToPost > item.currentBalance + 0.005,
+        expectedBalance: balanceCapExempt ? item.currentBalance : Math.max(item.currentBalance - Math.min(paymentToPost, item.currentBalance), 0),
+        allocationExceedsBalance: balanceCapExempt ? false : paymentToPost > item.currentBalance + 0.005,
       };
     });
   }
@@ -705,6 +745,9 @@ export default function FilteredMattersPage() {
 
   function masterPaymentSelectedOnlyHasEligibleSelection(): boolean {
     if (!masterPaymentSelectedOnlyInput) return true;
+    if (isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput)) {
+      return masterPaymentAllocationRows().some((item: any) => item.selected);
+    }
     return masterPaymentAllocationRows().some((item: any) => item.selected && item.currentBalance > 0);
   }
 
@@ -713,7 +756,11 @@ export default function FilteredMattersPage() {
     const allocated = masterPaymentAllocationTotalValue();
 
     if (amount <= 0) return "Enter a payment amount before allocating.";
-    if (!masterPaymentSelectedOnlyHasEligibleSelection()) return "Select at least one child matter with an open balance.";
+    const balanceCapExempt = isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput);
+
+    if (masterPaymentSelectedOnlyHasEligibleSelection() === false) {
+      return balanceCapExempt ? "Select at least one child matter for this interest or cost-recovery payment." : "Select at least one child matter with an open balance.";
+    }
     if (masterPaymentAllocationHasOverage()) return "One or more allocations exceed the child matter's current balance.";
     if (Math.abs(allocated - amount) >= 0.005) {
       return `Allocate the full payment amount before posting.  Allocated: ${money(allocated)} / Payment Amount: ${money(amount)}.`;
@@ -13125,7 +13172,7 @@ function masterSettlementDateFiledValue(): string {
                                     <input
                                       type="checkbox"
                                       checked={!!masterPaymentSelectedRowIds[item.rowKey]}
-                                      disabled={item.currentBalance <= 0}
+                                      disabled={!isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput) && item.currentBalance <= 0}
                                       onChange={(event) => {
                                         setMasterPaymentSelectedRowIds((current) => ({
                                           ...current,
@@ -13133,7 +13180,7 @@ function masterSettlementDateFiledValue(): string {
                                         }));
                                         setMasterPaymentPostResult(null);
                                       }}
-                                      title={item.currentBalance <= 0 ? "This child matter has no open balance." : "Include this child matter in the allocation."}
+                                      title={!isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput) && item.currentBalance <= 0 ? "This child matter has no open balance." : "Include this child matter in the allocation."}
                                     />
                                   </td>
                                 )}

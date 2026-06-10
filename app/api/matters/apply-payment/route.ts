@@ -16,6 +16,18 @@ function cleanText(value: any): string {
   return String(value ?? "").trim();
 }
 
+function isCostRecoveryTransactionType(value: unknown): boolean {
+  const normalized = cleanText(value).toLowerCase();
+  if (normalized === "interest" || normalized === "interest payment" || normalized.includes("interest collected")) return true;
+  return [
+    "filing fee collected",
+    "index fee collected",
+    "service fee collected",
+    "other court costs collected",
+    "other court fees collected",
+  ].includes(normalized);
+}
+
 function money(value: any): string {
   return `$${num(value).toFixed(2)}`;
 }
@@ -423,12 +435,14 @@ export async function POST(request: Request) {
       paymentVoluntary: beforeTotals.localPaymentTotal + paymentAmount,
     });
 
-    if (claimAmount > 0 && paymentAmount > before.balancePresuit + 0.005) {
-      return NextResponse.json(
+    const isCostRecoveryPayment = isCostRecoveryTransactionType(transactionType);
+
+    if (!isCostRecoveryPayment && claimAmount > 0 && paymentAmount > before.balancePresuit + 0.005) {
+      return Response.json(
         {
           ok: false,
           error: "Payment amount exceeds the current Balance.",
-          before,
+          balancePresuit: before.balancePresuit,
           paymentAmount,
         },
         { status: 400 }

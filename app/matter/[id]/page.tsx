@@ -1859,6 +1859,18 @@ const activeGroupKey =
     return paymentEditingReceipt ? num(paymentEditingReceipt?.paymentAmount) : 0;
   }
 
+  function isCostRecoveryPaymentTransactionType(value: unknown): boolean {
+    const normalized = textValue(value).toLowerCase();
+    if (normalized === "interest" || normalized === "interest payment" || normalized.includes("interest collected")) return true;
+    return [
+      "filing fee collected",
+      "index fee collected",
+      "service fee collected",
+      "other court costs collected",
+      "other court fees collected",
+    ].includes(normalized);
+  }
+
   function paymentFormDeltaValue(): number {
     const entered = paymentFormAmountValue();
     return paymentEditingReceipt ? entered - paymentFormOriginalAmountValue() : entered;
@@ -2910,7 +2922,9 @@ function openClaimAmountEditDialog() {
     const newPaymentVoluntary = currentPaymentVoluntary + paymentDelta;
     const newBalancePresuit = Math.max(currentBalancePresuit - paymentDelta, 0);
 
-    if (paymentDelta > currentBalancePresuit) {
+    const isCostRecoveryPayment = isCostRecoveryPaymentTransactionType(paymentTransactionTypeInput);
+
+    if (!isCostRecoveryPayment && paymentDelta > currentBalancePresuit) {
       setPaymentApplyResult({
         ok: false,
         error:
@@ -10229,7 +10243,7 @@ function openClaimAmountEditDialog() {
                     </div>
 
                     <div style={{ padding: "0 18px 16px", fontSize: 12, color: "#64748b", fontWeight: 700 }}>
-                      Post Payment records a local check payment, updates Barsh Matters local payment totals, and updates Balance. Posted payments cannot be edited; void and repost if correction is needed.
+                      Post Payment records a local check payment, updates Barsh Matters local payment totals, and updates Balance. Principal payments remain capped by Balance Presuit; interest and cost-recovery payments may exceed the matter-level balance/costs owed and will flow into remittance accounting. Posted payments cannot be edited; void and repost if correction is needed.
                     </div>
                     </div>
                   </div>

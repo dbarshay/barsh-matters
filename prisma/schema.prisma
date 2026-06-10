@@ -353,6 +353,15 @@ model ProviderClientInvoice {
   retainerFeeTotal       Float @default(0)
   invoicePackageTotal    Float @default(0)
 
+  baseNetRemitToProvider          Float @default(0)
+  costBalanceThisRemittancePeriod Float @default(0)
+  costBalanceDeductionCap         Float @default(0)
+  costBalanceAdjustmentToNetRemit Float @default(0)
+  costBalanceLedgerBefore         Float @default(0)
+  costBalanceLedgerChange         Float @default(0)
+  costBalanceLedgerAfter          Float @default(0)
+  netRemitToProviderTotal         Float @default(0)
+
   clientSnapshot Json?
   filterSnapshot Json?
   totalsSnapshot Json?
