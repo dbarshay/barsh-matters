@@ -595,10 +595,19 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       ? `<div><span>25% Deduction Cap</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionCap))}</span></div>`
       : "";
     const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAppliedToLedger)
-      ? `<div><span>Cost Balance Applied to Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span></div>`
+      ? `<div><span>Cost Excess Applied to Negative Cost Balance</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span></div>`
       : "";
-    const printableCostBalanceLedgerAfterHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceLedgerAfter)
-      ? `<div><span>Cost Balance Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span></div>`
+    const printableNegativeCostBalanceBeforeHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceLedgerBefore)
+      ? `<div><span>Negative Cost Balance Before This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerBefore))}</span></div>`
+      : "";
+    const printableNegativeCostBalanceAfterHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceLedgerAfter)
+      ? `<div><span>Negative Cost Balance After This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span></div>`
+      : "";
+    const printableCostExcessAddedToNetRemitHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceReimbursementToProvider)
+      ? `<div><span>Cost Excess Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>`
+      : "";
+    const printableCostDeductionAppliedHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceDeductionApplied)
+      ? `<div><span>Cost Deduction Applied</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionApplied))}</span></div>`
       : "";
     const summaryFinalNetRemitToProvider = printableCostSummary.netRemitToProviderTotal;
 
@@ -673,11 +682,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     .section-note { color: #475569; font-size: 12px; margin: 4px 0 8px; display: flex; gap: 20px; flex-wrap: wrap; }
     .empty { color: #64748b; font-style: italic; text-align: center; padding: 10px; }
     .section-total td { font-weight: 800; background: #f8fafc; border-top: 2px solid #94a3b8; }
-    .totals { margin-top: 30px; width: 680px; margin-left: auto; border: 3px solid #94a3b8; border-radius: 14px; padding: 22px 24px; font-size: 20px; }
+    .totals { margin-top: 30px; width: 680px; margin-left: auto; border: 3px solid #94a3b8; border-radius: 14px; padding: 22px 24px; font-size: 20px; break-inside: avoid; page-break-inside: avoid; }
     .totals div { display: flex; justify-content: space-between; gap: 30px; padding: 10px 0; }
+    .summary-emphasis { padding-left: 28px !important; font-weight: 900; }
+    .summary-emphasis span { font-weight: 900; }
     .total { font-weight: 900; border-top: 4px solid #0f172a; margin-top: 12px; padding-top: 16px !important; font-size: 28px; }
     .footer { margin-top: 18px; color: #64748b; font-size: 10px; }
-    @media print { button { display: none; } body { padding: 0; } thead { display: table-header-group; } tfoot { display: table-footer-group; } }
+    @media print { button { display: none; } body { padding: 0; } thead { display: table-header-group; } tfoot { display: table-footer-group; } .totals { break-inside: avoid; page-break-inside: avoid; } }
   </style>
 </head>
 <body>
@@ -757,15 +768,16 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <div class="totals">
     <div><span>Principal / Interest Received</span><span>${safeHtml(money(summaryPrincipalInterestReceived))}</span></div>
     <div><span>Retainer Fee</span><span>${safeHtml(money(summaryRetainerFee))}</span></div>
-    <div><span>Net Remit Before Costs</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>
+    <div class="summary-emphasis"><span>Net Remit Before Costs</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>
     <div><span>Costs Expended During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costsExpendedTotal))}</span></div>
     <div><span>Costs Received During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.filingFeePaymentTotal))}</span></div>
-    <div><span>Cost Balance During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costBalanceThisRemittancePeriod))}</span></div>
+    <div class="summary-emphasis"><span>Cost Excess / Shortfall This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceThisRemittancePeriod))}</span></div>
     ${printableCostBalanceAppliedToLedgerHtml}
     ${printableCostDeductionCapHtml}
-    <div><span>Cost Balance Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>
-    <div><span>Cost Deduction Applied</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionApplied))}</span></div>
-    ${printableCostBalanceLedgerAfterHtml}
+    ${printableNegativeCostBalanceBeforeHtml}
+    ${printableNegativeCostBalanceAfterHtml}
+    ${printableCostExcessAddedToNetRemitHtml}
+    ${printableCostDeductionAppliedHtml}
     <div class="total"><span>Final Net Remit to Provider</span><span>${safeHtml(money(summaryFinalNetRemitToProvider))}</span></div>
   </div>
 
@@ -911,21 +923,20 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 10 }}>
           <div><strong>Principal / Interest Received</strong><br />{money(summary.principalInterestTotal)}</div>
           <div><strong>Retainer Fee</strong><br />{money(summary.retainerFeeTotal)}</div>
-          <div><strong>Net Remit Before Costs</strong><br />{money(summary.baseNetRemitToProvider)}</div>
+          <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Net Remit Before Costs</strong><br /><strong>{money(summary.baseNetRemitToProvider)}</strong></div>
           {summary.costBalanceThisRemittancePeriod < 0 && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
           <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
           <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
-          <div><strong>Cost Balance During This Remittance Period</strong><br />{money(summary.costBalanceThisRemittancePeriod)}</div>
-          {isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Balance Applied to Ledger</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>}
-          {isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Cost Balance Ledger Before</strong><br />{money(summary.costBalanceLedgerBefore)}</div>}
-          <div><strong>Cost Balance Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>
-          <div><strong>Cost Deduction Applied</strong><br />{money(summary.costBalanceDeductionApplied)}</div>
-          {isNonZeroMoneyValue(summary.costBalanceLedgerChange) && <div><strong>Cost Balance Ledger Change</strong><br />{money(summary.costBalanceLedgerChange)}</div>}
-          {isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Cost Balance Ledger</strong><br />{money(summary.costBalanceLedgerAfter)}</div>}
+          <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>
+          {isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div><strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>Cost Deduction Applied</strong><br />{money(summary.costBalanceDeductionApplied)}</div>}
           <div><strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}</div>
         </div>
         <p style={{ margin: "10px 0 0", color: "#475569", fontSize: 12 }}>
-          Cost Balance During This Remittance Period = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. Negative balances are deducted from Net Remit Before Costs up to the 25% cap, with the excess carried forward in the Cost Balance Ledger. Positive balances have no 25% deduction; they first reduce the Cost Balance Ledger, and only the excess is added to Net Remit Before Costs.
+          Cost Excess / Shortfall This Remittance = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. If there is a Negative Cost Balance before this remittance, cost excess is applied to that balance first. Only excess remaining after the Negative Cost Balance is cleared is added to Net Remit. Cost shortfalls may be deducted from Net Remit Before Costs up to the 25% cap, with the excess carried forward as a Negative Cost Balance.
         </p>
       </section>
     );
