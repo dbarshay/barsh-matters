@@ -1335,7 +1335,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                               document.getElementById("client-cost-ledger")?.scrollIntoView({ behavior: "smooth", block: "start" });
                             }, 50);
                           }}
-                          style={secondaryButtonStyle}
+                          style={{
+                            ...secondaryButtonStyle,
+                            border: "1px solid #2563eb",
+                            background: "#2563eb",
+                            color: "#ffffff",
+                            boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
+                          }}
                           title="Open the Client Cost Ledger"
                         >
                           Open Client Costs Ledger
