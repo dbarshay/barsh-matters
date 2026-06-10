@@ -298,7 +298,8 @@
     "verify:invoice-step4-finalize-output-safety": "node scripts/verify-invoice-step4-finalize-output-safety.mjs",
     "verify:provider-client-invoice-history-remittance-totals-safety": "node scripts/verify-provider-client-invoice-history-remittance-totals-safety.mjs",
     "verify:remittance-excludes-voided-master-costs-safety": "node scripts/verify-remittance-excludes-voided-master-costs-safety.mjs",
-    "verify:remittance-cost-balance-ledger-contract-safety": "node scripts/verify-remittance-cost-balance-ledger-contract-safety.mjs"
+    "verify:remittance-cost-balance-ledger-contract-safety": "node scripts/verify-remittance-cost-balance-ledger-contract-safety.mjs",
+    "verify:invoice-summary-hide-zero-ledger-lines-safety": "node scripts/verify-invoice-summary-hide-zero-ledger-lines-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

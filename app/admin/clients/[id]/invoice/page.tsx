@@ -594,6 +594,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const printableCostDeductionCapHtml = printableCostSummary.costBalanceThisRemittancePeriod < 0
       ? `<div><span>25% Deduction Cap</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionCap))}</span></div>`
       : "";
+    const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAppliedToLedger)
+      ? `<div><span>Cost Balance Applied to Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span></div>`
+      : "";
+    const printableCostBalanceLedgerAfterHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceLedgerAfter)
+      ? `<div><span>Cost Balance Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span></div>`
+      : "";
     const summaryFinalNetRemitToProvider = printableCostSummary.netRemitToProviderTotal;
 
     function normalizeAddressDisplayLine(line: any): string {
@@ -755,11 +761,11 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     <div><span>Costs Expended During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costsExpendedTotal))}</span></div>
     <div><span>Costs Received During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.filingFeePaymentTotal))}</span></div>
     <div><span>Cost Balance During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costBalanceThisRemittancePeriod))}</span></div>
-    <div><span>Cost Balance Applied to Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span></div>
+    ${printableCostBalanceAppliedToLedgerHtml}
     ${printableCostDeductionCapHtml}
     <div><span>Cost Balance Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>
     <div><span>Cost Deduction Applied</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionApplied))}</span></div>
-    <div><span>Cost Balance Ledger</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span></div>
+    ${printableCostBalanceLedgerAfterHtml}
     <div class="total"><span>Final Net Remit to Provider</span><span>${safeHtml(money(summaryFinalNetRemitToProvider))}</span></div>
   </div>
 
@@ -893,6 +899,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     };
   }
 
+  function isNonZeroMoneyValue(value: unknown): boolean {
+    return Math.abs(Number(value || 0)) >= 0.005;
+  }
+
   function renderCostBalanceSummary(source: any) {
     const summary = invoiceCostSummaryValues(source);
     return (
@@ -906,12 +916,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
           <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
           <div><strong>Cost Balance During This Remittance Period</strong><br />{money(summary.costBalanceThisRemittancePeriod)}</div>
-          <div><strong>Cost Balance Applied to Ledger</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>
-          <div><strong>Cost Balance Ledger Before</strong><br />{money(summary.costBalanceLedgerBefore)}</div>
+          {isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Balance Applied to Ledger</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Cost Balance Ledger Before</strong><br />{money(summary.costBalanceLedgerBefore)}</div>}
           <div><strong>Cost Balance Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>
           <div><strong>Cost Deduction Applied</strong><br />{money(summary.costBalanceDeductionApplied)}</div>
-          <div><strong>Cost Balance Ledger Change</strong><br />{money(summary.costBalanceLedgerChange)}</div>
-          <div><strong>Cost Balance Ledger</strong><br />{money(summary.costBalanceLedgerAfter)}</div>
+          {isNonZeroMoneyValue(summary.costBalanceLedgerChange) && <div><strong>Cost Balance Ledger Change</strong><br />{money(summary.costBalanceLedgerChange)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Cost Balance Ledger</strong><br />{money(summary.costBalanceLedgerAfter)}</div>}
           <div><strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}</div>
         </div>
         <p style={{ margin: "10px 0 0", color: "#475569", fontSize: 12 }}>
