@@ -844,11 +844,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
   const previewTotals = preview?.totalsSnapshot || {};
   const latestFinalizedCostBalanceLedger = history.find((invoice: any) => invoice?.status === "finalized")?.costBalanceLedgerAfter;
-  const displayedCostBalanceLedger = money(Number(previewTotals.costBalanceLedgerAfter ?? invoiceDetail?.invoice?.costBalanceLedgerAfter ?? latestFinalizedCostBalanceLedger ?? 0));
+  const costBalanceLedgerAmount = Number(previewTotals.costBalanceLedgerAfter ?? invoiceDetail?.invoice?.costBalanceLedgerAfter ?? latestFinalizedCostBalanceLedger ?? 0);
+  const displayedCostBalanceLedger = money(costBalanceLedgerAmount);
   const providerBillingRows = [
     { label: "Pull Costs", value: findDetailValue(providerClientDetails, ["hidden_pull_costs", "pull_costs", "Pull Costs", "Pull Cost"]) || "—" },
     { label: "Remit", value: findDetailValue(providerClientDetails, ["hidden_remit", "remit", "Remit", "remit_type", "remit_account"]) || "—" },
-    { label: "Cost Balance Ledger", value: displayedCostBalanceLedger },
+    { label: "Cost Balance", value: displayedCostBalanceLedger, amount: costBalanceLedgerAmount, action: "view-cost-ledger" },
   ];
 
   const previewLines = Array.isArray(preview?.lines) ? preview.lines : [];
@@ -1310,8 +1311,41 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               ))}
             </div>
             <div style={compactInfoGroupStyle}>
-              {providerBillingRows.map((row) => (
-                <ProviderInfoItem key={row.label} label={row.label} value={row.value} />
+              {providerBillingRows.map((row: any) => (
+                row.action === "view-cost-ledger" ? (
+                  <div key={row.label}>
+                    <dt style={compactInfoLabelStyle}>{row.label}</dt>
+                    <dd style={compactInfoValueStyle}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <strong
+                          style={{
+                            fontSize: 24,
+                            lineHeight: 1,
+                            color: Number(row.amount || 0) > 0 ? "#b91c1c" : "#166534",
+                          }}
+                        >
+                          {row.value}
+                        </strong>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCostLedgerVisible(true);
+                            loadCostLedger();
+                            window.setTimeout(() => {
+                              document.getElementById("client-cost-ledger")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 50);
+                          }}
+                          style={secondaryButtonStyle}
+                          title="Open the Client Cost Ledger"
+                        >
+                          Open Ledger
+                        </button>
+                      </div>
+                    </dd>
+                  </div>
+                ) : (
+                  <ProviderInfoItem key={row.label} label={row.label} value={row.value} />
+                )
               ))}
             </div>
           </dl>

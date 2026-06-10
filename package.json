@@ -309,7 +309,8 @@
     "verify:scenario-6-shortfall-fully-deducted-within-cap-safety": "node scripts/verify-scenario-6-shortfall-fully-deducted-within-cap-safety.mjs",
     "verify:scenario-7-prior-balance-shortfall-fully-deducted-safety": "node scripts/verify-scenario-7-prior-balance-shortfall-fully-deducted-safety.mjs",
     "verify:provider-client-invoice-cost-ledger-ui-safety": "node scripts/verify-provider-client-invoice-cost-ledger-ui-safety.mjs",
-    "verify:provider-client-invoice-cost-expended-reinvoice-safety": "node scripts/verify-provider-client-invoice-cost-expended-reinvoice-safety.mjs"
+    "verify:provider-client-invoice-cost-expended-reinvoice-safety": "node scripts/verify-provider-client-invoice-cost-expended-reinvoice-safety.mjs",
+    "verify:invoice-cost-balance-ledger-access-safety": "node scripts/verify-invoice-cost-balance-ledger-access-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
