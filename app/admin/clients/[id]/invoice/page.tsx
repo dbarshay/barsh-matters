@@ -1338,7 +1338,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                           style={secondaryButtonStyle}
                           title="Open the Client Cost Ledger"
                         >
-                          Open Ledger
+                          Open Client Costs Ledger
                         </button>
                       </div>
                     </dd>

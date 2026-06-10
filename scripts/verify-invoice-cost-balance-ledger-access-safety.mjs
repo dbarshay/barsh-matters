@@ -39,7 +39,7 @@ mustContain("invoice page", page, '{ label: "Cost Balance", value: displayedCost
 mustContain("invoice page", page, 'row.action === "view-cost-ledger"');
 mustContain("invoice page", page, "fontSize: 24");
 mustContain("invoice page", page, 'color: Number(row.amount || 0) > 0 ? "#b91c1c" : "#166534"');
-mustContain("invoice page", page, "Open Ledger");
+mustContain("invoice page", page, "Open Client Costs Ledger");
 mustContain("invoice page", page, "setCostLedgerVisible(true);");
 mustContain("invoice page", page, "loadCostLedger();");
 mustContain("invoice page", page, 'document.getElementById("client-cost-ledger")?.scrollIntoView');
