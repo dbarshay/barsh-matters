@@ -75,9 +75,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
     const costReceivedRows = remittanceRows.filter((row: any) => isCostRecoveryTransactionType(row?.transactionType));
 
-    const costExpendedSourceIds = Array.from(new Set(costsExpendedRows.map((row: any) => clean(row?.id)).filter(Boolean)));
-    const receiptIds = Array.from(
-      new Set(
+    const costExpendedSourceIds: string[] = Array.from(
+      new Set<string>(costsExpendedRows.map((row: any) => clean(row?.id)).filter(Boolean))
+    );
+    const receiptIds: number[] = Array.from(
+      new Set<number>(
         costReceivedRows
           .map((row: any) => Number(String(row?.id || "").trim()))
           .filter((value: number) => Number.isSafeInteger(value))
@@ -125,7 +127,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         : Promise.resolve([]),
     ]);
 
-    const receiptInvoiceIds = Array.from(new Set(receiptMarks.map((row: any) => clean(row.invoiceId)).filter(Boolean)));
+    const receiptInvoiceIds: string[] = Array.from(
+      new Set<string>(receiptMarks.map((row: any) => clean(row.invoiceId)).filter(Boolean))
+    );
     const receiptInvoiceById = receiptInvoiceIds.length
       ? new Map(
           (

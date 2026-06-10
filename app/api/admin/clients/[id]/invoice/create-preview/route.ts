@@ -214,8 +214,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     });
 
     const receiptLines = eligibleRemittanceRows.map((row: any) => receiptLine(row, client));
-    const costSourceIds = Array.from(
-      new Set(
+    const costSourceIds: string[] = Array.from(
+      new Set<string>(
         costsExpendedRows
           .map((row: any) => clean(row?.id))
           .filter(Boolean)
