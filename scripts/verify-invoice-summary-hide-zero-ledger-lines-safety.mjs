@@ -29,7 +29,7 @@ mustContain("invoice page", invoicePage, "return Math.abs(Number(value || 0)) >=
 mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceAppliedToLedger\) && <div><strong>Cost Excess Applied to Negative Cost Balance<\/strong>/, "conditional Cost Excess Applied to Negative Cost Balance row");
 mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceLedgerBefore\) && <div><strong>Negative Cost Balance Before This Remittance<\/strong>/, "conditional Negative Cost Balance Before row");
 mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceLedgerAfter\) && <div><strong>Negative Cost Balance After This Remittance<\/strong>/, "conditional Negative Cost Balance After row");
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceReimbursementToProvider\) && <div><strong>Cost Excess Added to Net Remit<\/strong>/, "conditional Cost Excess Added to Net Remit row");
+mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceReimbursementToProvider\) && <div style=\{\{ paddingLeft: 28, fontWeight: 950 \}\}><strong>Cost Excess Added to Net Remit<\/strong>/, "conditional Cost Excess Added to Net Remit row");
 mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceDeductionApplied\) && <div><strong>Cost Deduction Applied<\/strong>/, "conditional Cost Deduction Applied row");
 
 mustMatch("printable hidden-zero", invoicePage, /const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue\(printableCostSummary\.costBalanceAppliedToLedger\)[\s\S]*Cost Excess Applied to Negative Cost Balance[\s\S]*: "";/, "conditional printable applied row");

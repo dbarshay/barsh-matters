@@ -31,22 +31,22 @@ mustContain("printable CSS", invoicePage, ".summary-emphasis { padding-left: 28p
 mustContain("printable CSS", invoicePage, ".summary-emphasis span { font-weight: 900; }");
 mustContain("printable summary", invoicePage, '<div class="summary-emphasis"><span>Net Remit Before Costs</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>');
 mustContain("printable summary", invoicePage, '<div class="summary-emphasis"><span>Cost Excess / Shortfall This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceThisRemittancePeriod))}</span></div>');
-mustContain("printable hidden row", invoicePage, "Cost Excess Applied to Negative Cost Balance</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>");
+mustContain("printable hidden row", invoicePage, "Cost Excess Applied to Negative Cost Balance</span><span class=\"negative-remit-adjustment\">${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>");
 mustContain("printable hidden row", invoicePage, "Negative Cost Balance Before This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerBefore))}</span>");
 mustContain("printable hidden row", invoicePage, "Negative Cost Balance After This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerAfter))}</span>");
-mustContain("printable scenario 1 row", invoicePage, "Cost Excess Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span>");
+mustContain("printable scenario 1 row", invoicePage, "<div class=\"summary-emphasis\"><span>Cost Excess Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>");
 
 mustContain("on-screen summary", invoicePage, '<div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Net Remit Before Costs</strong><br /><strong>{money(summary.baseNetRemitToProvider)}</strong></div>');
 mustContain("on-screen summary", invoicePage, '<div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>');
-mustContain("on-screen hidden row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>");
+mustContain("on-screen hidden row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span></div>");
 mustContain("on-screen hidden row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}</div>");
 mustContain("on-screen hidden row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}</div>");
-mustContain("on-screen scenario 1 row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div><strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>");
+mustContain("on-screen scenario 1 row", invoicePage, "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong></div>");
 
-mustOccurExactly("on-screen applied row", invoicePage, "<strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}", 1);
+mustOccurExactly("on-screen applied row", invoicePage, "<strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span>", 1);
 mustOccurExactly("on-screen before row", invoicePage, "<strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}", 1);
 mustOccurExactly("on-screen after row", invoicePage, "<strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}", 1);
-mustOccurExactly("on-screen scenario 1 row", invoicePage, "<strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}", 1);
+mustOccurExactly("on-screen scenario 1 row", invoicePage, "<strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong>", 1);
 
 mustNotContain("summary stale label", invoicePage, "Cost Balance Added to Net Remit");
 mustNotContain("summary stale label", invoicePage, "Cost Balance Applied to Ledger");

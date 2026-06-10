@@ -115,7 +115,7 @@ mustContain(
 mustContain(
   "printable summary scenario 2 applied amount",
   invoicePage,
-  "Cost Excess Applied to Negative Cost Balance</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>"
+  "Cost Excess Applied to Negative Cost Balance</span><span class=\"negative-remit-adjustment\">${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>"
 );
 mustContain(
   "printable summary scenario 2 after balance",
@@ -136,7 +136,7 @@ mustContain(
 mustContain(
   "on-screen summary scenario 2 applied amount",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span></div>"
 );
 mustContain(
   "on-screen summary scenario 2 after balance",
@@ -146,7 +146,7 @@ mustContain(
 mustContain(
   "on-screen summary hides scenario 2 net excess when zero",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div><strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong></div>"
 );
 mustContain(
   "on-screen summary hides deduction when zero",
@@ -157,7 +157,7 @@ mustContain(
 mustOccurExactly(
   "on-screen applied row",
   invoicePage,
-  "<strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}",
+  "<strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span>",
   1
 );
 mustOccurExactly(
@@ -175,7 +175,7 @@ mustOccurExactly(
 mustOccurExactly(
   "on-screen cost excess added row",
   invoicePage,
-  "<strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}",
+  "<strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong>",
   1
 );
 

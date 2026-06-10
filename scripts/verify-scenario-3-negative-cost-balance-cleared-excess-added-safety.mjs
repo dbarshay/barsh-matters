@@ -107,21 +107,27 @@ mustContain(
 );
 
 mustContain(
+  "printable summary red negative remit adjustment CSS",
+  invoicePage,
+  ".negative-remit-adjustment { color: #b91c1c; font-weight: 900; }"
+);
+
+mustContain(
   "printable summary scenario 3 prior negative balance",
   invoicePage,
   "Negative Cost Balance Before This Remittance</span><span>${safeHtml(money(printableCostSummary.costBalanceLedgerBefore))}</span>"
 );
 
 mustContain(
-  "printable summary scenario 3 applied amount",
+  "printable summary scenario 3 applied amount is red",
   invoicePage,
-  "Cost Excess Applied to Negative Cost Balance</span><span>${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>"
+  "Cost Excess Applied to Negative Cost Balance</span><span class=\"negative-remit-adjustment\">${safeHtml(money(printableCostSummary.costBalanceAppliedToLedger))}</span>"
 );
 
 mustContain(
   "printable summary scenario 3 excess added to net remit",
   invoicePage,
-  "Cost Excess Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span>"
+  "<div class=\"summary-emphasis\"><span>Cost Excess Added to Net Remit</span><span>${safeHtml(money(printableCostSummary.costBalanceReimbursementToProvider))}</span></div>"
 );
 
 mustContain(
@@ -133,13 +139,13 @@ mustContain(
 mustContain(
   "on-screen summary scenario 3 applied amount",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span></div>"
 );
 
 mustContain(
   "on-screen summary scenario 3 excess added to net remit",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div><strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong></div>"
 );
 
 assertOrder(
@@ -148,8 +154,8 @@ assertOrder(
   [
     "<strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong>",
     "<strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}",
-    "<strong>Cost Excess Applied to Negative Cost Balance</strong><br />{money(summary.costBalanceAppliedToLedger)}",
-    "<strong>Cost Excess Added to Net Remit</strong><br />{money(summary.costBalanceReimbursementToProvider)}",
+    "<strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span>",
+    "<strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong>",
     "<strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}",
   ]
 );
