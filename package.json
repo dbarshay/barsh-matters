@@ -301,7 +301,8 @@
     "verify:remittance-cost-balance-ledger-contract-safety": "node scripts/verify-remittance-cost-balance-ledger-contract-safety.mjs",
     "verify:invoice-summary-hide-zero-ledger-lines-safety": "node scripts/verify-invoice-summary-hide-zero-ledger-lines-safety.mjs",
     "verify:printable-invoice-summary-page-break-safety": "node scripts/verify-printable-invoice-summary-page-break-safety.mjs",
-    "verify:invoice-summary-emphasis-layout-safety": "node scripts/verify-invoice-summary-emphasis-layout-safety.mjs"
+    "verify:invoice-summary-emphasis-layout-safety": "node scripts/verify-invoice-summary-emphasis-layout-safety.mjs",
+    "verify:scenario-2-negative-cost-balance-cost-excess-safety": "node scripts/verify-scenario-2-negative-cost-balance-cost-excess-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
