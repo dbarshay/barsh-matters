@@ -36,7 +36,9 @@ mustContain("admin client route totals active costs expended rows", adminClientR
 mustNotContain("admin client route old cost history filter", adminClientRoute, ".filter((row) => row.amount && row.date);");
 
 mustContain("create-preview reads costs expended from admin client route", previewRoute, "const costsExpendedRows = Array.isArray(detail.costsExpended?.rows) ? detail.costsExpended.rows : []");
-mustContain("create-preview converts costs expended rows into cost lines", previewRoute, "const costLines = costsExpendedRows.map((row: any) => costLine(row))");
+mustContain("create-preview identifies eligible uninvoiced costs expended rows", previewRoute, "const eligibleCostsExpendedRows = costsExpendedRows.filter((row: any) => !finalizedCostSourceIdSet.has(clean(row?.id)))");
+mustContain("create-preview converts eligible costs expended rows into cost lines", previewRoute, "const costLines = eligibleCostsExpendedRows.map((row: any) => costLine(row))");
+mustContain("create-preview reports excluded already-invoiced cost rows", previewRoute, "excludedAlreadyInvoicedCostExpendedRowCount");
 mustContain("create-preview totals costs expended", previewRoute, "const costsExpendedTotal = costLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0)");
 mustContain("create-preview calculates period cost balance from costs received minus costs expended", previewRoute, "const costBalanceThisRemittancePeriod = moneyNumber(filingFeePaymentTotal - costsExpendedTotal)");
 mustContain("create-preview uses prior finalized cost balance ledger", previewRoute, "select: { costBalanceLedgerAfter: true }");

@@ -57,8 +57,10 @@ mustContain("invoice page", page, "finalizeInvoice");
 mustContain("invoice page", page, "/finalize");
 mustContain("invoice page", page, "confirmFinalizeInvoice: true");
 mustContain("invoice page", page, "window.confirm");
-mustContain("invoice page", page, "Invoice finalized. Included receipt rows are now marked with this invoice ID");
-mustContain("invoice page", page, "Included receipt rows are now marked with this invoice ID and excluded from future invoice previews by default.");
+mustContain("invoice page", page, "Invoice finalized.");
+mustContain("invoice page", page, "included receipt row");
+mustContain("invoice page", page, "marked with this invoice ID");
+mustContain("invoice page", page, "exclude them from future ordinary previews");
 mustContain("invoice page", page, "disabled={!createdInvoice || createdInvoice?.status !== \"draft\" || finalizing}");
 mustContain("invoice page", page, "4. Finalize Invoice");
 

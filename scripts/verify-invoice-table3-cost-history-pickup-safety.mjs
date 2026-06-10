@@ -151,7 +151,7 @@ for (const required of [
 
 for (const required of [
   "const costsExpendedRows = Array.isArray(detail.costsExpended?.rows) ? detail.costsExpended.rows : []",
-  "const costLines = costsExpendedRows.map((row: any) => costLine(row))",
+  "const eligibleCostsExpendedRows = costsExpendedRows.filter((row: any) => !finalizedCostSourceIdSet.has(clean(row?.id)))",\n  "const costLines = eligibleCostsExpendedRows.map((row: any) => costLine(row))",\n  "excludedAlreadyInvoicedCostExpendedRowCount",
   "costLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0)",
 ]) {
   mustContain("invoice create-preview cost history pickup", previewRoute, required);

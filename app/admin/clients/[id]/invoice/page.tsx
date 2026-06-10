@@ -283,6 +283,9 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const [invoiceDetail, setInvoiceDetail] = useState<any>(null);
   const [invoiceDetailVisible, setInvoiceDetailVisible] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [costLedger, setCostLedger] = useState<any>(null);
+  const [costLedgerVisible, setCostLedgerVisible] = useState(false);
+  const [loadingCostLedger, setLoadingCostLedger] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -327,10 +330,29 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     }
   }
 
+  async function loadCostLedger(clientId = id) {
+    if (!clientId) return;
+    setLoadingCostLedger(true);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}/invoice/cost-ledger?${previewQuery().toString()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || "Could not load client cost ledger.");
+      setCostLedger(json);
+      setCostLedgerVisible(true);
+    } catch (err: any) {
+      setError(err?.message || "Could not load client cost ledger.");
+    } finally {
+      setLoadingCostLedger(false);
+    }
+  }
+
   useEffect(() => {
     if (!id) return;
     loadClientDetail(id);
     loadHistory(id);
+    loadCostLedger(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -389,6 +411,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       setInvoiceDetailVisible(false);
       setInvoiceDetail(null);
       await loadHistory();
+      await loadCostLedger();
     } catch (err: any) {
       setError(err?.message || "Could not create draft invoice.");
     } finally {
@@ -455,6 +478,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       await loadInvoiceDetail(invoiceId);
       setInvoiceDetailVisible(true);
       await loadHistory();
+      await loadCostLedger();
     } catch (err: any) {
       setError(err?.message || "Could not finalize invoice.");
     } finally {
@@ -490,6 +514,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       setInvoiceDetailVisible(false);
       setInvoiceDetail(null);
       await loadHistory();
+      await loadCostLedger();
     } catch (err: any) {
       setError(err?.message || "Could not void invoice.");
     } finally {
@@ -916,6 +941,110 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     return Math.abs(Number(value || 0)) >= 0.005;
   }
 
+  function renderClientCostLedger() {
+    const rows = Array.isArray(costLedger?.rows) ? costLedger.rows : [];
+    const totals = costLedger?.totals || {};
+    const csvRows = rows.map((row: any) => ({
+      "Kind": row.label || row.ledgerKind,
+      "Date Incurred": dateOnly(row.dateIncurred),
+      "Posted Date": dateOnly(row.postedDate),
+      "Cost Type": row.costType,
+      "Matter": row.matter,
+      "Lawsuit": row.lawsuit,
+      "Patient": row.patient,
+      "Amount": money(row.amount),
+      "Voided": row.voided ? "Yes" : "No",
+      "Invoice Status": row.invoiceStatus || "not_invoiced",
+      "Invoice ID": row.invoiceId,
+      "Invoice Number": row.invoiceNumber,
+      "Eligible": row.eligibleForFutureInvoice ? "Yes" : "No",
+      "Reason": row.eligibilityReason,
+    }));
+
+    return (
+      <section style={{ ...cardStyle, marginTop: 18 }} id="client-cost-ledger">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Client Cost Ledger</h2>
+            <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13 }}>
+              Read-only cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" onClick={() => loadCostLedger()} disabled={loadingCostLedger} style={secondaryButtonStyle}>
+              {loadingCostLedger ? "Loading Ledger..." : "Refresh Ledger"}
+            </button>
+            <button type="button" onClick={() => setCostLedgerVisible((value) => !value)} style={secondaryButtonStyle}>
+              {costLedgerVisible ? "Hide Ledger" : "Show Ledger"}
+            </button>
+            <button type="button" onClick={() => downloadCsv("client-cost-ledger.csv", csvRows)} disabled={!rows.length} style={secondaryButtonStyle}>
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 10, marginTop: 12 }}>
+          <div><strong>Total Rows</strong><br />{totals.rowCount ?? rows.length}</div>
+          <div><strong>Costs Expended</strong><br />{totals.costExpendedRowCount ?? 0}</div>
+          <div><strong>Costs Received</strong><br />{totals.costReceivedRowCount ?? 0}</div>
+          <div><strong>Eligible for Future Invoice</strong><br />{totals.eligibleForFutureInvoiceCount ?? 0}</div>
+        </div>
+
+        {costLedgerVisible && (
+          <div style={{ overflowX: "auto", marginTop: 12 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Kind</th>
+                  <th style={thStyle}>Date Incurred</th>
+                  <th style={thStyle}>Posted Date</th>
+                  <th style={thStyle}>Cost Type</th>
+                  <th style={thStyle}>Matter / Lawsuit</th>
+                  <th style={thStyle}>Amount</th>
+                  <th style={thStyle}>Voided</th>
+                  <th style={thStyle}>Invoice Status</th>
+                  <th style={thStyle}>Eligible</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length ? rows.map((row: any, index: number) => (
+                  <tr key={`${row.sourceTable}-${row.sourceId}-${index}`}>
+                    <td style={tdStyle}>{row.label || row.ledgerKind}</td>
+                    <td style={tdStyle}>{dateOnly(row.dateIncurred) || "—"}</td>
+                    <td style={tdStyle}>{dateOnly(row.postedDate) || "—"}</td>
+                    <td style={tdStyle}>{row.costType || "—"}</td>
+                    <td style={tdStyle}>
+                      <strong>{row.matter || "—"}</strong>
+                      {row.lawsuit ? <><br /><span style={{ color: "#475569" }}>{row.lawsuit}</span></> : null}
+                      {row.patient ? <><br /><span style={{ color: "#64748b" }}>{row.patient}</span></> : null}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>{money(row.amount)}</td>
+                    <td style={tdStyle}>{row.voided ? "Yes" : "No"}</td>
+                    <td style={tdStyle}>
+                      <div>{row.invoiceStatus || "not_invoiced"}</div>
+                      {row.invoiceNumber ? <div style={{ color: "#475569", fontSize: 12 }}>{row.invoiceNumber}</div> : null}
+                      {row.invoiceId ? <div style={{ color: "#64748b", fontSize: 11 }}>{row.invoiceId}</div> : null}
+                    </td>
+                    <td style={tdStyle}>
+                      <strong style={{ color: row.eligibleForFutureInvoice ? "#166534" : "#991b1b" }}>
+                        {row.eligibleForFutureInvoice ? "Yes" : "No"}
+                      </strong>
+                      <div style={{ color: "#64748b", fontSize: 12 }}>{row.eligibilityReason || ""}</div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td style={tdStyle} colSpan={9}>No cost ledger rows found for the current filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   function renderCostBalanceSummary(source: any) {
     const summary = invoiceCostSummaryValues(source);
     return (
@@ -1307,6 +1436,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           )}
         </div>
       </section>
+
+      {renderClientCostLedger()}
 
       <section style={{ ...cardStyle, marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>

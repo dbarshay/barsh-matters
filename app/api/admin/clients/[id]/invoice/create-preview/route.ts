@@ -214,7 +214,50 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     });
 
     const receiptLines = eligibleRemittanceRows.map((row: any) => receiptLine(row, client));
-    const costLines = costsExpendedRows.map((row: any) => costLine(row));
+    const costSourceIds = Array.from(
+      new Set(
+        costsExpendedRows
+          .map((row: any) => clean(row?.id))
+          .filter(Boolean)
+      )
+    );
+
+    const finalizedCostLineMarks = costSourceIds.length
+      ? await prisma.providerClientInvoiceLine.findMany({
+          where: {
+            lineType: "cost_expended",
+            sourceTable: "Lawsuit.lawsuitOptions",
+            sourceId: { in: costSourceIds },
+            invoice: {
+              status: "finalized",
+              voidedAt: null,
+            },
+          },
+          select: {
+            sourceId: true,
+            invoiceId: true,
+            invoice: {
+              select: {
+                invoiceNumber: true,
+                status: true,
+                finalizedAt: true,
+                voidedAt: true,
+              },
+            },
+          },
+        })
+      : [];
+
+    const finalizedCostSourceIdSet = new Set(
+      finalizedCostLineMarks
+        .map((line: any) => clean(line?.sourceId))
+        .filter(Boolean)
+    );
+
+    const eligibleCostsExpendedRows = costsExpendedRows.filter((row: any) => !finalizedCostSourceIdSet.has(clean(row?.id)));
+    const excludedAlreadyInvoicedCostRows = costsExpendedRows.filter((row: any) => finalizedCostSourceIdSet.has(clean(row?.id)));
+
+    const costLines = eligibleCostsExpendedRows.map((row: any) => costLine(row));
     const lines = [...receiptLines, ...costLines];
 
     const principalInterestLines = receiptLines.filter((line: any) => line.lineType === "receipt");
@@ -305,7 +348,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       ok: true,
       action: "provider-client-invoice-create-preview",
       mode: includeAlreadyInvoiced ? "read-only-preview-admin-include-already-invoiced" : "read-only-preview",
-      safety: "Read-only invoice create preview. Ordinary mode excludes MatterPaymentReceipt rows already assigned to an invoiceId. Admin include-already-invoiced mode is diagnostic only. This route does not create invoices, update MatterPaymentReceipt.invoiceId, write remittances, generate documents, send email, print, queue, update ClaimIndex, mutate Clio, or write any database rows.",
+      safety: "Read-only invoice create preview. Ordinary mode excludes MatterPaymentReceipt rows already assigned to an invoiceId and cost-expended rows already frozen into finalized non-voided invoice lines. Admin include-already-invoiced mode is diagnostic only for MatterPaymentReceipt rows. This route does not create invoices, update MatterPaymentReceipt.invoiceId, write remittances, generate documents, send email, print, queue, update ClaimIndex, mutate Clio, or write any database rows.",
       invoiceDraftPreview: {
         invoiceNumberCandidate: invoiceNumberCandidate(client.displayName),
         status: "draft-preview",
@@ -320,6 +363,26 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
           includeAlreadyInvoiced,
           sourceReceiptRowCount: remittanceRows.length,
           eligibleUnmarkedReceiptRowCount: eligibleRemittanceRows.length,
+          sourceCostExpendedRowCount: costsExpendedRows.length,
+          eligibleUninvoicedCostExpendedRowCount: eligibleCostsExpendedRows.length,
+          excludedAlreadyInvoicedCostExpendedRowCount: excludedAlreadyInvoicedCostRows.length,
+          finalizedCostExpendedLineMarkCount: finalizedCostLineMarks.length,
+          excludedCostExpendedDetails: excludedAlreadyInvoicedCostRows.map((row: any) => {
+            const sourceId = clean(row?.id);
+            const mark = finalizedCostLineMarks.find((line: any) => clean(line?.sourceId) === sourceId);
+            return {
+              id: sourceId,
+              invoiceId: clean(mark?.invoiceId),
+              invoiceNumber: clean(mark?.invoice?.invoiceNumber),
+              status: clean(mark?.invoice?.status),
+              finalizedAt: mark?.invoice?.finalizedAt || null,
+              matter: clean(row?.matter),
+              lawsuit: clean(row?.lawsuit),
+              patient: clean(row?.patient),
+              costType: clean(row?.costType),
+              amount: moneyNumber(row?.amount),
+            };
+          }),
           excludedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? 0 : excludedAlreadyInvoicedRows.length,
           includedAlreadyInvoicedReceiptRowCount: includeAlreadyInvoiced ? excludedAlreadyInvoicedRows.length : 0,
           alreadyInvoicedReceiptDetails: excludedAlreadyInvoicedRows.map((row: any) => {

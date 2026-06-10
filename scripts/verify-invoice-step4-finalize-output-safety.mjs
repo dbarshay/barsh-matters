@@ -171,14 +171,14 @@ mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-pre
 mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceAddedToLedger");
 mustContain("invoice page", page, "Costs Expended During This Remittance Period");
 mustContain("invoice page", page, "Costs Received During This Remittance Period");
-mustContain("invoice page", page, "Cost Balance Applied to Ledger");
-mustContain("invoice page", page, "Positive balances have no 25% deduction");
-mustContain("invoice page", page, "summary.costBalanceThisRemittancePeriod < 0 && <div><strong>25% Deduction Cap</strong>");
+mustNotContain("invoice page stale label", page, "Cost Balance Applied to Ledger");
+mustContain("invoice page", page, "25% Deduction Cap");
+mustContain("invoice page", page, "isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong>");
 mustContain("printable invoice", page, "printableCostDeductionCapHtml");
 mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "currentPeriodNegativeCostBalance > 0 ? Math.max(0, baseNetRemitToProvider * 0.25) : 0");
 mustNotContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceThisRemittancePeriod = moneyNumber(costsExpendedTotal - filingFeePaymentTotal)");
 mustNotContain("invoice page", page, "Cost Balance This Remittance Period = Total Costs Expended minus Costs Received");
-mustContain("invoice page", page, "Cost Balance Added to Net Remit");
+mustContain("invoice page", page, "Cost Excess Added to Net Remit");
 mustContain("invoice page", page, "Cost Deduction Applied");
 mustContain("invoice page", page, "costBalanceReimbursementToProvider");
 mustContain("invoice page", page, "costBalanceDeductionApplied");
