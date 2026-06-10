@@ -696,13 +696,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <h2>Principal / Interest Received</h2>
   <div class="section-note">
     <span>Gross: ${safeHtml(money(sectionTotal(principalInterestLines)))}</span>
-    <span>Retainer: ${safeHtml(money(sectionRetainerTotal(principalInterestLines)))}</span>
+    <span>Retainer Fee: ${safeHtml(money(sectionRetainerTotal(principalInterestLines)))}</span>
     <span>Net Remit: ${safeHtml(money(sectionRemitTotal(principalInterestLines)))}</span>
   </div>
   <table>
     <thead>
       <tr>
-        <th>Matter</th><th>Patient</th><th>DOL</th><th>DOS</th><th>Insurer</th><th>Case</th><th>Type</th><th>Posted</th><th>Check Date</th><th>Check #</th><th class="money">Amt. Billed</th><th class="money">Amt. Received</th><th class="money">Retainer</th><th class="money">Net Remit</th>
+        <th>Matter</th><th>Patient</th><th>DOL</th><th>DOS</th><th>Insurer</th><th>Case</th><th>Type</th><th>Posted</th><th>Check Date</th><th>Check #</th><th class="money">Amt. Billed</th><th class="money">Amt. Received</th><th class="money">Retainer Fee</th><th class="money">Net Remit</th>
       </tr>
     </thead>
     <tbody>
@@ -734,7 +734,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <table>
     <thead>
       <tr>
-        <th>Matter</th><th>Patient</th><th>DOL</th><th>DOS</th><th>Insurer</th><th>Case</th><th>Type</th><th>Incurred</th><th class="money">Amount</th>
+        <th>Matter</th><th>Patient</th><th>DOL</th><th>DOS</th><th>Insurer</th><th>Case</th><th>Type</th><th>Date Incurred</th><th class="money">Amount</th>
       </tr>
     </thead>
     <tbody>
