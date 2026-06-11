@@ -53,27 +53,35 @@ mustContain(routePath, route, "createsOutlookDraft: true");
 mustContain(routePath, route, "sendsEmail: false");
 mustContain(routePath, route, "readsMailbox: false");
 mustContain(routePath, route, "syncsMailbox: false");
-mustContain(routePath, route, "attachesDocument: false");
-mustContain(routePath, route, "attachmentUploadDeferred: true");
 mustContain(routePath, route, "clioRecordsChanged: false");
 mustContain(routePath, route, "databaseRecordsChanged: false");
-mustContain(routePath, route, "crossPlatformRuntime: true");
-mustContain(routePath, route, "localOutlookAutomationRequired: false");
 mustContain(routePath, route, "readyForGraphDraftCreate");
-mustContain(routePath, route, "MailDrop in Cc");
-mustContain(routePath, route, "no MailDrop in Bcc");
-mustContain(routePath, route, "allowMetadataOnlyDraft");
+mustContain(routePath, route, "resolveMaildropForGraphDraftMatterId");
+mustContain(routePath, route, "clioMaildropEmail");
+mustContain(routePath, route, "let cc = normalizeGraphRecipients");
+mustContain(routePath, route, "context.clioMaildropEmail");
+mustContain(routePath, route, "email: context.clioMaildropEmail");
 mustContain(routePath, route, "graphFetchJson");
 mustContain(routePath, route, "graphMailboxMessagesUrl");
 mustContain(routePath, route, "graphMessageId");
 mustContain(routePath, route, "internetMessageId");
 mustContain(routePath, route, "conversationId");
 
+// Rule 1 allowed Clio scope in this route: finalized document retrieval/listing and MailDrop context only.
+mustContain(routePath, route, "clioFetch");
+mustContain(routePath, route, "listClioMatterDocuments");
+mustContain(routePath, route, "/api/v4/documents/");
+mustContain(routePath, route, "/api/v4/document_versions/");
+mustContain(routePath, route, "downloadAttachmentBytesFromPlan");
+
 mustNotContain(routePath, route, "sendMail");
 mustNotContain(routePath, route, "/sendMail");
 mustNotContain(routePath, route, "createUploadSession");
-mustNotContain(routePath, route, "clioFetch(");
-mustNotContain(routePath, route, "prisma.");
+mustNotContain(routePath, route, "method: \"PATCH\"");
+mustNotContain(routePath, route, "method: \"DELETE\"");
+mustNotContain(routePath, route, "updateMatterCustomFields");
+mustNotContain(routePath, route, "upsertClaimIndexFromMatter");
+mustNotContain(routePath, route, "ingestMattersFromClioBatch");
 mustNotContain(routePath, route, "export async function GET");
 mustNotContain(routePath, route, "export async function PATCH");
 mustNotContain(routePath, route, "export async function DELETE");
@@ -91,3 +99,4 @@ if (failures > 0) {
 }
 
 console.log("=== GRAPH CREATE DRAFT SAFETY PASSED ===");
+console.log("The Golden Rule: Clio document retrieval and MailDrop context are allowed; Clio matter mutation remains forbidden.");

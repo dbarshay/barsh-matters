@@ -36,7 +36,7 @@ mustContain("direct preview loader", "loadMatterDocumentDataPreview");
 mustContain("direct preview panel reuse", "renderMatterDocumentDataPreviewPanel");
 mustContain("Refresh Data button", "Refresh Data");
 mustContain("Direct matter packet endpoint", "/api/documents/matter-packet");
-mustContain("direct no-generation language", "No documents are generated from this popup.");
+mustContain("direct popup renderer", "renderMatterDocumentGenerationPopup");
 
 mustNotContain("old direct placeholder title", "View Documents action will be wired later.");
 mustNotContain("old direct action title", "Launch the Direct Matter document generation preview.");

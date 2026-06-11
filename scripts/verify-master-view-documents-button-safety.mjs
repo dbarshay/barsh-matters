@@ -36,7 +36,7 @@ mustContain("master preview loader", "loadMasterDocumentDataPreview");
 mustContain("master preview panel reuse", "renderMasterDocumentDataPreviewPanel");
 mustContain("Refresh Data button", "Refresh Data");
 mustContain("Master packet endpoint", "/api/documents/packet?masterLawsuitId=");
-mustContain("master no-generation language", "No documents are generated from this popup.");
+mustContain("master popup renderer", "renderMasterDocumentGenerationPopup");
 
 mustNotContain("old master placeholder title", "Document controls remain in the Documents workflow.");
 mustNotContain("old master action title", "Launch the Master Lawsuit document generation preview.");

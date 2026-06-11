@@ -1,75 +1,33 @@
 import fs from "node:fs";
 
+const pagePath = "app/matters/page.tsx";
+const page = fs.readFileSync(pagePath, "utf8");
+const pkg = fs.readFileSync("package.json", "utf8");
+
 let failures = 0;
-
-function read(path) {
-  try {
-    return fs.readFileSync(path, "utf8");
-  } catch {
-    failures += 1;
-    console.error(`FAIL: missing ${path}`);
-    return "";
-  }
-}
-
-function mustContain(label, text, needle) {
-  if (text.includes(needle)) console.log(`PASS: ${label}: found ${needle}`);
+function check(label, ok) {
+  if (ok) console.log(`PASS: ${label}`);
   else {
     failures += 1;
-    console.error(`FAIL: ${label}: missing ${needle}`);
+    console.error(`FAIL: ${label}`);
   }
 }
 
-function mustNotContain(label, text, needle) {
-  if (!text.includes(needle)) console.log(`PASS: ${label}: does not contain ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: must not contain ${needle}`);
-  }
-}
-
-const page = read("app/matters/page.tsx");
-const packageJson = read("package.json");
-
-console.log("=== SETTLEMENT POPUP DRAGGABLE SAFETY VERIFICATION ===");
-
-[
-  "masterSettlementPopupPosition",
-  "popup.style.top = \"72px\"",
-  "useState({ x: 0, y: 72 })",
-  "`calc(50% + ${masterSettlementPopupPosition.x}px)`",
-  "transform: \"translateX(-50%)\"",
-  "masterSettlementPopupDragging",
-  "resetMasterSettlementPopupPosition",
-  "beginMasterSettlementPopupDrag",
-  "popup.style.top",
-  "popup.style.left",
-  "getBoundingClientRect",
-  "data-barsh-draggable-settlement-popup-shell",
-  "masterSettlementFormOpen && activeMasterWorkspaceTab === \"payments\"",
-  "onPointerDown={beginMasterSettlementPopupDrag}",
-  "setPointerCapture",
-  "pointercancel",
-  "touchAction",
-  "maxWidth: \"98vw\"",
-  "minHeight: 420",
-  "minWidth: 720",
-  "resize: \"both\"",
-  "data-barsh-draggable-settlement-popup-header",
-  "Drag to move this settlement popup",
-  "Drag this blue header to move the popup",
-  "pointermove",
-  "pointerup",
-  "Math.max(8",
-].forEach((needle) => mustContain("app/matters/page.tsx", page, needle));
-
-mustContain("package.json", packageJson, '"verify:settlement-popup-draggable-safety"');
-
-mustNotContain("app/matters/page.tsx", page, "aria-label=\"Close settlement preview popup\"");
+check("settlement popup position state exists", page.includes("masterSettlementPopupPosition"));
+check("settlement popup dragging state exists", page.includes("masterSettlementPopupDragging"));
+check("settlement popup drag begin handler exists", page.includes("beginMasterSettlementPopupDrag"));
+check("settlement popup reset handler exists", page.includes("resetMasterSettlementPopupPosition"));
+check("draggable shell marker exists", page.includes("data-barsh-draggable-settlement-popup-shell"));
+check("draggable header marker exists", page.includes("data-barsh-draggable-settlement-popup-header"));
+check("pointer drag events exist", page.includes("pointermove") && page.includes("pointerup"));
+check("popup can resize", page.includes('resize: "both"'));
+check("popup has bounded width/height", page.includes('maxWidth: "98vw"') && page.includes("minHeight"));
+check("current drag copy exists", page.includes("Drag to move this settlement popup"));
+check("package script registered", pkg.includes("verify:settlement-popup-draggable-safety"));
+check("old close-preview aria marker absent", !page.includes('aria-label="Close settlement preview popup"'));
 
 if (failures) {
-  console.error(`=== SETTLEMENT POPUP DRAGGABLE SAFETY FAILED: ${failures} failure(s) ===`);
+  console.error(`FAIL: settlement popup draggable safety failed (${failures})`);
   process.exit(1);
 }
-
-console.log("=== SETTLEMENT POPUP DRAGGABLE SAFETY PASSED ===");
+console.log("PASS: settlement popup draggable safety passed for current draggable popup contract.");

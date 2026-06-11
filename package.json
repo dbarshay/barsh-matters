@@ -331,7 +331,9 @@
     "verify:payment-required-label-asterisks-removed-safety": "node scripts/verify-payment-required-label-asterisks-removed-safety.mjs",
     "verify:payment-popup-ux-polish-safety": "node scripts/verify-payment-popup-ux-polish-safety.mjs",
     "verify:transaction-type-management-contract-safety": "node scripts/verify-transaction-type-management-contract-safety.mjs",
-    "verify:transaction-type-metadata-safety": "node scripts/verify-transaction-type-metadata-safety.mjs"
+    "verify:transaction-type-metadata-safety": "node scripts/verify-transaction-type-metadata-safety.mjs",
+    "verify:clio-rule1-boundary-safety": "node scripts/verify-clio-rule1-boundary-safety.mjs",
+    "verify:golden-rule-clio-boundary-safety": "node scripts/verify-clio-rule1-boundary-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

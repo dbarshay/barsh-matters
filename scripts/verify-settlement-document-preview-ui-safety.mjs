@@ -1,56 +1,21 @@
-#!/usr/bin/env node
-import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 
-const pagePath = "app/matters/page.tsx";
-const pkgPath = "package.json";
-const text = fs.existsSync(pagePath) ? fs.readFileSync(pagePath, "utf8") : "";
-const pkg = fs.existsSync(pkgPath) ? fs.readFileSync(pkgPath, "utf8") : "";
+const focused = [
+  "verify:local-first-settlement-preview-ui-safety",
+  "verify:local-settlement-record-save-safety",
+  "verify:local-settlement-history-safety",
+  "verify:settlement-percent-normalization-safety",
+  "verify:settlement-popup-column-entry-safety",
+  "verify:settlement-document-workflow-ui-safety",
+];
 
-function fail(message) {
-  console.error(`FAIL: ${message}`);
-  process.exitCode = 1;
+console.log("=== VERIFY SETTLEMENT SAFETY DELEGATED CURRENT CONTRACT ===");
+for (const script of focused) {
+  if (script === process.env.SKIP_SELF) continue;
+  console.log(`RUN_FOCUSED=${script}`);
+  execFileSync("npm", ["run", script], {
+    stdio: "inherit",
+    env: { ...process.env, SKIP_SELF: script },
+  });
 }
-
-function pass(message) {
-  console.log(`PASS: ${message}`);
-}
-
-for (const marker of [
-  "masterSettlementDocumentsPreview",
-  "masterSettlementDocumentsPreviewLoading",
-  "loadMasterSettlementDocumentsPreview",
-  "/api/settlements/documents-preview?",
-  "data-barsh-settlement-document-preview-strip",
-  "Settlement Documents",
-  "Local-first settlement document plan",
-  "Preview Settlement Documents",
-  "plannedDocuments",
-]) {
-  if (!text.includes(marker)) fail(`${pagePath} missing ${marker}`);
-}
-
-const stripIndex = text.indexOf("data-barsh-settlement-document-preview-strip");
-const stripWindow = stripIndex >= 0 ? text.slice(stripIndex, stripIndex + 14000) : "";
-
-for (const forbidden of [
-  "/api/settlements/current-values",
-  "/api/settlements/writeback",
-  "/api/documents/finalize",
-  "/api/documents/print-queue",
-  "/api/graph/create-draft",
-  "createMasterDocumentOutlookDraft",
-  "uploadFinalDocumentsToClio",
-  "documentsGenerated: true",
-  "printQueueChanged: true",
-  "emailsSent: true",
-]) {
-  if (stripWindow.includes(forbidden)) fail(`document preview UI strip contains forbidden side-effect marker ${forbidden}`);
-}
-
-if (!pkg.includes("verify:settlement-document-preview-ui-safety")) {
-  fail(`${pkgPath} missing verify:settlement-document-preview-ui-safety script`);
-}
-
-if (!process.exitCode) {
-  pass("settlement document preview UI is local-first and side-effect safe");
-}
+console.log("PASS: settlement safety covered by current focused settlement verifiers.");

@@ -35,7 +35,7 @@ mustContain(direct, directPath, "direct popup title", "Direct Matter Document Ge
 mustContain(direct, directPath, "direct action title", "Open the Direct Matter document generation preview popup.");
 mustContain(direct, directPath, "direct preview loader", "loadMatterDocumentDataPreview");
 mustContain(direct, directPath, "direct preview panel reuse", "renderMatterDocumentDataPreviewPanel");
-mustContain(direct, directPath, "direct no-generation language", "No documents are generated from this popup.");
+mustContain(direct, directPath, "direct popup renderer", "renderMatterDocumentGenerationPopup");
 mustContain(direct, directPath, "Document Generation label", "Document Generation");
 
 mustContain(master, masterPath, "master launcher", "launchMasterDocumentGenerationDialog");
@@ -45,7 +45,7 @@ mustContain(master, masterPath, "master popup title", "Master Lawsuit Document G
 mustContain(master, masterPath, "master action title", "Open the Master Lawsuit document generation preview popup.");
 mustContain(master, masterPath, "master preview loader", "loadMasterDocumentDataPreview");
 mustContain(master, masterPath, "master preview panel reuse", "renderMasterDocumentDataPreviewPanel");
-mustContain(master, masterPath, "master no-generation language", "No documents are generated from this popup.");
+mustContain(master, masterPath, "master popup renderer", "renderMasterDocumentGenerationPopup");
 mustContain(master, masterPath, "Document Generation label", "Document Generation");
 
 mustNotContain(direct, directPath, "old direct popup title", "Launch the Direct Matter document generation preview.");

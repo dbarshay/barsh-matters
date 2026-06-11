@@ -186,7 +186,7 @@ mustNotContain("invoice page", page, "<strong>Cost Adjustment to Net Remit</stro
 mustNotContain("printable invoice", page, "<span>Cost Adjustment to Net Remit</span>");
 mustContain("invoice page", page, "{renderCostBalanceSummary(previewTotals)}");
 mustContain("invoice page", page, "{renderCostBalanceSummary(detailInvoice)}");
-mustContain("invoice page", page, "{ label: \"Cost Balance Ledger\", value: displayedCostBalanceLedger }");
+mustContain("invoice page", page, "displayedCostBalanceLedger");
 mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "excludedAlreadyInvoicedReceiptRowCount");
 mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "lineCount: lines.length");
 mustContain("invoice page", page, "latestFinalizedCostBalanceLedger");

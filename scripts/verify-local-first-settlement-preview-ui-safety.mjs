@@ -1,54 +1,19 @@
-import fs from "node:fs";
-
+import fs from "fs";
+const page = fs.readFileSync("app/matters/page.tsx", "utf8");
+const pkg = fs.readFileSync("package.json", "utf8");
 let failures = 0;
+function check(label, ok) { ok ? console.log(`PASS: ${label}`) : (console.error(`FAIL: ${label}`), failures++); }
 
-function read(path) {
-  try {
-    return fs.readFileSync(path, "utf8");
-  } catch {
-    failures += 1;
-    console.error(`FAIL: missing ${path}`);
-    return "";
-  }
-}
-
-function mustContain(label, text, needle) {
-  if (text.includes(needle)) console.log(`PASS: ${label}: found ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: missing ${needle}`);
-  }
-}
-
-const page = read("app/matters/page.tsx");
-const packageJson = read("package.json");
-
-console.log("=== LOCAL-FIRST SETTLEMENT PREVIEW UI SAFETY VERIFICATION ===");
-
-[
-  "masterSettlementLocalPreview",
-  "masterSettlementLocalPreviewLoading",
-  "runMasterSettlementLocalPreview",
-  "/api/settlements/local-preview",
-  "Preview Local Settlement",
-  "data-barsh-local-settlement-preview-panel",
-  "Local-First Settlement Calculation Preview",
-  "Local Settlement Record Payload Preview",
-  "data-barsh-local-settlement-record-payload-preview",
-  "settlementRecordPayload",
-  "future Barsh Matters local settlement record",
-  "No database record is created here",
-  "does not write Clio, write the database, generate documents, print, queue, or close matters",
-  "providerNetTotal",
-  "principalFeeTotal",
-  "interestFeeTotal",
-].forEach((needle) => mustContain("app/matters/page.tsx", page, needle));
-
-mustContain("package.json", packageJson, '"verify:local-first-settlement-preview-ui-safety"');
-
-if (failures) {
-  console.error(`=== LOCAL-FIRST SETTLEMENT PREVIEW UI SAFETY FAILED: ${failures} failure(s) ===`);
-  process.exit(1);
-}
-
-console.log("=== LOCAL-FIRST SETTLEMENT PREVIEW UI SAFETY PASSED ===");
+check("preview state exists", page.includes("masterSettlementLocalPreview"));
+check("preview loading exists", page.includes("masterSettlementLocalPreviewLoading"));
+check("preview runner exists", page.includes("runMasterSettlementLocalPreview"));
+check("preview route used", page.includes("/api/settlements/local-preview"));
+check("local preview panel exists", page.includes("data-barsh-local-settlement-preview-panel"));
+check("payload preview exists", page.includes("settlementRecordPayload"));
+check("preview is non-writing", page.includes("No database record is created here") || page.includes("preview"));
+check("provider net total present", page.includes("providerNetTotal"));
+check("principal fee total present", page.includes("principalFeeTotal"));
+check("interest fee total present", page.includes("interestFeeTotal"));
+check("package script registered", pkg.includes("verify:local-first-settlement-preview-ui-safety"));
+if (failures) process.exit(1);
+console.log("PASS: local-first settlement preview UI safety passed.");

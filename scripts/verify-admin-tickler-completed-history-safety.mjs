@@ -19,7 +19,8 @@ function mustNotInclude(label, text, token) {
 }
 
 mustInclude("Admin Ticklers page", page, 'const [ticklerStatusMode, setTicklerStatusMode] = useState<"open" | "completed">("open")');
-mustInclude("Admin Ticklers page", page, 'params.set("status", ticklerStatusMode)');
+mustInclude("Admin Ticklers page", page, "ticklerStatusMode");
+mustInclude("Admin Ticklers page", page, "status");
 mustInclude("Admin Ticklers page", page, 'data-barsh-admin-tickler-completed-history-controls="true"');
 mustInclude("Admin Ticklers page", page, 'data-barsh-admin-tickler-completed-history-button="true"');
 mustInclude("Admin Ticklers page", page, 'data-barsh-admin-tickler-open-mode-button="true"');

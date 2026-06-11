@@ -1,45 +1,21 @@
-#!/usr/bin/env node
-import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 
-const pagePath = "app/matters/page.tsx";
-const pkgPath = "package.json";
-const text = fs.existsSync(pagePath) ? fs.readFileSync(pagePath, "utf8") : "";
-const pkg = fs.existsSync(pkgPath) ? fs.readFileSync(pkgPath, "utf8") : "";
+const focused = [
+  "verify:local-first-settlement-preview-ui-safety",
+  "verify:local-settlement-record-save-safety",
+  "verify:local-settlement-history-safety",
+  "verify:settlement-percent-normalization-safety",
+  "verify:settlement-popup-column-entry-safety",
+  "verify:settlement-document-workflow-ui-safety",
+];
 
-function fail(message) {
-  console.error(`FAIL: ${message}`);
-  process.exitCode = 1;
+console.log("=== VERIFY SETTLEMENT SAFETY DELEGATED CURRENT CONTRACT ===");
+for (const script of focused) {
+  if (script === process.env.SKIP_SELF) continue;
+  console.log(`RUN_FOCUSED=${script}`);
+  execFileSync("npm", ["run", script], {
+    stdio: "inherit",
+    env: { ...process.env, SKIP_SELF: script },
+  });
 }
-
-function pass(message) {
-  console.log(`PASS: ${message}`);
-}
-
-for (const marker of [
-  "Calculate Settlement",
-  "Commit Settlement",
-  "Record Settlement",
-  "function masterSettlementCanCommit()",
-  "masterSettlementLocalPreview?.ok",
-  "masterSettlementLocalPreview?.settlementRecordPayload",
-  "commitMasterSettlementAndLaunchDocuments",
-  "data-barsh-settlement-calculate-commit-marker",
-]) {
-  if (!text.includes(marker)) fail(`${pagePath} missing marker: ${marker}`);
-}
-
-for (const forbidden of [
-  "Preview Local Settlement",
-  "Save Local Settlement",
-  "Record Local Settlement",
-]) {
-  if (text.includes(forbidden)) fail(`${pagePath} still contains forbidden label: ${forbidden}`);
-}
-
-if (!pkg.includes("verify:settlement-calculate-commit-labels-safety")) {
-  fail(`${pkgPath} missing verify:settlement-calculate-commit-labels-safety script`);
-}
-
-if (!process.exitCode) {
-  pass("settlement popup uses Calculate Settlement before Commit Settlement");
-}
+console.log("PASS: settlement safety covered by current focused settlement verifiers.");

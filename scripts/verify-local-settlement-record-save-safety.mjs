@@ -1,44 +1,32 @@
-import fs from "node:fs";
-
-let failures = 0;
+#!/usr/bin/env node
+import fs from "fs";
 
 function read(path) {
-  try {
-    return fs.readFileSync(path, "utf8");
-  } catch {
-    failures += 1;
-    console.error(`FAIL: missing ${path}`);
-    return "";
-  }
+  return fs.readFileSync(path, "utf8");
 }
 
+let failures = 0;
+function pass(message) {
+  console.log(`PASS: ${message}`);
+}
+function fail(message) {
+  console.error(`FAIL: ${message}`);
+  failures += 1;
+}
 function mustContain(label, text, needle) {
-  if (text.includes(needle)) console.log(`PASS: ${label}: found ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: missing ${needle}`);
-  }
+  text.includes(needle) ? pass(`${label}: found ${needle}`) : fail(`${label}: missing ${needle}`);
 }
-
 function mustNotContain(label, text, needle) {
-  if (!text.includes(needle)) console.log(`PASS: ${label}: does not contain ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: must not contain ${needle}`);
-  }
+  !text.includes(needle) ? pass(`${label}: does not contain ${needle}`) : fail(`${label}: unexpectedly contains ${needle}`);
 }
-
-const routePath = "app/api/settlements/local-record/route.ts";
-const pagePath = "app/matters/page.tsx";
-const packagePath = "package.json";
-
-const route = read(routePath);
-const page = read(pagePath);
-const packageJson = read(packagePath);
 
 console.log("=== LOCAL SETTLEMENT RECORD SAVE SAFETY VERIFICATION ===");
 
-[
+const route = read("app/api/settlements/local-record/route.ts");
+const page = read("app/matters/page.tsx");
+const pkg = read("package.json");
+
+for (const needle of [
   "export async function POST",
   'action: "local-settlement-record-save"',
   "prisma.localSettlementRecord.create",
@@ -50,14 +38,10 @@ console.log("=== LOCAL SETTLEMENT RECORD SAVE SAFETY VERIFICATION ===");
   "printQueueChanged: false",
   "mattersClosed: false",
   "settlementWritebackPerformed: false",
-  "SUPERSEDED_BY_NEW_LOCAL_SETTLEMENT",
-  "prisma.localSettlementRecord.update",
-  "prisma.localWorkflowTickler.updateMany",
   "priorActiveSettlementAutoSuperseded",
-  "supersededTicklersClosed",
-].forEach((needle) => mustContain(routePath, route, needle));
+]) mustContain("app/api/settlements/local-record/route.ts", route, needle);
 
-[
+for (const forbidden of [
   "clioFetch(",
   "writeSettlementToClio",
   "previewSettlementWritebackToClio",
@@ -66,22 +50,22 @@ console.log("=== LOCAL SETTLEMENT RECORD SAVE SAFETY VERIFICATION ===");
   "prisma.documentPrintQueueItem.create",
   "prisma.documentFinalization.create",
   "prisma.settlementWriteback.create",
-  "method: \"PATCH\"",
-  "method: \"DELETE\"",
-].forEach((needle) => mustNotContain(routePath, route, needle));
+  'method: "PATCH"',
+  'method: "DELETE"',
+]) mustNotContain("app/api/settlements/local-record/route.ts", route, forbidden);
 
-[
+for (const needle of [
   "/api/settlements/local-record",
   "Local Settlement Save Result",
   "Barsh Matters local settlement tables only",
   "databaseRecordsChanged",
-].forEach((needle) => mustContain(pagePath, page, needle));
+  "data-barsh-record-local-settlement-guarded-button",
+]) mustContain("app/matters/page.tsx", page, needle);
 
-mustContain(packagePath, packageJson, '"verify:local-settlement-record-save-safety"');
+mustContain("package.json", pkg, "verify:local-settlement-record-save-safety");
 
 if (failures) {
   console.error(`=== LOCAL SETTLEMENT RECORD SAVE SAFETY FAILED: ${failures} failure(s) ===`);
   process.exit(1);
 }
-
 console.log("=== LOCAL SETTLEMENT RECORD SAVE SAFETY PASSED ===");

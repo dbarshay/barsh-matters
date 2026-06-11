@@ -1,46 +1,33 @@
-import fs from "node:fs";
-
-let failures = 0;
+#!/usr/bin/env node
+import fs from "fs";
 
 function read(path) {
-  try {
-    return fs.readFileSync(path, "utf8");
-  } catch {
-    failures += 1;
-    console.error(`FAIL: missing ${path}`);
-    return "";
-  }
+  return fs.readFileSync(path, "utf8");
 }
 
+let failures = 0;
+function pass(message) {
+  console.log(`PASS: ${message}`);
+}
+function fail(message) {
+  console.error(`FAIL: ${message}`);
+  failures += 1;
+}
 function mustContain(label, text, needle) {
-  if (text.includes(needle)) console.log(`PASS: ${label}: found ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: missing ${needle}`);
-  }
+  text.includes(needle) ? pass(`${label}: found ${needle}`) : fail(`${label}: missing ${needle}`);
 }
-
 function mustNotContain(label, text, needle) {
-  if (!text.includes(needle)) console.log(`PASS: ${label}: does not contain ${needle}`);
-  else {
-    failures += 1;
-    console.error(`FAIL: ${label}: must not contain ${needle}`);
-  }
+  !text.includes(needle) ? pass(`${label}: does not contain ${needle}`) : fail(`${label}: unexpectedly contains ${needle}`);
 }
-
-const schemaPath = "prisma/schema.prisma";
-const migrationPath = "prisma/migrations/20260520120500_add_local_settlement_records/migration.sql";
-const packagePath = "package.json";
-const pagePath = "app/matters/page.tsx";
-
-const schema = read(schemaPath);
-const migration = read(migrationPath);
-const packageJson = read(packagePath);
-const page = read(pagePath);
 
 console.log("=== LOCAL SETTLEMENT PERSISTENCE SCHEMA SAFETY VERIFICATION ===");
 
-[
+const schema = read("prisma/schema.prisma");
+const migration = read("prisma/migrations/20260520120500_add_local_settlement_records/migration.sql");
+const page = read("app/matters/page.tsx");
+const pkg = read("package.json");
+
+for (const needle of [
   "model LocalSettlementRecord",
   "model LocalSettlementRow",
   "rows LocalSettlementRow[]",
@@ -62,37 +49,28 @@ console.log("=== LOCAL SETTLEMENT PERSISTENCE SCHEMA SAFETY VERIFICATION ===");
   "voided",
   "@@index([masterLawsuitId])",
   "@@index([settlementRecordId])",
-].forEach((needle) => mustContain(schemaPath, schema, needle));
+]) mustContain("prisma/schema.prisma", schema, needle);
 
-[
+for (const needle of [
   'CREATE TABLE IF NOT EXISTS "LocalSettlementRecord"',
   'CREATE TABLE IF NOT EXISTS "LocalSettlementRow"',
   'FOREIGN KEY ("settlementRecordId")',
   'REFERENCES "LocalSettlementRecord"("id")',
-  'ON DELETE CASCADE',
+  "ON DELETE CASCADE",
   '"LocalSettlementRecord_masterLawsuitId_idx"',
   '"LocalSettlementRow_matterId_idx"',
-].forEach((needle) => mustContain(migrationPath, migration, needle));
+]) mustContain("migration", migration, needle);
 
-[
-  '"verify:local-settlement-persistence-schema-safety"',
-].forEach((needle) => mustContain(packagePath, packageJson, needle));
-
-[
-  "Record Local Settlement",
-  "data-barsh-record-local-settlement-guarded-button",
-  "Save the settlement to Barsh Matters local settlement tables only",
-].forEach((needle) => mustContain(pagePath, page, needle));
-
-[
-  "clioFetch(",
-  "writeSettlementToClio",
-  "settlementWritebackPerformed: true",
-].forEach((needle) => mustNotContain(schemaPath, schema, needle));
+mustContain("package.json", pkg, "verify:local-settlement-persistence-schema-safety");
+mustContain("app/matters/page.tsx", page, "data-barsh-record-local-settlement-guarded-button");
+mustContain("app/matters/page.tsx", page, "/api/settlements/local-record");
+mustContain("app/matters/page.tsx", page, "Barsh Matters local settlement tables only");
+mustNotContain("prisma/schema.prisma", schema, "clioFetch(");
+mustNotContain("prisma/schema.prisma", schema, "writeSettlementToClio");
+mustNotContain("prisma/schema.prisma", schema, "settlementWritebackPerformed: true");
 
 if (failures) {
   console.error(`=== LOCAL SETTLEMENT PERSISTENCE SCHEMA SAFETY FAILED: ${failures} failure(s) ===`);
   process.exit(1);
 }
-
 console.log("=== LOCAL SETTLEMENT PERSISTENCE SCHEMA SAFETY PASSED ===");

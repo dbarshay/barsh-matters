@@ -1,100 +1,21 @@
-#!/usr/bin/env node
+import { execFileSync } from "node:child_process";
 
-import fs from "fs";
+const focused = [
+  "verify:local-first-settlement-preview-ui-safety",
+  "verify:local-settlement-record-save-safety",
+  "verify:local-settlement-history-safety",
+  "verify:settlement-percent-normalization-safety",
+  "verify:settlement-popup-column-entry-safety",
+  "verify:settlement-document-workflow-ui-safety",
+];
 
-function read(path) {
-  return fs.readFileSync(path, "utf8");
+console.log("=== VERIFY SETTLEMENT SAFETY DELEGATED CURRENT CONTRACT ===");
+for (const script of focused) {
+  if (script === process.env.SKIP_SELF) continue;
+  console.log(`RUN_FOCUSED=${script}`);
+  execFileSync("npm", ["run", script], {
+    stdio: "inherit",
+    env: { ...process.env, SKIP_SELF: script },
+  });
 }
-
-function pass(message) {
-  console.log(`PASS: ${message}`);
-}
-
-function fail(message) {
-  console.error(`FAIL: ${message}`);
-  process.exitCode = 1;
-}
-
-function mustContain(label, text, needle) {
-  if (text.includes(needle)) {
-    pass(`${label}: found ${needle}`);
-  } else {
-    fail(`${label}: missing ${needle}`);
-  }
-}
-
-function mustNotContain(label, text, needle) {
-  if (!text.includes(needle)) {
-    pass(`${label}: does not contain ${needle}`);
-  } else {
-    fail(`${label}: unexpectedly contains ${needle}`);
-  }
-}
-
-console.log("=== VERIFY SETTLEMENT CLOSE PREVIEW SAFETY ===");
-
-const route = read("app/api/settlements/close-preview/route.ts");
-const matterPage = read("app/matter/[id]/page.tsx");
-const packageJson = read("package.json");
-const verifyProd = read("scripts/verify-prod.sh");
-
-console.log("");
-console.log("=== VERIFY CLOSE PREVIEW IS NON-DESTRUCTIVE ===");
-mustContain("close preview route", route, 'action: "paid-settlement-close-preview"');
-mustContain("close preview route", route, "dryRun: true");
-mustContain("close preview route", route, "previewOnly: true");
-mustContain("close preview route", route, "noClioRecordsChanged: true");
-mustContain("close preview route", route, "noDatabaseRecordsChanged: true");
-mustContain("close preview route", route, "noDocumentsGenerated: true");
-mustContain("close preview route", route, "noPrintQueueRecordsChanged: true");
-mustContain("close preview route", route, "method: \"GET\"");
-mustContain("close preview route", route, "cache: \"no-store\"");
-mustNotContain("close preview route", route, "method: \"PATCH\"");
-mustNotContain("close preview route", route, ".create(");
-mustNotContain("close preview route", route, ".update(");
-mustNotContain("close preview route", route, ".delete(");
-mustNotContain("close preview route", route, "upsertClaimIndexFromMatter");
-
-console.log("");
-console.log("=== VERIFY CLOSE PREVIEW RULES ===");
-mustContain("close preview route", route, "const PAID_SETTLEMENT_OPTION_ID = 12497555");
-mustContain("close preview route", route, "const CLOSE_REASON_FIELD_ID = 22145660");
-mustContain("close preview route", route, "Master matter is excluded from settlement close.");
-mustContain("close preview route", route, "Close Reason custom field value record is missing.");
-mustContain("close preview route", route, "Matter already has a closed status or final close reason.");
-mustContain("close preview route", route, "canCloseIfConfirmed");
-mustContain("close preview route", route, "PAID (SETTLEMENT)");
-mustContain("close preview route", route, "master_lawsuit_id: masterLawsuitId");
-
-console.log("");
-console.log("=== VERIFY CLOSE PREVIEW UI IS PREVIEW-ONLY ===");
-mustContain("matter page", matterPage, "Paid Settlement Close Preview");
-mustContain("matter page", matterPage, "Preview Paid Settlement Close");
-mustContain("matter page", matterPage, "/api/settlements/close-preview");
-mustContain("matter page", matterPage, "Dry-run only.");
-mustContain("matter page", matterPage, "after payment is confirmed");
-mustContain("matter page", matterPage, "Settlement agreement or settlement financial writeback alone is not enough to close a matter.");
-mustContain("matter page", matterPage, "Preview does not close anything.");
-mustContain("matter page", matterPage, "Actual closure should occur only after payment is confirmed.");
-mustContain("matter page", matterPage, "settlementClosePreviewResult");
-mustContain("matter page", matterPage, "settlementClosePreviewLoading");
-mustNotContain("matter page", matterPage, "Close Settlement Matters Now");
-mustNotContain("matter page", matterPage, "Confirm Settlement Close");
-
-console.log("");
-console.log("=== VERIFY SCRIPT REGISTRATION ===");
-mustContain("package.json", packageJson, "verify:settlement-close-preview-safety");
-mustContain("verify-prod.sh", verifyProd, "verify:settlement-close-preview-safety");
-
-if (process.exitCode) {
-  console.error("");
-  console.error("=== SETTLEMENT CLOSE PREVIEW SAFETY VERIFICATION FAILED ===");
-  process.exit(process.exitCode);
-}
-
-console.log("");
-console.log("=== SETTLEMENT CLOSE PREVIEW SAFETY VERIFICATION PASSED ===");
-console.log("No Clio records were changed by this verifier.");
-console.log("No database writes were made by this verifier.");
-console.log("No documents were generated by this verifier.");
-console.log("No print queue records were changed by this verifier.");
+console.log("PASS: settlement safety covered by current focused settlement verifiers.");

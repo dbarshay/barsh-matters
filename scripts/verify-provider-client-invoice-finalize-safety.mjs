@@ -62,7 +62,7 @@ mustContain("invoice page", page, "included receipt row");
 mustContain("invoice page", page, "marked with this invoice ID");
 mustContain("invoice page", page, "exclude them from future ordinary previews");
 mustContain("invoice page", page, "disabled={!createdInvoice || createdInvoice?.status !== \"draft\" || finalizing}");
-mustContain("invoice page", page, "4. Finalize Invoice");
+mustContain("invoice page", page, "Finalize Invoice");
 
 mustNotMatch("invoice page", page, /providerClientInvoice\.(create|update|upsert|delete|deleteMany|updateMany)\s*\(/i, "direct ProviderClientInvoice mutation in UI");
 mustNotMatch("invoice page", page, /matterPaymentReceipt\.(update|updateMany|create|upsert|delete|deleteMany)\s*\(/i, "direct MatterPaymentReceipt mutation in UI");

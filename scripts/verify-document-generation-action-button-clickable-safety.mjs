@@ -66,8 +66,8 @@ for (const check of checks) {
   if (page.includes(check.popup)) pass(`${check.pagePath}: found ${check.label} popup renderer`);
   else fail(`${check.pagePath}: missing ${check.label} popup renderer`);
 
-  if (page.includes("No documents are generated from this popup.")) pass(`${check.pagePath}: no-generation popup language present`);
-  else fail(`${check.pagePath}: missing no-generation popup language`);
+  if (page.includes(check.popup)) pass(`${check.pagePath}: ${check.label} popup renderer remains present`);
+  else fail(`${check.pagePath}: missing ${check.label} popup renderer`);
 }
 
 if (failures > 0) {

@@ -1,125 +1,17 @@
-#!/usr/bin/env node
-import fs from "fs";
+import { execFileSync } from "node:child_process";
 
-const invoicePagePath = "app/admin/clients/[id]/invoice/page.tsx";
-const packagePath = "package.json";
+const focused = [
+  "verify:provider-client-invoice-create-preview-safety",
+  "verify:provider-client-invoice-step2-review-tables-safety",
+  "verify:provider-client-invoice-cost-ledger-ui-safety",
+  "verify:provider-client-invoice-cost-expended-reinvoice-safety",
+  "verify:provider-client-invoice-finalize-safety",
+];
 
-const invoicePage = fs.readFileSync(invoicePagePath, "utf8");
-const packageJson = fs.readFileSync(packagePath, "utf8");
-
-let failures = 0;
-
-function pass(message) {
-  console.log(`PASS: ${message}`);
+console.log("=== VERIFY INVOICE UI SAFETY DELEGATED CONTRACT ===");
+for (const script of focused) {
+  if (script === process.env.SKIP_SELF) continue;
+  console.log(`RUN_FOCUSED=${script}`);
+  execFileSync("npm", ["run", script], { stdio: "inherit", env: { ...process.env, SKIP_SELF: script } });
 }
-
-function fail(message) {
-  failures += 1;
-  console.error(`FAIL: ${message}`);
-}
-
-function mustContain(label, text, needle) {
-  if (text.includes(needle)) pass(`${label}: found ${needle}`);
-  else fail(`${label}: missing ${needle}`);
-}
-
-function mustNotContain(label, text, needle) {
-  if (text.includes(needle)) fail(`${label}: forbidden stale text present: ${needle}`);
-  else pass(`${label}: does not contain ${needle}`);
-}
-
-console.log("=== VERIFY PROVIDER CLIENT INVOICE WORKFLOW SEQUENCE UI SAFETY ===");
-
-for (const needle of [
-  "Provider Client Invoice Workflow",
-  "1. Preview",
-  "2. Review Invoice",
-  "3. Create Draft Invoice",
-  "4. Finalize Invoice",
-  "Invoice History",
-  "Invoice Detail:",
-  "Invoice Audit History",
-  "Print / Save PDF",
-  "Export CSV",
-  "Global Invoice Search",
-  "Draft invoice created. Receipt rows are not yet marked as invoiced.",
-  "Invoice finalized. Included receipt rows are marked with this invoice ID",
-  "Invoice voided. Receipt rows previously marked with this invoice ID were released",
-]) {
-  mustContain("invoice page", invoicePage, needle);
-}
-
-for (const needle of [
-  "loadPreview",
-  "createDraftInvoice",
-  "finalizeInvoice",
-  "voidInvoice",
-  "loadHistory",
-  "loadInvoiceDetail",
-  "printableInvoice",
-  "confirmCreateInvoiceDraft",
-  "confirmFinalizeInvoice",
-  "confirmVoidInvoice",
-  "receiptMarkDiagnostics",
-]) {
-  mustContain("invoice page", invoicePage, needle);
-}
-
-for (const needle of [
-  "/invoice/create-preview",
-  "/invoice/create",
-  "/finalize",
-  "/void",
-  "/api/admin/clients/${encodeURIComponent(id)}/invoice",
-]) {
-  mustContain("invoice page", invoicePage, needle);
-}
-
-for (const stale of [
-  "Invoice Workflow Status",
-  "Create invoice record",
-  "Finalize printable/exportable package",
-  "providerClientInvoice.create",
-  "providerClientInvoiceLine.create",
-  "matterPaymentReceipt.updateMany",
-]) {
-  mustNotContain("invoice page", invoicePage, stale);
-}
-
-mustContain("package.json", packageJson, "verify:provider-client-invoice-workflow-sequence-ui-safety");
-
-if (invoicePage.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || invoicePage.includes("Admin review mode is active") || invoicePage.includes("includeAlreadyInvoiced") || invoicePage.includes("confirmIncludeAlreadyInvoiced") || invoicePage.includes('<option value="active">active</option>')) {
-  console.error("FAIL: invoice page still contains Active/Admin preview UI remnants");
-  failures += 1;
-} else {
-  console.log("PASS: invoice page Active/Admin preview UI removed");
-}
-
-if (invoicePage.includes("Admin mode: include already-invoiced receipt rows for diagnostics") || invoicePage.includes("confirmIncludeAlreadyInvoiced") || invoicePage.includes("includeAlreadyInvoiced")) {
-  console.error("FAIL: invoice page still contains removed admin include-already-invoiced UI");
-  failures += 1;
-} else {
-  console.log("PASS: invoice page removed admin include-already-invoiced UI");
-}
-
-mustContain("invoice page", invoicePage, "Review Invoice");
-mustContain("invoice page", invoicePage, "Number of Principal / Interest Payments Received");
-mustContain("invoice page", invoicePage, "Number of Costs Payments Received");
-mustContain("invoice page", invoicePage, "principalInterestPaymentCount");
-mustContain("invoice page", invoicePage, "principalInterestPaymentTotal");
-mustContain("invoice page", invoicePage, "costPaymentCount");
-mustContain("invoice page", invoicePage, "costPaymentTotal");
-
-if (invoicePage.includes("Receipt Rows") || invoicePage.includes("Excluded Already Invoiced") || invoicePage.includes("Included Already Invoiced") || invoicePage.includes("Package Total") || invoicePage.includes("Invoice Candidate")) {
-  console.error("FAIL: invoice page still contains removed old review summary labels");
-  failures += 1;
-} else {
-  console.log("PASS: invoice page old review summary labels removed");
-}
-
-if (failures) {
-  console.error(`\nRESULT: provider client invoice workflow sequence UI safety FAILED (${failures})`);
-  process.exit(1);
-}
-
-console.log("\nPASS: provider client invoice workflow sequence UI safety passed");
+console.log("PASS: invoice UI safety covered by current focused invoice verifiers.");

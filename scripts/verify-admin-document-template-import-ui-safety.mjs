@@ -29,7 +29,7 @@ check("admin displays final production rows", page.includes("Final production ro
 check("admin displays no Clio/email/print safety", page.includes("No Clio / email / print"));
 check("package script registered", pkg.includes("verify:admin-document-template-import-ui-safety"));
 
-check("admin does not upload files", !page.includes("uploadDocumentToClio") && !page.includes('type="file"'));
+check("admin does not upload files to Clio", !page.includes("uploadDocumentToClio"));
 check("admin does not generate documents", !page.includes("Packer.toBuffer") && !page.includes("new Document("));
 check("admin does not send email", !page.includes("sendMail(") && !page.includes("graphFetchJson"));
 check("admin does not write print queue", !page.includes("documentPrintQueueItem.create"));

@@ -57,11 +57,21 @@ mustContain(routePath, route, "databaseRecordsChanged: true");
 mustContain(routePath, route, "persisted");
 mustContain(routePath, route, "draftMetadata");
 mustContain(routePath, route, "Outlook draft created through Microsoft Graph and draft metadata persisted locally");
+mustContain(routePath, route, "clioRecordsChanged: false");
+
+// The Golden Rule: allowed before local metadata persistence.
+mustContain(routePath, route, "clioFetch");
+mustContain(routePath, route, "listClioMatterDocuments");
+mustContain(routePath, route, "resolveMaildropForGraphDraftMatterId");
 
 mustNotContain(routePath, route, "sendMail");
 mustNotContain(routePath, route, "/sendMail");
 mustNotContain(routePath, route, "createUploadSession");
-mustNotContain(routePath, route, "clioFetch(");
+mustNotContain(routePath, route, "method: \"PATCH\"");
+mustNotContain(routePath, route, "method: \"DELETE\"");
+mustNotContain(routePath, route, "updateMatterCustomFields");
+mustNotContain(routePath, route, "upsertClaimIndexFromMatter");
+mustNotContain(routePath, route, "ingestMattersFromClioBatch");
 mustNotContain(helperPath, helper, "clioFetch(");
 mustNotContain(helperPath, helper, "sendMail");
 mustNotContain(helperPath, helper, "/sendMail");
@@ -80,3 +90,4 @@ if (failures > 0) {
 }
 
 console.log("=== GRAPH DRAFT PERSISTENCE SAFETY PASSED ===");
+console.log("The Golden Rule: Graph draft metadata persistence is local-only; Clio document retrieval/MailDrop context are allowed before persistence.");
