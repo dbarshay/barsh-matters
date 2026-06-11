@@ -8,7 +8,7 @@ const requiredPage = [
   'data-barsh-court-calendar-page="true"',
   "/api/court-calendar/events",
   "includeCaseData",
-  "Export Report XLS",
+  
   "Create Court Calendar Event",
   "BarshHeaderActions",
   "BarshHeaderQuickNav",
@@ -42,4 +42,10 @@ if (failures.length) {
   process.exit(1);
 }
 
+if (!page.includes('handleCalendarFilterKeyDown')) failures.push('page missing handleCalendarFilterKeyDown');
+if (!page.includes('onKeyDown={handleCalendarFilterKeyDown}')) failures.push('page missing onKeyDown={handleCalendarFilterKeyDown}');
+if (!page.includes('Search Calendar')) failures.push('page missing Search Calendar');
+if (!page.includes('gridTemplateColumns: "140px 140px minmax(220px, 1fr) 190px minmax(260px, 1.15fr) minmax(220px, 0.95fr)"')) failures.push('page missing gridTemplateColumns: "140px 140px minmax(220px, 1fr) 190px minmax(260px, 1.15fr) minmax(220px, 0.95fr)"');
+if (page.includes('Create Event')) failures.push('page contains removed filter action Create Event');
+if (page.includes('Export Report XLS')) failures.push('page contains removed filter action Export Report XLS');
 console.log("PASS: court calendar page safety");

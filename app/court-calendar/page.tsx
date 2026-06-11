@@ -289,6 +289,12 @@ export default function CourtCalendarPage() {
     }
   }
 
+  function handleCalendarFilterKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    void searchEvents();
+  }
+
   async function createEvent() {
     if (!form.masterLawsuitId.trim()) {
       alert("Master Lawsuit ID is required.");
@@ -411,19 +417,13 @@ export default function CourtCalendarPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => setCreateOpen((prev) => !prev)} style={secondaryButtonStyle}>
-              {createOpen ? "Hide Create Event" : "Create Event"}
-            </button>
             <button type="button" onClick={() => void searchEvents()} style={primaryButtonStyle} disabled={loading}>
               {loading ? "Searching..." : "Search Calendar"}
-            </button>
-            <button type="button" onClick={exportCalendarReport} style={secondaryButtonStyle} disabled={!events.length}>
-              Export Report XLS
             </button>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(150px, 1fr))", gap: 10, marginTop: 14 }} data-barsh-court-calendar-exact-filter-screen="true">
+        <div style={{ display: "grid", gridTemplateColumns: "140px 140px minmax(220px, 1fr) 190px minmax(260px, 1.15fr) minmax(220px, 0.95fr)", gap: 10, marginTop: 14 }} data-barsh-court-calendar-exact-filter-screen="true" onKeyDown={handleCalendarFilterKeyDown}>
           <label style={labelStyle}>
             Date From
             <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={inputStyle} />
