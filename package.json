@@ -321,7 +321,8 @@
     "verify:invoice-history-actions-safety": "node scripts/verify-invoice-history-actions-safety.mjs",
     "verify:invoice-step4-finalize-card-scroll-safety": "node scripts/verify-invoice-step4-finalize-card-scroll-safety.mjs",
     "verify:invoice-draft-action-merged-into-review-safety": "node scripts/verify-invoice-draft-action-merged-into-review-safety.mjs",
-    "verify:provider-client-hub-page-polish-safety": "node scripts/verify-provider-client-hub-page-polish-safety.mjs"
+    "verify:provider-client-hub-page-polish-safety": "node scripts/verify-provider-client-hub-page-polish-safety.mjs",
+    "verify:provider-client-notes-add-edit-delete-safety": "node scripts/verify-provider-client-notes-add-edit-delete-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

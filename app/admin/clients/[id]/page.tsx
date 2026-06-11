@@ -292,6 +292,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
   const [lawsuitPanelSortField, setLawsuitPanelSortField] = useState("lawsuit");
   const [lawsuitPanelSortDirection, setLawsuitPanelSortDirection] = useState<"asc" | "desc">("asc");
   const [editingField, setEditingField] = useState<keyof typeof clientForm | null>(null);
+  const [notesEditorMode, setNotesEditorMode] = useState<"add" | "edit">("add");
+  const [editableNotes, setEditableNotes] = useState<string[]>([]);
   const [savingClient, setSavingClient] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [clientForm, setClientForm] = useState({
@@ -563,7 +565,9 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
     try {
       const body =
         editingField === "notes"
-          ? { appendNote: clientForm.notes }
+          ? notesEditorMode === "edit"
+            ? { replaceNotes: true, notes: editableNotes.map((note) => note.trim()).filter(Boolean).join("\n\n") }
+            : { appendNote: clientForm.notes }
           : editingField === "address"
             ? { address: clientForm.address }
             : clientForm;
@@ -578,7 +582,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
       await loadDetail(id);
       setEditingField(null);
-      setSaveMessage(editingField === "notes" ? "Note added." : "Saved.");
+      setSaveMessage(editingField === "notes" ? (notesEditorMode === "edit" ? "Notes updated." : "Note added.") : "Saved.");
     } catch (err: any) {
       setError(err?.message || "Could not save client info.");
     } finally {
@@ -638,10 +642,44 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
     [lawsuitRows]
   );
 
+  function splitClientNotesForEditing(rawNotes: string) {
+    return rawNotes
+      .split(/\n+/)
+      .map((note) => note.trim())
+      .filter(Boolean);
+  }
+
+  function startAddNote() {
+    setSaveMessage("");
+    setError("");
+    setNotesEditorMode("add");
+    setEditableNotes([]);
+    setClientForm((current) => ({ ...current, notes: "" }));
+    setEditingField("notes");
+  }
+
+  function startEditNotes() {
+    setSaveMessage("");
+    setError("");
+    setNotesEditorMode("edit");
+    setEditableNotes(splitClientNotesForEditing(clientNotes(client?.details)));
+    setClientForm((current) => ({ ...current, notes: clientNotes(client?.details) }));
+    setEditingField("notes");
+  }
+
+  function updateEditableNote(index: number, value: string) {
+    setEditableNotes((current) => current.map((note, noteIndex) => (noteIndex === index ? value : note)));
+  }
+
+  function deleteEditableNote(index: number) {
+    setEditableNotes((current) => current.filter((_, noteIndex) => noteIndex !== index));
+  }
+
   function beginEdit(field: keyof typeof clientForm) {
     setSaveMessage("");
     setError("");
     if (field === "notes") {
+      setNotesEditorMode("add");
       setClientForm((current) => ({ ...current, notes: "" }));
     }
     setEditingField(field);
@@ -649,6 +687,9 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
   function cancelEdit() {
     setEditingField(null);
+    setNotesEditorMode("add");
+    setEditableNotes([]);
+    setNotesEditorMode("add");
     if (client) {
       setClientForm({
         address: clientAddress(client.details),
@@ -1027,12 +1068,79 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             <p style={providerHubSubtleTextStyle}>Internal notes and account-specific reminders for this provider/client.</p>
           </div>
         </div>
-        <dl style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, margin: 0 }}>
-          {editableTextRow("", "notes", clientNotes(client?.details), {
-            multiline: true,
-            addLabel: "Add Notes",
-          })}
-        </dl>
+
+        {editingField === "notes" ? (
+          notesEditorMode === "add" ? (
+            <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ color: "#475569", fontSize: 13, fontWeight: 850 }}>
+                Add a new note. Saving will append it with the current date and time.
+              </div>
+              <textarea
+                value={clientForm.notes}
+                onChange={(event) => updateClientForm("notes", event.target.value)}
+                placeholder="Enter new note..."
+                style={{ width: "100%", minHeight: 110, padding: 10, border: "1px solid #cbd5e1", borderRadius: 10, fontFamily: "inherit", lineHeight: 1.45 }}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                <button type="button" disabled={savingClient} onClick={cancelEdit} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#ffffff", fontWeight: 850 }}>
+                  Cancel
+                </button>
+                <button type="button" disabled={savingClient || !clientForm.notes.trim()} onClick={saveClientDefaults} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#ffffff", fontWeight: 900 }}>
+                  {savingClient ? "Saving..." : "Save New Note"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ color: "#475569", fontSize: 13, fontWeight: 850 }}>
+                Edit any individual note below or use Delete to remove that note. Saving replaces the notes list.
+              </div>
+              {editableNotes.length ? (
+                editableNotes.map((note, noteIndex) => (
+                  <div key={`note-editor-${noteIndex}`} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "start" }}>
+                    <textarea
+                      value={note}
+                      onChange={(event) => updateEditableNote(noteIndex, event.target.value)}
+                      style={{ width: "100%", minHeight: 70, padding: 10, border: "1px solid #cbd5e1", borderRadius: 10, fontFamily: "inherit", lineHeight: 1.45 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => deleteEditableNote(noteIndex)}
+                      style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900 }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800 }}>No notes remain.</div>
+              )}
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                <button type="button" disabled={savingClient} onClick={cancelEdit} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#ffffff", fontWeight: 850 }}>
+                  Cancel
+                </button>
+                <button type="button" disabled={savingClient} onClick={saveClientDefaults} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#ffffff", fontWeight: 900 }}>
+                  {savingClient ? "Saving..." : "Save Note Edits"}
+                </button>
+              </div>
+            </div>
+          )
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
+              {clientNotes(client?.details) || "No notes yet."}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <button type="button" onClick={startAddNote} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#ffffff", fontWeight: 900 }}>
+                Add Note
+              </button>
+              <button type="button" onClick={startEditNotes} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #64748b", background: "#ffffff", color: "#0f172a", fontWeight: 900 }}>
+                Edit Notes
+              </button>
+            </div>
+          </div>
+        )}
+
         {saveMessage && <div style={{ marginTop: 10, color: "#166534", fontWeight: 800 }}>{saveMessage}</div>}
       </section>
 

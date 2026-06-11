@@ -6,6 +6,12 @@ function clean(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function asPlainObject(value: unknown): Record<string, any> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, any>;
+}
+
+
 function lower(value: unknown): string {
   return clean(value).toLowerCase();
 }
@@ -397,6 +403,16 @@ function timestampedClientNote(value: unknown) {
   return `[${timestamp}] ${text}`;
 }
 
+function replaceClientNotes(target: any, notes: unknown) {
+  const details = asPlainObject(target.details);
+  const nextNotes = clean(notes);
+  target.details = {
+    ...details,
+    hidden_notes: nextNotes,
+    notes: nextNotes,
+  };
+}
+
 function appendClientNote(details: Record<string, unknown>, value: unknown) {
   const stamped = timestampedClientNote(value);
   if (!stamped) return;
@@ -420,13 +436,14 @@ function clientEditFieldNames(body: any): string[] {
   if ("pullCosts" in body) fields.push("Pull Costs");
   if ("remit" in body) fields.push("Remit");
   if ("notes" in body) fields.push("Notes");
-  if ("appendNote" in body) fields.push("Notes");
+    if (body?.replaceNotes === true) fields.push("Notes");
+    else if ("appendNote" in body) fields.push("Notes");
 
   return fields;
 }
 
 function clientAuditAction(body: any): string {
-  return "appendNote" in body ? "admin-client-note-add" : "admin-client-detail-update";
+  return body?.replaceNotes === true ? "admin-client-notes-replace" : "appendNote" in body ? "admin-client-note-add" : "admin-client-detail-update";
 }
 
 function jsonSafeValue(value: unknown) {
@@ -442,7 +459,8 @@ function editableClientDetails(details: Record<string, unknown>, body: any) {
 
   if ("address" in body) setDetailValue(next, "address", body.address);
   if ("notes" in body) setDetailValue(next, "notes", body.notes);
-  if ("appendNote" in body) appendClientNote(next, body.appendNote);
+  if (body?.replaceNotes === true) replaceClientNotes(next, body.notes);
+  else if ("appendNote" in body) appendClientNote(next, body.appendNote);
 
   if ("owner" in body) setHiddenDetailValue(next, "hidden_owner", body.owner);
   if ("providerGroup" in body) setHiddenDetailValue(next, "hidden_group_name", body.providerGroup);
