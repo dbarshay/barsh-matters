@@ -324,7 +324,8 @@
     "verify:provider-client-hub-page-polish-safety": "node scripts/verify-provider-client-hub-page-polish-safety.mjs",
     "verify:provider-client-notes-add-edit-delete-safety": "node scripts/verify-provider-client-notes-add-edit-delete-safety.mjs",
     "verify:provider-client-hub-nowrap-safety": "node scripts/verify-provider-client-hub-nowrap-safety.mjs",
-    "verify:provider-client-identity-nowrap-safety": "node scripts/verify-provider-client-identity-nowrap-safety.mjs"
+    "verify:provider-client-identity-nowrap-safety": "node scripts/verify-provider-client-identity-nowrap-safety.mjs",
+    "verify:provider-client-notes-eyebrow-removed-safety": "node scripts/verify-provider-client-notes-eyebrow-removed-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

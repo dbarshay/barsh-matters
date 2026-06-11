@@ -1070,9 +1070,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       <section style={{ ...providerHubCardStyle, marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, marginBottom: 10 }}>
           <div>
-            <div style={providerHubHeaderLabelStyle}>
-              Notes
-            </div>
             <h2 style={providerHubSectionTitleStyle}>Account Notes</h2>
           </div>
         </div>
