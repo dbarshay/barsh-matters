@@ -26,6 +26,16 @@ const pageStyle: React.CSSProperties = {
 };
 
 
+const providerHubIdentityLabelStyle: React.CSSProperties = {
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const providerHubIdentityValueStyle: React.CSSProperties = {
+  margin: 0,
+  whiteSpace: "nowrap",
+};
+
 const providerHubCardStyle: React.CSSProperties = {
   border: "1px solid #e2e8f0",
   borderRadius: 18,
@@ -840,7 +850,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(330px, 0.95fr) minmax(460px, 1.2fr) minmax(320px, 0.9fr)",
+          gridTemplateColumns: "minmax(450px, 1.05fr) minmax(440px, 1fr) minmax(320px, 0.85fr)",
           gap: 18,
           marginBottom: 18,
           alignItems: "start",
@@ -877,11 +887,11 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               </button>
             )}
           </div>
-          <dl style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px 12px", margin: 0 }}>
-            <dt style={{ fontWeight: 800 }}>Name</dt>
-            <dd style={{ margin: 0 }}>{client?.displayName || ""}</dd>
-            <dt style={{ fontWeight: 800 }}>Address</dt>
-            <dd style={{ margin: 0 }}>
+          <dl style={{ display: "grid", gridTemplateColumns: "100px max-content", gap: "8px 18px", margin: 0, alignItems: "start" }}>
+            <dt style={providerHubIdentityLabelStyle}>Name</dt>
+            <dd style={providerHubIdentityValueStyle}>{client?.displayName || ""}</dd>
+            <dt style={providerHubIdentityLabelStyle}>Address</dt>
+            <dd style={providerHubIdentityValueStyle}>
               {editingField === "address" ? (
                 <textarea
                   value={clientForm.address}
@@ -889,13 +899,13 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                   style={{ width: "100%", minHeight: 70, padding: 8, border: "1px solid #cbd5e1", borderRadius: 8 }}
                 />
               ) : (
-                <span style={{ whiteSpace: "pre-wrap", display: "block" }}>{clientAddress(client?.details) || "—"}</span>
+                <span style={{ whiteSpace: "pre", display: "block" }}>{clientAddress(client?.details) || "—"}</span>
               )}
             </dd>
-            <dt style={{ fontWeight: 800 }}>Status</dt>
-            <dd style={{ margin: 0 }}>{statusBadge(client?.isActive)}</dd>
-            <dt style={{ fontWeight: 800 }}>Aliases</dt>
-            <dd style={{ margin: 0 }}>{client?.aliases?.length ? client.aliases.join(", ") : "—"}</dd>
+            <dt style={providerHubIdentityLabelStyle}>Status</dt>
+            <dd style={providerHubIdentityValueStyle}>{statusBadge(client?.isActive)}</dd>
+            <dt style={providerHubIdentityLabelStyle}>Aliases</dt>
+            <dd style={providerHubIdentityValueStyle}>{client?.aliases?.length ? client.aliases.join(", ") : "—"}</dd>
           </dl>
         </div>
 

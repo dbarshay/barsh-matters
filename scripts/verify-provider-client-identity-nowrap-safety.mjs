@@ -26,31 +26,33 @@ function mustAvoidPattern(label, text, regex, description) {
   else fail(`${label}: matched forbidden ${description}`);
 }
 
-console.log("=== VERIFY PROVIDER CLIENT HUB NOWRAP SAFETY ===");
+console.log("=== VERIFY PROVIDER CLIENT IDENTITY NOWRAP SAFETY ===");
 
-mustContain("client page", page, "providerHubNoWrapLabelStyle");
-mustContain("client page", page, "providerHubNoWrapValueStyle");
+mustContain("client page", page, "providerHubIdentityLabelStyle");
+mustContain("client page", page, "providerHubIdentityValueStyle");
 mustContain("client page", page, 'whiteSpace: "nowrap"');
 mustContain("client page", page, 'gridTemplateColumns: "minmax(450px, 1.05fr) minmax(440px, 1fr) minmax(320px, 0.85fr)"');
-mustContain("client page", page, 'gridTemplateColumns: "205px max-content"');
-mustContain("client page", page, '<dt style={providerHubNoWrapLabelStyle}>Owner</dt>');
-mustContain("client page", page, '<dt style={providerHubNoWrapLabelStyle}>Provider Group</dt>');
-mustContain("client page", page, '<dt style={providerHubNoWrapLabelStyle}>Retainer NF Principal</dt>');
-mustContain("client page", page, '<dd style={providerHubNoWrapValueStyle}>');
+mustContain("client page", page, 'gridTemplateColumns: "100px max-content"');
+mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Name</dt>');
+mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Address</dt>');
+mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Status</dt>');
+mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Aliases</dt>');
+mustContain("client page", page, '<dd style={providerHubIdentityValueStyle}>');
+mustContain("client page", page, 'whiteSpace: "pre"');
 
 mustAvoidPattern("client page", page, /providerClientInvoice\.(create|update|delete|upsert)\s*\(/i, "direct ProviderClientInvoice mutation on hub page");
 mustAvoidPattern("client page", page, /matterPaymentReceipt\.(create|update|delete|upsert)\s*\(/i, "direct MatterPaymentReceipt mutation on hub page");
 
-const expected = "node scripts/verify-provider-client-hub-nowrap-safety.mjs";
-if (pkg.scripts?.["verify:provider-client-hub-nowrap-safety"] === expected) {
-  pass("package.json registers verify:provider-client-hub-nowrap-safety");
+const expected = "node scripts/verify-provider-client-identity-nowrap-safety.mjs";
+if (pkg.scripts?.["verify:provider-client-identity-nowrap-safety"] === expected) {
+  pass("package.json registers verify:provider-client-identity-nowrap-safety");
 } else {
-  fail("package.json missing verify:provider-client-hub-nowrap-safety");
+  fail("package.json missing verify:provider-client-identity-nowrap-safety");
 }
 
 if (failures) {
-  console.error(`\nRESULT: provider/client hub nowrap safety FAILED (${failures})`);
+  console.error(`\nRESULT: provider/client identity nowrap safety FAILED (${failures})`);
   process.exit(1);
 }
 
-console.log("\nRESULT: provider/client hub nowrap safety PASSED");
+console.log("\nRESULT: provider/client identity nowrap safety PASSED");
