@@ -90,15 +90,15 @@ mustContain(
 );
 
 mustContain(
-  "printable Scenario 6 cap row is conditional on carried-forward shortfall, not any shortfall",
+  "printable Scenario 6 cap row is conditional on cost deduction applied",
   invoicePage,
-  "const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAddedToLedger)"
+  "const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceDeductionApplied)"
 );
 
 mustContain(
-  "on-screen Scenario 6 cap row is conditional on carried-forward shortfall, not any shortfall",
+  "on-screen Scenario 6 cap row is conditional on cost deduction applied",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
 );
 
 mustContain(

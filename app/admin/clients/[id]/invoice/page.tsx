@@ -653,7 +653,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const summaryRetainerFee = Number(invoice.retainerFeeTotal || 0);
     const summaryNetRemitToProvider = summaryPrincipalInterestReceived - summaryRetainerFee;
     const printableCostSummary = invoiceCostSummaryValues(invoice);
-    const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAddedToLedger)
+    const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceDeductionApplied)
       ? `<div><span>25% Deduction Cap</span><span>${safeHtml(money(printableCostSummary.costBalanceDeductionCap))}</span></div>`
       : "";
     const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAppliedToLedger)
@@ -956,10 +956,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const currentPeriodNegativeCostBalance = Math.max(0, -costBalanceThisRemittancePeriod);
     const costBalanceAppliedToLedger = Number(totals.costBalanceAppliedToLedger ?? Math.min(currentPeriodPositiveCostBalance, Math.max(0, costBalanceLedgerBefore)));
     const costBalanceReimbursementToProvider = Number(totals.costBalanceReimbursementToProvider ?? Math.max(0, currentPeriodPositiveCostBalance - costBalanceAppliedToLedger));
-    const costBalanceDeductionApplied = Number(totals.costBalanceDeductionApplied ?? Math.min(currentPeriodNegativeCostBalance, costBalanceDeductionCap));
-    const costBalanceAddedToLedger = Number(totals.costBalanceAddedToLedger ?? Math.max(0, currentPeriodNegativeCostBalance - costBalanceDeductionApplied));
+    const totalRecoverableNegativeCostBalance = Number(totals.totalRecoverableNegativeCostBalance ?? (currentPeriodNegativeCostBalance + Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger)));
+    const costBalanceDeductionApplied = Number(totals.costBalanceDeductionApplied ?? Math.min(totalRecoverableNegativeCostBalance, costBalanceDeductionCap));
+    const currentShortfallDeductionApplied = Number(totals.currentShortfallDeductionApplied ?? Math.min(currentPeriodNegativeCostBalance, costBalanceDeductionApplied));
+    const priorBalanceDeductionApplied = Number(totals.priorBalanceDeductionApplied ?? Math.max(0, costBalanceDeductionApplied - currentShortfallDeductionApplied));
+    const costBalanceAddedToLedger = Number(totals.costBalanceAddedToLedger ?? Math.max(0, currentPeriodNegativeCostBalance - currentShortfallDeductionApplied));
     const costBalanceAdjustmentToNetRemit = Number(totals.costBalanceAdjustmentToNetRemit ?? (costBalanceReimbursementToProvider - costBalanceDeductionApplied));
-    const costBalanceLedgerAfter = Number(totals.costBalanceLedgerAfter ?? Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger + costBalanceAddedToLedger));
+    const costBalanceLedgerAfter = Number(totals.costBalanceLedgerAfter ?? Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger - priorBalanceDeductionApplied + costBalanceAddedToLedger));
     const costBalanceLedgerChange = Number(totals.costBalanceLedgerChange ?? (costBalanceLedgerAfter - costBalanceLedgerBefore));
     const netRemitToProviderTotal = Number(totals.netRemitToProviderTotal ?? (baseNetRemitToProvider + costBalanceAdjustmentToNetRemit));
 
@@ -1107,7 +1110,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <div><strong>Principal / Interest Received</strong><br />{money(summary.principalInterestTotal)}</div>
           <div><strong>Retainer Fee</strong><br />{money(summary.retainerFeeTotal)}</div>
           <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Net Remit Before Costs</strong><br /><strong>{money(summary.baseNetRemitToProvider)}</strong></div>
-          {isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
+          {isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
           <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
           <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
           <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>

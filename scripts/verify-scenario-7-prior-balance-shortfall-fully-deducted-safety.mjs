@@ -156,15 +156,15 @@ mustContain(
 );
 
 mustContain(
-  "printable Scenario 7 cap hidden unless current shortfall carries forward",
+  "printable Scenario 7 cap shown when cost deduction is applied",
   invoicePage,
-  "const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceAddedToLedger)"
+  "const printableCostDeductionCapHtml = isNonZeroMoneyValue(printableCostSummary.costBalanceDeductionApplied)"
 );
 
 mustContain(
-  "on-screen Scenario 7 cap hidden unless current shortfall carries forward",
+  "on-screen Scenario 7 cap shown when cost deduction is applied",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
+  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
 );
 
 mustContain(
