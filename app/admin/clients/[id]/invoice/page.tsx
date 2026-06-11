@@ -395,6 +395,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     return query;
   }
 
+
+  function scrollToInvoiceSection(sectionId: string, delayMs = 150) {
+    window.setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, delayMs);
+  }
+
   async function loadPreview() {
     if (!id) return;
     setLoadingPreview(true);
@@ -1492,17 +1499,17 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       </section>
 
 
-      <section style={{ ...cardStyle, marginBottom: 18 }}>
+      <section id="invoice-step-1" style={{ ...cardStyle, marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
           <div>
             <div style={{ color: "#2563eb", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Step 1
             </div>
             <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
-              Preview Invoice
+              Select Invoice Criteria
             </h2>
             <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
-              Select the receipt status, transaction type, and date range to generate a read-only invoice preview before creating a draft.
+              Select the receipt status, transaction type, and date range that should be included in the invoice preview.
             </p>
           </div>
         </div>
@@ -1530,7 +1537,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
           <label style={{ fontWeight: 900, color: "#334155" }}>
             <span style={{ display: "block", marginBottom: 6 }}>Transaction Type</span>
-            <select value={transactionTypeFilter} onChange={(event) => setTransactionTypeFilter(event.target.value)} style={filterControlStyle}>
+            <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
               <option value="">All</option>
               <option value="principal_interest">Principal / Interest</option>
               <option value="filing_fee_payment">Costs Received</option>
@@ -1557,7 +1564,9 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           </span>
           <button
             type="button"
-            onClick={loadPreview}
+            onClick={() => {
+              Promise.resolve(loadPreview()).then(() => scrollToInvoiceSection("invoice-step-2", 200));
+            }}
             disabled={loadingPreview || !id}
             style={{
               padding: "10px 16px",
@@ -1574,80 +1583,235 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         </div>
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18, display: preview ? undefined : "none" }}>
-        <h2 style={{ marginTop: 0 }}>2. Review Invoice</h2>
-        {!preview ? (
-          <p style={{ color: "#64748b" }}>No preview loaded.</p>
-        ) : (
+      <section id="invoice-step-2" style={{ ...cardStyle, marginBottom: 18, display: preview ? undefined : "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
+          <div>
+            <div style={{ color: "#2563eb", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Step 2
+            </div>
+            <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
+              Review Invoice Preview
+            </h2>
+            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
+              Confirm the previewed receipt rows, cost rows, retainer calculation, and remittance summary before creating a draft invoice.
+            </p>
+          </div>
+        </div>
+
+        {preview ? (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(230px, 1fr))", gap: 16, marginBottom: 14 }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
-                <strong>Principal / Interest Payments:</strong>
-                <span>{principalInterestPaymentCount} — {money(principalInterestPaymentTotal)}</span>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(190px, 1fr))",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Principal / Interest
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                  {money(principalInterestPaymentTotal)}
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  {principalInterestPaymentCount} payment row{principalInterestPaymentCount === 1 ? "" : "s"}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
-                <strong>Costs Received:</strong>
-                <span>{costsReceivedPaymentCount} — {money(costsReceivedPaymentTotal)}</span>
+
+              <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Costs Received
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                  {money(costsReceivedPaymentTotal)}
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  {costsReceivedPaymentCount} cost receipt row{costsReceivedPaymentCount === 1 ? "" : "s"}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline", whiteSpace: "nowrap" }}>
-                <strong>Costs Expended:</strong>
-                <span>{feesCostsExpendedCount} — {money(feesCostsExpendedTotal)}</span>
+
+              <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Costs Expended
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                  {money(feesCostsExpendedTotal)}
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  {feesCostsExpendedCount} cost row{feesCostsExpendedCount === 1 ? "" : "s"}
+                </div>
+              </div>
+
+              <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Final Net Remit
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                  {money(previewTotals.netRemitToProviderTotal)}
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Cost balance after: {money(previewTotals.costBalanceLedgerAfter)}
+                </div>
               </div>
             </div>
 
-            {renderPreviewLineTable(
-              "Principal / Interest Received",
-              principalInterestPreviewLines,
-              "No principal or interest payments in this preview."
-            )}
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#ffffff" }}>
+                {renderPreviewLineTable(
+                  "Principal / Interest Received",
+                  principalInterestPreviewLines,
+                  "No principal or interest payments in this preview."
+                )}
+              </div>
 
-            {renderPreviewLineTable(
-              "Costs Received",
-              costsReceivedPreviewLines,
-              "No cost payments received in this preview."
-            )}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#ffffff" }}>
+                {renderPreviewLineTable(
+                  "Costs Received",
+                  costsReceivedPreviewLines,
+                  "No cost payments received in this preview."
+                )}
+              </div>
 
-            {renderPreviewLineTable(
-              "Fees and Costs Expended",
-              feesCostsExpendedPreviewLines,
-              "No fees or costs expended in this preview."
-            )}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#ffffff" }}>
+                {renderPreviewLineTable(
+                  "Fees and Costs Expended",
+                  feesCostsExpendedPreviewLines,
+                  "No fees or costs expended in this preview."
+                )}
+              </div>
 
-            {renderCostBalanceSummary(previewTotals)}
+              <div style={{ border: "1px solid #bfdbfe", borderRadius: 14, padding: 12, background: "#f8fbff" }}>
+                {renderCostBalanceSummary(previewTotals)}
+              </div>
+
+            <div
+              style={{
+                border: "1px solid #dbeafe",
+                background: "#f8fbff",
+                borderRadius: 14,
+                padding: 14,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 14,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Draft Invoice Action
+                </div>
+                <div style={{ marginTop: 4, color: "#0f172a", fontSize: 14, fontWeight: 850 }}>
+                  Create a draft invoice from this reviewed preview.
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Draft invoices freeze package lines for review but do not mark receipt rows as invoiced.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  Promise.resolve(createDraftInvoice()).then(() => scrollToInvoiceSection("invoice-step-3", 200));
+                }}
+                disabled={!preview || creatingDraft}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: "1px solid #2563eb",
+                  background: preview ? "#2563eb" : "#94a3b8",
+                  color: "#fff",
+                  fontWeight: 950,
+                  boxShadow: preview ? "0 2px 6px rgba(37, 99, 235, 0.25)" : undefined,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {creatingDraft ? "Creating Draft..." : "Create Draft Invoice"}
+              </button>
+            </div>
+            </div>
           </>
+        ) : (
+          <p style={{ color: "#64748b" }}>No preview loaded.</p>
         )}
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18, display: preview ? undefined : "none" }}>
-        <h2 style={{ marginTop: 0 }}>3. Create Draft Invoice</h2>
-        <p style={{ color: "#475569" }}>
-          Draft invoices freeze the package lines but do not mark receipt rows as invoiced.
-        </p>
-        <button type="button" onClick={createDraftInvoice} disabled={!preview || creatingDraft} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #2563eb", background: preview ? "#2563eb" : "#94a3b8", color: "#fff", fontWeight: 900 }}>
-          {creatingDraft ? "Creating Draft..." : "Create Draft Invoice"}
-        </button>
-      </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18, display: createdInvoice ? undefined : "none" }}>
-        <h2 style={{ marginTop: 0 }}>4. Finalize Invoice</h2>
-        <p style={{ color: "#475569" }}>
-          Finalizing marks only the included MatterPaymentReceipt rows with this invoice ID. The frozen invoice lines remain the invoice review/output source, and source costs, remittance records, Clio, ClaimIndex, documents, email, print, and queue are not changed.
-        </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <button type="button" onClick={() => finalizeInvoice()} disabled={!createdInvoice || createdInvoice?.status !== "draft" || finalizing} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #166534", background: createdInvoice?.status === "draft" ? "#166534" : "#94a3b8", color: "#fff", fontWeight: 900 }}>
+      <section id="invoice-step-3" style={{ ...cardStyle, marginBottom: 18, display: createdInvoice ? undefined : "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
+          <div>
+            <div style={{ color: "#166534", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Step 3
+            </div>
+            <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
+              Finalize Invoice
+            </h2>
+            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
+              Finalize only after reviewing the draft. Finalization marks included MatterPaymentReceipt rows with this invoice ID and keeps frozen invoice lines as the review/output source.
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            border: "1px solid #bbf7d0",
+            background: "#f0fdf4",
+            borderRadius: 14,
+            padding: 14,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 14,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ color: "#166534", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Finalization Action
+            </div>
+            <div style={{ marginTop: 4, color: "#0f172a", fontSize: 14, fontWeight: 850 }}>
+              Convert the draft invoice into a finalized invoice package.
+            </div>
+            <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              {createdInvoice && (
+                <>
+                  {statusBadge(createdInvoice.status)}
+                  <strong>{createdInvoice.invoiceNumber}</strong>
+                </>
+              )}
+            </div>
+            <div style={{ marginTop: 6, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+              Source costs, remittance records, Clio, ClaimIndex, documents, email, print, and queue are not changed.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              Promise.resolve(finalizeInvoice()).then(() => scrollToInvoiceSection("invoice-detail", 200));
+            }}
+            disabled={!createdInvoice || createdInvoice?.status !== "draft" || finalizing}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 10,
+              border: "1px solid #166534",
+              background: createdInvoice?.status === "draft" ? "#166534" : "#94a3b8",
+              color: "#fff",
+              fontWeight: 950,
+              boxShadow: createdInvoice?.status === "draft" ? "0 2px 6px rgba(22, 101, 52, 0.25)" : undefined,
+              whiteSpace: "nowrap",
+            }}
+          >
             {finalizing ? "Finalizing..." : "Finalize Invoice"}
           </button>
-          {createdInvoice && (
-            <span>
-              {statusBadge(createdInvoice.status)} <strong>{createdInvoice.invoiceNumber}</strong>
-            </span>
-          )}
         </div>
       </section>
 
 
       {invoiceDetailVisible && invoiceDetail && (
-        <section style={{ ...cardStyle, marginBottom: 18 }}>
+        <section id="invoice-detail" style={{ ...cardStyle, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ marginTop: 0 }}>Invoice Detail: {detailInvoice?.invoiceNumber}</h2>
@@ -1663,7 +1827,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                 <button type="button" onClick={() => finalizeInvoice(detailInvoice)} disabled={finalizing} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #166534", background: "#166534", color: "#fff", fontWeight: 900 }}>Finalize</button>
               )}
               {detailInvoice?.status === "finalized" && (
-                <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #991b1b", background: "#fff", color: "#991b1b", fontWeight: 900 }}>Void</button>
+                <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900 }}>Void</button>
               )}
             </div>
           </div>

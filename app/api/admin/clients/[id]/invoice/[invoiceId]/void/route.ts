@@ -66,9 +66,9 @@ export async function POST(
       );
     }
 
-    if (invoice.status !== "finalized") {
+    if (invoice.status !== "finalized" && invoice.status !== "draft") {
       return NextResponse.json(
-        { ok: false, error: `Only finalized invoices can be voided. Current status: ${invoice.status}` },
+        { ok: false, error: `Only draft or finalized invoices can be voided. Current status: ${invoice.status}` },
         { status: 409 }
       );
     }

@@ -158,6 +158,58 @@ export default function ClientInvoiceHistoryPage() {
     }
   }
 
+  const [actionBusyInvoiceId, setActionBusyInvoiceId] = useState("");
+
+  async function finalizeInvoice(invoice: any) {
+    const invoiceId = clean(invoice?.id);
+    if (id.length === 0 || invoiceId.length === 0) return;
+    setActionBusyInvoiceId(invoiceId);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}/finalize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmFinalizeInvoice: true }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok === false || json?.ok === false) {
+        throw new Error(json?.error || "Unable to finalize invoice.");
+      }
+      await loadHistory();
+    } catch (err: any) {
+      setError(err?.message || "Unable to finalize invoice.");
+    } finally {
+      setActionBusyInvoiceId("");
+    }
+  }
+
+  async function voidInvoice(invoice: any) {
+    const invoiceId = clean(invoice?.id);
+    const invoiceNumber = clean(invoice?.invoiceNumber) || "this invoice";
+    if (id.length === 0 || invoiceId.length === 0) return;
+    const confirmed = window.confirm(`Void ${invoiceNumber}? This will void the invoice record. Finalized invoice receipt marks will be released for future invoicing.`);
+    if (confirmed === false) return;
+    setActionBusyInvoiceId(invoiceId);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/clients/${encodeURIComponent(id)}/invoice/${encodeURIComponent(invoiceId)}/void`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmVoidInvoice: true, voidReason: "Voided from client invoice history page" }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok === false || json?.ok === false) {
+        throw new Error(json?.error || "Unable to void invoice.");
+      }
+      await loadHistory();
+    } catch (err: any) {
+      setError(err?.message || "Unable to void invoice.");
+    } finally {
+      setActionBusyInvoiceId("");
+    }
+  }
+
+
   useEffect(() => {
     loadHistory();
   }, [id]);
@@ -271,12 +323,13 @@ export default function ClientInvoiceHistoryPage() {
                 <th style={{ ...thStyle, textAlign: "right" }}>Cost Balance</th>
                 <th style={{ ...thStyle, textAlign: "right" }}>Cost Ledger</th>
                 <th style={{ ...thStyle, textAlign: "right" }}>Final Net Remit</th>
+                <th style={thStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {history.length === 0 && (
                 <tr>
-                  <td colSpan={14} style={tdStyle}>{loading ? "Loading invoice history..." : "No invoice history found."}</td>
+                  <td colSpan={15} style={tdStyle}>{loading ? "Loading invoice history..." : "No invoice history found."}</td>
                 </tr>
               )}
               {history.map((invoice: any) => (
@@ -295,6 +348,30 @@ export default function ClientInvoiceHistoryPage() {
                   <td style={{ ...tdStyle, textAlign: "right" }}>{money(invoice.costBalanceThisRemittancePeriod)}</td>
                   <td style={{ ...tdStyle, textAlign: "right" }}>{money(invoice.costBalanceLedgerAfter)}</td>
                   <td style={{ ...tdStyle, textAlign: "right", fontWeight: 900 }}>{money(invoice.netRemitToProviderTotal)}</td>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {invoice.status === "draft" && (
+                        <button
+                          type="button"
+                          onClick={() => finalizeInvoice(invoice)}
+                          disabled={actionBusyInvoiceId === clean(invoice.id)}
+                          style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #166534", background: "#166534", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}
+                        >
+                          Finalize
+                        </button>
+                      )}
+                      {(invoice.status === "draft" || invoice.status === "finalized") && (
+                        <button
+                          type="button"
+                          onClick={() => voidInvoice(invoice)}
+                          disabled={actionBusyInvoiceId === clean(invoice.id)}
+                          style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}
+                        >
+                          Void
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

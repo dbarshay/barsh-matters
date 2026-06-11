@@ -52,7 +52,7 @@ mustContain("finalize route", finalize, "receiptRowsMarkedWithThisInvoiceId");
 mustContain("finalize route", finalize, "does not mutate Clio, ClaimIndex, source costs, documents, email, print, queue");
 mustContain("void route", voidRoute, "data: { invoiceId: null }");
 mustContain("void route", voidRoute, "receiptRowsClearedOnVoid");
-mustContain("void route", voidRoute, "Only finalized invoices can be voided");
+mustContain("void route", voidRoute, "Only draft or finalized invoices can be voided");
 
 mustNotMatch("preview route", preview, /matterPaymentReceipt\.(update|updateMany|create|upsert|delete|deleteMany)\s*\(/i, "MatterPaymentReceipt mutation in preview");
 mustNotMatch("preview route", preview, /claimIndex\.(update|updateMany|create|upsert|delete|deleteMany)\s*\(/i, "ClaimIndex mutation in preview");

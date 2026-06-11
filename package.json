@@ -316,7 +316,11 @@
     "verify:invoice-unreached-steps-hidden-safety": "node scripts/verify-invoice-unreached-steps-hidden-safety.mjs",
     "verify:invoice-client-costs-ledger-page-safety": "node scripts/verify-invoice-client-costs-ledger-page-safety.mjs",
     "verify:invoice-history-page-safety": "node scripts/verify-invoice-history-page-safety.mjs",
-    "verify:invoice-step1-preview-card-polish-safety": "node scripts/verify-invoice-step1-preview-card-polish-safety.mjs"
+    "verify:invoice-step1-preview-card-polish-safety": "node scripts/verify-invoice-step1-preview-card-polish-safety.mjs",
+    "verify:invoice-step2-review-card-polish-safety": "node scripts/verify-invoice-step2-review-card-polish-safety.mjs",
+    "verify:invoice-history-actions-safety": "node scripts/verify-invoice-history-actions-safety.mjs",
+    "verify:invoice-step4-finalize-card-scroll-safety": "node scripts/verify-invoice-step4-finalize-card-scroll-safety.mjs",
+    "verify:invoice-draft-action-merged-into-review-safety": "node scripts/verify-invoice-draft-action-merged-into-review-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
