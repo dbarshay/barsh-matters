@@ -21,6 +21,11 @@ function mustContain(label, text, needle) {
   else fail(`${label}: missing ${needle}`);
 }
 
+function mustAvoid(label, text, needle) {
+  if (!text.includes(needle)) pass(`${label}: avoids ${needle}`);
+  else fail(`${label}: still contains ${needle}`);
+}
+
 function mustAvoidPattern(label, text, regex, description) {
   if (regex.test(text) === false) pass(`${label}: avoids ${description}`);
   else fail(`${label}: matched forbidden ${description}`);
@@ -36,7 +41,8 @@ mustContain("client page", page, 'gridTemplateColumns: "100px max-content"');
 mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Name</dt>');
 mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Address</dt>');
 mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Status</dt>');
-mustContain("client page", page, '<dt style={providerHubIdentityLabelStyle}>Aliases</dt>');
+mustAvoid("client page", page, '<dt style={providerHubIdentityLabelStyle}>Aliases</dt>');
+mustAvoid("client page", page, '<dt style={{ fontWeight: 800 }}>Aliases</dt>');
 mustContain("client page", page, '<dd style={providerHubIdentityValueStyle}>');
 mustContain("client page", page, 'whiteSpace: "pre"');
 

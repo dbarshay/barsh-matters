@@ -904,8 +904,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             </dd>
             <dt style={providerHubIdentityLabelStyle}>Status</dt>
             <dd style={providerHubIdentityValueStyle}>{statusBadge(client?.isActive)}</dd>
-            <dt style={providerHubIdentityLabelStyle}>Aliases</dt>
-            <dd style={providerHubIdentityValueStyle}>{client?.aliases?.length ? client.aliases.join(", ") : "—"}</dd>
           </dl>
         </div>
 
