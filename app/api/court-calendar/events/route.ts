@@ -137,7 +137,7 @@ function eventSelect() {
   } as const;
 }
 
-async function enrichEvents(events: Array<any>) {
+async function enrichEvents(events: Array<any>, options: { hideClosedMatters?: boolean } = {}) {
   const masterIds = Array.from(new Set(events.map((event) => clean(event.masterLawsuitId)).filter(Boolean)));
 
   if (!masterIds.length) return events.map((event) => ({ ...event, caseData: { childCount: 0, matters: [] } }));
@@ -170,7 +170,9 @@ async function enrichEvents(events: Array<any>) {
   });
 
   const byMaster = new Map<string, Array<any>>();
-  for (const claim of claims) {
+  const visibleClaims = options.hideClosedMatters ? claims.filter((claim) => clean(claim.final_status).toLowerCase() !== "closed") : claims;
+
+  for (const claim of visibleClaims) {
     const key = clean(claim.master_lawsuit_id);
     if (!key) continue;
     if (!byMaster.has(key)) byMaster.set(key, []);
@@ -229,6 +231,7 @@ export async function GET(req: NextRequest) {
     const venue = clean(url.searchParams.get("venue"));
     const clientName = clean(url.searchParams.get("clientName"));
     const includeCaseData = clean(url.searchParams.get("includeCaseData")).toLowerCase() === "true";
+    const hideClosedMatters = clean(url.searchParams.get("hideClosedMatters")).toLowerCase() === "true";
     const limit = positiveLimit(url.searchParams.get("limit"));
 
     const where: any = {};
@@ -279,7 +282,7 @@ export async function GET(req: NextRequest) {
       localFirst: true,
       sourceOfTruth: "barsh-matters-local",
       count: events.length,
-      events: includeCaseData ? await enrichEvents(events) : events,
+      events: includeCaseData ? await enrichEvents(events, { hideClosedMatters }) : events,
       safety: {
         readOnly: true,
         clioRecordsChanged: false,

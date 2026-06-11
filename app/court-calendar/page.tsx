@@ -222,6 +222,7 @@ export default function CourtCalendarPage() {
   const [appearanceTypeFilter, setAppearanceTypeFilter] = useState("all");
   const [venueFilter, setVenueFilter] = useState("all");
   const [clientNameFilter, setClientNameFilter] = useState("all");
+  const [hideClosedMatters, setHideClosedMatters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptionsResult | null>(null);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
   const [query, setQuery] = useState("");
@@ -266,6 +267,7 @@ export default function CourtCalendarPage() {
     if (appearanceTypeFilter && appearanceTypeFilter !== "all") params.set("appearanceType", appearanceTypeFilter);
     if (clientNameFilter && clientNameFilter !== "all") params.set("clientName", clientNameFilter);
     if (query.trim()) params.set("q", query.trim());
+    if (hideClosedMatters) params.set("hideClosedMatters", "true");
     params.set("includeCaseData", "true");
     params.set("limit", "500");
     return params;
@@ -423,7 +425,7 @@ export default function CourtCalendarPage() {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "140px 140px minmax(220px, 1fr) 190px minmax(260px, 1.15fr) minmax(220px, 0.95fr)", gap: 10, marginTop: 14 }} data-barsh-court-calendar-exact-filter-screen="true" onKeyDown={handleCalendarFilterKeyDown}>
+        <div style={{ display: "grid", gridTemplateColumns: "130px 130px minmax(210px, 1fr) 180px minmax(250px, 1.1fr) minmax(220px, 0.95fr) 190px", gap: 10, marginTop: 14 }} data-barsh-court-calendar-exact-filter-screen="true" onKeyDown={handleCalendarFilterKeyDown}>
           <label style={labelStyle}>
             Date From
             <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={inputStyle} />
@@ -454,7 +456,14 @@ export default function CourtCalendarPage() {
           </label>
           <label style={labelStyle}>
             Search Text
-            <input value={query} onChange={(event) => setQuery(event.target.value)} style={inputStyle} placeholder="Court, part, judge, notes..." data-barsh-court-calendar-search-text-filter="true" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} style={inputStyle} placeholder="Court, calendar, index, caption..." data-barsh-court-calendar-search-text-filter="true" />
+          </label>
+          <label style={{ ...labelStyle, justifyContent: "end" }}>
+            Hide Closed Matters
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 38, fontWeight: 900, color: "#334155" }}>
+              <input type="checkbox" checked={hideClosedMatters} onChange={(event) => setHideClosedMatters(event.target.checked)} data-barsh-court-calendar-hide-closed-matters-filter="true" />
+              {hideClosedMatters ? "Yes" : "No"}
+            </span>
           </label>
         </div>
       </section>
