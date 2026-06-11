@@ -57,7 +57,7 @@ mustContain(
 mustContain(
   "create-preview scenario 2 math",
   previewRoute,
-  "const costBalanceLedgerAfter = moneyNumber(Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger + costBalanceAddedToLedger));"
+  "const costBalanceLedgerAfter = moneyNumber(Math.max(0, costBalanceLedgerBefore - costBalanceAppliedToLedger - priorBalanceDeductionApplied + costBalanceAddedToLedger));"
 );
 mustContain(
   "create-preview scenario 2 math",
