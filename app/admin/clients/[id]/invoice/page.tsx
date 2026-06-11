@@ -1412,7 +1412,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         </div>
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18 }}>
+      <section style={{ ...cardStyle, marginBottom: 18, display: preview ? undefined : "none" }}>
         <h2 style={{ marginTop: 0 }}>2. Review Invoice</h2>
         {!preview ? (
           <p style={{ color: "#64748b" }}>No preview loaded.</p>
@@ -1456,7 +1456,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         )}
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18 }}>
+      <section style={{ ...cardStyle, marginBottom: 18, display: preview ? undefined : "none" }}>
         <h2 style={{ marginTop: 0 }}>3. Create Draft Invoice</h2>
         <p style={{ color: "#475569" }}>
           Draft invoices freeze the package lines but do not mark receipt rows as invoiced.
@@ -1466,7 +1466,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         </button>
       </section>
 
-      <section style={{ ...cardStyle, marginBottom: 18 }}>
+      <section style={{ ...cardStyle, marginBottom: 18, display: createdInvoice ? undefined : "none" }}>
         <h2 style={{ marginTop: 0 }}>4. Finalize Invoice</h2>
         <p style={{ color: "#475569" }}>
           Finalizing marks only the included MatterPaymentReceipt rows with this invoice ID. The frozen invoice lines remain the invoice review/output source, and source costs, remittance records, Clio, ClaimIndex, documents, email, print, and queue are not changed.
