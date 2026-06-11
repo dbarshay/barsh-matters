@@ -1096,34 +1096,74 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
   function renderCostBalanceSummary(source: any) {
     const summary = invoiceCostSummaryValues(source);
-    return (
-      <section style={{ marginTop: 18, border: "2px solid #94a3b8", borderRadius: 14, padding: 14, background: "#f8fafc" }}>
-        <h3 style={{ margin: "0 0 10px", fontWeight: 950 }}>Remittance Summary</h3>
-        <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(320px, 1.45fr) minmax(190px, 0.9fr) minmax(170px, 0.75fr) minmax(410px, 1.25fr)",
-              gap: 24,
-              alignItems: "start",
-            }}
-          >
-          <div><strong>Principal / Interest Received</strong><br />{money(summary.principalInterestTotal)}</div>
-          <div><strong>Retainer Fee</strong><br />{money(summary.retainerFeeTotal)}</div>
-          <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Net Remit Before Costs</strong><br /><strong>{money(summary.baseNetRemitToProvider)}</strong></div>
-          {isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>}
-          <div><strong>Costs Expended During This Remittance Period</strong><br />{money(summary.costsExpendedTotal)}</div>
-          <div><strong>Costs Received During This Remittance Period</strong><br />{money(summary.filingFeePaymentTotal)}</div>
-          <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>
-          {isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}</div>}
-          {isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: "#b91c1c", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span></div>}
-          {isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}</div>}
-          {isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong></div>}
-          {isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Deduction Applied</strong><br /><span style={{ color: "#b91c1c", fontWeight: 900 }}>{money(summary.costBalanceDeductionApplied)}</span></div>}
-          <div><strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}</div>
+    const hasDeduction = isNonZeroMoneyValue(summary.costBalanceDeductionApplied);
+    const hasCostExcessApplied = isNonZeroMoneyValue(summary.costBalanceAppliedToLedger);
+    const hasCostExcessAdded = isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider);
+    const hasPriorNegativeBalance = isNonZeroMoneyValue(summary.costBalanceLedgerBefore);
+    const hasAfterNegativeBalance = isNonZeroMoneyValue(summary.costBalanceLedgerAfter);
+
+    const rowBaseStyle = {
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr) auto",
+      gap: 18,
+      alignItems: "center",
+      padding: "10px 12px",
+      borderBottom: "1px solid #e2e8f0",
+    } as const;
+
+    const shadedRowStyle = { ...rowBaseStyle, background: "#f1f5f9", borderRadius: 12, borderBottom: "1px solid #dbe4ef", margin: "8px 0" } as const;
+    const blueRowStyle = { ...rowBaseStyle, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, margin: "8px 0" } as const;
+    const labelStyle = { color: "#334155", fontWeight: 850 } as const;
+    const amountStyle = { color: "#0f172a", fontWeight: 900, whiteSpace: "nowrap" } as const;
+    const redAmountStyle = { ...amountStyle, color: "#b91c1c" } as const;
+    const blueAmountStyle = { ...amountStyle, color: "#1d4ed8" } as const;
+
+    const Row = ({ label, value, variant = "normal" }: { label: string; value: any; variant?: "normal" | "shaded" | "blue" | "red" }) => {
+      const style = variant === "blue" ? blueRowStyle : variant === "shaded" || variant === "red" ? shadedRowStyle : rowBaseStyle;
+      const valueStyle = variant === "blue" ? blueAmountStyle : variant === "red" ? redAmountStyle : amountStyle;
+      return (
+        <div style={style}>
+          <div style={labelStyle}>{label}</div>
+          <div style={valueStyle}>{money(value)}</div>
         </div>
-        <p style={{ margin: "10px 0 0", color: "#475569", fontSize: 12 }}>
-          Cost Excess / Shortfall This Remittance = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. If there is a Negative Cost Balance before this remittance, cost excess is applied to that balance first. Only excess remaining after the Negative Cost Balance is cleared is added to Net Remit. Cost shortfalls may be deducted from Net Remit Before Costs up to the 25% cap, with the excess carried forward as a Negative Cost Balance.
-        </p>
+      );
+    };
+
+    return (
+      <section style={{ marginTop: 18, border: "1px solid #cbd5e1", borderRadius: 18, padding: 18, background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)", boxShadow: "0 10px 28px rgba(15, 23, 42, 0.08)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 14 }}>
+          <div>
+            <h3 style={{ margin: 0, fontWeight: 950, fontSize: 20, color: "#0f172a" }}>Remittance Summary</h3>
+            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 13 }}>
+              Provider net remittance, cost recovery, and negative cost balance impact.
+            </p>
+          </div>
+          {hasDeduction && <div style={{ padding: "8px 12px", borderRadius: 999, background: "#eff6ff", color: "#1d4ed8", fontWeight: 900, whiteSpace: "nowrap" }}>25% cap applied</div>}
+        </div>
+
+        <div style={{ border: "1px solid #e2e8f0", borderRadius: 16, padding: 10, background: "#ffffff" }}>
+          <Row label="Principal / Interest Received" value={summary.principalInterestTotal} />
+          <Row label="Retainer Fee" value={summary.retainerFeeTotal} />
+          <Row label="Net Remit Before Costs" value={summary.baseNetRemitToProvider} variant="shaded" />
+          {hasDeduction && <Row label="25% Deduction Cap" value={summary.costBalanceDeductionCap} variant="blue" />}
+          <Row label="Costs Expended During This Remittance Period" value={summary.costsExpendedTotal} />
+          <Row label="Costs Received During This Remittance Period" value={summary.filingFeePaymentTotal} />
+          <Row label="Cost Excess / Shortfall This Remittance" value={summary.costBalanceThisRemittancePeriod} variant="shaded" />
+          {hasPriorNegativeBalance && <Row label="Negative Cost Balance Before This Remittance" value={summary.costBalanceLedgerBefore} />}
+          {hasCostExcessApplied && <Row label="Cost Excess Applied to Negative Cost Balance" value={summary.costBalanceAppliedToLedger} variant="red" />}
+          {hasAfterNegativeBalance && <Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />}
+          {hasCostExcessAdded && <Row label="Cost Excess Added to Net Remit" value={summary.costBalanceReimbursementToProvider} variant="blue" />}
+          {hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />}
+
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 18, alignItems: "center", marginTop: 14, padding: "16px 14px", borderRadius: 14, background: "#0f172a", color: "#ffffff", fontSize: 18, fontWeight: 950, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16)" }}>
+            <div>Final Net Remit to Provider</div>
+            <div>{money(summary.netRemitToProviderTotal)}</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: 12, lineHeight: 1.5 }}>
+          Cost Excess / Shortfall This Remittance = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. Cost excess first reduces any Negative Cost Balance, and any remaining excess is added to Net Remit. Cost shortfalls and prior negative balances may be deducted from Net Remit Before Costs up to the 25% cap, with any unrecovered balance carried forward.
+        </div>
       </section>
     );
   }

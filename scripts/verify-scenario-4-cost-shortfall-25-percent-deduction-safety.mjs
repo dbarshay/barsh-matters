@@ -145,28 +145,28 @@ mustContain(
 mustContain(
   "on-screen Scenario 4 deduction cap",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
+  'hasDeduction && <Row label="25% Deduction Cap" value={summary.costBalanceDeductionCap} variant="blue" />'
 );
 
 mustContain(
   "on-screen Scenario 4 after balance",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}</div>"
+  'hasAfterNegativeBalance && <Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />'
 );
 
 mustContain(
   "on-screen Scenario 4 deduction applied is emphasized/red",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Deduction Applied</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceDeductionApplied)}</span></div>"
+  'hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />'
 );
 
 assertOrder(
   "on-screen Scenario 4 deduction-to-final order",
   invoicePage,
   [
-    "<strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}",
-    "<strong>Cost Deduction Applied</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceDeductionApplied)}</span>",
-    "<strong>Final Net Remit to Provider</strong><br />{money(summary.netRemitToProviderTotal)}",
+    '<Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />',
+    '<Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />',
+    '<div>Final Net Remit to Provider</div>',
   ]
 );
 

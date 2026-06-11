@@ -126,56 +126,56 @@ mustContain(
 mustContain(
   "on-screen summary scenario 2 prior balance",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceLedgerBefore) && <div><strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}</div>"
+  'hasPriorNegativeBalance && <Row label="Negative Cost Balance Before This Remittance" value={summary.costBalanceLedgerBefore} />'
 );
 mustContain(
   "on-screen summary scenario 2 current excess",
   invoicePage,
-  '<div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess / Shortfall This Remittance</strong><br /><strong>{money(summary.costBalanceThisRemittancePeriod)}</strong></div>'
+  '<Row label="Cost Excess / Shortfall This Remittance" value={summary.costBalanceThisRemittancePeriod} variant="shaded" />'
 );
 mustContain(
   "on-screen summary scenario 2 applied amount",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceAppliedToLedger) && <div><strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span></div>"
+  'hasCostExcessApplied && <Row label="Cost Excess Applied to Negative Cost Balance" value={summary.costBalanceAppliedToLedger} variant="red" />'
 );
 mustContain(
   "on-screen summary scenario 2 after balance",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceLedgerAfter) && <div><strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}</div>"
+  'hasAfterNegativeBalance && <Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />'
 );
 mustContain(
   "on-screen summary hides scenario 2 net excess when zero",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceReimbursementToProvider) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong></div>"
+  'hasCostExcessAdded && <Row label="Cost Excess Added to Net Remit" value={summary.costBalanceReimbursementToProvider} variant="blue" />'
 );
 mustContain(
   "on-screen summary hides deduction when zero",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Deduction Applied</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceDeductionApplied)}</span></div>"
+  'hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />'
 );
 
 mustOccurExactly(
   "on-screen applied row",
   invoicePage,
-  "<strong>Cost Excess Applied to Negative Cost Balance</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceAppliedToLedger)}</span>",
+  '<Row label="Cost Excess Applied to Negative Cost Balance" value={summary.costBalanceAppliedToLedger} variant="red" />',
   1
 );
 mustOccurExactly(
   "on-screen prior negative balance row",
   invoicePage,
-  "<strong>Negative Cost Balance Before This Remittance</strong><br />{money(summary.costBalanceLedgerBefore)}",
+  '<Row label="Negative Cost Balance Before This Remittance" value={summary.costBalanceLedgerBefore} />',
   1
 );
 mustOccurExactly(
   "on-screen after negative balance row",
   invoicePage,
-  "<strong>Negative Cost Balance After This Remittance</strong><br />{money(summary.costBalanceLedgerAfter)}",
+  '<Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />',
   1
 );
 mustOccurExactly(
   "on-screen cost excess added row",
   invoicePage,
-  "<strong>Cost Excess Added to Net Remit</strong><br /><strong>{money(summary.costBalanceReimbursementToProvider)}</strong>",
+  '<Row label="Cost Excess Added to Net Remit" value={summary.costBalanceReimbursementToProvider} variant="blue" />',
   1
 );
 

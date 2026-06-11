@@ -98,7 +98,7 @@ mustContain(
 mustContain(
   "on-screen Scenario 6 cap row is conditional on cost deduction applied",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div><strong>25% Deduction Cap</strong><br />{money(summary.costBalanceDeductionCap)}</div>"
+  'hasDeduction && <Row label="25% Deduction Cap" value={summary.costBalanceDeductionCap} variant="blue" />'
 );
 
 mustContain(
@@ -110,7 +110,7 @@ mustContain(
 mustContain(
   "on-screen Scenario 6 deduction applied is emphasized/red",
   invoicePage,
-  "isNonZeroMoneyValue(summary.costBalanceDeductionApplied) && <div style={{ paddingLeft: 28, fontWeight: 950 }}><strong>Cost Deduction Applied</strong><br /><span style={{ color: \"#b91c1c\", fontWeight: 900 }}>{money(summary.costBalanceDeductionApplied)}</span></div>"
+  'hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />'
 );
 
 mustNotContain(
