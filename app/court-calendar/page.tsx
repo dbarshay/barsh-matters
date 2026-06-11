@@ -31,6 +31,9 @@ type CalendarEvent = {
     patients?: string[];
     providers?: string[];
     insurers?: string[];
+    lawsuitAmount?: number | null;
+    lawsuitBalance?: number | null;
+    caption?: string | null;
     claimNumbers?: string[];
     matters?: Array<Record<string, unknown>>;
   };
@@ -86,6 +89,13 @@ function labelFromCode(value: unknown): string {
 
 function dateOnly(value: unknown): string {
   return formatDateOnlyForDisplay(value) || text(value) || "—";
+}
+
+
+function money(value: unknown) {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount) || Math.abs(amount) < 0.005) return "—";
+  return amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 function safeExportCell(value: unknown): string {
@@ -506,52 +516,37 @@ export default function CourtCalendarPage() {
             <thead>
               <tr>
                 <th style={thStyle}>Date</th>
-                <th style={thStyle}>Time</th>
-                <th style={thStyle}>Type</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Master Lawsuit</th>
-                <th style={thStyle}>Index / AAA</th>
                 <th style={thStyle}>Court</th>
-                <th style={thStyle}>Part</th>
-                <th style={thStyle}>Judge / Arbitrator</th>
-                <th style={thStyle}>Title</th>
-                <th style={thStyle}>Child Matters</th>
-                <th style={thStyle}>Patients</th>
-                <th style={thStyle}>Providers</th>
-                <th style={thStyle}>Insurers</th>
-                <th style={thStyle}>Reminder</th>
+                <th style={thStyle}>Calendar Number</th>
+                <th style={thStyle}>Index Number</th>
+                <th style={thStyle}>Lawsuit Number</th>
+                <th style={thStyle}>Appearance Type</th>
+                <th style={thStyle}>Lawsuit Amount</th>
+                <th style={thStyle}>Lawsuit Balance</th>
+                <th style={thStyle}>Caption</th>
               </tr>
             </thead>
             <tbody>
               {!events.length ? (
                 <tr>
-                  <td style={tdStyle} colSpan={15}>{loading ? "Loading..." : "No court calendar events found."}</td>
+                  <td style={tdStyle} colSpan={9}>{loading ? "Loading..." : "No court calendar events found."}</td>
                 </tr>
               ) : (
                 events.map((event) => (
                   <tr key={event.id} data-barsh-court-calendar-result-row="true">
                     <td style={{ ...tdStyle, fontWeight: 950 }}>{dateOnly(event.eventDate)}</td>
-                    <td style={tdStyle}>{text(event.eventTime) || "—"}</td>
-                    <td style={tdStyle}>{labelFromCode(event.eventType)}</td>
-                    <td style={tdStyle}>{labelFromCode(event.status)}</td>
-                    <td style={tdStyle}>
-                      <Link href={`/matters?master=${encodeURIComponent(event.masterLawsuitId)}`} style={{ color: "#1d4ed8", fontWeight: 900 }}>
-                        {event.masterLawsuitId}
-                      </Link>
-                    </td>
-                    <td style={tdStyle}>{text(event.indexAaaNumber) || "—"}</td>
                     <td style={tdStyle}>{text(event.court || event.venue) || "—"}</td>
-                    <td style={tdStyle}>{text(event.part) || "—"}</td>
-                    <td style={tdStyle}>{text(event.judgeOrArbitrator) || "—"}</td>
-                    <td style={{ ...tdStyle, minWidth: 220 }}>
-                      <strong>{event.title}</strong>
-                      {event.notes ? <div style={{ color: "#64748b", marginTop: 3 }}>{event.notes}</div> : null}
+                    <td style={tdStyle}>{text(event.calendarNumber) || "—"}</td>
+                    <td style={tdStyle}>{text(event.indexAaaNumber) || "—"}</td>
+                    <td style={tdStyle}>
+                      <a href={`/matters?master=${encodeURIComponent(text(event.displayNumber || event.masterLawsuitId))}`} style={{ color: "#1d4ed8", fontWeight: 900, textDecoration: "underline" }}>
+                        {text(event.displayNumber || event.masterLawsuitId) || "—"}
+                      </a>
                     </td>
-                    <td style={tdStyle}>{event.caseData?.childCount ?? "—"}</td>
-                    <td style={tdStyle}>{safeExportCell(event.caseData?.patients) || "—"}</td>
-                    <td style={tdStyle}>{safeExportCell(event.caseData?.providers) || "—"}</td>
-                    <td style={tdStyle}>{safeExportCell(event.caseData?.insurers) || "—"}</td>
-                    <td style={tdStyle}>{dateOnly(event.reminderDate)}</td>
+                    <td style={tdStyle}>{text(event.appearanceType) || "—"}</td>
+                    <td style={tdStyle}>{money(event.caseData?.lawsuitAmount)}</td>
+                    <td style={tdStyle}>{money(event.caseData?.lawsuitBalance)}</td>
+                    <td style={{ ...tdStyle, minWidth: 320 }}>{text(event.caseData?.caption) || "—"}</td>
                   </tr>
                 ))
               )}
