@@ -69,6 +69,8 @@ const statusOptions = [
   ["missed", "Missed"],
 ];
 
+const WEB_CIVIL_LOCAL_CALENDAR_URL = "https://iapps.courts.state.ny.us/webcivilLocal/LCCalendarSearch";
+
 const appearanceTypeOptions = [["all", "All"], ["Trial", "Trial"], ["Conference", "Conference"], ["Motion", "Motion"]];
 
 type FilterOptionsResult = { ok?: boolean; appearanceTypes?: string[]; venues?: string[]; clientNames?: string[]; error?: string; };
@@ -523,7 +525,13 @@ export default function CourtCalendarPage() {
             <label style={labelStyle}>Part<input value={form.part} onChange={(event) => setForm((prev) => ({ ...prev, part: event.target.value }))} style={inputStyle} /></label>
             <label style={labelStyle}>Judge / Arbitrator<input value={form.judgeOrArbitrator} onChange={(event) => setForm((prev) => ({ ...prev, judgeOrArbitrator: event.target.value }))} style={inputStyle} /></label>
             <label style={labelStyle}>Index Number<input value={form.indexAaaNumber} onChange={(event) => setForm((prev) => ({ ...prev, indexAaaNumber: event.target.value }))} style={inputStyle} /></label>
-            <label style={labelStyle}>Calendar Number<input value={form.calendarNumber} onChange={(event) => setForm((prev) => ({ ...prev, calendarNumber: event.target.value }))} style={inputStyle} /></label>
+            <label style={labelStyle}>Calendar Number
+              <input value={form.calendarNumber} onChange={(event) => setForm((prev) => ({ ...prev, calendarNumber: event.target.value }))} style={inputStyle} />
+              <span style={{ marginTop: 4, color: "#64748b", fontSize: 11, fontWeight: 800, lineHeight: 1.25 }} data-barsh-court-calendar-webcivil-local-helper="true">
+                Confirm manually in WebCivil Local using court, date range, and index number.
+                <a href={WEB_CIVIL_LOCAL_CALENDAR_URL} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8", fontWeight: 950, marginLeft: 8 }}>Open WebCivil Local Court Calendars</a>
+              </span>
+            </label>
             <label style={labelStyle}>Appearance Type<input value={form.appearanceType} onChange={(event) => setForm((prev) => ({ ...prev, appearanceType: event.target.value }))} style={inputStyle} placeholder="In person, virtual, submission..." /></label>
             <label style={labelStyle}>Reminder Date<input type="date" value={form.reminderDate} onChange={(event) => setForm((prev) => ({ ...prev, reminderDate: event.target.value }))} style={inputStyle} /></label>
             <label style={{ ...labelStyle, alignContent: "end" }}>

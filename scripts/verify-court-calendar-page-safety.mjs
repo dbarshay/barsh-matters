@@ -65,4 +65,9 @@ if (!page.includes('sortableCalendarHeader("Appearance Type", "appearanceType")'
 if (!page.includes('sortableCalendarHeader("Lawsuit Amount", "lawsuitAmount")')) failures.push('page missing sortable result column token sortableCalendarHeader("Lawsuit Amount", "lawsuitAmount")');
 if (!page.includes('sortableCalendarHeader("Lawsuit Balance", "lawsuitBalance")')) failures.push('page missing sortable result column token sortableCalendarHeader("Lawsuit Balance", "lawsuitBalance")');
 if (!page.includes('sortableCalendarHeader("Caption", "caption")')) failures.push('page missing sortable result column token sortableCalendarHeader("Caption", "caption")');
+if (!page.includes('WEB_CIVIL_LOCAL_CALENDAR_URL')) failures.push('page missing WebCivil Local calendar-number helper token WEB_CIVIL_LOCAL_CALENDAR_URL');
+if (!page.includes('webcivilLocal/LCCalendarSearch')) failures.push('page missing WebCivil Local calendar-number helper token webcivilLocal/LCCalendarSearch');
+if (!page.includes('data-barsh-court-calendar-webcivil-local-helper')) failures.push('page missing WebCivil Local calendar-number helper token data-barsh-court-calendar-webcivil-local-helper');
+if (!page.includes('Confirm manually in WebCivil Local using court, date range, and index number.')) failures.push('page missing WebCivil Local calendar-number helper token Confirm manually in WebCivil Local using court, date range, and index number.');
+if (!page.includes('Open WebCivil Local Court Calendars')) failures.push('page missing WebCivil Local calendar-number helper token Open WebCivil Local Court Calendars');
 console.log("PASS: court calendar page safety");
