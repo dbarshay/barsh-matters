@@ -57,6 +57,16 @@ const providerHubSubtleTextStyle: React.CSSProperties = {
   lineHeight: 1.45,
 };
 
+const providerHubNoWrapLabelStyle: React.CSSProperties = {
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const providerHubNoWrapValueStyle: React.CSSProperties = {
+  margin: 0,
+  whiteSpace: "nowrap",
+};
+
 const providerHubButtonBaseStyle: React.CSSProperties = {
   width: "100%",
   textAlign: "center",
@@ -830,7 +840,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(260px, 0.9fr) minmax(260px, 0.9fr) minmax(260px, 0.8fr)",
+          gridTemplateColumns: "minmax(330px, 0.95fr) minmax(460px, 1.2fr) minmax(320px, 0.9fr)",
           gap: 18,
           marginBottom: 18,
           alignItems: "start",
@@ -921,9 +931,9 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             )}
           </div>
 
-          <dl style={{ display: "grid", gridTemplateColumns: "190px 1fr", gap: "4px 10px", margin: 0 }}>
-            <dt style={{ fontWeight: 800 }}>Owner</dt>
-            <dd style={{ margin: 0 }}>
+          <dl style={{ display: "grid", gridTemplateColumns: "205px max-content", gap: "4px 18px", margin: 0, alignItems: "start" }}>
+            <dt style={providerHubNoWrapLabelStyle}>Owner</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.owner} onChange={(event) => updateClientForm("owner", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -931,8 +941,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Provider Group</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Provider Group</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.providerGroup} onChange={(event) => updateClientForm("providerGroup", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -940,8 +950,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer NF Principal</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer NF Principal</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerNFPrincipal} onChange={(event) => updateClientForm("retainerNFPrincipal", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -949,8 +959,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer NF Interest</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer NF Interest</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerNFInterest} onChange={(event) => updateClientForm("retainerNFInterest", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -958,8 +968,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer WC Principal</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer WC Principal</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerWCPrincipal} onChange={(event) => updateClientForm("retainerWCPrincipal", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -967,8 +977,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer WC Interest</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer WC Interest</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerWCInterest} onChange={(event) => updateClientForm("retainerWCInterest", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -976,8 +986,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer Liens Principal</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer Liens Principal</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerLiensPrincipal} onChange={(event) => updateClientForm("retainerLiensPrincipal", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -985,8 +995,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Retainer Liens Interest</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Retainer Liens Interest</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <input value={clientForm.retainerLiensInterest} onChange={(event) => updateClientForm("retainerLiensInterest", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8 }} />
               ) : (
@@ -994,8 +1004,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Pull Costs</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Pull Costs</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <select value={clientForm.pullCosts} onChange={(event) => updateClientForm("pullCosts", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff" }}>
                   <option value="">—</option>
@@ -1007,8 +1017,8 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               )}
             </dd>
 
-            <dt style={{ fontWeight: 800 }}>Remit</dt>
-            <dd style={{ margin: 0 }}>
+            <dt style={providerHubNoWrapLabelStyle}>Remit</dt>
+            <dd style={providerHubNoWrapValueStyle}>
               {editingField === "providerGroup" ? (
                 <select value={clientForm.remit} onChange={(event) => updateClientForm("remit", event.target.value)} style={{ width: "100%", padding: 6, border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff" }}>
                   <option value="">—</option>
