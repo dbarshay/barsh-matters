@@ -80,8 +80,8 @@ for (const [label, source] of [
   assert(!source.includes("method: \"PATCH\""), `${label} must not PATCH Clio.`);
 }
 
-assert(matterClose.includes("noClioWrite: true"), "matter close must report noClioWrite=true.");
-assert(matterClose.includes("noClioRead: true"), "matter close must report noClioRead=true.");
+assert(matterClose.includes("syncClioMatterClosed"), "matter close must perform guarded Clio close sync.");
+assert(matterClose.includes("clioRead: false"), "matter close must not hydrate/read back local data from Clio.");
 assert(settlementClose.includes("legacyClioOperationalRouteBlocked"), "settlement close should remain blocked pending local-first rebuild.");
 
 for (const forbidden of [

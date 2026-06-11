@@ -333,7 +333,8 @@
     "verify:transaction-type-management-contract-safety": "node scripts/verify-transaction-type-management-contract-safety.mjs",
     "verify:transaction-type-metadata-safety": "node scripts/verify-transaction-type-metadata-safety.mjs",
     "verify:clio-rule1-boundary-safety": "node scripts/verify-clio-rule1-boundary-safety.mjs",
-    "verify:golden-rule-clio-boundary-safety": "node scripts/verify-clio-rule1-boundary-safety.mjs"
+    "verify:golden-rule-clio-boundary-safety": "node scripts/verify-clio-rule1-boundary-safety.mjs",
+    "verify:guarded-clio-close-sync-safety": "node scripts/verify-guarded-clio-close-sync-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

@@ -105,11 +105,11 @@ for (const file of blockedRoutes) {
 }
 
 const matterClose = read("app/api/matters/close/route.ts");
-mustContain("matter close", matterClose, "noClioWrite: true");
-mustContain("matter close", matterClose, "noClioRead: true");
+mustContain("matter close", matterClose, "syncClioMatterClosed");
+mustContain("matter close", matterClose, "clioCloseSync");
 // Temporary current-state marker: close decision is local-first today.
 // The Golden Rule requires future guarded Clio close sync from Barsh Matters close workflows.
-pass("matter close current-state inspected; The Golden Rule requires Clio close sync implementation next.");
+pass("matter close implements guarded Clio close sync under The Golden Rule.");
 
 const settlementClose = read("app/api/settlements/close/route.ts");
 mustContain("settlement close shortcut", settlementClose, "legacyClioOperationalRouteBlocked");

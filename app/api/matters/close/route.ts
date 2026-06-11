@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncClioMatterClosed } from "@/lib/clioCloseSync";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,6 +18,24 @@ function jsonError(message: string, status = 400, details: Record<string, unknow
     },
     { status }
   );
+}
+
+function clioCloseSyncAuditSummary(result: {
+  matterId: number;
+  ok: boolean;
+  status: number;
+  endpoint: string;
+  attemptedStatus: "Closed";
+  error?: string;
+}) {
+  return {
+    matterId: result.matterId,
+    ok: result.ok,
+    status: result.status,
+    endpoint: result.endpoint,
+    attemptedStatus: result.attemptedStatus,
+    error: result.error || null,
+  };
 }
 
 export async function POST(request: Request) {
@@ -59,6 +78,26 @@ export async function POST(request: Request) {
       });
     }
 
+    const clioCloseSync = await syncClioMatterClosed({
+      matterId,
+      reason: closeReason,
+      source: "close-matter",
+    });
+
+    if (!clioCloseSync.ok) {
+      return jsonError("Clio close sync failed. Local matter close was not committed.", 502, {
+        matterId,
+        displayNumber: existing.display_number || "",
+        clioCloseSync,
+        safety: {
+          clioCloseSyncAttempted: true,
+          clioClosed: false,
+          claimIndexUpdated: false,
+          auditLogCreated: false,
+        },
+      });
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const claimIndex = await tx.claimIndex.update({
         where: {
@@ -86,7 +125,7 @@ export async function POST(request: Request) {
       await tx.auditLog.create({
         data: {
           action: "claimindex-matter-close",
-          summary: `Closed matter ${claimIndex.display_number || claimIndex.matter_id} locally with reason ${closeReason}.`,
+          summary: `Closed matter ${claimIndex.display_number || claimIndex.matter_id} locally and in Clio with reason ${closeReason}.`,
           entityType: "matter",
           fieldName: "final_status",
           priorValue: {
@@ -98,17 +137,18 @@ export async function POST(request: Request) {
             closeReason,
           },
           details: {
-            source: "local-close-matter-route",
-            storage: "ClaimIndex",
-            noClioWrite: true,
-            noClioRead: true,
+            source: "guarded-close-matter-route",
+            storage: "ClaimIndex + Clio matter status",
+            clioCloseSyncRequired: true,
+            clioCloseSyncReadOnly: false,
+            clioCloseSync: clioCloseSyncAuditSummary(clioCloseSync),
           },
           affectedMatterIds: [matterId],
           matterId,
           matterDisplayNumber: claimIndex.display_number || null,
           masterLawsuitId: claimIndex.master_lawsuit_id || null,
           sourcePage: "direct-matter",
-          workflow: "local-close-matter",
+          workflow: "guarded-close-matter",
           actorName,
           actorEmail: actorEmail || null,
         },
@@ -119,10 +159,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      action: "local-close-matter",
-      source: "claimindex",
-      noClioWrite: true,
-      noClioRead: true,
+      action: "guarded-close-matter",
+      source: "claimindex-and-clio",
+      clioCloseSyncRequired: true,
+      clioCloseSyncReadOnly: false,
       matterId,
       displayNumber: updated.display_number || "",
       finalStatus: updated.final_status || "",
@@ -139,14 +179,17 @@ export async function POST(request: Request) {
         close_reason: updated.close_reason || "",
       },
       claimIndex: updated,
+      clioCloseSync,
       safety: {
-        clioWrite: false,
+        clioCloseSyncAttempted: true,
+        clioClosed: true,
+        clioWrite: true,
         clioRead: false,
         claimIndexUpdated: true,
         auditLogCreated: true,
       },
     });
   } catch (error: any) {
-    return jsonError(error?.message || "Local matter close failed.", 500);
+    return jsonError(error?.message || "Guarded matter close failed.", 500);
   }
 }

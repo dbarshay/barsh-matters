@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncClioMattersClosed } from "@/lib/clioCloseSync";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,6 +9,11 @@ const CHILD_CLOSED_REASON = "Closed Lawsuit";
 
 function text(value: unknown): string {
   return String(value ?? "").trim();
+}
+
+function numericId(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 0;
 }
 
 function parseMatterIds(lawsuitMatters: string | null | undefined): number[] {
@@ -26,6 +32,50 @@ function jsonError(message: string, status = 400, details: Record<string, unknow
     },
     { status }
   );
+}
+
+function clioCloseSyncAuditSummary(result: {
+  ok: boolean;
+  attemptedMatterIds: number[];
+  syncedMatterIds: number[];
+  failed: Array<{
+    matterId: number;
+    ok: boolean;
+    status: number;
+    endpoint: string;
+    attemptedStatus: "Closed";
+    error?: string;
+  }>;
+  results: Array<{
+    matterId: number;
+    ok: boolean;
+    status: number;
+    endpoint: string;
+    attemptedStatus: "Closed";
+    error?: string;
+  }>;
+}) {
+  return {
+    ok: result.ok,
+    attemptedMatterIds: result.attemptedMatterIds,
+    syncedMatterIds: result.syncedMatterIds,
+    failed: result.failed.map((item) => ({
+      matterId: item.matterId,
+      ok: item.ok,
+      status: item.status,
+      endpoint: item.endpoint,
+      attemptedStatus: item.attemptedStatus,
+      error: item.error || null,
+    })),
+    results: result.results.map((item) => ({
+      matterId: item.matterId,
+      ok: item.ok,
+      status: item.status,
+      endpoint: item.endpoint,
+      attemptedStatus: item.attemptedStatus,
+      error: item.error || null,
+    })),
+  };
 }
 
 export async function POST(request: Request) {
@@ -62,6 +112,49 @@ export async function POST(request: Request) {
         ? (existing.lawsuitOptions as Record<string, unknown>)
         : {};
 
+    const clioMatterIdsToClose = Array.from(
+      new Set([
+        numericId((existing as any).clioMasterMatterId),
+        ...childMatterIds.map((id) => numericId(id)),
+      ].filter((id) => id > 0))
+    );
+
+    if (!clioMatterIdsToClose.length) {
+      return jsonError("No Clio matter IDs were available for guarded lawsuit close sync. Local lawsuit close was not committed.", 409, {
+        masterLawsuitId,
+        childMatterIds,
+        safety: {
+          clioCloseSyncAttempted: false,
+          clioClosed: false,
+          lawsuitUpdated: false,
+          childClaimIndexUpdated: false,
+          auditLogCreated: false,
+        },
+      });
+    }
+
+    const clioCloseSync = await syncClioMattersClosed({
+      matterIds: clioMatterIdsToClose,
+      reason: closeReason,
+      source: "close-lawsuit",
+    });
+
+    if (!clioCloseSync.ok) {
+      return jsonError("Clio close sync failed. Local lawsuit close was not committed.", 502, {
+        masterLawsuitId,
+        closeReason,
+        childMatterIds,
+        clioCloseSync,
+        safety: {
+          clioCloseSyncAttempted: true,
+          clioClosed: false,
+          lawsuitUpdated: false,
+          childClaimIndexUpdated: false,
+          auditLogCreated: false,
+        },
+      });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const lawsuit = await tx.lawsuit.update({
         where: {
@@ -75,10 +168,11 @@ export async function POST(request: Request) {
             closeReason,
             close_reason: closeReason,
             closedAt: new Date().toISOString(),
-            closeWorkflow: "local-close-lawsuit",
+            closeWorkflow: "guarded-close-lawsuit",
             childCloseReason: CHILD_CLOSED_REASON,
-            noClioWrite: true,
-            noClioRead: true,
+            clioCloseSyncRequired: true,
+            clioCloseSyncReadOnly: false,
+            clioCloseSync: clioCloseSyncAuditSummary(clioCloseSync),
           },
         },
       });
@@ -112,7 +206,7 @@ export async function POST(request: Request) {
       await tx.auditLog.create({
         data: {
           action: "local-lawsuit-close",
-          summary: `Closed lawsuit ${masterLawsuitId} locally; child matters marked Closed with reason ${CHILD_CLOSED_REASON}.`,
+          summary: `Closed lawsuit ${masterLawsuitId} locally and in Clio; child matters marked Closed with reason ${CHILD_CLOSED_REASON}.`,
           entityType: "lawsuit",
           fieldName: "final_status",
           priorValue: {
@@ -125,18 +219,19 @@ export async function POST(request: Request) {
             childCloseReason: CHILD_CLOSED_REASON,
           },
           details: {
-            source: "local-close-lawsuit-route",
-            storage: "Lawsuit.lawsuitOptions + ClaimIndex",
+            source: "guarded-close-lawsuit-route",
+            storage: "Lawsuit.lawsuitOptions + ClaimIndex + Clio matter status",
             childMatterIds,
             childByMasterUpdatedCount: childByMasterUpdate.count,
             childByMatterIdUpdatedCount: childByMatterIdUpdate.count,
-            noClioWrite: true,
-            noClioRead: true,
+            clioCloseSyncRequired: true,
+            clioCloseSyncReadOnly: false,
+            clioCloseSync: clioCloseSyncAuditSummary(clioCloseSync),
           },
           affectedMatterIds: childMatterIds,
           masterLawsuitId,
           sourcePage: "master-lawsuit",
-          workflow: "local-close-lawsuit",
+          workflow: "guarded-close-lawsuit",
           actorName,
           actorEmail: actorEmail || null,
         },
@@ -152,10 +247,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      action: "local-close-lawsuit",
-      source: "local-lawsuit-schema-and-claimindex",
-      noClioWrite: true,
-      noClioRead: true,
+      action: "guarded-close-lawsuit",
+      source: "local-lawsuit-schema-claimindex-and-clio",
+      clioCloseSyncRequired: true,
+      clioCloseSyncReadOnly: false,
       masterLawsuitId,
       finalStatus: "Closed",
       closeReason,
@@ -165,8 +260,11 @@ export async function POST(request: Request) {
       childByMasterUpdatedCount: result.childByMasterUpdatedCount,
       childByMatterIdUpdatedCount: result.childByMatterIdUpdatedCount,
       lawsuit: result.lawsuit,
+      clioCloseSync,
       safety: {
-        clioWrite: false,
+        clioCloseSyncAttempted: true,
+        clioClosed: true,
+        clioWrite: true,
         clioRead: false,
         lawsuitUpdated: true,
         childClaimIndexUpdated: true,
@@ -174,6 +272,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: any) {
-    return jsonError(error?.message || "Local lawsuit close failed.", 500);
+    return jsonError(error?.message || "Guarded lawsuit close failed.", 500);
   }
 }
