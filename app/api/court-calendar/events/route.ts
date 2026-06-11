@@ -224,6 +224,9 @@ export async function GET(req: NextRequest) {
     const dateFrom = clean(url.searchParams.get("dateFrom"));
     const dateTo = clean(url.searchParams.get("dateTo"));
     const query = clean(url.searchParams.get("q"));
+    const appearanceType = clean(url.searchParams.get("appearanceType"));
+    const venue = clean(url.searchParams.get("venue"));
+    const clientName = clean(url.searchParams.get("clientName"));
     const includeCaseData = clean(url.searchParams.get("includeCaseData")).toLowerCase() === "true";
     const limit = positiveLimit(url.searchParams.get("limit"));
 
@@ -232,6 +235,8 @@ export async function GET(req: NextRequest) {
     if (masterLawsuitId) where.masterLawsuitId = masterLawsuitId;
     if (status && status !== "all") where.status = normalizeStatus(status);
     if (eventType) where.eventType = eventType;
+    if (appearanceType && appearanceType !== "all") where.appearanceType = { contains: appearanceType };
+    if (venue && venue !== "all") where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { OR: [{ venue: { contains: venue } }, { court: { contains: venue } }] }];
 
     if (dateFrom || dateTo) {
       where.eventDate = {};
@@ -251,6 +256,12 @@ export async function GET(req: NextRequest) {
         { displayNumber: { contains: query } },
         { masterLawsuitId: { contains: query } },
       ];
+    }
+
+    if (clientName && clientName !== "all") {
+      const matchingClaims = await prisma.claimIndex.findMany({ where: { client_name: { contains: clientName } }, select: { master_lawsuit_id: true }, take: 1000 });
+      const matchingMasters = Array.from(new Set(matchingClaims.map((row) => clean(row.master_lawsuit_id)).filter(Boolean)));
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), matchingMasters.length ? { masterLawsuitId: { in: matchingMasters } } : { masterLawsuitId: "__NO_CLIENT_MATCH__" }];
     }
 
     const events = await prisma.courtCalendarEvent.findMany({

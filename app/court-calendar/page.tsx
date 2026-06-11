@@ -4,7 +4,7 @@ import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 
 type CalendarEvent = {
@@ -64,6 +64,10 @@ const statusOptions = [
   ["cancelled", "Cancelled"],
   ["missed", "Missed"],
 ];
+
+const appearanceTypeOptions = [["all", "All"], ["Trial", "Trial"], ["Conference", "Conference"], ["Motion", "Motion"]];
+
+type FilterOptionsResult = { ok?: boolean; appearanceTypes?: string[]; venues?: string[]; clientNames?: string[]; error?: string; };
 
 function text(value: unknown): string {
   return String(value ?? "").trim();
@@ -204,6 +208,11 @@ export default function CourtCalendarPage() {
   const [status, setStatus] = useState("scheduled");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [appearanceTypeFilter, setAppearanceTypeFilter] = useState("all");
+  const [venueFilter, setVenueFilter] = useState("all");
+  const [clientNameFilter, setClientNameFilter] = useState("all");
+  const [filterOptions, setFilterOptions] = useState<FilterOptionsResult | null>(null);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -229,6 +238,11 @@ export default function CourtCalendarPage() {
 
   const events = useMemo(() => Array.isArray(result?.events) ? result.events : [], [result]);
 
+  useEffect(() => { async function loadFilterOptions() { setFilterOptionsLoading(true); try { const response = await fetch("/api/court-calendar/filter-options", { cache: "no-store" }); const json = await response.json().catch(() => ({})); setFilterOptions(json); } catch (error: any) { setFilterOptions({ ok: false, error: error?.message || "Could not load filter options." }); } finally { setFilterOptionsLoading(false); } } void loadFilterOptions(); }, []);
+
+  const venueOptions = useMemo(() => Array.isArray(filterOptions?.venues) ? filterOptions.venues : [], [filterOptions]);
+  const clientNameOptions = useMemo(() => Array.isArray(filterOptions?.clientNames) ? filterOptions.clientNames : [], [filterOptions]);
+
   function buildSearchParams() {
     const params = new URLSearchParams();
     if (masterLawsuitId.trim()) params.set("masterLawsuitId", masterLawsuitId.trim());
@@ -236,6 +250,9 @@ export default function CourtCalendarPage() {
     if (status && status !== "all") params.set("status", status);
     if (dateFrom.trim()) params.set("dateFrom", dateFrom.trim());
     if (dateTo.trim()) params.set("dateTo", dateTo.trim());
+    if (venueFilter && venueFilter !== "all") params.set("venue", venueFilter);
+    if (appearanceTypeFilter && appearanceTypeFilter !== "all") params.set("appearanceType", appearanceTypeFilter);
+    if (clientNameFilter && clientNameFilter !== "all") params.set("clientName", clientNameFilter);
     if (query.trim()) params.set("q", query.trim());
     params.set("includeCaseData", "true");
     params.set("limit", "500");
@@ -394,23 +411,7 @@ export default function CourtCalendarPage() {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(140px, 1fr))", gap: 10, marginTop: 14 }}>
-          <label style={labelStyle}>
-            Master Lawsuit
-            <input value={masterLawsuitId} onChange={(event) => setMasterLawsuitId(event.target.value)} style={inputStyle} placeholder="2026.06.00001" />
-          </label>
-          <label style={labelStyle}>
-            Event Type
-            <select value={eventType} onChange={(event) => setEventType(event.target.value)} style={inputStyle}>
-              {eventTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label style={labelStyle}>
-            Status
-            <select value={status} onChange={(event) => setStatus(event.target.value)} style={inputStyle}>
-              {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(150px, 1fr))", gap: 10, marginTop: 14 }} data-barsh-court-calendar-exact-filter-screen="true">
           <label style={labelStyle}>
             Date From
             <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={inputStyle} />
@@ -420,8 +421,28 @@ export default function CourtCalendarPage() {
             <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={inputStyle} />
           </label>
           <label style={labelStyle}>
+            Venue {filterOptionsLoading ? "· loading" : ""}
+            <select value={venueFilter} onChange={(event) => setVenueFilter(event.target.value)} style={inputStyle} data-barsh-court-calendar-venue-filter="true">
+              <option value="all">All</option>
+              {venueOptions.map((venue) => <option key={venue} value={venue}>{venue}</option>)}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Appearance Type
+            <select value={appearanceTypeFilter} onChange={(event) => setAppearanceTypeFilter(event.target.value)} style={inputStyle} data-barsh-court-calendar-appearance-type-filter="true">
+              {appearanceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Client Name {filterOptionsLoading ? "· loading" : ""}
+            <select value={clientNameFilter} onChange={(event) => setClientNameFilter(event.target.value)} style={inputStyle} data-barsh-court-calendar-client-name-filter="true">
+              <option value="all">All</option>
+              {clientNameOptions.map((clientName) => <option key={clientName} value={clientName}>{clientName}</option>)}
+            </select>
+          </label>
+          <label style={labelStyle}>
             Search Text
-            <input value={query} onChange={(event) => setQuery(event.target.value)} style={inputStyle} placeholder="Court, part, judge, notes..." />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} style={inputStyle} placeholder="Court, part, judge, notes..." data-barsh-court-calendar-search-text-filter="true" />
           </label>
         </div>
       </section>

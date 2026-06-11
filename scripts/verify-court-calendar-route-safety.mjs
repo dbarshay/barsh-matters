@@ -1,5 +1,20 @@
 import fs from "fs";
 
+function assertFileContains(filePath, needle, message) {
+  const content = fs.readFileSync(filePath, "utf8");
+  if (content.indexOf(needle) < 0) {
+    throw new Error(message + "\nMissing: " + needle + "\nFile: " + filePath);
+  }
+}
+
+function assertFileDoesNotContain(filePath, needle, message) {
+  const content = fs.readFileSync(filePath, "utf8");
+  if (content.indexOf(needle) >= 0) {
+    throw new Error(message + "\nUnexpected: " + needle + "\nFile: " + filePath);
+  }
+}
+
+
 const route = fs.readFileSync("app/api/court-calendar/events/route.ts", "utf8");
 
 const required = [
@@ -40,5 +55,11 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
+
+
+assertFileContains("app/api/court-calendar/filter-options/route.ts", `type: "provider_client"`, "Court Calendar Client Name dropdown must use the same provider_client ReferenceEntity table as main search Provider.");
+assertFileContains("app/api/court-calendar/filter-options/route.ts", "providerClientRows.map((row) => row.displayName)", "Court Calendar Client Name options must be built from provider_client displayName rows.");
+assertFileDoesNotContain("app/api/court-calendar/filter-options/route.ts", "provider_name", "Court Calendar Client Name dropdown must not use ClaimIndex provider_name / treating-person provider names.");
+assertFileDoesNotContain("app/api/court-calendar/filter-options/route.ts", "client_name", "Court Calendar Client Name dropdown must not use ClaimIndex client_name as its option source.");
 
 console.log("PASS: court calendar route safety");
