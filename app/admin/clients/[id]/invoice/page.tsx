@@ -286,6 +286,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const [costLedger, setCostLedger] = useState<any>(null);
   const [costLedgerVisible, setCostLedgerVisible] = useState(false);
   const [loadingCostLedger, setLoadingCostLedger] = useState(false);
+  const [invoiceHistoryVisible, setInvoiceHistoryVisible] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -846,6 +847,11 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const latestFinalizedCostBalanceLedger = history.find((invoice: any) => invoice?.status === "finalized")?.costBalanceLedgerAfter;
   const costBalanceLedgerAmount = Number(previewTotals.costBalanceLedgerAfter ?? invoiceDetail?.invoice?.costBalanceLedgerAfter ?? latestFinalizedCostBalanceLedger ?? 0);
   const displayedCostBalanceLedger = money(costBalanceLedgerAmount);
+  const latestFinalizedInvoice = history.find((invoice: any) => invoice?.status === "finalized") || null;
+  const latestInvoice = history[0] || null;
+  const finalizedInvoiceCount = history.filter((invoice: any) => invoice?.status === "finalized").length;
+  const draftInvoiceCount = history.filter((invoice: any) => invoice?.status === "draft").length;
+  const voidedInvoiceCount = history.filter((invoice: any) => invoice?.status === "voided").length;
   const providerBillingRows = [
     { label: "Pull Costs", value: findDetailValue(providerClientDetails, ["hidden_pull_costs", "pull_costs", "Pull Costs", "Pull Cost"]) || "—" },
     { label: "Remit", value: findDetailValue(providerClientDetails, ["hidden_remit", "remit", "Remit", "remit_type", "remit_account"]) || "—" },
@@ -1480,20 +1486,40 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       {renderClientCostLedger()}
 
       <section style={{ ...cardStyle, marginBottom: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ marginTop: 0 }}>Invoice History</h2>
             <p style={{ color: "#475569", marginTop: 0 }}>
-              View finalized invoice detail, finalize drafts, void finalized invoices, and print/save invoices as PDF.
+              Collapsed by default. Expand to view finalized invoice detail, finalize drafts, void finalized invoices, and print/save invoices as PDF.
             </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", fontSize: 12, color: "#334155" }}>
+              <span><strong>Total:</strong> {history.length}</span>
+              <span><strong>Finalized:</strong> {finalizedInvoiceCount}</span>
+              <span><strong>Draft:</strong> {draftInvoiceCount}</span>
+              <span><strong>Voided:</strong> {voidedInvoiceCount}</span>
+              <span><strong>Latest Finalized:</strong> {latestFinalizedInvoice?.invoiceNumber || "—"}</span>
+              <span><strong>Cost Balance:</strong> {displayedCostBalanceLedger}</span>
+            </div>
           </div>
-          <button type="button" onClick={() => loadHistory()} disabled={loadingHistory} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 900 }}>
-            {loadingHistory ? "Refreshing..." : "Refresh"}
-          </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setInvoiceHistoryVisible((value) => value === false)} style={secondaryButtonStyle}>
+              {invoiceHistoryVisible ? "Hide Invoice History" : "Show Invoice History"}
+            </button>
+            <button type="button" onClick={() => loadHistory()} disabled={loadingHistory} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontWeight: 900 }}>
+              {loadingHistory ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        {invoiceHistoryVisible === false && (
+          <p style={{ color: "#64748b", marginBottom: 0 }}>
+            Latest invoice: <strong>{latestInvoice?.invoiceNumber || "—"}</strong>{latestInvoice ? <> {statusBadge(latestInvoice.status)}</> : null}
+          </p>
+        )}
+
+        {invoiceHistoryVisible && (
+          <div style={{ overflowX: "auto", marginTop: 14 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
                 <th style={thStyle}>Invoice Number</th>
@@ -1555,8 +1581,9 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        )}
       </section>
 
       {invoiceDetailVisible && invoiceDetail && (

@@ -311,7 +311,8 @@
     "verify:provider-client-invoice-cost-ledger-ui-safety": "node scripts/verify-provider-client-invoice-cost-ledger-ui-safety.mjs",
     "verify:provider-client-invoice-cost-expended-reinvoice-safety": "node scripts/verify-provider-client-invoice-cost-expended-reinvoice-safety.mjs",
     "verify:invoice-cost-balance-ledger-access-safety": "node scripts/verify-invoice-cost-balance-ledger-access-safety.mjs",
-    "verify:invoice-cost-ledger-collapsed-default-safety": "node scripts/verify-invoice-cost-ledger-collapsed-default-safety.mjs"
+    "verify:invoice-cost-ledger-collapsed-default-safety": "node scripts/verify-invoice-cost-ledger-collapsed-default-safety.mjs",
+    "verify:invoice-history-collapsed-default-safety": "node scripts/verify-invoice-history-collapsed-default-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
