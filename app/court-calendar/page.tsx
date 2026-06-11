@@ -434,7 +434,7 @@ export default function CourtCalendarPage() {
             </select>
           </label>
           <label style={labelStyle}>
-            Client Name {filterOptionsLoading ? "· loading" : ""}
+            Provider {filterOptionsLoading ? "· loading" : ""}
             <select value={clientNameFilter} onChange={(event) => setClientNameFilter(event.target.value)} style={inputStyle} data-barsh-court-calendar-provider-filter="true">
               <option value="all">All</option>
               {clientNameOptions.map((clientName) => <option key={clientName} value={clientName}>{clientName}</option>)}
