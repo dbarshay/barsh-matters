@@ -9895,29 +9895,26 @@ function openClaimAmountEditDialog() {
                     >
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: "grid",
+                        gridTemplateColumns: "38px minmax(0, 1fr) 38px",
                         alignItems: "center",
                         gap: 16,
                         padding: "16px 18px",
-                        borderBottom: "1px solid #e5e7eb",
-                        background: "#f8fafc",
+                        borderBottom: "1px solid #dbe4f0",
+                        background: "#f0fdf4",
                       }}
                     >
-                      <div>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: "#0f172a" }}>
-                          Post Payment
-                        </div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginTop: 3 }}>
-                          This posts only to {textValue(matter?.displayNumber) || "this bill/matter"}.
-                        </div>
-                      </div>
+                      <div aria-hidden="true" />
 
-                      <div style={{ textAlign: "right", fontWeight: 900, color: "#334155" }}>
-                        Payment Amount:{" "}
-                        <span style={{ color: "#dc2626", fontSize: 20 }}>
-                          {money(num(paymentAmountInput))}
-                        </span>
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 950,
+                          color: "#14532d",
+                          textAlign: "center",
+                        }}
+                      >
+                        Post Individual Matter Payment
                       </div>
 
                       <button
@@ -10105,47 +10102,6 @@ function openClaimAmountEditDialog() {
                       </label>
                     </div>
 
-                    {paymentAmountInput && (
-                      <div
-                        className="barsh-direct-payment-preview"
-                        style={{
-                          margin: "0 18px 18px",
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr",
-                          gap: 10,
-                        }}
-                      >
-                        {paymentEditingReceipt && (
-                          <div>Original Amount: {money(paymentFormOriginalAmountValue())}</div>
-                        )}
-                        <div>Payment Amount: {money(paymentFormAmountValue())}</div>
-                        {paymentEditingReceipt && (
-                          <div>Local Payment Delta: {signedMoneyValue(paymentFormDeltaValue())}</div>
-                        )}
-                        {paymentEditingReceipt && (
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              padding: "8px 10px",
-                              border: "1px solid #facc15",
-                              borderRadius: 10,
-                              background: "#fef9c3",
-                              color: "#854d0e",
-                              fontWeight: 900,
-                            }}
-                          >
-                            {Math.abs(paymentFormDeltaValue()) >= 0.005
-                              ? `This edit will change local payment totals by ${signedMoneyValue(paymentFormDeltaValue())}.`
-                              : "Metadata-only edit.  Local payment totals will not change."}
-                          </div>
-                        )}
-                        <div>Expected Payments Posted: {money(expectedPaymentsPostedAfterPaymentForm())}</div>
-                        <div>
-                          Expected Balance Presuit: {money(expectedBalancePresuitAfterPaymentForm())}
-                        </div>
-                      </div>
-                    )}
-
                     <div
                       className="barsh-direct-payment-form-actions"
                       style={{
@@ -10235,10 +10191,6 @@ function openClaimAmountEditDialog() {
                       >
                         {paymentApplyLoading ? "Posting..." : "Post Payment"}
                       </button>
-                    </div>
-
-                    <div style={{ padding: "0 18px 16px", fontSize: 12, color: "#64748b", fontWeight: 700 }}>
-                      Post Payment records a local check payment, updates Barsh Matters local payment totals, and updates Balance. Principal payments remain capped by Balance Presuit; interest and cost-recovery payments may exceed the matter-level balance/costs owed and will flow into remittance accounting. Posted payments cannot be edited; void and repost if correction is needed.
                     </div>
                     </div>
                   </div>

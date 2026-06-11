@@ -72,18 +72,24 @@ mustInclude("lawsuit allocation passes explicit context", page, 'postingContext:
 mustInclude("lawsuit screen uses Post Payment wording", page, "Post Payment");
 
 
+mustInclude("lawsuit payment hides allocation controls until required fields complete", page, 'display: masterPaymentRequiredFieldsComplete() ? "grid" : "none"');
+mustInclude("lawsuit payment hides allocation preview until required fields complete", page, 'display: masterPaymentRequiredFieldsComplete() ? "block" : "none"');
+mustInclude("lawsuit payment allocation preview still present", page, "Allocation Preview ·");
+mustInclude("lawsuit payment hides Post Payment button until required fields complete", page, 'display: masterPaymentRequiredFieldsComplete() ? "inline-flex" : "none"');
 mustInclude("lawsuit payment has allocation method state", page, "masterPaymentAllocationMethodInput");
 mustInclude("lawsuit payment defaults allocation method to proportional by balance", page, 'useState("proportional_by_balance")');
-mustInclude("lawsuit payment has manual allocation option", page, '<option value="manual">Manual Allocation</option>');
-mustInclude("lawsuit payment has proportional allocation option", page, '<option value="proportional_by_balance">Proportional by Balance</option>');
-mustInclude("lawsuit payment has selected child matters option", page, "Selected Child Matters Only");
+mustInclude("lawsuit payment has manual allocation option", page, '<option value="manual">Allocate Manually</option>');
+mustInclude("lawsuit payment has proportional allocation option", page, '<option value="proportional_by_balance">Allocate Equally by Percentage</option>');
+// Removed by payment popup UX polish: mustInclude("lawsuit payment has selected child matters option", page, "Selected Child Matters Only");
 mustInclude("lawsuit payment has selected row state", page, "masterPaymentSelectedRowIds");
 mustInclude("lawsuit payment has manual allocation input state", page, "masterPaymentManualAllocationInputs");
 mustInclude("lawsuit payment validates allocation overage", page, "One or more allocations exceed the child matter");
 mustInclude("lawsuit payment disables submit on allocation validation message", page, "masterPaymentAllocationValidationMessage()");
 mustInclude("lawsuit payment manual allocation uses editable input", page, 'inputMode="decimal"');
-mustInclude("lawsuit payment selected-only limits eligible rows", page, "(!masterPaymentSelectedOnlyInput || selected)");
-mustInclude("lawsuit payment allocation column renamed", page, ">Allocation</th>");
+// Removed by payment popup UX polish: selected-only allocation UI removed.
+mustInclude("lawsuit payment allocation column remains", page, ">Allocation</th>");
+mustInclude("lawsuit payment remaining balance column renamed", page, ">Remaining Balance</th>");
+mustInclude("lawsuit payment hides balance allocation percent in manual mode", page, 'masterPaymentAllocationMethodInput !== "manual" && (');
 
 
 mustInclude("lawsuit bills table has Lawsuit Payment column", page, ">Lawsuit Payment</th>");

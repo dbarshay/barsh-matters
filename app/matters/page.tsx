@@ -543,7 +543,9 @@ export default function FilteredMattersPage() {
     setMasterPaymentTransactionTypeInput(nextType);
     if (String(nextType || "").trim() === "Attorney Fee") {
       setMasterPaymentTransactionStatusInput("Do Not Show on Remittance");
+      return;
     }
+    setMasterPaymentTransactionStatusInput("Show on Remittance");
   }
 
   async function loadMasterPaymentTransactionReferenceOptions() {
@@ -12382,6 +12384,7 @@ function masterSettlementDateFiledValue(): string {
                       borderRadius: 14,
                       overflow: "hidden",
                       background: "#ffffff",
+                      display: masterPaymentRequiredFieldsComplete() ? "block" : "none",
                     }}
                   >
                     <div
@@ -13033,8 +13036,8 @@ function masterSettlementDateFiledValue(): string {
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
+                      display: "grid",
+                      gridTemplateColumns: "38px minmax(0, 1fr) 38px",
                       alignItems: "center",
                       gap: 12,
                       padding: "16px 18px",
@@ -13044,26 +13047,17 @@ function masterSettlementDateFiledValue(): string {
                       borderTopRightRadius: 22,
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 950,
-                          color: "#14532d",
-                        }}
-                      >
-                        Lawsuit Payment Preview
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 3,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "#166534",
-                        }}
-                      >
-                        Master Lawsuit Payment · Local child-bill receipts.
-                      </div>
+                    <div aria-hidden="true" />
+
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 950,
+                        color: "#14532d",
+                        textAlign: "center",
+                      }}
+                    >
+                      Post Lawsuit Payment
                     </div>
 
                     <button
@@ -13237,84 +13231,66 @@ function masterSettlementDateFiledValue(): string {
                   </div>
 
                   <div
-                    className="barsh-direct-payment-preview"
-                    style={{
-                      margin: "0 18px 18px",
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr 1fr",
-                      gap: 10,
-                    }}
-                  >
-                    <div>Payment Amount: {money(masterPaymentPreviewAmountValue())}</div>
-                    <div>Allocated to Child Matters: {money(masterPaymentAllocationTotalValue())}</div>
-                    <div>Remaining to Allocate: {money(Math.max(masterPaymentUnallocatedAmountValue(), 0))}</div>
-                    <div>Expected Payments Posted: {money(masterPaymentSummary.paymentsPosted + masterPaymentAllocationTotalValue())}</div>
-                    <div>Expected Balance Presuit: {money(Math.max(masterPaymentSummary.balancePresuit - masterPaymentAllocationTotalValue(), 0))}</div>
-                    <div
-                      style={{
-                        gridColumn: "1 / -1",
-                        padding: "6px 8px",
-                        border: "1px solid #bae6fd",
-                        borderRadius: 8,
-                        background: "#e0f2fe",
-                        color: "#075985",
-                        fontWeight: 900,
-                      }}
-                    >
-                      This posts local Barsh Matters payment receipts to the child bill matters.
-                    </div>
-                  </div>
-
-                  <div
                     style={{
                       margin: "0 18px 12px",
                       border: "1px solid #dbe4f0",
                       borderRadius: 14,
                       padding: 12,
                       background: "#f8fafc",
-                      display: "grid",
+                      display: masterPaymentRequiredFieldsComplete() ? "grid" : "none",
                       gridTemplateColumns: "minmax(220px, 1fr) minmax(220px, 1fr)",
                       gap: 12,
                       alignItems: "end",
                     }}
                   >
-                    <label className="barsh-direct-payment-field">
-                      <span>Allocation Method *</span>
+                    <label
+                      className="barsh-direct-payment-field"
+                      style={{
+                        display: "grid",
+                        gap: 6,
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 12,
+                        background: "#f8fafc",
+                        justifySelf: "start",
+                        width: "min(340px, 100%)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: "#334155",
+                          fontWeight: 800,
+                          fontSize: 12,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Allocation Method
+                      </span>
                       <select
                         value={masterPaymentAllocationMethodInput}
                         onChange={(event) => {
                           setMasterPaymentAllocationMethodInput(event.target.value);
                           setMasterPaymentPostResult(null);
                         }}
-                      >
-                        <option value="proportional_by_balance">Proportional by Balance</option>
-                        <option value="manual">Manual Allocation</option>
-                      </select>
-                    </label>
-
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "10px 12px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 12,
-                        background: "#ffffff",
-                        fontSize: 13,
-                        fontWeight: 850,
-                        color: "#334155",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={masterPaymentSelectedOnlyInput}
-                        onChange={(event) => {
-                          setMasterPaymentSelectedOnlyInput(event.target.checked);
-                          setMasterPaymentPostResult(null);
+                        style={{
+                          width: "100%",
+                          minHeight: 40,
+                          border: "1px solid #94a3b8",
+                          borderRadius: 10,
+                          background: "#ffffff",
+                          color: "#0f172a",
+                          fontWeight: 700,
+                          fontSize: 14,
+                          padding: "8px 40px 8px 12px",
+                          outline: "none",
+                          appearance: "auto",
                         }}
-                      />
-                      Selected Child Matters Only
+                      >
+                        <option value="proportional_by_balance">Allocate Equally by Percentage</option>
+                        <option value="manual">Allocate Manually</option>
+                      </select>
                     </label>
 
                     <div
@@ -13341,6 +13317,7 @@ function masterSettlementDateFiledValue(): string {
                       borderRadius: 14,
                       overflow: "hidden",
                       background: "#ffffff",
+                      display: masterPaymentRequiredFieldsComplete() ? "block" : "none",
                     }}
                   >
                     <div
@@ -13355,7 +13332,7 @@ function masterSettlementDateFiledValue(): string {
                         color: "#475569",
                       }}
                     >
-                      Allocation Preview · {masterPaymentAllocationMethodInput === "manual" ? "Manual Allocation" : "Proportional by Balance"}
+                      Allocation Preview · {masterPaymentAllocationMethodInput === "manual" ? "Allocate Manually" : "Allocate Equally by Percentage"}
                     </div>
 
                     <div style={{ overflowX: "auto" }}>
@@ -13377,9 +13354,11 @@ function masterSettlementDateFiledValue(): string {
                             <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Provider</th>
                             <th style={{ textAlign: "left", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Patient</th>
                             <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Bill Amount</th>
-                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Balance Allocation %</th>
+                            {masterPaymentAllocationMethodInput !== "manual" && (
+                              <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Balance Allocation %</th>
+                            )}
                             <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Allocation</th>
-                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Expected Balance</th>
+                            <th style={{ textAlign: "right", padding: "6px 8px", border: "1px solid #cbd5e1" }}>Remaining Balance</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -13418,9 +13397,11 @@ function masterSettlementDateFiledValue(): string {
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 900 }}>
                                   {money(item.billAmount)}
                                 </td>
-                                <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right" }}>
-                                  {allocationPercent.toFixed(2)}%
-                                </td>
+                                {masterPaymentAllocationMethodInput !== "manual" && (
+                                  <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right" }}>
+                                    {allocationPercent.toFixed(2)}%
+                                  </td>
+                                )}
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", textAlign: "right", fontWeight: 950, color: item.allocationExceedsBalance ? "#991b1b" : "#166534" }}>
                                   {masterPaymentAllocationMethodInput === "manual" ? (
                                     <input
@@ -13526,9 +13507,12 @@ function masterSettlementDateFiledValue(): string {
                       title={
                         masterPaymentSubmitDisabled() && !masterPaymentPosting
                           ? "Complete all required payment fields and allocate the full payment amount before posting."
-                          : "Post local Barsh Matters payment receipts to the child bill matters."
+                          : "Post payment."
                       }
                       style={{
+                        display: masterPaymentRequiredFieldsComplete() ? "inline-flex" : "none",
+                        alignItems: "center",
+                        justifyContent: "center",
                         minWidth: 190,
                         height: 44,
                         border: "1px solid #16a34a",
