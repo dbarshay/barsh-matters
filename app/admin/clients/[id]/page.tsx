@@ -1072,6 +1072,24 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div>
             <h2 style={providerHubSectionTitleStyle}>Account Notes</h2>
           </div>
+          {editingField !== "notes" && (
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={startAddNote}
+                style={{ padding: "3px 8px", borderRadius: 7, border: "1px solid #2563eb", background: "#2563eb", color: "#ffffff", fontSize: 12, fontWeight: 900, lineHeight: 1.1 }}
+              >
+                Add Note
+              </button>
+              <button
+                type="button"
+                onClick={startEditNotes}
+                style={{ padding: "3px 8px", borderRadius: 7, border: "1px solid #64748b", background: "#ffffff", color: "#0f172a", fontSize: 12, fontWeight: 900, lineHeight: 1.1 }}
+              >
+                Edit Notes
+              </button>
+            </div>
+          )}
         </div>
 
         {editingField === "notes" ? (
@@ -1134,14 +1152,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: "grid", gap: 12 }}>
             <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
               {clientNotes(client?.details) || "No notes yet."}
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-              <button type="button" onClick={startAddNote} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#ffffff", fontWeight: 900 }}>
-                Add Note
-              </button>
-              <button type="button" onClick={startEditNotes} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #64748b", background: "#ffffff", color: "#0f172a", fontWeight: 900 }}>
-                Edit Notes
-              </button>
             </div>
           </div>
         )}
