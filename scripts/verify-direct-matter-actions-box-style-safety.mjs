@@ -26,7 +26,6 @@ for (const token of [
   'alignItems: "center"',
   'display: "inline-flex"',
   'height: 36',
-  'flex: "0 0 132px"',
   'minWidth: 132',
   'width: 132',
   'width: "fit-content"',
