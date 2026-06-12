@@ -8482,6 +8482,10 @@ function openClaimAmountEditDialog() {
           role="dialog"
           aria-modal="true"
           aria-label="Edit Date of Service"
+          data-barsh-direct-dos-edit-standard-modal="true"
+          onClick={() => { setDirectFieldEditModal(null); setDirectFieldEditResult(null); }}
+          onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setDirectFieldEditModal(null); setDirectFieldEditResult(null); } }}
+          tabIndex={-1}
           style={{
             position: "fixed",
             inset: 0,
@@ -8493,102 +8497,49 @@ function openClaimAmountEditDialog() {
             background: "rgba(15, 23, 42, 0.45)",
           }}
         >
-          <div
+          <form
+            onClick={(event) => event.stopPropagation()}
+            onSubmit={(event) => { event.preventDefault(); if (!directFieldEditLoading) void saveDosEditDialog(); }}
             style={{
               width: "min(520px, calc(100vw - 48px))",
-              border: "1px solid #cbd5e1",
+              overflow: "hidden",
+              border: "1px solid transparent",
               borderRadius: 18,
-              background: "#fff",
-              boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
-              padding: 20,
+              background: "#1e3a8a",
+              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)",
             }}
           >
-            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Edit Date of Service</h2>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 16 }}>
-              This updates DOS Start and DOS End locally.
-            </div>
+            <h2 style={{ margin: 0, padding: "12px 14px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", fontSize: 17, fontWeight: 950, lineHeight: 1.15 }}>
+              Edit Date of Service
+            </h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
-                <span>DOS Start</span>
-                <input
-                  type="date"
-                  value={dosStartInput}
-                  onChange={(event) => setDosStartInput(event.target.value)}
-                  style={{
-                    height: 40,
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 10,
-                    padding: "0 10px",
-                    fontWeight: 800,
-                  }}
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
-                <span>DOS End</span>
-                <input
-                  type="date"
-                  value={dosEndInput}
-                  onChange={(event) => setDosEndInput(event.target.value)}
-                  style={{
-                    height: 40,
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 10,
-                    padding: "0 10px",
-                    fontWeight: 800,
-                  }}
-                />
-              </label>
-            </div>
-
-            {directFieldEditResult && !directFieldEditResult.ok && (
-              <div style={{ color: "#991b1b", fontWeight: 800, marginBottom: 12 }}>
-                {textValue(directFieldEditResult.error) || "Date of Service could not be updated."}
+            <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
+              <div data-barsh-direct-dos-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#0f172a" }}>{dosStartInput || "—"}{dosEndInput && dosEndInput !== dosStartInput ? ` – ${dosEndInput}` : ""}</strong>
               </div>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setDirectFieldEditModal(null);
-                  setDirectFieldEditResult(null);
-                }}
-                disabled={directFieldEditLoading}
-                style={{
-                  minWidth: 96,
-                  height: 38,
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10,
-                  background: "#f8fafc",
-                  color: "#334155",
-                  fontWeight: 900,
-                  cursor: directFieldEditLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={saveDosEditDialog}
-                disabled={directFieldEditLoading}
-                style={{
-                  minWidth: 118,
-                  height: 38,
-                  border: "1px solid #16a34a",
-                  borderRadius: 10,
-                  background: directFieldEditLoading ? "#bbf7d0" : "#16a34a",
-                  color: "#fff",
-                  fontWeight: 900,
-                  cursor: directFieldEditLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                {directFieldEditLoading ? "Saving..." : "Save"}
-              </button>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
+                  <span>DOS Start</span>
+                  <input type="date" value={dosStartInput} onChange={(event) => setDosStartInput(event.target.value)} style={{ height: 40, border: "1px solid #cbd5e1", borderRadius: 10, padding: "0 10px", fontWeight: 800 }} />
+                </label>
+                <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
+                  <span>DOS End</span>
+                  <input type="date" value={dosEndInput} onChange={(event) => setDosEndInput(event.target.value)} style={{ height: 40, border: "1px solid #cbd5e1", borderRadius: 10, padding: "0 10px", fontWeight: 800 }} />
+                </label>
+              </div>
+              {directFieldEditResult && !directFieldEditResult.ok && (
+                <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: 10, fontSize: 13, fontWeight: 800 }}>
+                  {textValue(directFieldEditResult.error) || "Date of Service could not be updated."}
+                </div>
+              )}
             </div>
-          </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 16px 16px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+              <button type="button" onClick={() => { setDirectFieldEditModal(null); setDirectFieldEditResult(null); }} disabled={directFieldEditLoading} style={{ minWidth: 96, height: 38, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#334155", fontWeight: 900, cursor: directFieldEditLoading ? "not-allowed" : "pointer" }}>Cancel</button>
+              <button type="submit" disabled={directFieldEditLoading} style={{ minWidth: 118, height: 38, border: "1px solid #1e3a8a", borderRadius: 10, background: directFieldEditLoading ? "#93c5fd" : "#1e3a8a", color: "#ffffff", fontWeight: 900, cursor: directFieldEditLoading ? "not-allowed" : "pointer" }}>{directFieldEditLoading ? "Saving..." : "Confirm Edit"}</button>
+            </div>
+          </form>
         </div>
       )}
 

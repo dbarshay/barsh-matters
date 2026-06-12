@@ -345,7 +345,8 @@
     "verify:direct-matter-date-of-loss-claim-info-safety": "node scripts/verify-direct-matter-date-of-loss-claim-info-safety.mjs",
     "verify:direct-matter-actions-box-style-safety": "node scripts/verify-direct-matter-actions-box-style-safety.mjs",
     "verify:master-field-edit-popup-standard-modal-safety": "node scripts/verify-master-field-edit-popup-standard-modal-safety.mjs",
-    "verify:direct-claim-amount-popup-standard-modal-safety": "node scripts/verify-direct-claim-amount-popup-standard-modal-safety.mjs"
+    "verify:direct-claim-amount-popup-standard-modal-safety": "node scripts/verify-direct-claim-amount-popup-standard-modal-safety.mjs",
+    "verify:direct-dos-popup-standard-modal-safety": "node scripts/verify-direct-dos-popup-standard-modal-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
