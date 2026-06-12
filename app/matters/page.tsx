@@ -20,6 +20,8 @@ type MatterRow = {
   claimNumber: string;
   dosStart: string;
   dosEnd: string;
+  dateOfLoss: string;
+  date_of_loss: string;
   denialReason: string;
   status: string;
   finalStatus: "Open" | "Closed";
@@ -230,6 +232,8 @@ function toMatterRow(row: any, matchedBy: string): MatterRow | null {
     claimNumber: claimNumberFromMatter(row),
     dosStart: clean(row?.dosStart ?? row?.dos_start),
     dosEnd: clean(row?.dosEnd ?? row?.dos_end),
+    dateOfLoss: clean(row?.dateOfLoss ?? row?.date_of_loss ?? row?.lossDate ?? row?.loss_date),
+    date_of_loss: clean(row?.dateOfLoss ?? row?.date_of_loss ?? row?.lossDate ?? row?.loss_date),
     denialReason: clean(row?.denialReason ?? row?.denial_reason),
     status: clean(row?.matterStage?.name ?? row?.matter_stage_name ?? row?.status),
     finalStatus: (() => {

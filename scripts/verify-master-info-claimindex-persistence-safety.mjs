@@ -5,6 +5,18 @@ const metadata = fs.readFileSync("app/api/lawsuits/update-metadata/route.ts", "u
 const failures = [];
 
 const claimInfoFields = ["provider", "patient", "insurer", "claimNumber", "dateOfLoss"];
+
+for (const token of [
+  "dateOfLoss: string;",
+  "date_of_loss: string;",
+  "dateOfLoss: clean(row?.dateOfLoss ?? row?.date_of_loss ?? row?.lossDate ?? row?.loss_date)",
+  "date_of_loss: clean(row?.dateOfLoss ?? row?.date_of_loss ?? row?.lossDate ?? row?.loss_date)",
+  "const masterDateOfLossSummary = useMemo(() =>",
+  "row.dateOfLoss || row.date_of_loss || row.lossDate || row.loss_date",
+]) {
+  if (!page.includes(token)) failures.push(`master page Date of Loss display/reload mapping missing token: ${token}`);
+}
+
 for (const field of claimInfoFields) {
   if (page.includes(`openMasterInfoEditDialog("${field}"`)) {
     failures.push(`Claim Information field ${field} must not be editable on the master lawsuit page`);
