@@ -340,7 +340,8 @@
     "verify:court-calendar-route-safety": "node scripts/verify-court-calendar-route-safety.mjs",
     "verify:court-calendar-page-safety": "node scripts/verify-court-calendar-page-safety.mjs",
     "verify:court-calendar-webcivil-local-import-safety": "node scripts/verify-court-calendar-webcivil-local-import-safety.mjs",
-    "verify:master-action-area-option-e-safety": "node scripts/verify-master-action-area-option-e-safety.mjs"
+    "verify:master-action-area-option-e-safety": "node scripts/verify-master-action-area-option-e-safety.mjs",
+    "verify:master-info-claimindex-persistence-safety": "node scripts/verify-master-info-claimindex-persistence-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

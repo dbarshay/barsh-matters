@@ -51,6 +51,50 @@ function amountForMode(row: any, mode: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+
+async function claimIndexColumns(): Promise<Set<string>> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<any[]>("PRAGMA table_info('ClaimIndex')");
+    return new Set(rows.map((row) => text(row?.name)).filter(Boolean));
+  } catch {
+    return new Set();
+  }
+}
+
+async function mirrorLawsuitMetadataToClaimIndex(params: {
+  masterLawsuitId: string;
+  court: string;
+  indexAaaNumber: string;
+  adversaryAttorney: string;
+  dateFiled: string;
+}) {
+  const columns = await claimIndexColumns();
+  const assignments: string[] = [];
+  const values: string[] = [];
+  const add = (column: string, value: string) => {
+    if (!columns.has(column)) return;
+    assignments.push(`${column} = ?`);
+    values.push(value || "");
+  };
+
+  add("court", params.court);
+  add("venue", params.court);
+  add("index_aaa_number", params.indexAaaNumber);
+  add("adversary_attorney", params.adversaryAttorney);
+  add("date_filed", params.dateFiled);
+
+  if (assignments.length === 0) {
+    return { skipped: true, reason: "No matching ClaimIndex mirror columns exist." };
+  }
+
+  values.push(params.masterLawsuitId);
+  const updated: any = await prisma.$executeRawUnsafe(
+    `UPDATE ClaimIndex SET ${assignments.join(", ")} WHERE master_lawsuit_id = ?`,
+    ...values
+  );
+  return { skipped: false, updatedCount: Number(updated) || 0, columns: assignments.map((item) => item.split(" = ")[0]) };
+}
+
 async function computeLocalAmountSought(params: {
   lawsuitMatters: string;
   mode: string;
@@ -257,6 +301,7 @@ export async function POST(req: NextRequest) {
       customAmountSought,
       indexAaaNumber: text(body?.indexAaaNumber),
       adversaryAttorney: text(body?.adversaryAttorney),
+      dateFiled: text(body?.dateFiled || existingOptions.dateFiled),
       selectedAdversaryAttorneyDetails:
         body?.selectedAdversaryAttorneyDetails && typeof body.selectedAdversaryAttorneyDetails === "object"
           ? body.selectedAdversaryAttorneyDetails
@@ -280,6 +325,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const claimIndexMirror = await mirrorLawsuitMetadataToClaimIndex({
+      masterLawsuitId,
+      court: text(body?.venueSelection || body?.venue),
+      indexAaaNumber: text(body?.indexAaaNumber),
+      adversaryAttorney: text(body?.adversaryAttorney),
+      dateFiled: text(body?.dateFiled || existingOptions.dateFiled),
+    });
+
     return NextResponse.json({
       ok: true,
       action: "local-lawsuit-metadata-update",
@@ -288,6 +341,7 @@ export async function POST(req: NextRequest) {
       noClioWrite: true,
       noClaimIndexHydration: true,
       lawsuit,
+      claimIndexMirror,
       amountSought: computed.amountSought,
       amountSoughtBreakdown: computed.breakdown,
       clioPostFilingWrite: {
