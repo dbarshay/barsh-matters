@@ -77,4 +77,13 @@ if (!page.includes('webcivilLocal/LCCalendarSearch')) failures.push('page missin
 if (!page.includes('data-barsh-court-calendar-webcivil-local-helper')) failures.push('page missing WebCivil Local calendar-number helper token data-barsh-court-calendar-webcivil-local-helper');
 if (!page.includes('Confirm manually in WebCivil Local using court, date range, and index number.')) failures.push('page missing WebCivil Local calendar-number helper token Confirm manually in WebCivil Local using court, date range, and index number.');
 if (!page.includes('Open WebCivil Local Court Calendars')) failures.push('page missing WebCivil Local calendar-number helper token Open WebCivil Local Court Calendars');
+if (page.includes("function printCalendarReport") === false) failures.push("page missing printCalendarReport");
+if (page.includes("data-barsh-court-calendar-print-filtered-results=\"true\"") === false) failures.push("page missing printable filtered-results button");
+if (page.includes("Trial Calendar Report") === false) failures.push("page missing Trial Calendar Report printable title");
+if (page.includes("matters from current filtered results") === false) failures.push("page missing current filtered results printable count");
+if (page.includes("window.print()") === false) failures.push("page missing printable window print trigger");
+if (page.includes("Daily Court<br/>Cal. No") === false) failures.push("page missing trial-calendar report column Daily Court Cal. No");
+if (page.includes("Trial Result") === false) failures.push("page missing trial-calendar report column Trial Result");
+if (page.includes("Adj") === false) failures.push("page missing trial result handwritten Adj line");
+if (page.includes("@page { size: landscape;") === false) failures.push("page missing landscape print CSS");
 console.log("PASS: court calendar page safety");

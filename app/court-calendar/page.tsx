@@ -126,6 +126,20 @@ function safeExportCell(value: unknown): string {
   return text(value);
 }
 
+function safeHtml(value: unknown): string {
+  return text(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function printableMoney(value: unknown): string {
+  const amount = Number(value ?? 0);
+  if (Number.isFinite(amount) === false || Math.abs(amount) < 0.005) return "";
+  return amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function printableResultLines(): string {
+  return ["Adj", "Final", "Conf", "Settled", "Discon"].map((label) => "<div class=\"result-line\"><span>" + label + "</span><span class=\"blank-line\"></span></div>").join("");
+}
+
 function timestampForFilename(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 }
@@ -439,6 +453,40 @@ export default function CourtCalendarPage() {
     }
   }
 
+  function printCalendarReport() {
+    if (events.length === 0) {
+      alert("Run a search before printing the Court Calendar report.");
+      return;
+    }
+    const printWindow = window.open("", "_blank");
+    if (printWindow === null) {
+      alert("Browser blocked printable Court Calendar report window.");
+      return;
+    }
+    const groupMap = new Map<string, CalendarEvent[]>();
+    for (const event of events) {
+      const groupName = text(event.court || event.venue) || "Unspecified Court / Venue";
+      const existingGroup = groupMap.get(groupName);
+      if (existingGroup) existingGroup.push(event);
+      else groupMap.set(groupName, [event]);
+    }
+    const reportDate = dateFrom || events[0]?.eventDate || new Date().toISOString().slice(0, 10);
+    const generatedAt = new Date().toLocaleString();
+    const filterSummary = [dateFrom || dateTo ? "Date: " + (dateFrom || "Any") + " to " + (dateTo || "Any") : "Date: Current filtered results", venueFilter === "all" ? "Venue: All" : "Venue: " + venueFilter, clientNameFilter === "all" ? "Provider: All" : "Provider: " + clientNameFilter, appearanceTypeFilter === "all" ? "Appearance: All" : "Appearance: " + appearanceTypeFilter, hideClosedMatters ? "Closed matters hidden" : "Closed matters included"].join(" · ");
+    let groupsHtml = "";
+    for (const [groupName, groupEvents] of Array.from(groupMap.entries())) {
+      let rowsHtml = "";
+      for (const event of groupEvents) {
+        rowsHtml += "<tr><td class=\"cal-no\">" + safeHtml(event.calendarNumber || "0") + "</td><td class=\"index-no\">" + safeHtml(event.indexAaaNumber) + "</td><td class=\"packet-id\">" + safeHtml(event.displayNumber || event.masterLawsuitId) + "</td><td class=\"case-status\">" + safeHtml(labelFromCode(event.status || event.eventType)) + "</td><td class=\"money\">" + safeHtml(printableMoney(event.caseData?.lawsuitAmount)) + "</td><td class=\"money\">" + safeHtml(printableMoney(event.caseData?.lawsuitBalance)) + "</td><td class=\"caption\">" + safeHtml(event.caseData?.caption || event.title) + "</td><td class=\"defense-attorney\"></td><td class=\"trial-status\">" + safeHtml(event.appearanceType || labelFromCode(event.eventType)) + "</td><td class=\"trial-result\">" + printableResultLines() + "</td></tr>";
+      }
+      groupsHtml += "<section class=\"court-group\"><div class=\"court-heading\"><span>" + safeHtml(dateOnly(reportDate)) + "</span><span>" + safeHtml(groupName) + "</span></div><table><thead><tr><th>Daily Court<br/>Cal. No</th><th>Index / AAA<br/>Number</th><th>Packet ID /<br/>Case ID</th><th>Case Status</th><th>Claim<br/>Amount</th><th>Balance<br/>Amount</th><th>Case Caption</th><th>Defendant<br/>Attorney</th><th>Trial Status</th><th>Trial Result</th></tr></thead><tbody>" + rowsHtml + "</tbody></table></section>";
+    }
+    const html = "<!doctype html><html><head><meta charset=\"utf-8\" /><title>Court Calendar Report</title><style>@page { size: landscape; margin: 0.28in 0.22in; } * { box-sizing: border-box; } body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; font-size: 9px; } .report-title { text-align: center; font-size: 18px; font-weight: 800; margin: 0 0 6px; } .report-meta { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px; font-size: 8px; color: #334155; } .court-heading { display: grid; grid-template-columns: 115px 1fr; align-items: end; gap: 8px; font-size: 12px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding: 0 0 3px; margin: 0 0 3px; } table { width: 100%; border-collapse: collapse; table-layout: fixed; } thead { display: table-header-group; } tr { page-break-inside: avoid; } th { text-align: left; vertical-align: bottom; font-size: 7.5px; font-weight: 900; color: #475569; border-bottom: 1px solid #cbd5e1; padding: 2px 3px; line-height: 1.05; } td { vertical-align: top; border-bottom: 1px solid #d7dde5; padding: 3px 3px; line-height: 1.08; word-break: break-word; overflow-wrap: anywhere; } th:nth-child(1), td:nth-child(1) { width: 5.8%; } th:nth-child(2), td:nth-child(2) { width: 9.3%; } th:nth-child(3), td:nth-child(3) { width: 9.3%; } th:nth-child(4), td:nth-child(4) { width: 9.3%; } th:nth-child(5), td:nth-child(5) { width: 7.2%; } th:nth-child(6), td:nth-child(6) { width: 7.4%; } th:nth-child(7), td:nth-child(7) { width: 17.8%; } th:nth-child(8), td:nth-child(8) { width: 10%; } th:nth-child(9), td:nth-child(9) { width: 8.7%; } th:nth-child(10), td:nth-child(10) { width: 15.2%; } .money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .trial-result { white-space: nowrap; } .result-line { display: grid; grid-template-columns: 34px 1fr; align-items: end; gap: 2px; line-height: 1.08; } .blank-line { border-bottom: 1px solid #9ca3af; height: 8px; min-width: 72px; } .screen-only { margin: 10px 0; text-align: center; } @media print { .screen-only { display: none; } body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }</style></head><body><div class=\"screen-only\"><button onclick=\"window.print()\">Print / Save PDF</button></div><h1 class=\"report-title\">Trial Calendar Report</h1><div class=\"report-meta\"><div>" + safeHtml(filterSummary) + "</div><div>" + safeHtml(events.length) + " matters from current filtered results · Generated " + safeHtml(generatedAt) + "</div></div>" + groupsHtml + "<script>setTimeout(() => window.print(), 250);</script></body></html>";
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+
   function exportCalendarReport() {
     const headers = [
       "Event Date",
@@ -580,9 +628,6 @@ export default function CourtCalendarPage() {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void searchEvents()} style={primaryButtonStyle} disabled={loading}>
               {loading ? "Searching..." : "Search Calendar"}
-            </button>
-            <button type="button" onClick={() => setWebCivilImportOpen((open) => !open)} style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-toggle="true">
-              Import Calendar Numbers from WebCivil Local
             </button>
           </div>
         </div>
@@ -735,6 +780,8 @@ export default function CourtCalendarPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button type="button" onClick={printCalendarReport} style={secondaryButtonStyle} disabled={events.length === 0} data-barsh-court-calendar-print-filtered-results="true">Print / Save PDF</button>
+            <button type="button" onClick={() => setWebCivilImportOpen((open) => !open)} style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-toggle="true">Import Calendar Numbers from WebCivil Local</button>
             <button type="button" onClick={exportCalendarReport} style={secondaryButtonStyle} disabled={!events.length} data-barsh-court-calendar-export-xlsx="true">Export XLSX</button>
             <Link href="/matters" style={secondaryButtonStyle}>Open Matters</Link>
           </div>
