@@ -8,7 +8,7 @@ import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
-type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider";
+type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider" | "dateOfLoss";
 
 type MatterRow = {
   id: string;
@@ -319,8 +319,10 @@ function getFilterFromUrl(): { kind: FilterKind | ""; value: string } {
   const claim = clean(params.get("claim"));
   const master = clean(params.get("master"));
   const treatingProvider = clean(params.get("treatingProvider"));
+  const dateOfLoss = clean(params.get("dateOfLoss"));
 
   if (treatingProvider) return { kind: "treatingProvider", value: treatingProvider };
+  if (dateOfLoss) return { kind: "dateOfLoss", value: dateOfLoss };
   if (patient) return { kind: "patient", value: patient };
   if (provider) return { kind: "provider", value: provider };
   if (insurer) return { kind: "insurer", value: insurer };
@@ -337,6 +339,7 @@ function filterTitle(kind: FilterKind | "", value: string) {
   if (kind === "treatingProvider") return `Matters for Treating Provider: ${value}`;
   if (kind === "insurer") return `Matters for Insurer: ${value}`;
   if (kind === "master") return `Matters for Master Lawsuit: ${value}`;
+  if (kind === "dateOfLoss") return `Matters for Date of Loss: ${formatDateOnlyForDisplay(value) || value}`;
   return `Matters for Claim: ${value}`;
 }
 
@@ -347,6 +350,7 @@ function filterLabel(kind: FilterKind | "") {
   if (kind === "insurer") return "Insurer";
   if (kind === "claim") return "Claim Number";
   if (kind === "master") return "Master Lawsuit";
+  if (kind === "dateOfLoss") return "Date of Loss";
   return "Filter";
 }
 
@@ -2151,9 +2155,6 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     }
   }
 
-  function masterInfoFieldPersistsToClaimIndex(field: string): boolean {
-    return ["provider", "patient", "insurer", "claimNumber", "dateOfLoss"].includes(field);
-  }
 
   function masterInfoFieldPersistsLocally(field: string): boolean {
     return [
@@ -2492,7 +2493,6 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     ]);
 
     const localMetadataPersisted = masterInfoFieldPersistsLocally(field);
-    const claimIndexPersisted = masterInfoFieldPersistsToClaimIndex(field);
 
     if (localMetadataPersisted) {
       const masterLawsuitId = clean(value);
@@ -2519,33 +2519,6 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       setMasterLawsuitMetadata(json.lawsuit || null);
     }
 
-    if (claimIndexPersisted) {
-      const masterLawsuitId = clean(value);
-
-      if (!masterLawsuitId) {
-        window.alert(`Cannot save ${label} because no Master Lawsuit ID is available.`);
-        return;
-      }
-
-      const response = await fetch("/api/lawsuits/claim-index-field", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({
-          masterLawsuitId,
-          field,
-          value: after,
-          actorName: masterNoteUserName(),
-        }),
-      });
-
-      const json = await response.json().catch(() => null);
-
-      if (!response.ok || !json?.ok) {
-        window.alert(json?.error || `${label} could not be saved to ClaimIndex.`);
-        return;
-      }
-    }
 
     void writeMasterAuditEntry({
       action: "master_info_updated",
@@ -2561,7 +2534,6 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
         selectedContactName: masterInfoSelectedContact?.name || null,
         selectedCourtDetails,
         localLawsuitPersisted: localMetadataPersisted,
-        claimIndexPersisted,
         clioWriteAttempted: false,
       },
     });
@@ -4466,7 +4438,9 @@ function masterSettlementDateFiledValue(): string {
                   ? `/api/claim-index/search?insurer=${encodeURIComponent(filter.value)}`
                   : filter.kind === "master"
                     ? `/api/claim-index/by-master?masterLawsuitId=${encodeURIComponent(filter.value)}`
-                    : `/api/claim-index/search?claim=${encodeURIComponent(filter.value)}`;
+                    : filter.kind === "dateOfLoss"
+                      ? `/api/claim-index/search?dateOfLoss=${encodeURIComponent(filter.value)}`
+                      : `/api/claim-index/search?claim=${encodeURIComponent(filter.value)}`;
 
         const rawRows = await fetchRows(url);
         const mapped: MatterRow[] = [];
@@ -4477,6 +4451,7 @@ function masterSettlementDateFiledValue(): string {
           if (filter.kind === "treatingProvider" && !exactOrContains(treatingProviderName(row), filter.value)) continue;
           if (filter.kind === "insurer" && !exactOrContains(insurerName(row), filter.value)) continue;
           if (filter.kind === "claim" && !exactOrContains(claimNumberFromMatter(row), filter.value)) continue;
+          if (filter.kind === "dateOfLoss" && !exactOrContains(clean((row as any).dateOfLoss || (row as any).date_of_loss), filter.value)) continue;
 
           const mappedRow = toMatterRow(row, filterLabel(filter.kind));
           if (mappedRow) mapped.push(mappedRow);
@@ -9673,20 +9648,6 @@ function masterSettlementDateFiledValue(): string {
                             "—"
                           )}
                         </strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("provider", "Provider", masterInfoDisplayValue("provider", masterProviderClientSummary))}
-                          title="Open Provider edit preview dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
                       </div>
 
                       <div style={masterInfoCardStyle}>
@@ -9704,20 +9665,6 @@ function masterSettlementDateFiledValue(): string {
                             "—"
                           )}
                         </strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("patient", "Patient", masterInfoDisplayValue("patient", clean((masterSettlementDetailRows as any[])[0]?.patient)))}
-                          title="Open Patient edit dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
                       </div>
 
                       <div style={masterInfoCardStyle}>
@@ -9735,20 +9682,6 @@ function masterSettlementDateFiledValue(): string {
                             "—"
                           )}
                         </strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("insurer", "Insurer", masterInfoDisplayValue("insurer", masterInsurerSummary))}
-                          title="Open Insurer edit dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
                       </div>
 
                       <div style={masterInfoCardStyle}>
@@ -9766,39 +9699,11 @@ function masterSettlementDateFiledValue(): string {
                             "—"
                           )}
                         </strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("claimNumber", "Claim Number", masterInfoDisplayValue("claimNumber", masterClaimSummary.label))}
-                          title="Open Claim Number edit dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
                       </div>
 
                       <div style={masterInfoCardStyle}>
                         <span style={masterSummaryCardTitleStyle}>Date of Loss</span>
                         <strong style={masterSummaryCardValueStyle}>{masterDateOfLossDisplayValue()}</strong>
-                        <button
-                          type="button"
-                          onClick={() => openMasterInfoEditDialog("dateOfLoss", "Date of Loss", masterInfoDisplayValue("dateOfLoss", masterDateOfLossDisplayValue()))}
-                          title="Open Date of Loss edit dialog."
-                          style={{
-                            ...masterInfoCardEditButtonStyle,
-                            borderColor: "#93c5fd",
-                            background: "#ffffff",
-                            color: "#1d4ed8",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
                       </div>
                     </div>
                   </section>

@@ -1501,7 +1501,7 @@ const activeGroupKey =
   const [directFieldEditResult, setDirectFieldEditResult] = useState<any>(null);
   const [directFieldPicklistsLoading, setDirectFieldPicklistsLoading] = useState(false);
   const [directFieldPicklists, setDirectFieldPicklists] = useState<any>(null);
-  const [identityFieldEditModal, setIdentityFieldEditModal] = useState<"patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null>(null);
+  const [identityFieldEditModal, setIdentityFieldEditModal] = useState<"patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null>(null);
   const [identityFieldEditInput, setIdentityFieldEditInput] = useState("");
   const [identityFieldEditSelectedOptionId, setIdentityFieldEditSelectedOptionId] = useState("");
   const [identityReferenceOptions, setIdentityReferenceOptions] = useState<Record<string, any[]>>({});
@@ -2007,13 +2007,13 @@ const activeGroupKey =
     return "";
   }
 
-  function identityFieldReferenceType(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null): string {
+  function identityFieldReferenceType(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null): string {
     if (field === "client_name") return "provider_client";
     if (field === "insurer_name") return "insurer_company";
     return "";
   }
 
-  function identityFieldUsesReferenceOptions(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null): boolean {
+  function identityFieldUsesReferenceOptions(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null): boolean {
     return Boolean(identityFieldReferenceType(field));
   }
 
@@ -2025,7 +2025,7 @@ const activeGroupKey =
     return textValue(option?.displayName || option?.name || option?.value || option?.label);
   }
 
-  async function loadIdentityReferenceOptions(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null) {
+  async function loadIdentityReferenceOptions(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null) {
     const referenceType = identityFieldReferenceType(field);
     if (!referenceType) return [];
 
@@ -2058,19 +2058,21 @@ const activeGroupKey =
     }
   }
 
-  function identityFieldEditLabel(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null): string {
+  function identityFieldEditLabel(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null): string {
     if (field === "patient_name") return "Patient";
     if (field === "client_name") return "Provider";
     if (field === "insurer_name") return "Insurer";
     if (field === "claim_number_raw") return "Claim Number";
+    if (field === "date_of_loss") return "Date of Loss";
     return "Identity Field";
   }
 
-  function identityFieldCurrentValue(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | null): string {
+  function identityFieldCurrentValue(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss" | null): string {
     if (field === "patient_name") return textValue(matter?.patient?.name || matter?.patient);
     if (field === "client_name") return providerValue(matter);
     if (field === "insurer_name") return insurerValue(matter);
     if (field === "claim_number_raw") return textValue(matter?.claimNumber);
+    if (field === "date_of_loss") return textValue(matter?.dateOfLoss || matter?.date_of_loss);
     return "";
   }
 
@@ -2090,7 +2092,7 @@ const activeGroupKey =
     return 0;
   }
 
-  function openIdentityFieldEditDialog(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw") {
+  function openIdentityFieldEditDialog(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss") {
     const currentValue = identityFieldCurrentValue(field);
 
     setIdentityFieldEditResult(null);
@@ -2209,7 +2211,7 @@ const activeGroupKey =
     };
   }
 
-  function applyIdentityFieldToMatterState(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw", value: string) {
+  function applyIdentityFieldToMatterState(field: "patient_name" | "client_name" | "insurer_name" | "claim_number_raw" | "date_of_loss", value: string) {
     setMatter((current: any) => {
       if (!current) return current;
 
@@ -2260,6 +2262,14 @@ const activeGroupKey =
           claim_number: value,
           claimNumberRaw: value,
           claim_number_raw: value,
+        };
+      }
+
+      if (field === "date_of_loss") {
+        return {
+          ...current,
+          dateOfLoss: value,
+          date_of_loss: value,
         };
       }
 
@@ -9276,6 +9286,48 @@ function openClaimAmountEditDialog() {
                     {textValue(matter?.claimNumber) || "—"}
                   </div>
                 </a>
+
+
+                <div className="barsh-direct-summary-card">
+                  <div
+                    className="barsh-direct-summary-label"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span>Date of Loss</span>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openIdentityFieldEditDialog("date_of_loss");
+                      }}
+                      disabled={identityFieldEditLoading}
+                      title="Edit Date of Loss."
+                      style={identityEditButtonStyle}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div className="barsh-direct-summary-value barsh-direct-summary-value-strong">
+                    {textValue(matter?.dateOfLoss || matter?.date_of_loss) ? (
+                      <a
+                        href={`/matters?dateOfLoss=${encodeURIComponent(textValue(matter?.dateOfLoss || matter?.date_of_loss))}`}
+                        className="barsh-filter-field-link"
+                        style={{ color: "#1d4ed8", textDecoration: "underline", textUnderlineOffset: 2 }}
+                      >
+                        {formatDate(matter?.dateOfLoss || matter?.date_of_loss) || "—"}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
+                </div>
+
               </div>
 
               <div className="barsh-direct-summary-column" style={{ paddingTop: 28 }}>

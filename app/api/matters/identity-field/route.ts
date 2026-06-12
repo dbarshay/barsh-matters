@@ -9,7 +9,8 @@ type IdentityFieldName =
   | "client_name"
   | "insurer_name"
   | "claim_number_raw"
-  | "treating_provider";
+  | "treating_provider"
+  | "date_of_loss";
 
 type IdentityFieldConfig = {
   fieldName: IdentityFieldName;
@@ -36,6 +37,7 @@ const IDENTITY_FIELDS: Record<string, IdentityFieldConfig> = {
     fieldName: "claim_number_raw",
     label: "Claim Number",
   },
+  date_of_loss: { fieldName: "date_of_loss", label: "Date of Loss" },
   treating_provider: {
     fieldName: "treating_provider",
     label: "Treating Provider",
@@ -72,6 +74,8 @@ function getFieldConfig(rawFieldName: unknown): IdentityFieldConfig | null {
 }
 
 function claimIndexValue(claimIndex: any, fieldName: IdentityFieldName): string {
+  if (fieldName === "date_of_loss") return textValue(claimIndex?.date_of_loss);
+
   if (fieldName === "patient_name") return textValue(claimIndex?.patient_name);
   if (fieldName === "client_name") return textValue(claimIndex?.client_name);
   if (fieldName === "insurer_name") return textValue(claimIndex?.insurer_name);
@@ -136,6 +140,13 @@ async function findActiveReferenceEntity(config: IdentityFieldConfig, fieldValue
 }
 
 function updateDataForField(config: IdentityFieldConfig, nextValue: string) {
+  if (config.fieldName === "date_of_loss") {
+    return {
+      date_of_loss: nextValue || null,
+      indexed_at: new Date(),
+    };
+  }
+
   if (config.fieldName === "patient_name") {
     return {
       patient_name: nextValue,
@@ -205,6 +216,7 @@ export async function GET(request: Request) {
         insurer_name: true,
         claim_number_raw: true,
         claim_number_normalized: true,
+        date_of_loss: true,
         treating_provider: true,
         master_lawsuit_id: true,
       },
@@ -297,6 +309,7 @@ export async function PATCH(request: Request) {
         insurer_name: true,
         claim_number_raw: true,
         claim_number_normalized: true,
+        date_of_loss: true,
         treating_provider: true,
         master_lawsuit_id: true,
       },
@@ -351,6 +364,7 @@ export async function PATCH(request: Request) {
           insurer_name: true,
           claim_number_raw: true,
           claim_number_normalized: true,
+          date_of_loss: true,
           treating_provider: true,
           master_lawsuit_id: true,
         },
