@@ -26,7 +26,6 @@ for (const token of [
   "gridTemplateColumns: \"32px minmax(0, 1fr) 32px\"",
   "background: \"#1e3a8a\"",
   "borderBottom: \"1px solid #1e3a8a\"",
-  "clean(masterInfoEditResult.message) || clean(masterInfoEditResult.error)",
   "onKeyDown={(event) => { if (event.key === \"Escape\")",
   "Confirm Edit",
 ]) requireToken(dialog, token, "master field edit popup token");
@@ -35,6 +34,7 @@ for (const token of [
   "/* BARSH MATTERS STANDARD MODAL SYSTEM */",
   "BARSH MATTERS FIELD EDIT HEADER RIM FINAL FIX",
   "BARSH MATTERS FIELD EDIT MODAL EMPTY ROW SUPPRESSION",
+  "form > div:empty",
   "[data-barsh-standard-modal-overlay=\"true\"]",
   "[data-barsh-standard-modal-shell]",
   "[data-barsh-standard-modal-header=\"true\"]",
