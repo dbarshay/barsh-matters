@@ -8396,6 +8396,10 @@ function openClaimAmountEditDialog() {
             </h2>
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
+              <div data-barsh-direct-claim-amount-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#0f172a" }}>{formatMoneyInputValue(parseMoneyInputValue(claimAmountInput)) || "—"}</strong>
+              </div>
               <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
                 <span>Claim Amount</span>
                 <input
