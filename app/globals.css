@@ -637,3 +637,194 @@ body {
     width: min(100%, calc(100vw - 16px)) !important;
   }
 }
+
+/* BARSH MATTERS STANDARD MODAL SYSTEM */
+[data-barsh-standard-modal-overlay="true"] {
+  background: rgba(15, 23, 42, 0.42) !important;
+  overflow: auto !important;
+  padding: 28px 14px !important;
+}
+
+[data-barsh-standard-modal-shell] {
+  top: 72px !important;
+  width: min(680px, 94vw) !important;
+  max-height: calc(100vh - 104px) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28) !important;
+  overflow: hidden !important;
+}
+
+[data-barsh-standard-modal-header="true"] {
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) 32px !important;
+  align-items: center !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #1e3a8a !important;
+  background: #1e3a8a !important;
+  border-top-left-radius: 18px !important;
+  border-top-right-radius: 18px !important;
+}
+
+[data-barsh-standard-modal-title="true"] {
+  grid-column: 2 !important;
+  justify-self: center !important;
+  text-align: center !important;
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 950 !important;
+  line-height: 1.15 !important;
+}
+
+[data-barsh-standard-modal-subtitle="true"] {
+  display: none !important;
+}
+
+[data-barsh-standard-modal-close="true"] {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  width: 30px !important;
+  height: 30px !important;
+  border: 1px solid rgba(255, 255, 255, 0.42) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+  font-size: 22px !important;
+  box-shadow: none !important;
+}
+
+[data-barsh-standard-modal-close="true"]:hover {
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] form {
+  gap: 12px !important;
+  padding: 16px !important;
+  background: #ffffff !important;
+}
+
+[data-barsh-standard-modal-current-card="true"] {
+  padding: 10px 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #f8fafc !important;
+}
+
+[data-barsh-standard-modal-current-card="true"] span {
+  color: #64748b !important;
+  font-size: 11px !important;
+}
+
+[data-barsh-standard-modal-current-card="true"] strong {
+  color: #0f172a !important;
+  font-size: 15px !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] label {
+  color: #334155 !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] input,
+[data-barsh-standard-modal-overlay="true"] select,
+[data-barsh-standard-modal-overlay="true"] textarea {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] input:focus,
+[data-barsh-standard-modal-overlay="true"] select:focus,
+[data-barsh-standard-modal-overlay="true"] textarea:focus {
+  border-color: #2563eb !important;
+  outline: 2px solid rgba(37, 99, 235, 0.14) !important;
+  outline-offset: 0 !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] form > div:last-child {
+  margin-top: 4px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] form > div:last-child button {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] form > div:last-child button[type="submit"] {
+  border-color: #1e3a8a !important;
+  background: #1e3a8a !important;
+  color: #ffffff !important;
+}
+
+[data-barsh-standard-modal-overlay="true"] form > div:last-child button[type="button"] {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+}\n
+/* BARSH MATTERS FINAL STANDARD MODAL OVERRIDES */
+[data-barsh-standard-modal-header="true"] {
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) 32px !important;
+  align-items: center !important;
+  background: #1e3a8a !important;
+  border-bottom: 1px solid #1e3a8a !important;
+}
+[data-barsh-standard-modal-title="true"] {
+  grid-column: 2 !important;
+  justify-self: center !important;
+  color: #ffffff !important;
+  text-align: center !important;
+}
+[data-barsh-standard-modal-subtitle="true"] { display: none !important; }
+[data-barsh-standard-modal-close="true"] {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* BARSH MATTERS FIELD EDIT MODAL EMPTY ROW SUPPRESSION */
+[data-barsh-master-info-edit-standard-modal="true"] form > div:empty {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+[data-barsh-master-info-edit-standard-modal="true"] [data-barsh-standard-modal-subtitle="true"] {
+  display: none !important;
+}
+
+/* BARSH MATTERS FIELD EDIT HEADER RIM FIX */
+[data-barsh-master-info-edit-standard-modal="true"] [data-barsh-standard-modal-shell="compact-field-edit"] {
+  border-color: transparent !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+[data-barsh-master-info-edit-standard-modal="true"] [data-barsh-standard-modal-header="true"] {
+  border-top-left-radius: 18px !important;
+  border-top-right-radius: 18px !important;
+}
+
+/* BARSH MATTERS FIELD EDIT HEADER RIM FINAL FIX */
+[data-barsh-master-info-edit-standard-modal="true"] [data-barsh-standard-modal-shell="compact-field-edit"] {
+  border-color: transparent !important;
+  background: #1e3a8a !important;
+  overflow: hidden !important;
+}
+[data-barsh-master-info-edit-standard-modal="true"] form {
+  background: #ffffff !important;
+}
+[data-barsh-master-info-edit-standard-modal="true"] [data-barsh-standard-modal-header="true"] {
+  background: #1e3a8a !important;
+  border-bottom-color: #1e3a8a !important;
+  border-top-left-radius: 18px !important;
+  border-top-right-radius: 18px !important;
+}

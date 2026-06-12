@@ -343,7 +343,8 @@
     "verify:master-action-area-option-e-safety": "node scripts/verify-master-action-area-option-e-safety.mjs",
     "verify:master-info-claimindex-persistence-safety": "node scripts/verify-master-info-claimindex-persistence-safety.mjs",
     "verify:direct-matter-date-of-loss-claim-info-safety": "node scripts/verify-direct-matter-date-of-loss-claim-info-safety.mjs",
-    "verify:direct-matter-actions-box-style-safety": "node scripts/verify-direct-matter-actions-box-style-safety.mjs"
+    "verify:direct-matter-actions-box-style-safety": "node scripts/verify-direct-matter-actions-box-style-safety.mjs",
+    "verify:master-field-edit-popup-standard-modal-safety": "node scripts/verify-master-field-edit-popup-standard-modal-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

@@ -10977,6 +10977,8 @@ function masterSettlementDateFiledValue(): string {
                 role="dialog"
                 aria-modal="true"
                 aria-label={`${masterInfoEditDialog.label} edit preview popup`}
+                data-barsh-master-info-edit-standard-modal="true"
+                data-barsh-standard-modal-overlay="true"
                 style={{
                   position: "fixed",
                   inset: 0,
@@ -10984,12 +10986,15 @@ function masterSettlementDateFiledValue(): string {
                   display: "block",
                   padding: 0,
                   overflow: "hidden",
-                  background: "rgba(15, 23, 42, 0.58)",
+                  background: "rgba(15, 23, 42, 0.42)",
                 }}
                 onClick={closeMasterInfoEditDialog}
+                onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterInfoEditDialog(); } }}
+                tabIndex={-1}
               >
                 <div
                   onClick={(event) => event.stopPropagation()}
+                  data-barsh-standard-modal-shell="compact-field-edit"
                   style={{
                     position: "fixed",
                     top: 154,
@@ -10997,70 +11002,46 @@ function masterSettlementDateFiledValue(): string {
                     transform: "translateX(-50%)",
                     width: "min(620px, 94vw)",
                     maxHeight: "calc(100vh - 178px)",
-                    overflowY: "auto",
-                    border: "1px solid #93c5fd",
-                    borderRadius: 22,
-                    background: "#eff6ff",
-                    boxShadow: "0 30px 90px rgba(15, 23, 42, 0.38)",
+                    overflow: "hidden",
+                    border: "1px solid transparent",
+                    borderRadius: 18,
+                    background: "#ffffff",
+                    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)",
                   }}
                 >
                   <div
+                    data-barsh-standard-modal-header="true"
                     style={{
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: 12,
-                      padding: "16px 18px",
-                      borderBottom: "1px solid #dbe4f0",
-                      background: "#eff6ff",
-                      borderTopLeftRadius: 22,
-                      borderTopRightRadius: 22,
+                      display: "grid",
+                      gridTemplateColumns: "32px minmax(0, 1fr) 32px",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "12px 14px",
+                      borderBottom: "1px solid #1e3a8a",
+                      background: "#1e3a8a",
+                      borderTopLeftRadius: 0,
+                      borderTopRightRadius: 0,
                     }}
                   >
-                    <div>
+                    <div style={{ gridColumn: 2, justifySelf: "center", minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: 18,
+                          fontSize: 17,
                           fontWeight: 950,
-                          color: "#1e3a8a",
+                          color: "#ffffff",
+                          textAlign: "center",
                         }}
+                        data-barsh-standard-modal-title="true"
                       >
                         {masterInfoFieldKind(masterInfoEditDialog.field) === "money" ? "Add" : "Edit"} {masterInfoEditDialog.label}
                       </div>
-                      <div
-                        style={{
-                          marginTop: 3,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "#1e3a8a",
-                        }}
-                      >
-                        {masterInfoFieldKind(masterInfoEditDialog.field) === "money" ? "Master Lawsuit cost entry · Local save." : "Master Lawsuit field edit · Local save."}
-                      </div>
+                      <div data-barsh-standard-modal-subtitle="true" />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={closeMasterInfoEditDialog}
-                      style={{
-                        width: 38,
-                        height: 38,
-                        border: "1px solid #93c5fd",
-                        borderRadius: 999,
-                        background: "#ffffff",
-                        color: "#1e3a8a",
-                        fontSize: 26,
-                        fontWeight: 900,
-                        cursor: "pointer",
-                        lineHeight: 1,
-                      }}
-                      aria-label={`Close ${masterInfoEditDialog.label} edit preview popup`}
-                    >
-                      ×
-                    </button>
+                    <span data-barsh-standard-modal-close="removed" aria-hidden="true" />
                   </div>
 
                   <form
@@ -11079,17 +11060,18 @@ function masterSettlementDateFiledValue(): string {
                     }}
                     style={{
                       display: "grid",
-                      gap: 14,
-                      padding: 18,
+                      gap: 12,
+                      padding: 16,
                     }}
                   >
                     <div
+                      data-barsh-standard-modal-current-card="true"
                       style={{
                         display: "grid",
                         gap: 6,
-                        padding: 12,
-                        border: "1px solid #93c5fd",
-                        borderRadius: 14,
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 12,
                         background: "#ffffff",
                       }}
                     >
@@ -11099,12 +11081,12 @@ function masterSettlementDateFiledValue(): string {
                           fontWeight: 950,
                           letterSpacing: "0.06em",
                           textTransform: "uppercase",
-                          color: "#1e3a8a",
+                          color: "#0f172a",
                         }}
                       >
                         Current
                       </span>
-                      <strong style={{ fontSize: 16, color: "#1e3a8a" }}>
+                      <strong style={{ fontSize: 16, color: "#0f172a" }}>
                         {masterInfoEditDialog.currentValue || "—"}
                       </strong>
                     </div>
@@ -11116,7 +11098,7 @@ function masterSettlementDateFiledValue(): string {
                           gap: 7,
                           fontSize: 12,
                           fontWeight: 950,
-                          color: "#1e3a8a",
+                          color: "#0f172a",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                         }}
@@ -11128,11 +11110,11 @@ function masterSettlementDateFiledValue(): string {
                           onChange={(event) => setMasterInfoEditValue(event.target.value)}
                           style={{
                             width: "100%",
-                            border: "1px solid #93c5fd",
+                            border: "1px solid #cbd5e1",
                             borderRadius: 12,
                             padding: "11px 12px",
                             background: "#fff",
-                            color: "#1e3a8a",
+                            color: "#0f172a",
                             fontSize: 15,
                             fontWeight: 850,
                             outline: "none",
@@ -11156,7 +11138,7 @@ function masterSettlementDateFiledValue(): string {
                             gap: 7,
                             fontSize: 12,
                             fontWeight: 950,
-                            color: "#1e3a8a",
+                            color: "#0f172a",
                             textTransform: "uppercase",
                             letterSpacing: "0.05em",
                           }}
@@ -11167,11 +11149,11 @@ function masterSettlementDateFiledValue(): string {
                             onChange={(event) => setMasterInfoEditValue(event.target.value)}
                             style={{
                               width: "100%",
-                              border: "1px solid #93c5fd",
+                              border: "1px solid #cbd5e1",
                               borderRadius: 12,
                               padding: "11px 12px",
                               background: "#fff",
-                              color: "#1e3a8a",
+                              color: "#0f172a",
                               fontSize: 15,
                               fontWeight: 850,
                               outline: "none",
@@ -11192,13 +11174,13 @@ function masterSettlementDateFiledValue(): string {
                         </label>
 
                         {masterCourtOptionsLoading && (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#1e3a8a" }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>
                             Loading court list...
                           </div>
                         )}
 
                         {masterCourtOptionsError && (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#1e3a8a" }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>
                             {masterCourtOptionsError}
                           </div>
                         )}
@@ -11212,10 +11194,10 @@ function masterSettlementDateFiledValue(): string {
                             <div
                               style={{
                                 padding: "7px 10px",
-                                border: "1px solid #93c5fd",
+                                border: "1px solid #cbd5e1",
                                 borderRadius: 12,
                                 background: "#ffffff",
-                                color: "#1e3a8a",
+                                color: "#0f172a",
                                 fontSize: 12,
                                 fontWeight: 750,
                                 lineHeight: 1.45,
@@ -11238,7 +11220,7 @@ function masterSettlementDateFiledValue(): string {
                             gap: 7,
                             fontSize: 12,
                             fontWeight: 950,
-                            color: "#1e3a8a",
+                            color: "#0f172a",
                             textTransform: "uppercase",
                             letterSpacing: "0.05em",
                           }}
@@ -11256,11 +11238,11 @@ function masterSettlementDateFiledValue(): string {
                             autoComplete="off"
                             style={{
                               width: "100%",
-                              border: "1px solid #93c5fd",
+                              border: "1px solid #cbd5e1",
                               borderRadius: 12,
                               padding: "11px 12px",
                               background: "#fff",
-                              color: "#1e3a8a",
+                              color: "#0f172a",
                               fontSize: 15,
                               fontWeight: 850,
                               outline: "none",
@@ -11271,7 +11253,7 @@ function masterSettlementDateFiledValue(): string {
                         </label>
 
                         {masterInfoContactLoading && (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#1e3a8a" }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>
                             Loading suggestions...
                           </div>
                         )}
@@ -11280,10 +11262,10 @@ function masterSettlementDateFiledValue(): string {
                           <div
                             style={{
                               padding: "9px 11px",
-                              border: "1px solid #93c5fd",
+                              border: "1px solid #cbd5e1",
                               borderRadius: 12,
                               background: "#ffffff",
-                              color: "#1e3a8a",
+                              color: "#0f172a",
                               fontSize: 13,
                               fontWeight: 850,
                             }}
@@ -11304,23 +11286,23 @@ function masterSettlementDateFiledValue(): string {
                                 style={{
                                   textAlign: "left",
                                   padding: "9px 11px",
-                                  border: "1px solid #93c5fd",
+                                  border: "1px solid #cbd5e1",
                                   borderRadius: 12,
                                   background: "#ffffff",
-                                  color: "#1e3a8a",
+                                  color: "#0f172a",
                                   cursor: "pointer",
                                   fontWeight: 850,
                                 }}
                               >
                                 {contact.name}
-                                {contact.type ? <span style={{ color: "#1e3a8a" }}> — {contact.type}</span> : null}
+                                {contact.type ? <span style={{ color: "#0f172a" }}> — {contact.type}</span> : null}
                               </button>
                             ))}
                           </div>
                         )}
 
                         {!masterInfoContactLoading && masterInfoContactSearch.length >= 2 && masterInfoContactResults.length === 0 && !masterInfoSelectedContact && (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#1e3a8a" }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>
                             No suggestions found.
                           </div>
                         )}
@@ -11332,7 +11314,7 @@ function masterSettlementDateFiledValue(): string {
                           gap: 7,
                           fontSize: 12,
                           fontWeight: 950,
-                          color: "#1e3a8a",
+                          color: "#0f172a",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                         }}
@@ -11346,7 +11328,7 @@ function masterSettlementDateFiledValue(): string {
                                 left: 12,
                                 top: "50%",
                                 transform: "translateY(-50%)",
-                                color: "#1e3a8a",
+                                color: "#0f172a",
                                 fontWeight: 950,
                                 pointerEvents: "none",
                               }}
@@ -11363,11 +11345,11 @@ function masterSettlementDateFiledValue(): string {
                               inputMode="decimal"
                               style={{
                                 width: "100%",
-                                border: "1px solid #93c5fd",
+                                border: "1px solid #cbd5e1",
                                 borderRadius: 12,
                                 padding: "11px 12px 11px 28px",
                                 background: "#fff",
-                                color: "#1e3a8a",
+                                color: "#0f172a",
                                 fontSize: 15,
                                 fontWeight: 850,
                                 outline: "none",
@@ -11385,11 +11367,11 @@ function masterSettlementDateFiledValue(): string {
                             placeholder={`Enter ${masterInfoEditDialog.label}`}
                             style={{
                               width: "100%",
-                              border: "1px solid #93c5fd",
+                              border: "1px solid #cbd5e1",
                               borderRadius: 12,
                               padding: "11px 12px",
                               background: "#fff",
-                              color: "#1e3a8a",
+                              color: "#0f172a",
                               fontSize: 15,
                               fontWeight: 850,
                               outline: "none",
@@ -11404,10 +11386,10 @@ function masterSettlementDateFiledValue(): string {
                     <div
                       style={{
                         padding: "7px 10px",
-                        border: "1px solid #93c5fd",
+                        border: "1px solid #cbd5e1",
                         borderRadius: 12,
                         background: "#ffffff",
-                        color: "#1e3a8a",
+                        color: "#0f172a",
                         fontSize: 13,
                         fontWeight: 850,
                         lineHeight: 1.4,
@@ -11430,10 +11412,10 @@ function masterSettlementDateFiledValue(): string {
                         style={{
                           minWidth: 110,
                           height: 42,
-                          border: "1px solid #93c5fd",
+                          border: "1px solid #cbd5e1",
                           borderRadius: 12,
                           background: "#ffffff",
-                          color: "#1e3a8a",
+                          color: "#0f172a",
                           fontWeight: 900,
                           fontSize: 14,
                           cursor: "pointer",
@@ -11448,10 +11430,10 @@ function masterSettlementDateFiledValue(): string {
                         style={{
                           minWidth: 190,
                           height: 42,
-                          border: "1px solid #93c5fd",
+                          border: "1px solid #cbd5e1",
                           borderRadius: 12,
                           background: "#ffffff",
-                          color: "#1e3a8a",
+                          color: "#0f172a",
                           fontWeight: 950,
                           fontSize: 14,
                           cursor: "pointer",
@@ -11471,18 +11453,18 @@ function masterSettlementDateFiledValue(): string {
         <section
           data-barsh-local-settlement-history-panel="true"
           style={{
-            border: "1px solid #93c5fd",
+            border: "1px solid #cbd5e1",
             background: "#ffffff",
             borderRadius: 18,
-            padding: 18,
+            padding: 16,
             marginTop: 18,
             marginBottom: 18,
             boxShadow: "0 10px 24px rgba(30, 64, 175, 0.08)",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a8a" }}>Recorded Settlement</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>Recorded Settlement</div>
             </div>
           </div>
 
@@ -11490,79 +11472,79 @@ function masterSettlementDateFiledValue(): string {
             data-barsh-settlement-payment-due-tickler-strip="true"
             style={{
               marginTop: 14,
-              border: "1px solid #93c5fd",
+              border: "1px solid #cbd5e1",
               background: "#ffffff",
-              borderRadius: 14,
-              padding: 12,
+              borderRadius: 12,
+              padding: "10px 12px",
               display: "flex",
-              justifyContent: "space-between",
-              gap: 14,
+              justifyContent: "center",
+              gap: 12,
               alignItems: "center",
               flexWrap: "wrap",
             }}
           >
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: "#1e3a8a" }}>{masterSettlementPaymentDueFollowUpLabel()}</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "#0f172a" }}>{masterSettlementPaymentDueFollowUpLabel()}</div>
               {!masterSettlementTicklersLoading && masterSettlementTicklers?.ok && Array.isArray(masterSettlementTicklers.ticklers) && masterSettlementTicklers.ticklers.length === 0 && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "#1e3a8a" }}>No open payment due follow-up tickler yet.</div>
+                <div style={{ marginTop: 6, fontSize: 12, color: "#0f172a" }}>No open payment due follow-up tickler yet.</div>
               )}
               {!masterSettlementTicklersLoading && masterSettlementTicklers?.error && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "#1e3a8a" }}>{masterSettlementTicklers.error}</div>
+                <div style={{ marginTop: 6, fontSize: 12, color: "#0f172a" }}>{masterSettlementTicklers.error}</div>
               )}
             </div>
           </div>
           {masterSettlementHistoryLoading && !masterSettlementHistory ? (
-            <div style={{ marginTop: 14, color: "#1e3a8a", fontSize: 13 }}>Loading local settlement history...</div>
+            <div style={{ marginTop: 14, color: "#0f172a", fontSize: 13 }}>Loading local settlement history...</div>
           ) : masterSettlementHistory?.ok && Array.isArray(masterSettlementHistory.records) && masterSettlementHistory.records.length > 0 ? (
-            <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
+            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
               {masterSettlementHistory.records.map((record: any) => (
                 <div
                   key={record.id}
                   style={{
-                    border: "1px solid #93c5fd",
+                    border: "1px solid #cbd5e1",
                     background: "#ffffff",
-                    borderRadius: 14,
+                    borderRadius: 12,
                     padding: 14,
                   }}
                 >
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(130px, 1fr))", gap: 10 }}>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Principal Settlement</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a" }}>{record.principalSettlementDisplay || formatSettlementHistoryMoney(record.allocatedSettlementTotal || 0)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Principal Settlement</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{record.principalSettlementDisplay || formatSettlementHistoryMoney(record.allocatedSettlementTotal || 0)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Interest Settlement</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a" }}>{record.interestSettlementDisplay || formatSettlementHistoryMoney(record.interestAmountTotal || 0)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Interest Settlement</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{record.interestSettlementDisplay || formatSettlementHistoryMoney(record.interestAmountTotal || 0)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Costs</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a" }}>{formatSettlementHistoryMoney(record.costsAmount || 0)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Costs</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.costsAmount || 0)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Attorney Fee</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a" }}>{formatSettlementHistoryMoney(record.totalFee || 0)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Attorney Fee</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.totalFee || 0)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Total</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a" }}>{formatSettlementHistoryMoney(record.totalSettlementAmount || 0)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Total</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{formatSettlementHistoryMoney(record.totalSettlementAmount || 0)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Status</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Status</div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: record.voided ? "#991b1b" : "#166534" }}>
                         {record.voided ? "Voided" : record.status || "Recorded"}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Settled With</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a" }}>{record.settledWith || "—"}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Settled With</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{record.settledWith || "—"}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Settlement Date</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a" }}>{formatSettlementHistoryDate(record.settlementDate)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Settlement Date</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{formatSettlementHistoryDate(record.settlementDate)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 800, textTransform: "uppercase" }}>Payment Due</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a" }}>{formatSettlementHistoryDate(record.paymentExpectedDate)}</div>
+                      <div style={{ fontSize: 11, color: "#0f172a", fontWeight: 800, textTransform: "uppercase" }}>Payment Due</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{formatSettlementHistoryDate(record.paymentExpectedDate)}</div>
                     </div>
                   </div>
 
