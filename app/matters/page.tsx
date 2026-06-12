@@ -10194,12 +10194,15 @@ function masterSettlementDateFiledValue(): string {
                 </div>
 
                 <div
+                  data-barsh-master-actions-outer-section="true"
                   style={{
-                    border: "1px solid rgba(49, 87, 213, 0.22)",
-                    borderRadius: 12,
-                    background: "#f8fafc",
-                    padding: 18,
-                    boxShadow: "0 10px 26px rgba(49, 87, 213, 0.065)",
+                    display: "grid",
+                    gap: 8,
+                    background: "transparent",
+                    padding: 0,
+                    border: "none",
+                    borderRadius: 0,
+                    boxShadow: "none",
                   }}
                 >
                   <div
@@ -10293,8 +10296,8 @@ function masterSettlementDateFiledValue(): string {
 
                       {masterActionGroup === "court_dates" && (
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="court-dates">
-                          <button type="button" onClick={() => window.alert("Add New Court Date will be wired next.")} title="Add a new Court Calendar date for this lawsuit." style={{ minHeight: 36, border: "1px solid #ea580c", borderRadius: 999, background: "#ffffff", color: "#475569", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-add-new-court-date-placeholder="true">Add New Court Date</button>
-                          <button type="button" onClick={() => window.alert("View / Edit Court Dates will be wired after Add New Court Date.")} title="View and edit Court Calendar dates, appearance results, and notes for this lawsuit." style={{ minHeight: 36, border: "1px solid #ea580c", borderRadius: 999, background: "#ffffff", color: "#475569", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-edit-court-dates-placeholder="true">View / Edit Court Dates</button>
+                          <button type="button" onClick={() => window.alert("Add New Court Date will be wired next.")} title="Add a new Court Calendar date for this lawsuit." style={{ minHeight: 36, border: "1px solid #ea580c", borderRadius: 999, background: "#fff7ed", color: "#c2410c", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-add-new-court-date-placeholder="true">Add New Court Date</button>
+                          <button type="button" onClick={() => window.alert("View / Edit Court Dates will be wired after Add New Court Date.")} title="View and edit Court Calendar dates, appearance results, and notes for this lawsuit." style={{ minHeight: 36, border: "1px solid #ea580c", borderRadius: 999, background: "#fff7ed", color: "#c2410c", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-edit-court-dates-placeholder="true">View / Edit Court Dates</button>
                         </div>
                       )}
                     </div>

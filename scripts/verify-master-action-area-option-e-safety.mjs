@@ -34,7 +34,7 @@ for (const token of required) {
 if (page.includes("Lawsuit Actions")) failures.push("old Lawsuit Actions heading still present");
 if (page.includes("Payment controls: Active")) failures.push("old payment controls status text still present");
 if (page.includes("data-barsh-master-action-section=\"closing\"")) failures.push("Close Lawsuit should not be a top action group");
-if (failures.length) {
+\nfor (const token of ['data-barsh-master-actions-outer-section=\\"true\\"', 'background: \\"transparent\\"', 'boxShadow: \\"none\\"', 'data-barsh-master-add-new-court-date-placeholder=\\"true\\">Add New Court Date</button>', 'data-barsh-master-view-edit-court-dates-placeholder=\\"true\\">View / Edit Court Dates</button>', 'background: \\"#fff7ed\\", color: \\"#c2410c\\"']) {\n  if (!page.includes(token)) failures.push(`master Actions heading outside bordered card / orange Court Dates fills missing token: ${token}`);\n}\n\nif (failures.length) {
   console.error("FAIL: master action area option E safety");
   for (const failure of failures) console.error("- " + failure);
   process.exit(1);

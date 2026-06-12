@@ -1482,6 +1482,8 @@ const activeGroupKey =
   const [paymentReceiptsLoading, setPaymentReceiptsLoading] = useState(false);
   const [paymentReceipts, setPaymentReceipts] = useState<any[]>([]);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
+  const [directActionGroup, setDirectActionGroup] = useState<"payments" | "documents" | null>(null);
+  const [directPaymentsPanelOpen, setDirectPaymentsPanelOpen] = useState(false);
   const [paymentAmountInput, setPaymentAmountInput] = useState("");
   const [paymentDateInput, setPaymentDateInput] = useState(() => formatPaymentDateYYYYMMDD(new Date()));
   const [paymentTransactionTypeInput, setPaymentTransactionTypeInput] = useState("Voluntary Payment");
@@ -9521,261 +9523,257 @@ function openClaimAmountEditDialog() {
 
               <div
                 className="barsh-direct-financial-bubble"
+                data-barsh-direct-actions-outer-section="true"
                 style={{
                   marginTop: 12,
-                  border: matterIsClosedForPayment()
-                    ? "1px solid rgba(220, 38, 38, 0.28)"
-                    : "1px solid rgba(22, 163, 74, 0.26)",
-                  boxShadow: matterIsClosedForPayment()
-                    ? "0 10px 26px rgba(220, 38, 38, 0.075)"
-                    : "0 10px 26px rgba(22, 163, 74, 0.075)",
+                  display: "grid",
+                  gap: 8,
+                  background: "transparent",
+                  padding: 0,
+                  border: "none",
+                  borderRadius: 0,
+                  boxShadow: "none",
                 }}
               >
                 <div
+                  data-barsh-direct-actions-section-heading="true"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 950,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#1e3a8a",
+                    marginBottom: 8,
+                  }}
+                >
+                  Actions
+                </div>
+
+                <div
+                  data-barsh-direct-action-area="true"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
                     gap: 12,
                     marginBottom: 12,
+                    padding: 12,
+                    border: "1px solid #dbeafe",
+                    borderRadius: 14,
+                    background: "#ffffff",
                   }}
                 >
                   <div
+                    data-barsh-direct-action-tab-row="true"
                     style={{
                       display: "grid",
-                      gridTemplateRows: "auto auto 1fr",
-                      gap: 10,
-                      padding: "12px 12px 10px",
-                      border: "1px solid #bbf7d0",
-                      borderRadius: 14,
-                      background: "#f0fdf4",
-                      minHeight: 188,
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: 8,
+                      alignItems: "stretch",
                     }}
                   >
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 950,
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: "#166534",
-                        textAlign: "center",
-                      }}
-                    >
-                      Payment Actions
-                    </div>
-
-                    <button
-                      type="button"
-                      className="barsh-direct-apply-payment-button"
-                      onClick={() => {
-                        setPaymentApplyResult(null);
-                        setPaymentEditingReceipt(null);
-                        setPaymentFormOpen((open) => !open);
-                        setPaymentDateInput((current) => current || formatPaymentDateYYYYMMDD(new Date()));
-                      }}
-                      disabled={paymentApplyLoading || matterPaymentControlsDisabled()}
-                      title={matterPaymentDisabledReason() || "Open payment entry form."}
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #16a34a",
-                        borderRadius: 999,
-                        background: matterPaymentControlsDisabled() ? "#f3f4f6" : "#16a34a",
-                        color: matterPaymentControlsDisabled() ? "#64748b" : "#fff",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: matterPaymentControlsDisabled() ? "not-allowed" : "pointer",
-                        boxShadow: matterPaymentControlsDisabled() ? "none" : "0 8px 24px rgba(22, 163, 74, 0.22)",
-                      }}
-                    >
-                      {paymentApplyLoading ? "Posting Payment..." : paymentFormOpen ? "Close Payment Form" : "Post Payment"}
-                    </button>
-
-                    <div style={{ display: "grid", alignContent: "start" }}>
-                      {matterPaymentControlsDisabled() && (
-                        <div style={{ color: "#991b1b", fontSize: 11, fontWeight: 850, textAlign: "center" }}>
-                          {matterPaymentDisabledReason()}
-                        </div>
-                      )}
-                    </div>
+                    {[
+                      { key: "payments", label: "Payments", fill: "#16a34a", soft: "#f0fdf4", text: "#166534" },
+                      { key: "documents", label: "Documents", fill: "#8b5e3c", soft: "#f8efe7", text: "#7c4a22" },
+                    ].map(({ key, label, fill, soft, text }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setDirectActionGroup(key as any)}
+                        data-barsh-direct-action-tab={key}
+                        style={{
+                          width: "100%",
+                          minHeight: 40,
+                          border: `1px solid ${fill}`,
+                          borderRadius: 999,
+                          background: directActionGroup === key ? fill : soft,
+                          color: directActionGroup === key ? "#ffffff" : text,
+                          fontSize: 12,
+                          fontWeight: 950,
+                          cursor: "pointer",
+                          padding: "0 8px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateRows: "auto auto auto auto 1fr",
-                      gap: 10,
-                      padding: "12px 12px 10px",
-                      border: "1px solid #fecaca",
-                      borderRadius: 14,
-                      background: "#fff7f7",
-                      minHeight: 188,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 950,
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: "#991b1b",
-                        textAlign: "center",
-                      }}
-                    >
-                      Matter Actions
-                    </div>
+                  <div data-barsh-direct-action-panel="true" style={{ minHeight: directActionGroup ? 52 : 0 }}>
+                    {directActionGroup === "payments" && (
+                      <div
+                        data-barsh-direct-action-section="payment-actions"
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "132px 132px",
+                          gap: "6px 10px",
+                          alignItems: "start",
+                          width: "fit-content",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentApplyResult(null);
+                            setPaymentEditingReceipt(null);
+                            setPaymentFormOpen((open) => !open);
+                            setPaymentDateInput((current) => current || formatPaymentDateYYYYMMDD(new Date()));
+                          }}
+                          disabled={paymentApplyLoading || matterPaymentControlsDisabled()}
+                          title={matterPaymentDisabledReason() || "Open payment entry form."}
+                          style={{
+                            height: 36,
+                            minHeight: 36,
+                            width: 132,
+                            minWidth: 132,
+                            border: "1px solid #16a34a",
+                            borderRadius: 999,
+                            background: paymentApplyLoading || matterPaymentControlsDisabled() ? "#f8fafc" : "#f0fdf4",
+                            color: paymentApplyLoading || matterPaymentControlsDisabled() ? "#94a3b8" : "#166534",
+                            fontSize: 12,
+                            fontWeight: 950,
+                            cursor: paymentApplyLoading || matterPaymentControlsDisabled() ? "not-allowed" : "pointer",
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {paymentApplyLoading ? "Posting..." : paymentFormOpen ? "Close Payment" : "Post Payment"}
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={openCloseMatterDialogFromMatter}
-                      disabled={matterIsClosedForPayment()}
-                      title={
-                        matterIsClosedForPayment()
-                          ? "Matter is already Closed."
-                          : "Close this matter without posting a payment."
-                      }
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #dc2626",
-                        borderRadius: 999,
-                        background: matterIsClosedForPayment() ? "#f3f4f6" : "#dc2626",
-                        color: matterIsClosedForPayment() ? "#64748b" : "#fff",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: matterIsClosedForPayment() ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      Close Matter
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => setDirectPaymentsPanelOpen((open) => !open)}
+                          title="Show recent matter payment receipts."
+                          style={{
+                            appearance: "none",
+                            WebkitAppearance: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 36,
+                            minHeight: 36,
+                            width: 132,
+                            minWidth: 132,
+                            lineHeight: 1,
+                            padding: "0 14px",
+                            margin: 0,
+                            verticalAlign: "top",
+                            boxShadow: "none",
+                            transform: "none",
+                            border: "1px solid #16a34a",
+                            borderRadius: 999,
+                            background: "#f0fdf4",
+                            color: "#166534",
+                            fontSize: 12,
+                            fontWeight: 950,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                          data-barsh-direct-view-payments-button="true"
+                        >
+                          View Payments
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={openStartLawsuitModalFromMatter}
-                      disabled={submitting || matterIsClosedForPayment() || alreadyAggregated}
-                      title={
-                        alreadyAggregated
-                          ? "This matter is already part of a lawsuit."
-                          : matterIsClosedForPayment()
-                          ? "Closed matters are not eligible for lawsuit generation."
-                          : "Start a lawsuit from this individual matter."
-                      }
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #93c5fd",
-                        borderRadius: 999,
-                        background: submitting || matterIsClosedForPayment() || alreadyAggregated ? "#f3f4f6" : "#eff6ff",
-                        color: submitting || matterIsClosedForPayment() || alreadyAggregated ? "#64748b" : "#1d4ed8",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: submitting || matterIsClosedForPayment() || alreadyAggregated ? "not-allowed" : "pointer",
-                        opacity: submitting || matterIsClosedForPayment() || alreadyAggregated ? 0.7 : 1,
-                      }}
-                    >
-                      Start Lawsuit
-                    </button>
+                        {matterPaymentControlsDisabled() && (
+                          <div
+                            data-barsh-direct-payment-warning-under-post="true"
+                            style={{
+                            appearance: "none",
+                            WebkitAppearance: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 36,
+                            minHeight: 36,
+                            width: 132,
+                            minWidth: 132,
+                            lineHeight: 1,
+                            padding: "0 14px",
+                            margin: 0,
+                            verticalAlign: "top",
+                            boxShadow: "none",
+                            transform: "none",
+                              gridColumn: "1 / 2",
+                              color: "#991b1b",
+                              fontSize: 11,
+                              fontWeight: 850,
+                              maxWidth: 132,
+                            }}
+                          >
+                            {matterPaymentDisabledReason()}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    <button
-                      type="button"
-                      title="Open this direct matter's document activity."
-                      onClick={() => void openMatterDocumentActivityPopup()}
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #334155",
-                        borderRadius: 999,
-                        background: "#f8fafc",
-                        color: "#334155",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: "pointer",
-                        boxShadow: "0 8px 18px rgba(15, 23, 42, 0.12)",
-                      }}
-                    >
-                      Document Activity
-                    </button>
-
-                    <button
-                      type="button"
-                      title="Open the Direct Matter Clio document picker."
-                      onClick={() => void openMatterViewDocumentsPopup()}
-                      style={{
-                        boxShadow: "0 10px 22px rgba(14, 116, 144, 0.20)",
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #0e7490",
-                        borderRadius: 999,
-                        background: "#ecfeff",
-                        color: "#0e7490",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: "pointer",
-                        opacity: 0.95,
-                      }}
-                    >
-                      View Documents
-                    </button>
-
-                    <button
-                        title="Open the Direct Matter document generation preview popup."
-                        onClick={launchMatterDocumentGenerationDialog}
-                      type="button"
-                      style={{
-                            boxShadow: "0 10px 22px rgba(79, 70, 229, 0.28)",
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #4338ca",
-                        borderRadius: 999,
-                        background: "#4f46e5",
-                        color: "#ffffff",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: "pointer",
-                        opacity: 0.82,
-                      }}
-                    >
-                      Document Generation
-                    </button>
-
-                    <button
-                      type="button"
-                      title="Open read-only local email and Microsoft Graph thread records for this matter."
-                      onClick={() => {
-                        setActiveWorkspaceTab("email_threads");
-                        void loadMatterEmailThreadPreview();
-                      }}
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        height: 44,
-                        border: "1px solid #0f766e",
-                        borderRadius: 999,
-                        background: activeWorkspaceTab === "email_threads" ? "#0f766e" : "#ecfeff",
-                        color: activeWorkspaceTab === "email_threads" ? "#ffffff" : "#0f766e",
-                        fontSize: 12,
-                        fontWeight: 950,
-                        cursor: "pointer",
-                        boxShadow: activeWorkspaceTab === "email_threads" ? "0 10px 22px rgba(15, 118, 110, 0.24)" : "none",
-                      }}
-                    >
-                      Emails
-                    </button>
-
-                    <div style={{ display: "grid", alignContent: "start" }}>
-                      {matterIsClosedForPayment() && (
-                        <div style={{ color: "#991b1b", fontSize: 11, fontWeight: 850, textAlign: "center" }}>
-                          Disabled because this matter is Closed.
-                        </div>
-                      )}
-                    </div>
+                    {directActionGroup === "documents" && (
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-direct-action-section="documents-communications">
+                        <button
+                          type="button"
+                          title="Open the Direct Matter Clio document picker."
+                          onClick={() => void openMatterViewDocumentsPopup()}
+                          style={{
+                            minHeight: 36,
+                            border: "1px solid #8b5e3c",
+                            borderRadius: 999,
+                            background: "#f8efe7",
+                            color: "#7c4a22",
+                            fontSize: 12,
+                            fontWeight: 950,
+                            cursor: "pointer",
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                          }}
+                          data-barsh-direct-view-documents-button="true"
+                        >
+                          View Documents
+                        </button>
+                        <button
+                          type="button"
+                          title="Open read-only local email and Microsoft Graph thread records for this matter."
+                          onClick={() => {
+                            setActiveWorkspaceTab("email_threads");
+                            void loadMatterEmailThreadPreview();
+                          }}
+                          style={{
+                            minHeight: 36,
+                            border: "1px solid #8b5e3c",
+                            borderRadius: 999,
+                            background: "#f8efe7",
+                            color: "#7c4a22",
+                            fontSize: 12,
+                            fontWeight: 950,
+                            cursor: "pointer",
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                          }}
+                          data-barsh-direct-view-emails-button="true"
+                        >
+                          View Emails
+                        </button>
+                        <button
+                          type="button"
+                          title="Open the Direct Matter document generation preview popup."
+                          onClick={launchMatterDocumentGenerationDialog}
+                          style={{
+                            minHeight: 36,
+                            border: "1px solid #8b5e3c",
+                            borderRadius: 999,
+                            background: "#f8efe7",
+                            color: "#7c4a22",
+                            fontSize: 12,
+                            fontWeight: 950,
+                            cursor: "pointer",
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                          }}
+                          data-barsh-direct-generate-documents-button="true"
+                        >
+                          Generate Documents
+                        </button>
+                      </div>
+                    )}
                   </div>
+
                 </div>
 
                 <div style={{ textAlign: "center", marginBottom: 12 }}>
@@ -10350,6 +10348,7 @@ function openClaimAmountEditDialog() {
           </div>
         </div>
 
+        {directPaymentsPanelOpen && (
         <div
           className="barsh-direct-payment-receipts"
           style={{
@@ -10662,6 +10661,7 @@ function openClaimAmountEditDialog() {
             </div>
           )}
         </div>
+        )}
 
         <div className="barsh-summary-workflow-divider" />
 
