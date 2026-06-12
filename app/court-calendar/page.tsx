@@ -75,6 +75,27 @@ const appearanceTypeOptions = [["all", "All"], ["Trial", "Trial"], ["Conference"
 
 type FilterOptionsResult = { ok?: boolean; appearanceTypes?: string[]; venues?: string[]; clientNames?: string[]; error?: string; };
 
+type WebCivilImportResult = {
+  ok?: boolean;
+  previewOnly?: boolean;
+  databaseRecordsChanged?: boolean;
+  parsedRowCount?: number;
+  importableRowCount?: number;
+  skippedRowCount?: number;
+  updatedCount?: number;
+  rows?: Array<{
+    rowNumber: number;
+    eventId?: string;
+    calendarNumber?: string;
+    status: "ready" | "updated" | "skipped" | "error";
+    reason?: string;
+    currentCalendarNumber?: string | null;
+    event?: CalendarEvent | null;
+  }>;
+  error?: string;
+  safety?: Record<string, unknown>;
+};
+
 function text(value: unknown): string {
   return String(value ?? "").trim();
 }
@@ -233,6 +254,10 @@ export default function CourtCalendarPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createResult, setCreateResult] = useState<any>(null);
+  const [webCivilImportOpen, setWebCivilImportOpen] = useState(false);
+  const [webCivilImportText, setWebCivilImportText] = useState("");
+  const [webCivilImportLoading, setWebCivilImportLoading] = useState(false);
+  const [webCivilImportResult, setWebCivilImportResult] = useState<WebCivilImportResult | null>(null);
   const [form, setForm] = useState({
     masterLawsuitId: "",
     eventType: "appearance",
@@ -395,6 +420,7 @@ export default function CourtCalendarPage() {
       "Type",
       "Status",
       "Master Lawsuit",
+      "Calendar Number",
       "Index / AAA",
       "Court",
       "Part",
@@ -416,6 +442,7 @@ export default function CourtCalendarPage() {
       labelFromCode(event.eventType),
       labelFromCode(event.status),
       safeExportCell(event.masterLawsuitId),
+      safeExportCell(event.calendarNumber),
       safeExportCell(event.indexAaaNumber),
       safeExportCell(event.court || event.venue),
       safeExportCell(event.part),
@@ -432,6 +459,68 @@ export default function CourtCalendarPage() {
     ]);
 
     downloadWorkbookRows(headers, rows, `barsh-matters-court-calendar-${timestampForFilename()}.xlsx`, "Court Calendar");
+  }
+
+  function webCivilImportTemplateText() {
+    const headers = ["Event ID", "Event Date", "Court", "Index Number", "Lawsuit Number", "Current Calendar Number", "Calendar Number"];
+    const rows = events.map((event) => [
+      text(event.id),
+      dateOnly(event.eventDate),
+      text(event.court || event.venue),
+      text(event.indexAaaNumber),
+      text(event.displayNumber || event.masterLawsuitId),
+      text(event.calendarNumber),
+      "",
+    ]);
+    return [headers, ...rows].map((row) => row.map((cell) => String(cell ?? "").replace(/[\t\r\n]+/g, " ").trim()).join("\t")).join("\n");
+  }
+
+  async function copyWebCivilImportTemplate() {
+    const template = webCivilImportTemplateText();
+    setWebCivilImportText(template);
+    try {
+      await navigator.clipboard.writeText(template);
+      setWebCivilImportResult({ ok: true, previewOnly: true, parsedRowCount: events.length, importableRowCount: 0, skippedRowCount: 0, rows: [], safety: { clipboardOnly: true, clioRecordsChanged: false, externalWebCivilCalled: false } });
+    } catch {
+      setWebCivilImportResult({ ok: true, previewOnly: true, parsedRowCount: events.length, importableRowCount: 0, skippedRowCount: 0, rows: [], error: "Template filled below. Browser clipboard permission was not available.", safety: { clipboardOnly: true, clioRecordsChanged: false, externalWebCivilCalled: false } });
+    }
+  }
+
+  async function submitWebCivilImport(previewOnly: boolean) {
+    if (!webCivilImportText.trim()) {
+      alert("Paste the WebCivil Local import rows first.");
+      return;
+    }
+
+    setWebCivilImportLoading(true);
+    setWebCivilImportResult(null);
+
+    try {
+      const response = await fetch("/api/court-calendar/import-webcivil-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pastedText: webCivilImportText,
+          previewOnly,
+          sourcePage: "court-calendar",
+          sourceAction: previewOnly ? "preview-webcivil-local-calendar-number-import" : "apply-webcivil-local-calendar-number-import",
+          actorName: "Barsh Matters User",
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      setWebCivilImportResult(json);
+      if (!response.ok || !json?.ok) {
+        alert(json?.error || "WebCivil Local import failed.");
+        return;
+      }
+      if (!previewOnly) await searchEvents();
+    } catch (error: any) {
+      const fallback = { ok: false, error: error?.message || "WebCivil Local import failed." };
+      setWebCivilImportResult(fallback);
+      alert(fallback.error);
+    } finally {
+      setWebCivilImportLoading(false);
+    }
   }
 
   return (
@@ -465,6 +554,9 @@ export default function CourtCalendarPage() {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void searchEvents()} style={primaryButtonStyle} disabled={loading}>
               {loading ? "Searching..." : "Search Calendar"}
+            </button>
+            <button type="button" onClick={() => setWebCivilImportOpen((open) => !open)} style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-toggle="true">
+              Import Calendar Numbers from WebCivil Local
             </button>
           </div>
         </div>
@@ -511,6 +603,55 @@ export default function CourtCalendarPage() {
           </label>
         </div>
       </section>
+
+      {webCivilImportOpen && (
+        <section style={{ ...cardStyle, marginBottom: 14 }} data-barsh-court-calendar-webcivil-local-import-panel="true">
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Import Calendar Numbers from WebCivil Local</h2>
+              <p style={{ margin: 0, color: "#64748b", fontWeight: 750, maxWidth: 980 }}>
+                Manual paste/import only. Copy the template from the currently loaded calendar results, look up the calendar numbers in WebCivil Local, paste the completed rows here, preview, then apply. This updates only local Court Calendar events by Event ID.
+              </p>
+            </div>
+            <a href={WEB_CIVIL_LOCAL_CALENDAR_URL} target="_blank" rel="noreferrer" style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-open-link="true">Open WebCivil Local</a>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <button type="button" onClick={() => void copyWebCivilImportTemplate()} style={secondaryButtonStyle} disabled={!events.length} data-barsh-court-calendar-webcivil-local-copy-template="true">Copy Import Template</button>
+            <button type="button" onClick={() => void submitWebCivilImport(true)} style={secondaryButtonStyle} disabled={webCivilImportLoading} data-barsh-court-calendar-webcivil-local-preview-import="true">Preview Import</button>
+            <button type="button" onClick={() => void submitWebCivilImport(false)} style={primaryButtonStyle} disabled={webCivilImportLoading} data-barsh-court-calendar-webcivil-local-apply-import="true">{webCivilImportLoading ? "Importing..." : "Apply Import"}</button>
+          </div>
+          <label style={{ ...labelStyle, marginTop: 12 }}>
+            Paste completed import rows
+            <textarea value={webCivilImportText} onChange={(event) => setWebCivilImportText(event.target.value)} style={{ ...inputStyle, minHeight: 150, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: 12 }} placeholder={"Event ID\tEvent Date\tCourt\tIndex Number\tLawsuit Number\tCurrent Calendar Number\tCalendar Number"} data-barsh-court-calendar-webcivil-local-import-textarea="true" />
+          </label>
+          {webCivilImportResult && (
+            <div style={{ marginTop: 12, border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden" }} data-barsh-court-calendar-webcivil-local-import-result="true">
+              <div style={{ padding: 10, background: webCivilImportResult.ok ? "#f0fdf4" : "#fef2f2", color: webCivilImportResult.ok ? "#166534" : "#991b1b", fontWeight: 950 }}>
+                {webCivilImportResult.ok ? `${webCivilImportResult.previewOnly ? "Preview ready" : "Import applied"} · ${webCivilImportResult.importableRowCount ?? 0} importable · ${webCivilImportResult.skippedRowCount ?? 0} skipped · ${webCivilImportResult.updatedCount ?? 0} updated` : webCivilImportResult.error || "Import failed."}
+              </div>
+              {!!webCivilImportResult.rows?.length && (
+                <div style={{ maxHeight: 240, overflow: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                    <thead><tr><th style={thStyle}>Row</th><th style={thStyle}>Status</th><th style={thStyle}>Event ID</th><th style={thStyle}>Current</th><th style={thStyle}>Imported</th><th style={thStyle}>Reason</th></tr></thead>
+                    <tbody>
+                      {webCivilImportResult.rows.map((row) => (
+                        <tr key={`${row.rowNumber}-${row.eventId || "missing"}`}>
+                          <td style={tdStyle}>{row.rowNumber}</td>
+                          <td style={{ ...tdStyle, fontWeight: 950 }}>{row.status}</td>
+                          <td style={tdStyle}>{row.eventId || "—"}</td>
+                          <td style={tdStyle}>{text(row.currentCalendarNumber) || "—"}</td>
+                          <td style={tdStyle}>{text(row.calendarNumber) || "—"}</td>
+                          <td style={tdStyle}>{row.reason || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {createOpen && (
         <section style={{ ...cardStyle, marginBottom: 14 }} data-barsh-court-calendar-create-panel="true">
@@ -567,7 +708,10 @@ export default function CourtCalendarPage() {
               {result?.ok ? `${events.length} event(s).` : "Run a search to load events."}
             </p>
           </div>
-          <Link href="/matters" style={secondaryButtonStyle}>Open Matters</Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button type="button" onClick={exportCalendarReport} style={secondaryButtonStyle} disabled={!events.length} data-barsh-court-calendar-export-xlsx="true">Export XLSX</button>
+            <Link href="/matters" style={secondaryButtonStyle}>Open Matters</Link>
+          </div>
         </div>
 
         <div style={{ overflowX: "auto" }}>
