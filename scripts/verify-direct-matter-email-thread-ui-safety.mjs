@@ -73,12 +73,17 @@ console.log("\n=== VERIFY UNIFIED DIRECT EMAILS UI MARKERS ===");
   'function loadMatterEmailThreadPreview()',
   'fetch(`/api/graph/local-thread-preview?${params.toString()}`)',
   'function renderMatterEmailThreadsPanel()',
-  'activeWorkspaceTab === "email_threads" && renderMatterEmailThreadsPanel()',
-  'if (activeWorkspaceTab !== "email_threads") return;',
+  'matterViewEmailsPopupOpen',
+  'function openMatterViewEmailsPopup()',
+  'function closeMatterViewEmailsPopup()',
+  'function renderMatterViewEmailsPopup()',
+  '{renderMatterViewEmailsPopup()}',
+  'data-barsh-direct-view-emails-standard-modal="true"',
+  'data-barsh-direct-view-emails-header-standard="true"',
+  'data-barsh-direct-view-emails-footer-actions="true"',
+  'aria-label="View Emails"',
+  'if (!matterViewEmailsPopupOpen) return;',
   'void loadMatterEmailThreadPreview();',
-  'Unified matter email area.',
-  'Graph-synced messages and MailDrop-linked thread records appear here together',
-  'Opening this panel reads local records only',
   'Email records load automatically when this panel opens.',
   'Refresh Emails',
   'MailDrop Present',
@@ -107,6 +112,27 @@ console.log("\n=== VERIFY LOCAL THREAD PREVIEW ROUTE IS READ-ONLY ===");
   'databaseRecordsChanged: false',
   'Read-only local email-thread preview.',
 ].forEach((marker) => mustContain(routePath, route, marker));
+
+console.log("\n=== VERIFY REDUNDANT DIRECT EMAILS INTRO COPY IS REMOVED ===");
+[
+  'Raw local thread preview JSON',
+].forEach((marker) => mustNotContain("direct View Emails modal copy", page, marker));
+
+console.log("\n=== VERIFY REDUNDANT DIRECT EMAILS DEBUG COPY IS REMOVED ===");
+[
+  'Raw local thread preview JSON',
+].forEach((marker) => mustNotContain("direct View Emails modal debug copy", page, marker));
+
+console.log("\n=== VERIFY DIRECT EMAILS RENDER AS POPUP MODAL ===");
+[
+  'onClick={() => {\n                            openMatterViewEmailsPopup();\n                          }}',
+  'View Emails',
+].forEach((marker) => mustContain(pagePath, page, marker));
+
+[
+  'activeWorkspaceTab === "email_threads" && renderMatterEmailThreadsPanel()',
+  'setActiveWorkspaceTab("email_threads");\n                            void loadMatterEmailThreadPreview();',
+].forEach((marker) => mustNotContain("direct View Emails modal routing", page, marker));
 
 console.log("\n=== VERIFY NO DIRECT DRAFT/SEND/CLIO WRITE WIRING INSIDE DIRECT EMAILS PANEL ===");
 [

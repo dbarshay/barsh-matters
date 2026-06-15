@@ -641,6 +641,7 @@ const activeGroupKey =
   const [printQueueStatusResult, setPrintQueueStatusResult] = useState<any>(null);
   const [emailThreadPreviewLoading, setEmailThreadPreviewLoading] = useState(false);
   const [emailThreadPreviewResult, setEmailThreadPreviewResult] = useState<any>(null);
+  const [emailThreadLastCheckedAt, setEmailThreadLastCheckedAt] = useState("");
   const [graphThreadSyncPreviewLoading, setGraphThreadSyncPreviewLoading] = useState(false);
   const [graphThreadSyncPreviewResult, setGraphThreadSyncPreviewResult] = useState<any>(null);
   const [graphThreadSyncPreviewConversationId, setGraphThreadSyncPreviewConversationId] = useState<string>("");
@@ -649,6 +650,7 @@ const activeGroupKey =
   const [graphThreadSyncConversationId, setGraphThreadSyncConversationId] = useState<string>("");
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
+  const [matterViewEmailsPopupOpen, setMatterViewEmailsPopupOpen] = useState(false);
   const [matterClioDocumentsLoading, setMatterClioDocumentsLoading] = useState(false);
   const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
   const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
@@ -679,10 +681,10 @@ const activeGroupKey =
     }
   }
   useEffect(() => {
-    if (activeWorkspaceTab !== "email_threads") return;
+    if (!matterViewEmailsPopupOpen) return;
     if (emailThreadPreviewLoading || emailThreadPreviewResult) return;
     void loadMatterEmailThreadPreview();
-  }, [activeWorkspaceTab, emailThreadPreviewLoading, emailThreadPreviewResult]);
+  }, [matterViewEmailsPopupOpen, emailThreadPreviewLoading, emailThreadPreviewResult]);
 
   function directMatterNumericIdForDocuments(): number {
     const candidates = [
@@ -5377,6 +5379,21 @@ function openClaimAmountEditDialog() {
     });
   }
 
+  function emailThreadLastCheckedIsCurrent(): boolean {
+    const raw = textValue(emailThreadLastCheckedAt);
+    if (!raw) return false;
+    if (emailThreadPreviewResult?.error) return false;
+
+    const checkedAt = new Date(raw).getTime();
+    if (!Number.isFinite(checkedAt)) return false;
+
+    return Date.now() - checkedAt <= 15 * 60 * 1000;
+  }
+
+  function emailThreadLastCheckedColor(): string {
+    return emailThreadLastCheckedIsCurrent() ? bmColors.green : bmColors.red;
+  }
+
   function summarizeEmailRecipients(value: any): string {
     const recipients = Array.isArray(value) ? value : [];
     const labels = recipients
@@ -5413,6 +5430,7 @@ function openClaimAmountEditDialog() {
         error: err?.message || "Could not load local email/thread records.",
       });
     } finally {
+      setEmailThreadLastCheckedAt(new Date().toISOString());
       setEmailThreadPreviewLoading(false);
     }
   }
@@ -5542,6 +5560,17 @@ function openClaimAmountEditDialog() {
     }
   }
 
+  function openMatterViewEmailsPopup() {
+    setMatterViewEmailsPopupOpen(true);
+    if (!emailThreadPreviewLoading && !emailThreadPreviewResult) {
+      void loadMatterEmailThreadPreview();
+    }
+  }
+
+  function closeMatterViewEmailsPopup() {
+    setMatterViewEmailsPopupOpen(false);
+  }
+
   function renderMatterEmailThreadsPanel() {
     const threads = Array.isArray(emailThreadPreviewResult?.threads) ? emailThreadPreviewResult.threads : [];
     const counts = emailThreadPreviewResult?.counts || {};
@@ -5551,23 +5580,16 @@ function openClaimAmountEditDialog() {
     const syncCounts = graphThreadSyncResult?.counts || {};
 
     return (
-      <section id="matter-email-threads-section" style={tabPlaceholderPanelStyle}>
+      <section id="matter-email-threads-section" style={{ ...tabPlaceholderPanelStyle, margin: 0, boxShadow: "none", border: 0, borderRadius: 0 }}>
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-end",
             alignItems: "flex-start",
             gap: 12,
             flexWrap: "wrap",
           }}
         >
-          <div>
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Emails</h2>
-            <p style={tabPlaceholderTextStyle}>
-              Unified matter email area.  Graph-synced messages and MailDrop-linked thread records appear here together from local Barsh Matters email metadata.  Opening this panel reads local records only; it does not create drafts, send email, write Clio, or change database records.
-            </p>
-          </div>
-
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button
               type="button"
@@ -5575,8 +5597,8 @@ function openClaimAmountEditDialog() {
               disabled={emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
               style={{
                 padding: "7px 10px",
-                border: "1px solid #2563eb",
-                background: emailThreadPreviewLoading ? "#f3f4f6" : "#2563eb",
+                border: "1px solid #1e3a8a",
+                background: emailThreadPreviewLoading ? "#f3f4f6" : "#1e3a8a",
                 color: emailThreadPreviewLoading ? "#666" : "#fff",
                 borderRadius: 4,
                 cursor: emailThreadPreviewLoading ? "not-allowed" : "pointer",
@@ -5690,160 +5712,19 @@ function openClaimAmountEditDialog() {
           </div>
 
           <div style={bmStatCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Safety</div>
-            <div style={{ marginTop: 4, fontSize: 13, fontWeight: 900, color: bmColors.green }}>
-              Read Only
+            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Last Checked</div>
+            <div style={{ marginTop: 4, fontSize: 13, fontWeight: 900, color: emailThreadLastCheckedColor() }}>
+              {emailThreadLastCheckedAt ? formatEmailThreadTimestamp(emailThreadLastCheckedAt) : "—"}
             </div>
           </div>
+
         </div>
 
-        {emailThreadPreviewResult && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-              gap: 8,
-              marginBottom: 14,
-              fontSize: 12,
-            }}
-          >
-            {[
-              ["Graph calls", emailThreadPreviewResult.graphCallsMade ? "YES" : "No"],
-              ["Creates draft", emailThreadPreviewResult.createsOutlookDraft ? "YES" : "No"],
-              ["Sends email", emailThreadPreviewResult.sendsEmail ? "YES" : "No"],
-              ["Reads mailbox", emailThreadPreviewResult.readsMailbox ? "YES" : "No"],
-              ["Syncs mailbox", emailThreadPreviewResult.syncsMailbox ? "YES" : "No"],
-              ["DB changed", emailThreadPreviewResult.databaseRecordsChanged ? "YES" : "No"],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                style={{
-                  border: "1px solid " + bmColors.line,
-                  borderRadius: 12,
-                  padding: 10,
-                  background: "#f8fafc",
-                }}
-              >
-                <div style={{ fontSize: 10, fontWeight: 950, color: bmColors.subtle, textTransform: "uppercase" }}>
-                  {label}
-                </div>
-                <div
-                  style={{
-                    marginTop: 3,
-                    fontWeight: 950,
-                    color: value === "YES" ? bmColors.red : bmColors.green,
-                  }}
-                >
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        
 
-        {graphThreadSyncPreviewResult && (
-          <section
-            style={{
-              border: "1px solid #99f6e4",
-              borderRadius: 16,
-              padding: 14,
-              background: "#f0fdfa",
-              marginBottom: 14,
-            }}
-          >
-            <div style={{ fontWeight: 950, color: "#0f766e", marginBottom: 8 }}>
-              Graph Update Preview
-            </div>
-            {graphThreadSyncPreviewResult.error ? (
-              <div style={{ color: bmColors.red, fontWeight: 850 }}>
-                {textValue(graphThreadSyncPreviewResult.error)}
-              </div>
-            ) : (
-              <>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-                    gap: 8,
-                    fontSize: 12,
-                  }}
-                >
-                  {[
-                    ["Graph calls", graphThreadSyncPreviewResult.graphCallsMade ? "YES" : "No"],
-                    ["Reads mailbox", graphThreadSyncPreviewResult.readsMailbox ? "YES" : "No"],
-                    ["Creates draft", graphThreadSyncPreviewResult.createsOutlookDraft ? "YES" : "No"],
-                    ["Sends email", graphThreadSyncPreviewResult.sendsEmail ? "YES" : "No"],
-                    ["Syncs mailbox", graphThreadSyncPreviewResult.syncsMailbox ? "YES" : "No"],
-                    ["DB changed", graphThreadSyncPreviewResult.databaseRecordsChanged ? "YES" : "No"],
-                  ].map(([label, value]) => (
-                    <div key={label} style={{ border: "1px solid #ccfbf1", borderRadius: 12, padding: 10, background: "#fff" }}>
-                      <div style={{ fontSize: 10, fontWeight: 950, color: bmColors.subtle, textTransform: "uppercase" }}>{label}</div>
-                      <div style={{ marginTop: 3, fontWeight: 950, color: value === "YES" ? bmColors.red : bmColors.green }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 10, color: bmColors.ink, fontSize: 13, fontWeight: 800 }}>
-                  Graph messages found: {num(syncPreviewCounts.graphMessages)} · Drafts: {num(syncPreviewCounts.drafts)} · Sent/received: {num(syncPreviewCounts.sentOrReceived)} · With attachments: {num(syncPreviewCounts.withAttachments)}
-                </div>
-                <div style={{ marginTop: 6, color: bmColors.muted, fontSize: 12 }}>
-                  Preview only.  No Barsh Matters records were updated.
-                </div>
-              </>
-            )}
-          </section>
-        )}
 
-        {graphThreadSyncResult && (
-          <section
-            style={{
-              border: "1px solid #ddd6fe",
-              borderRadius: 16,
-              padding: 14,
-              background: "#f5f3ff",
-              marginBottom: 14,
-            }}
-          >
-            <div style={{ fontWeight: 950, color: "#6d28d9", marginBottom: 8 }}>
-              Graph Thread Sync Result
-            </div>
-            {graphThreadSyncResult.error ? (
-              <div style={{ color: bmColors.red, fontWeight: 850 }}>
-                {textValue(graphThreadSyncResult.error)}
-              </div>
-            ) : (
-              <>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-                    gap: 8,
-                    fontSize: 12,
-                  }}
-                >
-                  {[
-                    ["Graph calls", graphThreadSyncResult.graphCallsMade ? "YES" : "No"],
-                    ["Reads mailbox", graphThreadSyncResult.readsMailbox ? "YES" : "No"],
-                    ["Creates draft", graphThreadSyncResult.createsOutlookDraft ? "YES" : "No"],
-                    ["Sends email", graphThreadSyncResult.sendsEmail ? "YES" : "No"],
-                    ["Syncs mailbox", graphThreadSyncResult.syncsMailbox ? "YES" : "No"],
-                    ["DB changed", graphThreadSyncResult.databaseRecordsChanged ? "YES" : "No"],
-                  ].map(([label, value]) => (
-                    <div key={label} style={{ border: "1px solid #ede9fe", borderRadius: 12, padding: 10, background: "#fff" }}>
-                      <div style={{ fontSize: 10, fontWeight: 950, color: bmColors.subtle, textTransform: "uppercase" }}>{label}</div>
-                      <div style={{ marginTop: 3, fontWeight: 950, color: value === "YES" ? bmColors.red : bmColors.green }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 10, color: bmColors.ink, fontSize: 13, fontWeight: 800 }}>
-                  Graph messages: {num(syncCounts.graphMessages)} · Messages upserted: {num(graphThreadSyncResult.persisted?.messagesUpserted)} · Matter links created: {num(graphThreadSyncResult.persisted?.matterLinksCreated)}
-                </div>
-                <div style={{ marginTop: 6, color: bmColors.muted, fontSize: 12 }}>
-                  Confirmed sync persists local Barsh Matters email metadata only.  It does not send email, create drafts, write Clio, upload documents, or use local Outlook automation.
-                </div>
-              </>
-            )}
-          </section>
-        )}
+
+
 
         {emailThreadPreviewResult?.error && (
           <div
@@ -6190,27 +6071,7 @@ function openClaimAmountEditDialog() {
           </div>
         )}
 
-        {emailThreadPreviewResult && (
-          <details style={{ marginTop: 14 }}>
-            <summary style={{ cursor: "pointer", fontWeight: 850 }}>
-              Raw local thread preview JSON
-            </summary>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                overflowX: "auto",
-                margin: "8px 0 0 0",
-                padding: 10,
-                background: "#0f172a",
-                color: "#e5e7eb",
-                borderRadius: 10,
-                fontSize: 12,
-              }}
-            >
-              {JSON.stringify(emailThreadPreviewResult, null, 2)}
-            </pre>
-          </details>
-        )}
+        
       </section>
     );
   }
@@ -6951,6 +6812,107 @@ function openClaimAmountEditDialog() {
                 <div style={{ display: "none" }}>{renderMatterDocumentDataPreviewPanel()}</div>
               </div>
             </details>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderMatterViewEmailsPopup() {
+    if (!matterViewEmailsPopupOpen) return null;
+
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="View Emails"
+        data-barsh-direct-view-emails-standard-modal="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 10000,
+          background: "rgba(15, 23, 42, 0.45)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            width: "min(1180px, 96vw)",
+            maxHeight: "88vh",
+            overflow: "auto",
+            border: "1px solid #cbd5e1",
+            borderRadius: 22,
+            background: "#ffffff",
+            boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+          }}
+        >
+          <div
+            data-barsh-direct-view-emails-header-standard="true"
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+              display: "grid",
+              gridTemplateColumns: "90px minmax(0, 1fr) 90px",
+              alignItems: "center",
+              gap: 14,
+              padding: "16px 20px",
+              borderBottom: "1px solid #1e3a8a",
+              background: "#1e3a8a",
+              borderTopLeftRadius: 22,
+              borderTopRightRadius: 22,
+            }}
+          >
+            <div aria-hidden="true" />
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 950,
+                color: "#ffffff",
+                textAlign: "center",
+              }}
+            >
+              View Emails
+            </h2>
+            <div aria-hidden="true" />
+          </div>
+
+          <div style={{ padding: 20 }}>
+            {renderMatterEmailThreadsPanel()}
+          </div>
+
+          <div
+            data-barsh-direct-view-emails-footer-actions="true"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              padding: "14px 20px 18px",
+              borderTop: "1px solid #e5e7eb",
+              background: "#f8fafc",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeMatterViewEmailsPopup}
+              disabled={emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
+              style={{
+                minWidth: 118,
+                height: 38,
+                border: "1px solid #cbd5e1",
+                borderRadius: 10,
+                background: "#ffffff",
+                color: "#334155",
+                fontWeight: 900,
+                cursor: emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -9477,8 +9439,7 @@ function openClaimAmountEditDialog() {
                           type="button"
                           title="Open read-only local email and Microsoft Graph thread records for this matter."
                           onClick={() => {
-                            setActiveWorkspaceTab("email_threads");
-                            void loadMatterEmailThreadPreview();
+                            openMatterViewEmailsPopup();
                           }}
                           style={{
                             minHeight: 36,
@@ -13149,7 +13110,7 @@ function openClaimAmountEditDialog() {
         </section>
       )}
 
-      {activeWorkspaceTab === "email_threads" && renderMatterEmailThreadsPanel()}
+      {renderMatterViewEmailsPopup()}
 
       {activeWorkspaceTab === "audit_history" && (
         <section id="matter-audit-history-section" style={tabPlaceholderPanelStyle}>
