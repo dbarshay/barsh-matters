@@ -10446,58 +10446,80 @@ function masterSettlementDateFiledValue(): string {
 
             {masterPaymentClosePromptOpen && activeMasterWorkspaceTab === "payments" && (
               <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Close After Payment?"
+                onClick={() => setMasterPaymentClosePromptOpen(false)}
+                onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterPaymentClosePromptOpen(false); } }}
+                tabIndex={-1}
                 style={{
-                  margin: "12px 0",
-                  padding: "14px 16px",
-                  borderRadius: 14,
-                  border: "1px solid #ea580c",
-                  background: "#fff7ed",
-                  color: "#c2410c",
-                  boxShadow: "0 12px 28px rgba(37, 99, 235, 0.16)",
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 50001,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
+                  background: "rgba(15, 23, 42, 0.58)",
                 }}
               >
-                <div style={{ fontSize: 15, fontWeight: 950 }}>
-                  Payment activity was saved. Do you want to review closing this lawsuit now?
-                </div>
-                <div style={{ marginTop: 6, fontSize: 13, fontWeight: 750, color: "#c2410c" }}>
-                  Closing remains separate from payment posting. Use this only when the lawsuit and eligible child matters are ready to be closed after payment confirmation.
-                </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    onClick={() => setMasterPaymentClosePromptOpen(false)}
-                    style={{
-                      minWidth: 120,
-                      height: 38,
-                      border: "1px solid #ea580c",
-                      borderRadius: 10,
-                      background: "#fff7ed",
-                      color: "#c2410c",
-                      fontWeight: 900,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Not Now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMasterPaymentClosePromptOpen(false);
-                      setActiveMasterWorkspaceTab("close_paid_settlements");
-                    }}
-                    style={{
-                      minWidth: 190,
-                      height: 38,
-                      border: "1px solid #ea580c",
-                      borderRadius: 10,
-                      background: "#fff7ed",
-                      color: "#c2410c",
-                      fontWeight: 950,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Review Close Workflow
-                  </button>
+                <div
+                  onClick={(event) => event.stopPropagation()}
+                  style={{
+                    width: "min(520px, calc(100vw - 48px))",
+                    maxHeight: "88vh",
+                    overflow: "hidden",
+                    border: "1px solid #1e3a8a",
+                    borderRadius: 18,
+                    background: "#ffffff",
+                    boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+                  }}
+                >
+                  <div style={{ padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>Close After Payment?</h2>
+                  </div>
+
+                  <div style={{ padding: 20, background: "#ffffff", color: "#0f172a", fontSize: 15, fontWeight: 850, lineHeight: 1.45 }}>
+                    Payment posted. Do you want to close this lawsuit now?
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                    <button
+                      type="button"
+                      onClick={() => setMasterPaymentClosePromptOpen(false)}
+                      style={{
+                        minWidth: 110,
+                        height: 40,
+                        border: "1px solid #dc2626",
+                        borderRadius: 10,
+                        background: "#dc2626",
+                        color: "#ffffff",
+                        fontWeight: 900,
+                        cursor: "pointer",
+                      }}
+                    >
+                      No
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMasterPaymentClosePromptOpen(false);
+                        openMasterCloseLawsuitDialog();
+                      }}
+                      style={{
+                        minWidth: 190,
+                        height: 40,
+                        border: "1px solid #15803d",
+                        borderRadius: 10,
+                        background: "#16a34a",
+                        color: "#ffffff",
+                        fontWeight: 950,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Yes, Close
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
