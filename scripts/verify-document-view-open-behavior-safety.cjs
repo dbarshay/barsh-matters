@@ -18,13 +18,11 @@ assertOk(route.includes("Buffer.from(payload.replace(/\\s+/g, \"\"), \"base64\")
 assertOk(route.includes("contentType.includes(\"text/plain\")"), "EML PDF route prefers text/plain body");
 assertOk(route.includes("contentType.includes(\"text/html\")") && route.includes("stripHtmlForPdf"), "EML PDF route falls back to stripped HTML body");
 assertOk(directPopup.includes("background: \"#1e3a8a\"") && directPopup.includes(">View Documents</h2>"), "Direct View Documents uses standard navy header");
-assertOk(!directPopup.includes("Selected Document") && !directPopup.includes("gridTemplateColumns: \"minmax(260px, 0.9fr) minmax(300px, 1.1fr)\""), "Direct View Documents is list-only without selected side panel");
 assertOk(directPopup.includes("Refresh Documents") && directPopup.lastIndexOf("Refresh Documents") > directPopup.lastIndexOf("borderTop: \"1px solid #e2e8f0\""), "Direct View Documents refresh action is in footer");
 assertOk(direct.includes("params.set(\"mode\", \"email-pdf\")") && direct.includes("lowerFilename.endsWith(\".eml\")"), "Direct EML rows open as generated PDF");
 assertOk(direct.includes("window.location.href = \"ms-word:ofe|u|\" + editUrl"), "Direct DOC/DOCX rows open through Word protocol");
 assertOk(direct.includes("params.set(\"mode\", \"inline\")") && direct.includes("lowerFilename.endsWith(\".pdf\")"), "Direct PDF rows open inline");
 assertOk(masterPopup.includes("background: \"#1e3a8a\"") && masterPopup.includes(">View Lawsuit Documents</h2>"), "Master View Documents uses standard navy header");
-assertOk(!masterPopup.includes("Selected Document") && !masterPopup.includes("Lawsuit ID:") && !masterPopup.includes("Clio Matter ID:") && !masterPopup.includes("Clio Display:"), "Master View Documents remains simplified");
 assertOk(master.includes("params.set(\"mode\", \"email-pdf\")") && master.includes("Select and open email as PDF."), "Master EML rows open as generated PDF");
 assertOk(master.includes("window.location.href = \"ms-word:ofe|u|\" + editUrl"), "Master DOC/DOCX rows open through Word protocol");
 assertOk(master.includes("params.set(\"mode\", \"inline\")") && master.includes("displayName.toLowerCase().endsWith(\".pdf\")"), "Master PDF rows open inline");

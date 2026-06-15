@@ -125,7 +125,7 @@ console.log("\n=== VERIFY REDUNDANT DIRECT EMAILS DEBUG COPY IS REMOVED ===");
 
 console.log("\n=== VERIFY DIRECT EMAILS RENDER AS POPUP MODAL ===");
 [
-  'onClick={() => {\n                            openMatterViewEmailsPopup();\n                          }}',
+  'onClick={() => {\n                            setActiveWorkspaceTab("email_threads");\n                            openMatterViewEmailsPopup();\n                          }}',
   'View Emails',
 ].forEach((marker) => mustContain(pagePath, page, marker));
 

@@ -96,8 +96,8 @@ mustInclude("lawsuit bills table has Lawsuit Payment column", page, ">Lawsuit Pa
 mustInclude("lawsuit bills table calculates lawsuit payment from receipts", page, "function masterLawsuitPaymentAmountForRow");
 mustInclude("lawsuit bills table separates lawsuit payment from pre-suit payment", page, "const preSuitPaymentAmount = Math.max(totalPaymentAmount - lawsuitPaymentAmount, 0);");
 mustInclude("lawsuit payment opens close prompt after post", page, "setMasterPaymentClosePromptOpen(true);");
-mustInclude("lawsuit payment close prompt asks closing question", page, "Payment activity was saved. Do you want to review closing this lawsuit now?");
-mustInclude("lawsuit payment close prompt can navigate to close workflow", page, 'setActiveMasterWorkspaceTab("close_paid_settlements")');
+mustInclude("lawsuit payment close prompt asks closing question", page, "Payment posted. Do you want to close this lawsuit now?");
+mustInclude("lawsuit payment close prompt opens Close Lawsuit dialog", page, "openMasterCloseLawsuitDialog()");
 
 
 mustInclude("lawsuit bills table has original bill amount helper", page, "function masterLawsuitBillAmountForRow");
@@ -121,7 +121,7 @@ mustNotInclude("lawsuit payment summary has no missing masterLocalLawsuitOptions
 mustInclude("lawsuit payment summary calls actual masterLawsuitOptions helper", page, "const options = masterLawsuitOptions();");
 
 
-mustInclude("lawsuit payment close prompt can navigate to close workflow", page, 'setActiveMasterWorkspaceTab("close_paid_settlements")');
+mustInclude("lawsuit payment close prompt opens Close Lawsuit dialog", page, "openMasterCloseLawsuitDialog()");
 
 if (process.exitCode) {
   process.exit(process.exitCode);

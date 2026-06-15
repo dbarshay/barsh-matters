@@ -833,6 +833,7 @@ const activeGroupKey =
     if (!matterViewDocumentsPopupOpen) return null;
 
     const docs = matterClioDocumentsArray();
+    const selectedDocument = selectedMatterViewDocument();
 
     return (
       <div
@@ -845,11 +846,14 @@ const activeGroupKey =
         style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
       >
         <div onClick={(event) => event.stopPropagation()} style={{ width: "min(920px, 96vw)", maxHeight: "88vh", overflow: "hidden", border: "1px solid #1e3a8a", borderRadius: 18, background: "#ffffff", boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)", display: "flex", flexDirection: "column" }}>
-          <div data-barsh-direct-view-documents-header-standard="true" style={{ padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+          <div data-barsh-direct-view-documents-header-standard="true" style={{ display: "grid", gridTemplateColumns: "90px minmax(0, 1fr) 90px", alignItems: "center", gap: 14, padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderBottom: "1px solid #1e3a8a", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+            <div aria-hidden="true" />
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>View Documents</h2>
+            <div aria-hidden="true" />
           </div>
 
           <div style={{ padding: 20, display: "grid", gap: 14, maxHeight: "calc(88vh - 154px)", overflowY: "auto" }}>
+            <div style={{ color: "#334155", fontSize: 13, fontWeight: 900 }}>Documents: {docs.length}</div>
             {matterClioDocumentsResult?.ok === false && (
               <div style={{ padding: 12, border: "1px solid #fecaca", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontWeight: 850 }}>
                 {textValue(matterClioDocumentsResult.error) || "Could not load Clio documents."}
@@ -861,7 +865,7 @@ const activeGroupKey =
             )}
 
             {matterClioDocumentsResult?.ok && docs.length === 0 && (
-              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>No documents are currently listed in this direct matter Clio Documents tab.</div>
+              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>No documents are currently saved for this matter.</div>
             )}
 
             {docs.length > 0 && (
@@ -881,9 +885,23 @@ const activeGroupKey =
                 })}
               </div>
             )}
+
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#f8fafc", padding: 14 }}>
+              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 950, color: "#0f172a" }}>Selected Document</h3>
+              {selectedDocument ? (
+                <div style={{ display: "grid", gap: 8, color: "#334155", fontSize: 13, fontWeight: 800 }}>
+                  <div><strong>Filename:</strong> {matterViewDocumentListDisplayName(selectedDocument)}</div>
+                  <div><strong>Updated:</strong> {formatMatterDocumentUploadedSavedDate(selectedDocument.updatedAt || selectedDocument.latestDocumentVersion?.updatedAt)}</div>
+                  <div><strong>Type:</strong> {textValue(selectedDocument.latestDocumentVersion?.contentType || selectedDocument.contentType) || "—"}</div>
+                  <div><strong>Size:</strong> {textValue(selectedDocument.latestDocumentVersion?.size || selectedDocument.size) || "—"}</div>
+                </div>
+              ) : (
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800 }}>Select a document to view its stored Clio metadata.</div>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+          <div data-barsh-direct-view-documents-footer-actions="true" style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
             <button type="button" onClick={closeMatterViewDocumentsPopup} style={{ minWidth: 96, height: 40, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#334155", fontWeight: 900, cursor: "pointer" }}>Close</button>
             <button type="button" onClick={() => void loadMatterClioDocuments()} disabled={matterClioDocumentsLoading} style={{ minWidth: 138, height: 40, border: "1px solid #1e3a8a", borderRadius: 10, background: matterClioDocumentsLoading ? "#dbeafe" : "#1e3a8a", color: "#ffffff", fontWeight: 950, cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer" }}>{matterClioDocumentsLoading ? "Refreshing..." : "Refresh Documents"}</button>
           </div>
@@ -3209,6 +3227,7 @@ function openClaimAmountEditDialog() {
       });
 
       const createJson = await createRes.json();
+      createJson.noClioRecordsChangedMessage = "No Clio records were changed.";
 
       if (!createRes.ok || !createJson?.ok) {
         alert(createJson?.error || "Local lawsuit generation failed.");
@@ -5423,7 +5442,7 @@ function openClaimAmountEditDialog() {
                 height: 38,
                 padding: "7px 12px",
                 border: "1px solid #1e3a8a",
-                background: emailThreadPreviewLoading ? "#93c5fd" : "#1e3a8a",
+                background: emailThreadPreviewLoading ? "#f3f4f6" : "#1e3a8a",
                 color: "#ffffff",
                 borderRadius: 10,
                 cursor: emailThreadPreviewLoading ? "not-allowed" : "pointer",
@@ -5433,6 +5452,25 @@ function openClaimAmountEditDialog() {
             >
               {emailThreadPreviewLoading ? "Loading..." : "Refresh Emails"}
             </button>
+
+          <button
+            type="button"
+            onClick={openStartLawsuitModalFromMatter}
+            disabled={submitting || matterIsClosedForPayment() || alreadyAggregated}
+            title={alreadyAggregated ? "This matter is already assigned to a lawsuit." : "Create a lawsuit from this individual matter."}
+            style={{
+              border: "1px solid #1e3a8a",
+              background: alreadyAggregated ? "#e2e8f0" : "#eff6ff",
+              color: alreadyAggregated ? "#64748b" : "#1e3a8a",
+              borderRadius: 999,
+              padding: "8px 12px",
+              fontWeight: 950,
+              cursor: submitting || matterIsClosedForPayment() || alreadyAggregated ? "not-allowed" : "pointer",
+              minHeight: 36,
+            }}
+          >
+            Start Lawsuit
+          </button>
 
             <button
               type="button"
@@ -8080,6 +8118,7 @@ function openClaimAmountEditDialog() {
             <h2 style={{ margin: 0, padding: "12px 14px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", fontSize: 17, fontWeight: 950, lineHeight: 1.15 }}>
               Edit Claim Amount
             </h2>
+              <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45, fontWeight: 800 }}>Claim Amount is ClaimIndex-backed.</p>
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
               <div data-barsh-direct-claim-amount-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
@@ -8094,6 +8133,12 @@ function openClaimAmountEditDialog() {
                   value={claimAmountInput}
                   autoFocus
                   onFocus={(event) => event.currentTarget.select()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void saveClaimAmountEditDialog();
+                    }
+                  }}
                   onChange={(event) => setClaimAmountInput(formatMoneyEditingInput(event.target.value))}
                   onBlur={() => setClaimAmountInput(formatMoneyInputValue(parseMoneyInputValue(claimAmountInput)))}
                   style={{
@@ -9147,6 +9192,7 @@ function openClaimAmountEditDialog() {
                           type="button"
                           title="Open read-only local email and Microsoft Graph thread records for this matter."
                           onClick={() => {
+                            setActiveWorkspaceTab("email_threads");
                             openMatterViewEmailsPopup();
                           }}
                           style={{

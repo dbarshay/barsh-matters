@@ -13,6 +13,7 @@ const actionRowStyle: React.CSSProperties = {
   gap: 8,
   whiteSpace: "nowrap",
   flexWrap: "wrap",
+  transform: "translateX(48px)",
 };
 
 const baseActionStyle: React.CSSProperties = {

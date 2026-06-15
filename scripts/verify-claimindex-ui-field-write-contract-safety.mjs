@@ -261,7 +261,7 @@ for (const label of uiLabels) {
   else pass(`UI contains ClaimIndex-backed label ${label}`);
 }
 
-mustContain("matter page Claim Amount copy says ClaimIndex", matterPage, "This updates Claim Amount in ClaimIndex");
+mustContain("matter page Claim Amount copy says ClaimIndex", matterPage, "Claim Amount is ClaimIndex-backed");
 mustContain("matter page uses direct field route", matterPage, "/api/matters/update-direct-field");
 mustContain("matter page uses identity field route", matterPage, "/api/matters/identity-field");
 

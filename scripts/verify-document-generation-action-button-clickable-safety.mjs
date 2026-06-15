@@ -43,12 +43,11 @@ for (const check of checks) {
   const button = matching.find((candidate) => candidate.includes("Document Generation")) || matching[0];
 
   const required = [
-    ["Document Generation label", "Document Generation"],
+    ["Generate Documents label", "Generate Documents"],
     ["popup title", check.title],
-    ["indigo background", 'background: "#4f46e5"'],
-    ["white text", 'color: "#ffffff"'],
-    ["indigo border", 'border: "1px solid #4338ca"'],
-    ["button shadow", 'boxShadow: "0 10px 22px rgba(79, 70, 229, 0.28)"'],
+    ["documents action background", 'background: "#f8efe7"'],
+    ["documents action text", 'color: "#7c4a22"'],
+    ["documents action border", 'border: "1px solid #8b5e3c"'],
     ["pointer cursor", 'cursor: "pointer"'],
   ];
 

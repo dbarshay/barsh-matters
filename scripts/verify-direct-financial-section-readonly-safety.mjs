@@ -36,10 +36,11 @@ requireText("lower payments uses helper", page, "<strong>{money(directMatterPaym
 requireText("lower balance uses derived helper", page, "<strong>{money(currentDirectMatterBalancePresuit(matter))}</strong>");
 forbidText("old stored-balance fallback", page, "const clioBalance = num(raw)");
 
-const financialStart = page.indexOf('<div className="barsh-direct-financial-row">');
-const financialEnd = page.indexOf('Payment controls:', financialStart);
-const financialBlock =
-  financialStart >= 0 && financialEnd > financialStart ? page.slice(financialStart, financialEnd) : "";
+const financialAnchor = page.indexOf("<strong>{money(directMatterClaimAmountValue(matter))}</strong>");
+const balanceAnchor = page.indexOf("<strong>{money(currentDirectMatterBalancePresuit(matter))}</strong>", financialAnchor);
+const financialStart = financialAnchor >= 0 ? Math.max(0, page.lastIndexOf("<div", financialAnchor)) : -1;
+const financialEnd = balanceAnchor >= 0 ? page.indexOf("</div>", balanceAnchor) : -1;
+const financialBlock = financialStart >= 0 && financialEnd > financialStart ? page.slice(financialStart, financialEnd + 6) : "";
 
 requireText("financial section block located", financialBlock, '<span>Claim Amount</span>');
 requireText("financial section includes Payments row", financialBlock, '<span>Payments</span>');

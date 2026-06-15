@@ -1353,6 +1353,7 @@ export default function FilteredMattersPage() {
     if (masterViewDocumentsPopupOpen === false) return null;
 
     const docs = masterClioDocumentsArray();
+    const selectedDoc = selectedMasterViewDocument();
 
     return (
       <div
@@ -1420,11 +1421,28 @@ export default function FilteredMattersPage() {
                       <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 700 }}>
                         Uploaded/Saved: {formatMasterDocumentUploadedSavedDate(doc.updatedAt || doc.latestDocumentVersion?.updatedAt)}
                       </div>
+                      <div style={{ marginTop: 4, color: "#334155", fontSize: 12, fontWeight: 850 }}>
+                        Source: {masterDocumentPreviewText(doc.sourceLabel) || masterDocumentPreviewText(doc.sourceClioDisplayNumber) || "—"}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             )}
+
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#f8fafc", padding: 14 }}>
+              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 950, color: "#0f172a" }}>Selected Document</h3>
+              {selectedDoc ? (
+                <div style={{ display: "grid", gap: 8, color: "#334155", fontSize: 13, fontWeight: 800 }}>
+                  <div><strong>Source:</strong> {masterDocumentPreviewText(selectedDoc.sourceLabel) || "—"}</div>
+                  <div><strong>Source Matter:</strong> {masterDocumentPreviewText(selectedDoc.sourceClioDisplayNumber) || "—"}</div>
+                  <div><strong>Filename:</strong> {masterViewDocumentListDisplayName(selectedDoc)}</div>
+                  <div><strong>Updated:</strong> {formatMasterDocumentUploadedSavedDate(selectedDoc.updatedAt || selectedDoc.latestDocumentVersion?.updatedAt)}</div>
+                </div>
+              ) : (
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800 }}>Select a document to view its stored Clio source metadata.</div>
+              )}
+            </div>
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff", borderBottomLeftRadius: 18, borderBottomRightRadius: 18 }}>
@@ -5208,6 +5226,7 @@ function masterSettlementDateFiledValue(): string {
   }
 
   async function saveMasterSettlementDocumentLocally(selectedTemplate: { key: string; label: string; description: string } | null) {
+    const settlementFinalizedPdfSaveLocalSuccessCopy = "The finalized settlement PDF from the mapped master Clio matter Documents tab was opened for local saving.";
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
     const isSettlementDocumentMode =
       masterDocumentLaunchMode === "settlement" ||
@@ -5272,7 +5291,7 @@ function masterSettlementDateFiledValue(): string {
       return;
     }
 
-    alert("Save Locally is currently wired for settlement documents only.");
+    alert("Save Finalized PDF is currently wired for settlement documents only.");
   }
 
   async function launchMasterDocumentPrint(selectedTemplate: { key: string; label: string; description: string } | null) {
@@ -7293,7 +7312,7 @@ function masterSettlementDateFiledValue(): string {
                         opacity: masterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
                       }}
                     >
-                      Open in Word Web
+                      Open in Word Web Close older working-document tabs to avoid editing the wrong file.
                     </button>
 
                     <button
@@ -7555,7 +7574,7 @@ function masterSettlementDateFiledValue(): string {
                         masterDocumentPrintQueueLoading || !masterDocumentFinalizationResult?.finalizationRecord?.id
                       )}
                       {actionButton(
-                        "Save Locally",
+                        "Save Finalized PDF",
                         () => saveMasterSettlementDocumentLocally(displayedSelectedTemplate),
                         !masterDocumentFinalizationResult?.finalizationRecord?.id
                       )}
@@ -7571,13 +7590,13 @@ function masterSettlementDateFiledValue(): string {
                         title="Create an Outlook draft with the finalized settlement PDF attached from the mapped master Clio matter."
                         style={{
                           border: "none",
-                          background: masterDocumentFinalizationResult?.finalizationRecord?.id ? "#1e3a8a" : "#cbd5e1",
+                          background: masterDocumentFinalizationResult?.finalizationRecord?.id ? "#4f46e5" : "#c7d2fe",
+                          boxShadow: "0 10px 25px rgba(79,70,229,0.18)",
                           color: "#fff",
                           borderRadius: 14,
                           padding: "12px 16px",
                           fontWeight: 900,
                           cursor: masterDocumentFinalizationResult?.finalizationRecord?.id ? "pointer" : "not-allowed",
-                          boxShadow: "0 10px 25px rgba(30,58,138,0.18)",
                         }}
                       >
                         Email Finalized Document
@@ -8982,7 +9001,7 @@ function masterSettlementDateFiledValue(): string {
 
                 <div style={masterSettlementFieldStyle}>
                   <label style={masterSettlementFieldLabelStyle}>Settlement %</label>
-                  <input
+                  <input aria-label="Search Local Contact"
                     type="number"
                     step="0.01"
                     value={masterSettlementDraft.settlementPercent}
@@ -10695,13 +10714,13 @@ function masterSettlementDateFiledValue(): string {
                   <div
                     data-barsh-standard-modal-header="true"
                     style={{
-                      position: "sticky",
-                      top: 0,
-                      zIndex: 1,
                       display: "grid",
                       gridTemplateColumns: "32px minmax(0, 1fr) 32px",
                       alignItems: "center",
                       gap: 8,
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 1,
                       padding: "12px 14px",
                       borderBottom: "1px solid #1e3a8a",
                       background: "#1e3a8a",
@@ -11317,8 +11336,8 @@ function masterSettlementDateFiledValue(): string {
                   data-barsh-standard-settlement-popup-shell="true"
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    width: "min(1480px, calc(100vw - 48px))",
-                    minWidth: "min(980px, calc(100vw - 48px))",
+                    width: "min(1480px, 98vw)",
+                    minWidth: 980,
                     maxHeight: "88vh",
                     overflow: "auto",
                     border: "1px solid #1e3a8a",
@@ -11333,10 +11352,6 @@ function masterSettlementDateFiledValue(): string {
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
-                      display: "grid",
-                      gridTemplateColumns: "32px minmax(0, 1fr) 32px",
-                      alignItems: "center",
-                      gap: 8,
                       padding: "16px 20px",
                       borderBottom: "1px solid #1e3a8a",
                       background: "#1e3a8a",
@@ -11940,7 +11955,7 @@ function masterSettlementDateFiledValue(): string {
                             Local Settlement Record Payload Preview
                           </div>
                           <div style={{ color: "#475569", lineHeight: 1.45 }}>
-                            Preview-only payload prepared for a future Barsh Matters local settlement record.  No database record is created here.
+                            Preview-only payload prepared for a future Barsh Matters local settlement record.  No final file is created until the workflow is finalized.  No database record is created here.
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
                             <div><strong>Payload:</strong> {masterSettlementLocalPreview.settlementRecordPayload.payloadKind || "—"}</div>
@@ -12371,13 +12386,13 @@ function masterSettlementDateFiledValue(): string {
                 >
                   <div
                     style={{
+                      display: "grid",
+                      gridTemplateColumns: "38px minmax(0, 1fr) 38px",
+                      alignItems: "center",
+                      gap: 10,
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
-                      display: "grid",
-                      gridTemplateColumns: "32px minmax(0, 1fr) 32px",
-                      alignItems: "center",
-                      gap: 8,
                       padding: "16px 20px",
                       borderBottom: "1px solid #1e3a8a",
                       background: "#1e3a8a",

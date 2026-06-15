@@ -26,11 +26,11 @@ console.log("=== VERIFY SUMMARY HIDES ZERO COST ROWS ===");
 mustContain("invoice page", invoicePage, "function isNonZeroMoneyValue(value: unknown): boolean");
 mustContain("invoice page", invoicePage, "return Math.abs(Number(value || 0)) >= 0.005;");
 
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceAppliedToLedger\) && <div><strong>Cost Excess Applied to Negative Cost Balance<\/strong>/, "conditional Cost Excess Applied to Negative Cost Balance row");
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceLedgerBefore\) && <div><strong>Negative Cost Balance Before This Remittance<\/strong>/, "conditional Negative Cost Balance Before row");
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceLedgerAfter\) && <div><strong>Negative Cost Balance After This Remittance<\/strong>/, "conditional Negative Cost Balance After row");
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceReimbursementToProvider\) && <div style=\{\{ paddingLeft: 28, fontWeight: 950 \}\}><strong>Cost Excess Added to Net Remit<\/strong>/, "conditional Cost Excess Added to Net Remit row");
-mustMatch("on-screen hidden-zero", invoicePage, /\{isNonZeroMoneyValue\(summary\.costBalanceDeductionApplied\) && <div style=\{\{ paddingLeft: 28, fontWeight: 950 \}\}><strong>Cost Deduction Applied<\/strong>/, "conditional Cost Deduction Applied row");
+mustContain("on-screen hidden-zero", invoicePage, 'hasCostExcessApplied && <Row label="Cost Excess Applied to Negative Cost Balance" value={summary.costBalanceAppliedToLedger} variant="red" />');
+mustContain("on-screen hidden-zero", invoicePage, 'hasPriorNegativeBalance && <Row label="Negative Cost Balance Before This Remittance" value={summary.costBalanceLedgerBefore} />');
+mustContain("on-screen hidden-zero", invoicePage, 'hasAfterNegativeBalance && <Row label="Negative Cost Balance After This Remittance" value={summary.costBalanceLedgerAfter} />');
+mustContain("on-screen hidden-zero", invoicePage, 'hasCostExcessAdded && <Row label="Cost Excess Added to Net Remit" value={summary.costBalanceReimbursementToProvider} variant="blue" />');
+mustContain("on-screen hidden-zero", invoicePage, 'hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />');
 
 mustMatch("printable hidden-zero", invoicePage, /const printableCostBalanceAppliedToLedgerHtml = isNonZeroMoneyValue\(printableCostSummary\.costBalanceAppliedToLedger\)[\s\S]*Cost Excess Applied to Negative Cost Balance[\s\S]*: "";/, "conditional printable applied row");
 mustMatch("printable hidden-zero", invoicePage, /const printableNegativeCostBalanceBeforeHtml = isNonZeroMoneyValue\(printableCostSummary\.costBalanceLedgerBefore\)[\s\S]*Negative Cost Balance Before This Remittance[\s\S]*: "";/, "conditional printable before row");

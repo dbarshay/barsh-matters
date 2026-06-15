@@ -173,7 +173,7 @@ mustContain("invoice page", page, "Costs Expended During This Remittance Period"
 mustContain("invoice page", page, "Costs Received During This Remittance Period");
 mustNotContain("invoice page stale label", page, "Cost Balance Applied to Ledger");
 mustContain("invoice page", page, "25% Deduction Cap");
-mustContain("invoice page", page, "isNonZeroMoneyValue(summary.costBalanceAddedToLedger) && <div><strong>25% Deduction Cap</strong>");
+mustContain("invoice page", page, 'hasDeduction && <Row label="25% Deduction Cap" value={summary.costBalanceDeductionCap} variant="blue" />');
 mustContain("printable invoice", page, "printableCostDeductionCapHtml");
 mustContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "currentPeriodNegativeCostBalance > 0 ? Math.max(0, baseNetRemitToProvider * 0.25) : 0");
 mustNotContain("preview route", text("app/api/admin/clients/[id]/invoice/create-preview/route.ts"), "costBalanceThisRemittancePeriod = moneyNumber(costsExpendedTotal - filingFeePaymentTotal)");
