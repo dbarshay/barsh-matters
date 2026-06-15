@@ -366,7 +366,8 @@
     "verify:master-note-popup-persistence-safety": "node scripts/verify-master-note-popup-persistence-safety.cjs",
     "verify:master-info-edit-popup-safety": "node scripts/verify-master-info-edit-popup-safety.cjs",
     "verify:master-payment-close-prompt-safety": "node scripts/verify-master-payment-close-prompt-safety.cjs",
-    "verify:master-payment-popup-safety": "node scripts/verify-master-payment-popup-safety.cjs"
+    "verify:master-payment-popup-safety": "node scripts/verify-master-payment-popup-safety.cjs",
+    "verify:master-settlement-popup-safety": "node scripts/verify-master-settlement-popup-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

@@ -11361,68 +11361,60 @@ function masterSettlementDateFiledValue(): string {
                   position: "fixed",
                   inset: 0,
                   zIndex: 50000,
-                  display: "block",
-                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
                   overflow: "hidden",
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={(event) => event.stopPropagation()}
+                onClick={() => setMasterSettlementFormOpen(false)}
+                onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterSettlementFormOpen(false); } }}
+                tabIndex={-1}
               >
                 <div
-                  data-barsh-draggable-settlement-popup-shell="true"
+                  data-barsh-standard-settlement-popup-shell="true"
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    position: "fixed",
-                    top: masterSettlementPopupPosition.y,
-                    left: `calc(50% + ${masterSettlementPopupPosition.x}px)`,
-                    transform: "translateX(-50%)",
-                    width: "min(1480px, 98vw)",
-                    minWidth: 980,
-                    minHeight: 420,
-                    maxWidth: "98vw",
-                    maxHeight: "calc(100vh - 24px)",
+                    width: "min(1480px, calc(100vw - 48px))",
+                    minWidth: "min(980px, calc(100vw - 48px))",
+                    maxHeight: "88vh",
                     overflow: "auto",
-                    resize: "both",
-                    border: "1px solid #bfdbfe",
-                    borderRadius: 22,
-                    background: "#eff6ff",
-                    boxShadow: "0 30px 90px rgba(15, 23, 42, 0.38)",
+                    border: "1px solid #1e3a8a",
+                    borderRadius: 18,
+                    background: "#ffffff",
+                    boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
                   }}
                 >
                   <div
-                    data-barsh-draggable-settlement-popup-header="true"
-                    onPointerDown={beginMasterSettlementPopupDrag}
-                    title="Drag this blue header to move the settlement popup."
+                    data-barsh-standard-settlement-popup-header="true"
                     style={{
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: 12,
-                      padding: "16px 18px",
-                      borderBottom: "1px solid #dbe4f0",
-                      background: "#eff6ff",
-                      borderTopLeftRadius: 22,
-                      borderTopRightRadius: 22,
-                      cursor: masterSettlementPopupDragging ? "grabbing" : "grab",
-                      userSelect: "none",
-                      touchAction: "none",
+                      display: "grid",
+                      gridTemplateColumns: "32px minmax(0, 1fr) 32px",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "16px 20px",
+                      borderBottom: "1px solid #1e3a8a",
+                      background: "#1e3a8a",
+                      borderTopLeftRadius: 18,
+                      borderTopRightRadius: 18,
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 950,
-                          color: "#1d4ed8",
-                        }}
-                      >
-                        Settlement of {currentMasterLawsuitIdForDocumentPreview() || "—"}
-                      </div>
+                    <span aria-hidden="true" />
+                    <div
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 950,
+                        color: "#ffffff",
+                        textAlign: "center",
+                      }}
+                    >
+                      Record Settlement
                     </div>
-
+                    <span data-barsh-standard-modal-close="removed" aria-hidden="true" />
                   </div>
 
                   <div
@@ -12081,8 +12073,8 @@ function masterSettlementDateFiledValue(): string {
                       padding: "14px 18px",
                       borderTop: "1px solid #e5e7eb",
                       background: "#f8fafc",
-                      borderBottomLeftRadius: 22,
-                      borderBottomRightRadius: 22,
+                      borderBottomLeftRadius: 18,
+                      borderBottomRightRadius: 18,
                     }}
                   >
                     <button
@@ -12183,12 +12175,12 @@ function masterSettlementDateFiledValue(): string {
                     position: "fixed",
                     top: 104,
                     left: "50%",
-                    transform: "translateX(-50%)",
+                    
                     width: "min(1120px, 96vw)",
                     maxHeight: "calc(100vh - 178px)",
                     overflowY: "auto",
                     border: "1px solid #bfdbfe",
-                    borderRadius: 22,
+                    borderRadius: 18,
                     background: "#eff6ff",
                     boxShadow: "0 30px 90px rgba(15, 23, 42, 0.38)",
                   }}
