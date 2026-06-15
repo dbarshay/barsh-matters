@@ -10057,6 +10057,9 @@ function masterSettlementDateFiledValue(): string {
                           role="dialog"
                           aria-modal="true"
                           aria-label="Close Lawsuit"
+                          onClick={closeMasterCloseLawsuitDialog}
+                          onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterCloseLawsuitDialog(); } }}
+                          tabIndex={-1}
                           style={{
                             position: "fixed",
                             inset: 0,
@@ -10069,63 +10072,68 @@ function masterSettlementDateFiledValue(): string {
                           }}
                         >
                           <div
+                            onClick={(event) => event.stopPropagation()}
                             style={{
                               width: "min(520px, calc(100vw - 48px))",
-                              border: "1px solid #ea580c",
+                              maxHeight: "88vh",
+                              overflow: "hidden",
+                              border: "1px solid #1e3a8a",
                               borderRadius: 18,
-                              background: "#fff",
+                              background: "#ffffff",
                               boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
-                              padding: 20,
+                              display: "flex",
+                              flexDirection: "column",
                             }}
                           >
-                            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Close Lawsuit</h2>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#475569", marginBottom: 16 }}>
-                              This will close lawsuit <strong>{currentMasterLawsuitIdForDocumentPreview()}</strong> locally.
-                              All child matters in the lawsuit will be marked <strong>Closed</strong> with Closed Reason <strong>Closed Lawsuit</strong>.
+                            <div style={{ padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>Close Lawsuit</h2>
                             </div>
 
-                            <label style={{ display: "grid", gap: 6, fontWeight: 900, marginBottom: 16 }}>
-                              <span>Closed Reason for Lawsuit</span>
-                              <select
-                                value={masterCloseReason}
-                                onChange={(event) => setMasterCloseReason(event.target.value)}
-                                disabled={masterClosing}
-                                style={{
-                                  height: 42,
-                                  border: "1px solid #ea580c",
-                                  borderRadius: 10,
-                                  padding: "0 10px",
-                                  fontWeight: 800,
-                                  background: "#fff",
-                                }}
-                              >
-                                <option value="">Select Closed Reason</option>
-                                {masterCloseReasonOptions.map((reason) => (
-                                  <option key={reason} value={reason}>
-                                    {reason}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
+                            <div style={{ padding: 20, display: "grid", gap: 14, background: "#ffffff" }}>
+                              <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
+                                <span>Closed Reason</span>
+                                <select
+                                  value={masterCloseReason}
+                                  onChange={(event) => setMasterCloseReason(event.target.value)}
+                                  disabled={masterClosing}
+                                  autoFocus
+                                  style={{
+                                    height: 42,
+                                    border: "1px solid #cbd5e1",
+                                    borderRadius: 10,
+                                    padding: "0 10px",
+                                    fontWeight: 800,
+                                    background: "#ffffff",
+                                  }}
+                                >
+                                  <option value="">Select Closed Reason</option>
+                                  {masterCloseReasonOptions.map((reason) => (
+                                    <option key={reason} value={reason}>
+                                      {reason}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
 
-                            {masterCloseResult && !masterCloseResult.ok && (
-                              <div style={{ color: "#475569", fontWeight: 800, marginBottom: 12 }}>
-                                {clean(masterCloseResult.error) || "Close Lawsuit failed."}
-                              </div>
-                            )}
+                              {masterCloseResult && !masterCloseResult.ok && (
+                                <div style={{ padding: 12, border: "1px solid #fecaca", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontWeight: 850 }}>
+                                  {clean(masterCloseResult.error) || "Close Lawsuit failed."}
+                                </div>
+                              )}
+                            </div>
 
-                            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
                               <button
                                 type="button"
                                 onClick={closeMasterCloseLawsuitDialog}
                                 disabled={masterClosing}
                                 style={{
                                   minWidth: 96,
-                                  height: 38,
-                                  border: "1px solid #ea580c",
+                                  height: 40,
+                                  border: "1px solid #dc2626",
                                   borderRadius: 10,
-                                  background: "#ffffff",
-                                  color: "#475569",
+                                  background: masterClosing ? "#fecaca" : "#dc2626",
+                                  color: "#ffffff",
                                   fontWeight: 900,
                                   cursor: masterClosing ? "not-allowed" : "pointer",
                                 }}
@@ -10138,12 +10146,12 @@ function masterSettlementDateFiledValue(): string {
                                 disabled={masterClosing || !masterCloseReason}
                                 style={{
                                   minWidth: 132,
-                                  height: 38,
-                                  border: "1px solid #ea580c",
+                                  height: 40,
+                                  border: "1px solid #b91c1c",
                                   borderRadius: 10,
-                                  background: masterClosing || !masterCloseReason ? "#fecaca" : "#dc2626",
-                                  color: "#fff",
-                                  fontWeight: 900,
+                                  background: masterClosing || !masterCloseReason ? "#fecaca" : "#b91c1c",
+                                  color: "#ffffff",
+                                  fontWeight: 950,
                                   cursor: masterClosing || !masterCloseReason ? "not-allowed" : "pointer",
                                 }}
                               >

@@ -1,0 +1,20 @@
+const fs = require("fs");
+const s = fs.readFileSync("app/matters/page.tsx", "utf8");
+function assertOk(condition, message) { if (!condition) throw new Error(message); console.log("PASS:", message); }
+const start = s.indexOf("{masterCloseDialogOpen && (");
+const end = s.indexOf("{renderMasterViewDocumentsPopup()}", start);
+assertOk(start >= 0 && end > start, "Close Lawsuit popup boundaries found");
+const chunk = s.slice(start, end);
+assertOk(chunk.includes("aria-label=\"Close Lawsuit\""), "Close Lawsuit popup has dialog label");
+assertOk(chunk.includes("background: \"#1e3a8a\"") && chunk.includes(">Close Lawsuit</h2>"), "Close Lawsuit popup has navy centered header");
+assertOk(!chunk.includes("×") && !chunk.includes("top-right"), "Close Lawsuit popup has no top-right close glyph");
+assertOk(chunk.includes("event.key === \"Escape\"") && chunk.includes("closeMasterCloseLawsuitDialog()"), "Close Lawsuit popup supports Escape close");
+assertOk(chunk.includes("onClick={closeMasterCloseLawsuitDialog}") && chunk.includes("event.stopPropagation()"), "Close Lawsuit popup supports overlay close without inner click propagation");
+assertOk(!chunk.includes("This will close lawsuit") && !chunk.includes("All child matters"), "Close Lawsuit explanatory paragraph removed");
+assertOk(chunk.includes("<span>Closed Reason</span>") && chunk.includes("<select"), "Close Lawsuit body contains closed reason selector");
+assertOk(chunk.includes("borderTop: \"1px solid #e2e8f0\""), "Close Lawsuit popup has explicit footer divider");
+assertOk(chunk.includes(">\n                                Cancel\n                              </button>"), "Close Lawsuit popup has explicit Cancel button");
+assertOk(chunk.includes("background: masterClosing ? \"#fecaca\" : \"#dc2626\""), "Close Lawsuit Cancel button is red");
+assertOk(chunk.includes("background: masterClosing || !masterCloseReason ? \"#fecaca\" : \"#b91c1c\""), "Close Lawsuit confirm button is dark red when enabled");
+assertOk(s.includes("function renderMasterViewDocumentsPopup()") && s.includes("params.set(\"mode\", \"email-pdf\")"), "Locked Master View Documents behavior remains present");
+console.log("PASS: lawsuit Close Lawsuit popup verifier complete");
