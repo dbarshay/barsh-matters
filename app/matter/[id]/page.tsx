@@ -9587,49 +9587,27 @@ function openClaimAmountEditDialog() {
                       }}
                     >
                     <div
+                      data-barsh-direct-payment-header-standard="true"
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "38px minmax(0, 1fr) 38px",
+                        display: "flex",
                         alignItems: "center",
-                        gap: 16,
+                        justifyContent: "center",
                         padding: "16px 18px",
-                        borderBottom: "1px solid #dbe4f0",
-                        background: "#f0fdf4",
+                        borderBottom: "1px solid #1e3a8a",
+                        background: "#1e3a8a",
                       }}
                     >
-                      <div aria-hidden="true" />
-
                       <div
                         style={{
+                          width: "100%",
                           fontSize: 18,
                           fontWeight: 950,
-                          color: "#14532d",
+                          color: "#ffffff",
                           textAlign: "center",
                         }}
                       >
                         Post Individual Matter Payment
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPaymentFormOpen(false);
-                          setPaymentApplyResult(null);
-                        }}
-                        disabled={paymentApplyLoading || matterIsClosedForPayment()}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          color: "#64748b",
-                          fontSize: 26,
-                          fontWeight: 900,
-                          cursor: paymentApplyLoading ? "not-allowed" : "pointer",
-                          lineHeight: 1,
-                        }}
-                        aria-label="Close payment form"
-                      >
-                        ×
-                      </button>
                     </div>
 
                     {paymentEditingReceipt && (

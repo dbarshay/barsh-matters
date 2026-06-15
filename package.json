@@ -350,7 +350,8 @@
     "verify:direct-picklist-popup-standard-modal-safety": "node scripts/verify-direct-picklist-popup-standard-modal-safety.mjs",
     "verify:direct-identity-popup-standard-modal-safety": "node scripts/verify-direct-identity-popup-standard-modal-safety.mjs",
     "verify:direct-treating-provider-popup-standard-modal-safety": "node scripts/verify-direct-treating-provider-popup-standard-modal-safety.mjs",
-    "verify:direct-close-matter-popup-standard-modal-safety": "node scripts/verify-direct-close-matter-popup-standard-modal-safety.mjs"
+    "verify:direct-close-matter-popup-standard-modal-safety": "node scripts/verify-direct-close-matter-popup-standard-modal-safety.mjs",
+    "verify:direct-payment-popup-header-standard-safety": "node scripts/verify-direct-payment-popup-header-standard-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

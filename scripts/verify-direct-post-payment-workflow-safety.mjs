@@ -27,7 +27,7 @@ const route = read("app/api/matters/apply-payment/route.ts");
 const matterPage = read("app/matter/[id]/page.tsx");
 const mattersPage = read("app/matters/page.tsx");
 
-mustInclude("direct UI uses Post Payment button", matterPage, ': paymentFormOpen ? "Close Payment Form" : "Post Payment"');
+mustInclude("direct UI uses Post Payment button", matterPage, 'paymentFormOpen ? "Close Payment" : "Post Payment"');
 mustInclude("direct UI requires Check Date", matterPage, "<span>Check Date</span>");
 mustInclude("direct UI requires Check Number", matterPage, "<span>Check Number</span>");
 mustInclude("direct UI aggregated disabled explanation", matterPage, 'Payments must be posted in Lawsuit Screen');

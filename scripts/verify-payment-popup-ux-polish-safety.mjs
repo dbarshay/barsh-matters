@@ -34,9 +34,9 @@ mustNotContain(
 );
 mustNotContain("direct payment popup", matter, "This posts only to BRL");
 mustContain("direct payment popup header", matter, "Post Individual Matter Payment");
-mustContain("direct payment popup header centered", matter, 'gridTemplateColumns: "38px minmax(0, 1fr) 38px"');
+mustContain("direct payment popup header centered", matter, 'justifyContent: "center"');
 mustContain("direct payment popup header centered", matter, 'textAlign: "center"');
-mustContain("direct payment popup header green", matter, 'background: "#f0fdf4"');
+mustContain("direct payment popup header navy", matter, 'background: "#1e3a8a"');
 mustNotContain("direct payment popup header", matter, ">Post Payment<");
 
 mustNotContain(
