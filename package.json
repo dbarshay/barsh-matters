@@ -362,7 +362,8 @@
     "verify:direct-payment-backend-balance-guard-canonical-safety": "node scripts/verify-direct-payment-backend-balance-guard-canonical-safety.mjs",
     "verify:direct-visible-popup-standardization-safety": "node scripts/verify-direct-visible-popup-standardization-safety.mjs",
     "verify:document-view-open-behavior-safety": "node scripts/verify-document-view-open-behavior-safety.cjs",
-    "verify:master-close-lawsuit-popup-safety": "node scripts/verify-master-close-lawsuit-popup-safety.cjs"
+    "verify:master-close-lawsuit-popup-safety": "node scripts/verify-master-close-lawsuit-popup-safety.cjs",
+    "verify:master-note-popup-persistence-safety": "node scripts/verify-master-note-popup-persistence-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

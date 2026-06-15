@@ -2125,6 +2125,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       }
 
       setMasterLawsuitMetadata(json.lawsuit || null);
+      setMasterNotes(parseMasterNotesFromMetadata(json.lawsuit || null));
     } catch {
       setMasterLawsuitMetadata(null);
     }
@@ -2296,6 +2297,80 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
 
   function masterNoteUserName(): string {
     return "Dave";
+  }
+
+  type MasterNoteEntry = {
+    id: string;
+    note: string;
+    timestamp: string;
+    user: string;
+    editedAt?: string;
+  };
+
+  function parseMasterNotesFromMetadata(lawsuitInput?: any): MasterNoteEntry[] {
+    const local: any = lawsuitInput || masterLawsuitMetadata || {};
+    const options = local?.lawsuitOptions && typeof local.lawsuitOptions === "object" && !Array.isArray(local.lawsuitOptions) ? local.lawsuitOptions : {};
+    const raw = clean(local?.lawsuitNotes) || clean(options?.lawsuitNotes) || clean(options?.notes);
+    if (!raw) return [];
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((entry: any, index: number) => ({
+          id: clean(entry?.id) || String(Date.now()) + "-" + String(index) + "-note",
+          note: clean(entry?.note),
+          timestamp: clean(entry?.timestamp) || new Date().toLocaleString(),
+          user: clean(entry?.user) || masterNoteUserName(),
+          ...(clean(entry?.editedAt) ? { editedAt: clean(entry.editedAt) } : {}),
+        }))
+        .filter((entry: any) => clean(entry.note));
+    } catch {
+      return raw ? [{ id: String(Date.now()) + "-legacy-note", note: raw, timestamp: new Date().toLocaleString(), user: masterNoteUserName() }] : [];
+    }
+  }
+
+  async function persistMasterNotes(nextNotes: MasterNoteEntry[]): Promise<boolean> {
+    const masterLawsuitId = clean(value);
+    if (kind !== "master" || !masterLawsuitId) {
+      window.alert("Cannot save note because no Master Lawsuit ID is available.");
+      return false;
+    }
+
+    const local: any = masterLawsuitMetadata || {};
+    const options = masterLawsuitOptions();
+    const serializedNotes = JSON.stringify(nextNotes);
+    const payload = {
+      masterLawsuitId,
+      venue: clean(local?.venue) || clean(options?.venue),
+      venueSelection: clean(local?.venueSelection) || clean(options?.venueSelection),
+      venueOther: clean(local?.venueOther) || clean(options?.venueOther),
+      indexAaaNumber: clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber),
+      adversaryAttorney: clean(options?.adversaryAttorney),
+      dateFiled: clean(options?.dateFiled) || clean(local?.dateFiled),
+      status: clean(options?.status || options?.matterStatus || options?.workflowStatus),
+      amountSoughtMode: clean(local?.amountSoughtMode) || clean(options?.amountSoughtMode),
+      customAmountSought: clean(local?.customAmountSought) || clean(options?.customAmountSought),
+      lawsuitNotes: serializedNotes,
+      notes: serializedNotes,
+    };
+
+    const response = await fetch("/api/lawsuits/update-metadata", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(payload),
+    });
+
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json?.ok) {
+      window.alert(json?.error || "Note could not be saved locally.");
+      return false;
+    }
+
+    setMasterLawsuitMetadata(json.lawsuit || null);
+    setMasterInfoOverrides((current) => ({ ...current, lawsuitNotes: serializedNotes, notes: serializedNotes }));
+    return true;
   }
 
   function masterAuditMatterRows() {
@@ -2863,26 +2938,27 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     setMasterNoteEditingId(null);
   }
 
-  function saveMasterNote() {
+  async function saveMasterNote() {
     const note = clean(masterNoteDraft);
     if (!note) return;
 
     if (masterNoteEditingId) {
       const existingNote = masterNotes.find((entry) => entry.id === masterNoteEditingId);
       const before = existingNote?.note || "";
-
-      setMasterNotes((prev) =>
-        prev.map((entry) =>
-          entry.id === masterNoteEditingId
-            ? {
-                ...entry,
-                note,
-                editedAt: new Date().toLocaleString(),
-                user: entry.user || masterNoteUserName(),
-              }
-            : entry
-        )
+      const nextNotes = masterNotes.map((entry) =>
+        entry.id === masterNoteEditingId
+          ? {
+              ...entry,
+              note,
+              editedAt: new Date().toLocaleString(),
+              user: entry.user || masterNoteUserName(),
+            }
+          : entry
       );
+
+      const persisted = await persistMasterNotes(nextNotes);
+      if (!persisted) return;
+      setMasterNotes(nextNotes);
 
       void writeMasterAuditEntry({
         action: "master_note_edited",
@@ -2893,6 +2969,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
         newValue: note,
         details: {
           noteId: masterNoteEditingId,
+          localLawsuitPersisted: true,
         },
       });
 
@@ -2900,17 +2977,20 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       return;
     }
 
-    const noteId = `${Date.now()}-note`;
-
-    setMasterNotes((prev) => [
+    const noteId = String(Date.now()) + "-note";
+    const nextNotes = [
       {
         id: noteId,
         note,
         timestamp: new Date().toLocaleString(),
         user: masterNoteUserName(),
       },
-      ...prev,
-    ]);
+      ...masterNotes,
+    ];
+
+    const persisted = await persistMasterNotes(nextNotes);
+    if (!persisted) return;
+    setMasterNotes(nextNotes);
 
     void writeMasterAuditEntry({
       action: "master_note_added",
@@ -2921,6 +3001,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       newValue: note,
       details: {
         noteId,
+        localLawsuitPersisted: true,
       },
     });
 
@@ -2938,12 +3019,16 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     setMasterNoteDeleteTarget(null);
   }
 
-  function confirmDeleteMasterNote() {
+  async function confirmDeleteMasterNote() {
     if (!masterNoteDeleteTarget?.id) return;
 
     const deletedNote = masterNoteDeleteTarget.note || "";
+    const deletedNoteId = masterNoteDeleteTarget.id;
+    const nextNotes = masterNotes.filter((entry) => entry.id !== deletedNoteId);
 
-    setMasterNotes((prev) => prev.filter((entry) => entry.id !== masterNoteDeleteTarget.id));
+    const persisted = await persistMasterNotes(nextNotes);
+    if (!persisted) return;
+    setMasterNotes(nextNotes);
 
     void writeMasterAuditEntry({
       action: "master_note_deleted",
@@ -2953,7 +3038,8 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       priorValue: deletedNote,
       newValue: null,
       details: {
-        noteId: masterNoteDeleteTarget.id,
+        noteId: deletedNoteId,
+        localLawsuitPersisted: true,
       },
     });
 
@@ -10421,303 +10507,183 @@ function masterSettlementDateFiledValue(): string {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Confirm note deletion"
+                onClick={closeDeleteMasterNoteDialog}
+                onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeDeleteMasterNoteDialog(); } }}
+                tabIndex={-1}
                 style={{
                   position: "fixed",
                   inset: 0,
-                  zIndex: 50000,
-                  display: "block",
-                  padding: 0,
-                  overflow: "hidden",
+                  zIndex: 50001,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={closeDeleteMasterNoteDialog}
               >
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    confirmDeleteMasterNote();
-                  }}
+                <div
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    position: "fixed",
-                    top: masterSettlementPopupPosition.y,
-                    left: `calc(50% + ${masterSettlementPopupPosition.x}px)`,
-                    transform: "translateX(-50%)",
-                    width: "min(360px, 94vw)",
-                    display: "grid",
-                    gap: 16,
-                    padding: 20,
-                    border: "1px solid #ea580c",
+                    width: "min(440px, calc(100vw - 48px))",
+                    border: "1px solid #1e3a8a",
                     borderRadius: 18,
-                    background: "#fff7ed",
-                    boxShadow: "0 30px 90px rgba(15, 23, 42, 0.38)",
+                    background: "#ffffff",
+                    boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+                    overflow: "hidden",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 950,
-                      color: "#c2410c",
-                      textAlign: "center",
-                    }}
-                  >
-                    Delete Note?
+                  <div style={{ padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>Delete Note?</h2>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 10,
-                    }}
-                  >
-                    <button
-                      ref={masterNoteDeleteConfirmButtonRef}
-                      type="submit"
-                      style={{
-                        height: 42,
-                        border: "1px solid #ea580c",
-                        borderRadius: 12,
-                        background: "#fff7ed",
-                        color: "#c2410c",
-                        fontWeight: 950,
-                        fontSize: 14,
-                        cursor: "pointer",
-                        boxShadow: "0 8px 24px rgba(220, 38, 38, 0.22)",
-                      }}
-                    >
-                      Confirm
-                    </button>
-
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "18px 20px", background: "#ffffff" }}>
                     <button
                       type="button"
                       onClick={closeDeleteMasterNoteDialog}
                       style={{
-                        height: 42,
-                        border: "1px solid #ea580c",
-                        borderRadius: 12,
-                        background: "#fff7ed",
-                        color: "#c2410c",
+                        minWidth: 110,
+                        height: 40,
+                        border: "1px solid #dc2626",
+                        borderRadius: 10,
+                        background: "#dc2626",
+                        color: "#ffffff",
                         fontWeight: 900,
-                        fontSize: 14,
                         cursor: "pointer",
                       }}
                     >
                       Cancel
                     </button>
+                    <button
+                      ref={masterNoteDeleteConfirmButtonRef}
+                      type="button"
+                      onClick={() => void confirmDeleteMasterNote()}
+                      style={{
+                        minWidth: 110,
+                        height: 40,
+                        border: "1px solid #b91c1c",
+                        borderRadius: 10,
+                        background: "#b91c1c",
+                        color: "#ffffff",
+                        fontWeight: 950,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
-                </form>
+                </div>
               </div>
             )}
-
 
             {masterNoteDialogOpen && activeMasterWorkspaceTab === "payments" && (
               <div
                 role="dialog"
                 aria-modal="true"
-                aria-label="Master Lawsuit note popup"
+                aria-label={masterNoteEditingId ? "Edit Note" : "Add Note"}
+                onClick={closeMasterNoteDialog}
+                onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterNoteDialog(); } }}
+                tabIndex={-1}
                 style={{
                   position: "fixed",
                   inset: 0,
                   zIndex: 50000,
-                  display: "block",
-                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
                   overflow: "hidden",
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={closeMasterNoteDialog}
               >
                 <div
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    position: "fixed",
-                    top: 154,
-                    left: "50%",
-                    transform: "translateX(-50%)",
                     width: "min(720px, 94vw)",
-                    maxHeight: "calc(100vh - 178px)",
-                    overflowY: "auto",
-                    border: "1px solid #ea580c",
-                    borderRadius: 22,
-                    background: "#fff7ed",
-                    boxShadow: "0 30px 90px rgba(15, 23, 42, 0.38)",
+                    maxHeight: "88vh",
+                    overflow: "hidden",
+                    border: "1px solid #1e3a8a",
+                    borderRadius: 18,
+                    background: "#ffffff",
+                    boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
-                  <div
-                    data-barsh-draggable-settlement-popup-header="true"
-                    onPointerDown={beginMasterSettlementPopupDrag}
-                    title="Drag to move this settlement popup."
-                    style={{
-                      position: "sticky",
-                      top: 0,
-                      zIndex: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: 12,
-                      padding: "16px 18px",
-                      borderBottom: "1px solid #dbe4f0",
-                      background: "#fff7ed",
-                      borderTopLeftRadius: 22,
-                      borderTopRightRadius: 22,
-                      cursor: masterSettlementPopupDragging ? "grabbing" : "grab",
-                      userSelect: "none",
-                      touchAction: "none",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 950,
-                          color: "#c2410c",
-                        }}
-                      >
-                        {masterNoteEditingId ? "Edit Note" : "Add Note"}
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 3,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "#c2410c",
-                        }}
-                      >
-                        Master Lawsuit note · By {masterNoteUserName()} · Local UI log only until persistent Audit/History is wired.
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={closeMasterNoteDialog}
-                      style={{
-                        width: 38,
-                        height: 38,
-                        border: "1px solid #ea580c",
-                        borderRadius: 999,
-                        background: "#fff7ed",
-                        color: "#c2410c",
-                        fontSize: 26,
-                        fontWeight: 900,
-                        cursor: "pointer",
-                        lineHeight: 1,
-                      }}
-                      aria-label="Close note popup"
-                    >
-                      ×
-                    </button>
+                  <div style={{ padding: "16px 20px", background: "#1e3a8a", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>{masterNoteEditingId ? "Edit Note" : "Add Note"}</h2>
                   </div>
 
                   <form
                     onSubmit={(event) => {
                       event.preventDefault();
-                      saveMasterNote();
+                      void saveMasterNote();
                     }}
-                    style={{
-                      display: "grid",
-                      gap: 14,
-                      padding: 18,
-                    }}
+                    style={{ display: "contents" }}
                   >
-                    <label
-                      style={{
-                        display: "grid",
-                        gap: 7,
-                        fontSize: 12,
-                        fontWeight: 950,
-                        color: "#c2410c",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      Note
-                      <textarea
-                        ref={masterNoteTextareaRef}
-                        value={masterNoteDraft}
-                        onChange={(event) => setMasterNoteDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key !== "Enter") return;
-                          if (!event.metaKey && !event.ctrlKey) return;
+                    <div style={{ padding: 20, display: "grid", gap: 14, overflowY: "auto", background: "#ffffff" }}>
+                      <label style={{ display: "grid", gap: 7, fontSize: 12, fontWeight: 950, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Note
+                        <textarea
+                          ref={masterNoteTextareaRef}
+                          value={masterNoteDraft}
+                          onChange={(event) => setMasterNoteDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter") return;
+                            if (!event.metaKey && !event.ctrlKey) return;
 
-                          event.preventDefault();
-                          saveMasterNote();
-                        }}
-                        placeholder="Type note here..."
-                        style={{
-                          width: "100%",
-                          minHeight: 160,
-                          border: "1px solid #ea580c",
-                          borderRadius: 12,
-                          padding: "11px 12px",
-                          background: "#fff",
-                          color: "#c2410c",
-                          fontSize: 15,
-                          fontWeight: 750,
-                          lineHeight: 1.4,
-                          outline: "none",
-                          resize: "vertical",
-                          textTransform: "none",
-                          letterSpacing: 0,
-                        }}
-                      />
-                    </label>
-
-                    <div
-                      style={{
-                        padding: "7px 10px",
-                        border: "1px solid #ea580c",
-                        borderRadius: 12,
-                        background: "#fff7ed",
-                        color: "#c2410c",
-                        fontSize: 13,
-                        fontWeight: 850,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      Press Command+Enter or Ctrl+Enter to save.  Press Esc to cancel.  Plain Enter creates a new line.
+                            event.preventDefault();
+                            void saveMasterNote();
+                          }}
+                          placeholder="Type note here..."
+                          style={{
+                            width: "100%",
+                            minHeight: 160,
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 12,
+                            padding: "11px 12px",
+                            background: "#ffffff",
+                            color: "#0f172a",
+                            fontSize: 15,
+                            fontWeight: 750,
+                            lineHeight: 1.4,
+                            outline: "none",
+                            resize: "vertical",
+                            textTransform: "none",
+                            letterSpacing: 0,
+                          }}
+                        />
+                      </label>
                     </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 10,
-                        paddingTop: 4,
-                      }}
-                    >
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
                       <button
                         type="button"
                         onClick={closeMasterNoteDialog}
                         style={{
                           minWidth: 110,
-                          height: 42,
-                          border: "1px solid #ea580c",
-                          borderRadius: 12,
-                          background: "#fff7ed",
-                          color: "#c2410c",
+                          height: 40,
+                          border: "1px solid #dc2626",
+                          borderRadius: 10,
+                          background: "#dc2626",
+                          color: "#ffffff",
                           fontWeight: 900,
-                          fontSize: 14,
                           cursor: "pointer",
                         }}
                       >
                         Cancel
                       </button>
-
                       <button
                         type="submit"
                         disabled={!clean(masterNoteDraft)}
-                        title="Save note to the local notes log."
                         style={{
-                          minWidth: 150,
-                          height: 42,
-                          border: "1px solid #ea580c",
-                          borderRadius: 12,
+                          minWidth: 128,
+                          height: 40,
+                          border: "1px solid #15803d",
+                          borderRadius: 10,
                           background: clean(masterNoteDraft) ? "#16a34a" : "#bbf7d0",
                           color: clean(masterNoteDraft) ? "#ffffff" : "#166534",
                           fontWeight: 950,
-                          fontSize: 14,
                           cursor: clean(masterNoteDraft) ? "pointer" : "not-allowed",
-                          boxShadow: clean(masterNoteDraft) ? "0 8px 24px rgba(22, 163, 74, 0.22)" : "none",
                         }}
                       >
                         {masterNoteEditingId ? "Save Changes" : "Save Note"}
@@ -10727,7 +10693,6 @@ function masterSettlementDateFiledValue(): string {
                 </div>
               </div>
             )}
-
 
             {masterInfoEditDialog && activeMasterWorkspaceTab === "payments" && (
               <div
