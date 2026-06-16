@@ -36,6 +36,15 @@ if (matter.includes("/api/court-calendar/events") || matter.includes('data-barsh
   failures.push("direct matter page contains Court Calendar workflow wiring");
 }
 
+
+if (!page.includes("function selectedCourtCalendarReportTitle()")) failures.push("page missing report-type title helper");
+if (!page.includes("function printableCourtCalendarReportTable(groupEvents")) failures.push("page missing report-type printable table helper");
+if (!page.includes("Report Type: \" + selectedCourtCalendarReportTitle()")) failures.push("page missing report type in printable filter summary");
+if (!page.includes("reportType === \"appearance-calendar\"")) failures.push("page missing appearance-calendar output branch");
+if (!page.includes("reportType === \"trial-calendar\"")) failures.push("page missing trial-calendar output branch");
+if (!page.includes("barsh-matters-${selectedCourtCalendarReportSlug()}")) failures.push("page missing report-type XLSX filename wiring");
+if (!page.includes("selectedCourtCalendarReportSheetName()")) failures.push("page missing report-type XLSX sheet wiring");
+
 if (failures.length) {
   console.error("FAIL: court calendar page safety");
   for (const failure of failures) console.error(`- ${failure}`);
