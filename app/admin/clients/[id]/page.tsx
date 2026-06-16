@@ -306,7 +306,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
   const [checkNumber, setCheckNumber] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState<"" | "remittance" | "individual" | "lawsuits">("");
+  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState<"" | "remittance" | "individual" | "lawsuits" | "attorney_fees">("");
   const [matterPanelSortField, setMatterPanelSortField] = useState("matter");
   const [matterPanelSortDirection, setMatterPanelSortDirection] = useState<"asc" | "desc">("asc");
   const [lawsuitPanelSortField, setLawsuitPanelSortField] = useState("lawsuit");
@@ -359,6 +359,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
   const client = data?.client;
   const remittanceRows = data?.remittance?.rows || [];
+  const attorneyFeeRows = remittanceRows.filter((row: any) => String(row?.transactionType || "").trim().toLowerCase() === "attorney fee");
   const matterRows = data?.matters?.rows || [];
   const matterPanelTotals = useMemo(
     () =>
@@ -629,6 +630,42 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         "Void Reason": row.voidReason,
       })),
     [remittanceRows]
+  );
+
+  const attorneyFeeCsvRows = useMemo(
+    () =>
+      attorneyFeeRows.map((row: any) => ({
+        Matter: row.matter,
+        Patient: row.patient,
+        Provider: row.provider,
+        Insurer: row.insurer,
+        Lawsuit: row.lawsuit,
+        "Date of Service": providerPanelDateRange(row),
+        "Transaction Date": row.transactionDate,
+        "Transaction Type": row.transactionType,
+        Status: row.transactionStatus,
+        "Posting Context": row.postingContext,
+        Amount: row.amount,
+        "Check Date": row.checkDate,
+        "Check Number": row.checkNumber,
+        Voided: row.isVoided ? "Yes" : "No",
+        "Void Reason": row.voidReason,
+      })),
+    [attorneyFeeRows]
+  );
+
+  const attorneyFeeReportTotals = useMemo(
+    () =>
+      attorneyFeeRows.reduce(
+        (totals: { count: number; activeTotal: number; voidedTotal: number }, row: any) => {
+          totals.count += 1;
+          if (row?.isVoided) totals.voidedTotal += Number(row?.amount || 0);
+          else totals.activeTotal += Number(row?.amount || 0);
+          return totals;
+        },
+        { count: 0, activeTotal: 0, voidedTotal: 0 }
+      ),
+    [attorneyFeeRows]
   );
 
   const matterCsvRows = useMemo(
@@ -1063,6 +1100,14 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             >
               Lawsuit Matters
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "attorney_fees" ? "" : "attorney_fees")}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #b45309", background: activeWorkflowPanel === "attorney_fees" ? "#b45309" : "linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)", color: activeWorkflowPanel === "attorney_fees" ? "#fff" : "#0f172a" }}
+              data-barsh-attorney-fee-report-button="true"
+            >
+              Attorney Fee Report
+            </button>
           </div>
         </div>
       </section>
@@ -1350,6 +1395,110 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                   <tr>
                     <td style={tdStyle} colSpan={10}>
                       No individual matters matched this client/provider reference name or aliases.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {activeWorkflowPanel === "attorney_fees" && (
+        <section style={{ ...cardStyle, marginBottom: 18 }} data-barsh-attorney-fee-report-panel="true">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Attorney Fee Report</h2>
+              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                Admin-only report for Attorney Fee receipts. These rows are not part of provider invoice/remittance calculations.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => downloadCsv(`${client?.displayName || "Client"} - Attorney Fee Report.csv`, attorneyFeeCsvRows)}
+              disabled={!attorneyFeeCsvRows.length}
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: attorneyFeeCsvRows.length ? "#fff" : "#f1f5f9", fontWeight: 800 }}
+            >
+              Export CSV
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Rows</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{attorneyFeeReportTotals.count}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Active Attorney Fee</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(attorneyFeeReportTotals.activeTotal)}</div>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Voided Attorney Fee</div>
+              <div style={{ fontSize: 24, fontWeight: 950 }}>{money(attorneyFeeReportTotals.voidedTotal)}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12, border: "1px solid #fde68a", borderRadius: 12, padding: 12, background: "#fffbeb", color: "#92400e", lineHeight: 1.45, fontWeight: 800 }}>
+            Attorney Fee is a separate non-remittance payment type. This report reads local child-ledger receipt rows only and does not create invoices, write remittances, update ClaimIndex, or update Clio.
+          </div>
+
+          <div style={{ overflowX: "auto", maxHeight: 420 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1160 }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Matter</th>
+                  <th style={thStyle}>Patient</th>
+                  <th style={thStyle}>Provider</th>
+                  <th style={thStyle}>Insurer</th>
+                  <th style={thStyle}>Lawsuit</th>
+                  <th style={thStyle}>Date of Service</th>
+                  <th style={thStyle}>Transaction Date</th>
+                  <th style={thStyle}>Check Date</th>
+                  <th style={thStyle}>Check Number</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attorneyFeeRows.map((row: any) => {
+                  const matterHref = providerMatterHref(row.matter);
+                  const lawsuitHref = providerLawsuitHref(row.lawsuit);
+                  return (
+                    <tr key={`attorney-fee-${row.id || row.matter}-${row.checkNumber}-${row.amount}`}>
+                      <td style={tdStyle}>
+                        {matterHref ? (
+                          <Link href={matterHref} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+                            {row.matter}
+                          </Link>
+                        ) : (
+                          row.matter || "—"
+                        )}
+                      </td>
+                      <td style={tdStyle}>{row.patient || "—"}</td>
+                      <td style={tdStyle}>{row.provider || "—"}</td>
+                      <td style={tdStyle}>{row.insurer || "—"}</td>
+                      <td style={tdStyle}>
+                        {lawsuitHref ? (
+                          <Link href={lawsuitHref} style={{ color: "#2563eb", fontWeight: 800, textDecoration: "none" }}>
+                            {row.lawsuit}
+                          </Link>
+                        ) : (
+                          row.lawsuit || "—"
+                        )}
+                      </td>
+                      <td style={tdStyle}>{providerPanelDateRange(row) || "—"}</td>
+                      <td style={tdStyle}>{row.transactionDate || "—"}</td>
+                      <td style={tdStyle}>{row.checkDate || "—"}</td>
+                      <td style={tdStyle}>{row.checkNumber || "—"}</td>
+                      <td style={tdStyle}>{row.transactionStatus || "—"}{row.isVoided ? " · Voided" : ""}</td>
+                      <td style={tdStyle}>{money(row.amount)}</td>
+                    </tr>
+                  );
+                })}
+                {!attorneyFeeRows.length && (
+                  <tr>
+                    <td style={tdStyle} colSpan={11}>
+                      No Attorney Fee receipt rows matched the selected status/date/check filters.
                     </td>
                   </tr>
                 )}
