@@ -23,6 +23,12 @@ function mustContain(label, text, needle) {
   }
 }
 
+function mustNotContain(label, text, needle) {
+  if (text.includes(needle)) fail(`${label}: unexpectedly found ${needle}`);
+  pass(label);
+}
+
+
 function mustNotMatch(label, text, pattern, description) {
   if (!pattern.test(text)) {
     pass(`${label}: does not match ${description}`);
@@ -123,7 +129,7 @@ mustNotMatch("admin client detail route", route, /remittance\.(create|update|ups
 
 console.log("");
 console.log("=== VERIFY ADMIN CLIENT PAGE STATES CHILD-MATTER REPORTING CONTRACT ===");
-mustContain("admin client page", page, "Invoicing / Remittance Preview");
+mustNotContain("admin client page obsolete inline remittance preview", page, "Invoicing / Remittance Preview");
 mustContain("admin client page", page, "Provider Workflow Hub");
 mustContain("admin client page", page, "Lawsuit Matters");
 mustContain("admin client page", page, "Individual Matters");
@@ -149,9 +155,9 @@ mustContain("admin client invoice page", invoicePage, "Export CSV");
 mustContain("admin client invoice page", invoicePage, "/api/admin/clients");
 mustContain("admin client page", page, "activeWorkflowPanel");
 mustContain("admin client page", page, "setActiveWorkflowPanel");
-mustContain("admin client page", page, "Child-matter-based local payment reporting");
-mustContain("admin client page", page, "Lawsuit-page payments appear here only through allocated child MatterPaymentReceipt rows");
-mustContain("admin client page", page, "This preview does not create invoices, write remittances, or update Clio");
+mustNotContain("admin client page obsolete inline remittance copy", page, "Child-matter-based local payment reporting");
+mustNotContain("admin client page obsolete inline lawsuit allocation copy", page, "Lawsuit-page payments appear here only through allocated child MatterPaymentReceipt rows");
+mustNotContain("admin client page obsolete inline preview copy", page, "This preview does not create invoices, write remittances, or update Clio");
 mustContain("admin client page", page, "Individual Matters");
 mustContain("admin client page", page, "Export CSV");
 mustContain("admin client page", page, "downloadCsv");

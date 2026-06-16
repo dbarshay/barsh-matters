@@ -306,7 +306,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
   const [checkNumber, setCheckNumber] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState<"" | "remittance" | "individual" | "lawsuits" | "attorney_fees">("");
+  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState<"" | "individual" | "lawsuits" | "attorney_fees">("");
   const [matterPanelSortField, setMatterPanelSortField] = useState("matter");
   const [matterPanelSortDirection, setMatterPanelSortDirection] = useState<"asc" | "desc">("asc");
   const [lawsuitPanelSortField, setLawsuitPanelSortField] = useState("lawsuit");
@@ -610,27 +610,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       setSavingClient(false);
     }
   }
-
-  const remittanceCsvRows = useMemo(
-    () =>
-      remittanceRows.map((row: any) => ({
-        Matter: row.matter,
-        Patient: row.patient,
-        Provider: row.provider,
-        Insurer: row.insurer,
-        Lawsuit: row.lawsuit,
-        "Transaction Date": row.transactionDate,
-        "Transaction Type": row.transactionType,
-        Status: row.transactionStatus,
-        "Posting Context": row.postingContext,
-        Amount: row.amount,
-        "Check Date": row.checkDate,
-        "Check Number": row.checkNumber,
-        Voided: row.isVoided ? "Yes" : "No",
-        "Void Reason": row.voidReason,
-      })),
-    [remittanceRows]
-  );
 
   const attorneyFeeCsvRows = useMemo(
     () =>
@@ -1080,14 +1059,13 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         <div style={providerHubCardStyle}>
           <h2 style={providerHubSectionTitleStyle}>Provider Workflow Hub</h2>
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <button
-              type="button"
-              onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "remittance" ? "" : "remittance")}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #1d4ed8", background: activeWorkflowPanel === "remittance" ? "#1d4ed8" : "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: activeWorkflowPanel === "remittance" ? "#fff" : "#0f172a" }}
-              data-barsh-provider-remittance-preview-button="true"
+            <Link
+              href={`/admin/clients/${encodeURIComponent(id)}/invoice`}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #1d4ed8", background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: "#0f172a", textDecoration: "none" }}
+              data-barsh-provider-invoice-workflow-link="true"
             >
               Invoicing / Remittance
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "individual" ? "" : "individual")}
@@ -1205,102 +1183,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
         {saveMessage && <div style={{ marginTop: 10, color: "#166534", fontWeight: 800 }}>{saveMessage}</div>}
       </section>
-
-      {activeWorkflowPanel === "remittance" && (
-        <>
-          <section style={{ ...cardStyle, marginBottom: 18 }}>
-            <h2 style={{ marginTop: 0 }}>Invoicing / Remittance Preview</h2>
-            <p style={{ marginTop: -4, color: "#475569", lineHeight: 1.45 }}>
-              Child-matter-based local payment reporting. Lawsuit-page payments appear here only through allocated child MatterPaymentReceipt rows.
-              This preview does not create invoices, write remittances, or update Clio.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(150px, 1fr))", gap: 12, alignItems: "end" }}>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Status
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }}>
-                  <option value="posted">Posted only</option>
-                  <option value="voided">Voided only</option>
-                  <option value="all">All</option>
-                </select>
-              </label>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Transaction Type
-                <input value={transactionType} onChange={(event) => setTransactionType(event.target.value)} placeholder="Collection" style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
-              </label>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Posting Context
-                <input value={postingContext} onChange={(event) => setPostingContext(event.target.value)} placeholder="lawsuit-allocation" style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
-              </label>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Check Number
-                <input value={checkNumber} onChange={(event) => setCheckNumber(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
-              </label>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Date From
-                <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
-              </label>
-              <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
-                Date To
-                <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
-              </label>
-            </div>
-
-            <div style={{ display: "flex", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                onClick={() => id && loadDetail(id).catch((err) => setError(err?.message || "Could not refresh remittance."))}
-                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #0f172a", background: "#0f172a", color: "#fff", fontWeight: 800 }}
-              >
-                Preview
-              </button>
-              <Link
-                href={`/admin/clients/${encodeURIComponent(id)}/invoice`}
-                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #1d4ed8", background: "#ffffff", color: "#1d4ed8", fontWeight: 900, textDecoration: "none" }}
-                data-barsh-open-full-invoice-workflow-link="true"
-              >
-                Open Full Invoice Workflow
-              </Link>
-              <button
-                type="button"
-                onClick={() => downloadCsv(`${client?.displayName || "Client"} - Remittance Preview.csv`, remittanceCsvRows)}
-                disabled={!remittanceCsvRows.length}
-                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: remittanceCsvRows.length ? "#fff" : "#f1f5f9", fontWeight: 800 }}
-              >
-                Export CSV
-              </button>
-            </div>
-          </section>
-
-          <section style={{ ...cardStyle, marginBottom: 18 }}>
-            <h2 style={{ marginTop: 0 }}>Transaction Type Totals</h2>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Transaction Type</th>
-                    <th style={thStyle}>Active Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data?.remittance?.totalsByType || []).map((row) => (
-                    <tr key={row.transactionType}>
-                      <td style={tdStyle}>{row.transactionType}</td>
-                      <td style={tdStyle}>{money(row.amount)}</td>
-                    </tr>
-                  ))}
-                  {!data?.remittance?.totalsByType?.length && (
-                    <tr>
-                      <td style={tdStyle} colSpan={2}>
-                        No active receipt totals found for the selected filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </>
-      )}
 
       {activeWorkflowPanel === "individual" && (
         <section style={{ ...cardStyle, marginBottom: 18 }}>

@@ -375,7 +375,7 @@
     "verify:payment-types-clean-taxonomy-safety": "node scripts/verify-payment-types-clean-taxonomy-safety.mjs",
     "verify:direct-provider-remittance-treatment-safety": "node scripts/verify-direct-provider-remittance-treatment-safety.mjs",
     "verify:attorney-fee-report-panel-safety": "node scripts/verify-attorney-fee-report-panel-safety.mjs",
-    "verify:provider-hub-remittance-preview-button-safety": "node scripts/verify-provider-hub-remittance-preview-button-safety.mjs"
+    "verify:provider-hub-invoice-link-safety": "node scripts/verify-provider-hub-invoice-link-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
