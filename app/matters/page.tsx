@@ -526,7 +526,7 @@ export default function FilteredMattersPage() {
   const [masterCourtDatesListError, setMasterCourtDatesListError] = useState("");
   const [masterAddCourtDateForm, setMasterAddCourtDateForm] = useState({ eventDate: "", eventTime: "09:30", court: "", calendarNumber: "", judgeOrArbitrator: "", appearanceType: "", notes: "" });
   const [masterEditCourtDatesDialogOpen, setMasterEditCourtDatesDialogOpen] = useState(false);
-  const [masterEditCourtDatesSavingId, setMasterEditCourtDatesSavingId] = useState<number | null>(null);
+  const [masterEditCourtDatesSavingId, setMasterEditCourtDatesSavingId] = useState<string | null>(null);
   const [masterEditCourtDatesResult, setMasterEditCourtDatesResult] = useState<any>(null);
   const [masterEditCourtDatesSelectedId, setMasterEditCourtDatesSelectedId] = useState<string>("");
   const [masterEditCourtDatesSelectedEvent, setMasterEditCourtDatesSelectedEvent] = useState<any>(null);
@@ -2703,7 +2703,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       return;
     }
 
-    setMasterEditCourtDatesSavingId(hasEventId ? Number(eventId) || null : null);
+    setMasterEditCourtDatesSavingId(eventKey);
     setMasterEditCourtDatesResult(null);
     try {
       const response = await fetch("/api/court-calendar/events", {
@@ -2768,7 +2768,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     const eventKey = masterCourtDateEventKey(courtEvent);
     const eventId = eventKey;
     const form = masterEditCourtDatesForms[eventKey] || masterCourtDateEditFormFromEvent(courtEvent);
-    const saving = masterEditCourtDatesSavingId === (Number(eventId) || null);
+    const saving = masterEditCourtDatesSavingId === eventKey;
     return (
       <div key={eventKey || `${courtEvent.eventDate}-${courtEvent.eventTime}-${courtEvent.appearanceType}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, background: "#ffffff", padding: 12, display: "grid", gap: 10, minWidth: 0, overflow: "hidden", boxSizing: "border-box" }} data-barsh-master-edit-court-date-row="true">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, minWidth: 0 }}>

@@ -44,6 +44,12 @@ mustNotContain(page, 'error: "No Court Date is selected."', "stale no-selection 
 
 mustContain(page, "masterEditCourtDatesSelectedId", "edit popup must track selected Court Date id");
 mustContain(page, 'useState<string>("")', "edit popup selected Court Date id must use stable string state");
+mustContain(page, "const [masterEditCourtDatesSavingId, setMasterEditCourtDatesSavingId] = useState<string | null>(null);", "edit popup saving state must use stable string event keys, not numeric ids");
+mustContain(page, "setMasterEditCourtDatesSavingId(eventKey);", "save handler must set saving state to stable event key");
+mustContain(page, "const saving = masterEditCourtDatesSavingId === eventKey;", "edit row saving comparison must use stable event key");
+mustNotContain(page, "setMasterEditCourtDatesSavingId(hasEventId ? Number(eventId) || null : null);", "saving state must not coerce string event ids through Number()");
+mustNotContain(page, "masterEditCourtDatesSavingId === (Number(eventId) || null)", "saving comparison must not treat non-numeric string ids as null");
+
 mustContain(page, "function masterEditableCourtDatesInDisplayOrder()", "edit popup must provide chooser display order");
 mustContain(page, "function selectedMasterEditCourtDate()", "edit popup must provide selected Court Date helper");
 mustContain(page, "function masterCourtDateChoiceLabel", "edit popup must render readable Court Date choices");
