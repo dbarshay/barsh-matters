@@ -370,7 +370,8 @@
     "verify:master-settlement-popup-safety": "node scripts/verify-master-settlement-popup-safety.cjs",
     "verify:master-generate-documents-popup-safety": "node scripts/verify-master-generate-documents-popup-safety.cjs",
     "verify:master-court-dates-status-box-safety": "node scripts/verify-master-court-dates-status-box-safety.mjs",
-    "verify:master-court-dates-edit-safety": "node scripts/verify-master-court-dates-edit-safety.mjs"
+    "verify:master-court-dates-edit-safety": "node scripts/verify-master-court-dates-edit-safety.mjs",
+    "verify:court-calendar-report-output-safety": "node scripts/verify-court-calendar-report-output-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
