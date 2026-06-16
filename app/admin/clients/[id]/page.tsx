@@ -1080,12 +1080,14 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         <div style={providerHubCardStyle}>
           <h2 style={providerHubSectionTitleStyle}>Provider Workflow Hub</h2>
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <Link
-              href={`/admin/clients/${encodeURIComponent(id)}/invoice`}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #1d4ed8", background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: "#0f172a", textDecoration: "none" }}
+            <button
+              type="button"
+              onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "remittance" ? "" : "remittance")}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #1d4ed8", background: activeWorkflowPanel === "remittance" ? "#1d4ed8" : "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: activeWorkflowPanel === "remittance" ? "#fff" : "#0f172a" }}
+              data-barsh-provider-remittance-preview-button="true"
             >
               Invoicing / Remittance
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "individual" ? "" : "individual")}
@@ -1251,6 +1253,13 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               >
                 Preview
               </button>
+              <Link
+                href={`/admin/clients/${encodeURIComponent(id)}/invoice`}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #1d4ed8", background: "#ffffff", color: "#1d4ed8", fontWeight: 900, textDecoration: "none" }}
+                data-barsh-open-full-invoice-workflow-link="true"
+              >
+                Open Full Invoice Workflow
+              </Link>
               <button
                 type="button"
                 onClick={() => downloadCsv(`${client?.displayName || "Client"} - Remittance Preview.csv`, remittanceCsvRows)}
