@@ -1223,7 +1223,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               </label>
               <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
                 Transaction Type
-                <input value={transactionType} onChange={(event) => setTransactionType(event.target.value)} placeholder="Collection Payment" style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
+                <input value={transactionType} onChange={(event) => setTransactionType(event.target.value)} placeholder="Collection" style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }} />
               </label>
               <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
                 Posting Context
