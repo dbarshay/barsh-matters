@@ -36,8 +36,11 @@ mustInclude("direct UI blocks aggregated submit", matterPage, 'error: "Payments 
 mustInclude("direct UI posts direct context", matterPage, 'postingContext: "direct-matter"');
 mustInclude("direct UI submit says Post Payment", matterPage, '{paymentApplyLoading ? "Posting..." : "Post Payment"}');
 mustInclude("direct UI has required-field completion helper", matterPage, "function paymentFormRequiredFieldsComplete()");
-mustInclude("direct UI defaults transaction type to Voluntary Payment", matterPage, 'useState("Voluntary Payment")');
+mustInclude("direct UI defaults internally to Voluntary Payment", matterPage, 'useState("Voluntary Payment")');
+mustInclude("direct UI displays Voluntary", matterPage, 'return "Voluntary";');
 mustInclude("direct UI allows Interest transaction type", matterPage, '"Interest"');
+mustInclude("direct UI displays Direct Pay to Provider", matterPage, 'Direct Pay to Provider');
+mustInclude("direct UI includes internal PreC to Provider option", matterPage, '"PreC to Provider"');
 mustNotInclude("direct UI excludes Collection Payment transaction type", matterPage, '"Collection Payment"');
 mustInclude("direct UI disables submit until required fields complete", matterPage, "disabled={paymentFormSubmitDisabled()}");
 mustInclude("direct UI explains disabled submit", matterPage, "Complete all required payment fields before posting.");

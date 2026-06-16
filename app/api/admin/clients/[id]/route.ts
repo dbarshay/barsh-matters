@@ -316,6 +316,35 @@ function receiptStatus(row: any): string {
   return clean(row.transactionStatus || row.transaction_status || row.status);
 }
 
+function isReceiptFeeRecoveryTransactionType(value: unknown): boolean {
+  const type = lower(value);
+  return (
+    type.includes("filing fee") ||
+    type.includes("index fee") ||
+    type.includes("service fee") ||
+    type.includes("court cost") ||
+    type.includes("court costs") ||
+    type.includes("court fee") ||
+    type.includes("court fees")
+  );
+}
+
+function isReceiptDirectProviderTransactionType(value: unknown): boolean {
+  const type = lower(value);
+  return type === "prec to provider" || type === "direct pay to provider" || type === "direct pay to provider (pre-suit)";
+}
+
+function receiptMatchesTransactionTypeFilter(row: any, transactionTypeFilter: string): boolean {
+  if (!transactionTypeFilter) return true;
+  const type = lower(row.transactionType);
+  if (transactionTypeFilter === "principal_interest") {
+    return !isReceiptFeeRecoveryTransactionType(type) && !isReceiptDirectProviderTransactionType(type) && type !== "attorney fee";
+  }
+  if (transactionTypeFilter === "filing_fee_payment") return isReceiptFeeRecoveryTransactionType(type);
+  if (transactionTypeFilter === "direct_pay_to_provider") return isReceiptDirectProviderTransactionType(type);
+  return type.includes(transactionTypeFilter);
+}
+
 function receiptPostingContext(row: any): string {
   return clean(row.postingContext || row.posting_context);
 }
@@ -735,7 +764,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       .filter((row: any) => {
         if (statusFilter === "posted" && row.isVoided) return false;
         if (statusFilter === "voided" && !row.isVoided) return false;
-        if (transactionTypeFilter && !lower(row.transactionType).includes(transactionTypeFilter)) return false;
+        if (!receiptMatchesTransactionTypeFilter(row, transactionTypeFilter)) return false;
         if (checkNumberFilter && !lower(row.checkNumber).includes(checkNumberFilter)) return false;
         if (postingContextFilter && !lower(row.postingContext).includes(postingContextFilter)) return false;
         const rowDate = isoDateOnly(row.transactionDate);

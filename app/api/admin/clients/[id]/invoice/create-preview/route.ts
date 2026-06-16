@@ -46,6 +46,21 @@ function isFeeRecoveryTransactionType(value: unknown) {
   );
 }
 
+function isDirectProviderPaymentTransactionType(value: unknown) {
+  const type = String(value ?? "").trim().toLowerCase();
+  return (
+    type === "prec to provider" ||
+    type === "direct pay to provider" ||
+    type === "direct pay to provider (pre-suit)"
+  );
+}
+
+function receiptLineType(row: any): "receipt" | "filing_fee_payment" | "direct_pay_to_provider" {
+  if (isFeeRecoveryTransactionType(row?.transactionType)) return "filing_fee_payment";
+  if (isDirectProviderPaymentTransactionType(row?.transactionType)) return "direct_pay_to_provider";
+  return "receipt";
+}
+
 function detailValue(details: Record<string, unknown>, keys: string[]): string {
   const hidden =
     details?._hiddenImportFields &&
@@ -110,7 +125,7 @@ function receiptLine(row: any, client: any) {
   const amount = moneyNumber(row?.amount);
 
   return {
-    lineType: isFeeRecoveryTransactionType(row?.transactionType) ? "filing_fee_payment" : "receipt",
+    lineType: receiptLineType(row),
     sourceTable: "MatterPaymentReceipt",
     sourceId: clean(row?.id),
     sortDate: clean(row?.transactionDate || row?.createdAt),
@@ -274,6 +289,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const lines = [...receiptLines, ...costLines];
 
     const principalInterestLines = receiptLines.filter((line: any) => line.lineType === "receipt");
+    const directProviderPaymentLines = receiptLines.filter((line: any) => line.lineType === "direct_pay_to_provider");
     const filingFeePaymentLines = receiptLines.filter((line: any) => line.lineType === "filing_fee_payment");
 
     const priorFinalizedInvoice = await prisma.providerClientInvoice.findFirst({
@@ -283,6 +299,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     });
 
     const principalInterestTotal = principalInterestLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+    const directProviderPaymentTotal = directProviderPaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
+    const directProviderRetainerFeeTotal = directProviderPaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.retainerFee), 0);
     const filingFeePaymentTotal = filingFeePaymentLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
     const costsExpendedTotal = costLines.reduce((sum: number, line: any) => sum + moneyNumber(line.amount), 0);
     const retainerFeeTotal = receiptLines.reduce((sum: number, line: any) => sum + moneyNumber(line.retainerFee), 0);
@@ -314,6 +332,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       lineCount: lines.length,
       totalLines: lines.length,
       principalInterestTotal,
+      directProviderPaymentTotal,
+      directProviderRetainerFeeTotal,
       filingFeePaymentTotal,
       costsExpendedTotal,
       retainerFeeTotal,

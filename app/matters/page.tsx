@@ -540,10 +540,11 @@ export default function FilteredMattersPage() {
   const fallbackMasterPaymentTransactionTypeOptions = [
     "Collection Payment",
     "Interest",
-    "Attorney Fee",
     "Index Fee",
-    "Filing Fee",
+    "Service Fee",
     "Other Court Costs",
+    "PreC to Provider",
+    "Attorney Fee",
   ];
 
   const fallbackMasterPaymentTransactionStatusOptions = [
@@ -555,6 +556,17 @@ export default function FilteredMattersPage() {
     return String(option?.displayName || option?.label || option?.value || "").trim();
   }
 
+  function masterPaymentTransactionTypeDisplay(value: unknown): string {
+    const text = String(value ?? "").trim();
+    const normalized = text.toLowerCase();
+    if (normalized === "collection payment") return "Collection";
+    if (normalized === "prec to provider" || normalized === "direct pay to provider (pre-suit)") return "Direct Pay to Provider (Pre-suit)";
+    if (normalized === "filing fee" || normalized === "filing fee collected" || normalized === "index fee collected") return "Index Fee";
+    if (normalized === "service fee collected") return "Service Fee";
+    if (normalized === "other court costs collected" || normalized === "other court fees collected") return "Other Court Costs";
+    return text || "—";
+  }
+
   function masterPaymentTransactionTypeDropdownOptions(): string[] {
     return fallbackMasterPaymentTransactionTypeOptions;
   }
@@ -564,8 +576,22 @@ export default function FilteredMattersPage() {
     return loaded.length ? loaded : fallbackMasterPaymentTransactionStatusOptions;
   }
 
+  function isMasterPaymentDirectProviderTransactionType(value: unknown): boolean {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    return normalized === "prec to provider" || normalized === "direct pay to provider" || normalized === "direct pay to provider (pre-suit)";
+  }
+
   function handleMasterPaymentTransactionTypeChange(nextType: string) {
     setMasterPaymentTransactionTypeInput(nextType);
+    setMasterPaymentPostResult(null);
+    if (isMasterPaymentDirectProviderTransactionType(nextType)) {
+      setMasterPaymentSelectedOnlyInput(true);
+      setMasterPaymentSelectedRowIds({});
+      setMasterPaymentManualAllocationInputs({});
+      setMasterPaymentAllocationMethodInput("proportional_by_balance");
+    } else {
+      setMasterPaymentSelectedOnlyInput(false);
+    }
     if (String(nextType || "").trim() === "Attorney Fee") {
       setMasterPaymentTransactionStatusInput("Do Not Show on Remittance");
       return;
@@ -603,9 +629,13 @@ export default function FilteredMattersPage() {
   function isMasterPaymentCostRecoveryTransactionType(value: unknown): boolean {
     const normalized = String(value ?? "").trim().toLowerCase();
     return [
+      "index fee",
+      "filing fee",
       "filing fee collected",
       "index fee collected",
+      "service fee",
       "service fee collected",
+      "other court costs",
       "other court costs collected",
       "other court fees collected",
     ].includes(normalized);
@@ -615,9 +645,13 @@ export default function FilteredMattersPage() {
     const normalized = String(value ?? "").trim().toLowerCase();
     if (normalized === "interest" || normalized === "interest payment" || normalized.includes("interest collected")) return true;
     return [
+      "index fee",
+      "filing fee",
       "filing fee collected",
       "index fee collected",
+      "service fee",
       "service fee collected",
+      "other court costs",
       "other court costs collected",
       "other court fees collected",
     ].includes(normalized);
@@ -786,6 +820,10 @@ export default function FilteredMattersPage() {
     if (amount <= 0) return "Enter a payment amount before allocating.";
     const balanceCapExempt = isMasterPaymentBalanceCapExemptTransactionType(masterPaymentTransactionTypeInput);
 
+    if (isMasterPaymentDirectProviderTransactionType(masterPaymentTransactionTypeInput)) {
+      const selectedCount = masterPaymentAllocationRows().filter((item: any) => item.selected).length;
+      if (selectedCount !== 1) return "Select exactly one child matter for Direct Pay to Provider (Pre-suit).";
+    }
     if (masterPaymentSelectedOnlyHasEligibleSelection() === false) {
       return balanceCapExempt ? "Select at least one child matter for this interest or cost-recovery payment." : "Select at least one child matter with an open balance.";
     }
@@ -10882,7 +10920,7 @@ function masterSettlementDateFiledValue(): string {
                                   {receipt.sourceDisplayNumber || receipt.displayNumber || "—"} · {receipt.paymentDate || receipt.transactionDate || "—"}
                                 </div>
                                 <div style={{ fontSize: 11, fontWeight: 750, color: "#475569" }}>
-                                  {receipt.transactionType || "Payment"} · {receipt.transactionStatus || "—"} · Check {receipt.checkNumber || "—"}
+                                  {masterPaymentTransactionTypeDisplay(receipt.transactionType) || "Payment"} · {receipt.transactionStatus || "—"} · Check {receipt.checkNumber || "—"}
                                 </div>
                                 {receipt.voided && <div style={{ fontSize: 11, fontWeight: 900, color: "#475569" }}>Voided</div>}
                               </div>
@@ -12960,7 +12998,7 @@ function masterSettlementDateFiledValue(): string {
                         }}
                       >
                         {masterPaymentTransactionTypeDropdownOptions().map((option) => (
-                          <option key={option} value={option}>{option}</option>
+                          <option key={option} value={option}>{masterPaymentTransactionTypeDisplay(option)}</option>
                         ))}
                       </select>
                     </label>
@@ -13121,6 +13159,7 @@ function masterSettlementDateFiledValue(): string {
                       </span>
                       <select
                         value={masterPaymentAllocationMethodInput}
+                        disabled={isMasterPaymentDirectProviderTransactionType(masterPaymentTransactionTypeInput)}
                         onChange={(event) => {
                           setMasterPaymentAllocationMethodInput(event.target.value);
                           setMasterPaymentPostResult(null);
@@ -13142,6 +13181,11 @@ function masterSettlementDateFiledValue(): string {
                         <option value="proportional_by_balance">Allocate Equally by Percentage</option>
                         <option value="manual">Allocate Manually</option>
                       </select>
+                      {isMasterPaymentDirectProviderTransactionType(masterPaymentTransactionTypeInput) && (
+                        <div style={{ fontSize: 11, fontWeight: 850, color: "#475569", lineHeight: 1.35 }}>
+                          Direct Pay to Provider (Pre-suit) is claim-specific. Select exactly one child matter below.
+                        </div>
+                      )}
                     </label>
 
                     <div

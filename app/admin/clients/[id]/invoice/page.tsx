@@ -566,6 +566,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
     const lines = Array.isArray(invoice.lines) ? invoice.lines : [];
     const principalInterestLines = lines.filter((line: any) => line?.lineType === "receipt");
+    const directProviderPaymentLines = lines.filter((line: any) => line?.lineType === "direct_pay_to_provider");
     const costsReceivedLines = lines.filter((line: any) => line?.lineType === "filing_fee_payment");
     const feesCostsExpendedLines = lines.filter((line: any) => line?.lineType === "cost_expended");
 
@@ -603,6 +604,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       </tr>`
         )
         .join("");
+    }
+
+    function directProviderPaymentRows(sectionLines: any[]) {
+      return principalInterestRows(sectionLines);
     }
 
     function costsReceivedRows(sectionLines: any[]) {
@@ -650,6 +655,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     }
 
     const summaryPrincipalInterestReceived = Number(invoice.principalInterestTotal || 0);
+    const summaryDirectProviderPayments = Number(invoice.directProviderPaymentTotal || invoice.totalsSnapshot?.directProviderPaymentTotal || 0);
+    const summaryDirectProviderRetainerFee = Number(invoice.directProviderRetainerFeeTotal || invoice.totalsSnapshot?.directProviderRetainerFeeTotal || 0);
     const summaryRetainerFee = Number(invoice.retainerFeeTotal || 0);
     const summaryNetRemitToProvider = summaryPrincipalInterestReceived - summaryRetainerFee;
     const printableCostSummary = invoiceCostSummaryValues(invoice);
@@ -796,6 +803,24 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     </tbody>
   </table>
 
+  <h2>Direct Payments to Provider</h2>
+  <div class="section-note">
+    <span>Gross Direct Payments: ${safeHtml(money(sectionTotal(directProviderPaymentLines)))}</span>
+    <span>Retainer Fee: ${safeHtml(money(sectionRetainerTotal(directProviderPaymentLines)))}</span>
+    <span>Net Remit Impact: ${safeHtml(money(sectionRemitTotal(directProviderPaymentLines)))}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Matter</th><th>Patient</th><th>DOL</th><th>DOS</th><th>Insurer</th><th>Case</th><th>Type</th><th>Posted</th><th>Check Date</th><th>Check #</th><th class="money">Amt. Billed</th><th class="money">Direct Paid</th><th class="money">Retainer Fee</th><th class="money">Net Remit Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${directProviderPaymentRows(directProviderPaymentLines) || emptyRow(14, "No direct payments to provider.")}
+      <tr class="section-total"><td colspan="11">Section Total</td><td class="money">${safeHtml(money(sectionTotal(directProviderPaymentLines)))}</td><td class="money">${safeHtml(money(sectionRetainerTotal(directProviderPaymentLines)))}</td><td class="money">${safeHtml(money(sectionRemitTotal(directProviderPaymentLines)))}</td></tr>
+    </tbody>
+  </table>
+
   <h2>Costs Received</h2>
   <div class="section-note">
     <span>Total Costs Received: ${safeHtml(money(sectionTotal(costsReceivedLines)))}</span>
@@ -830,6 +855,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
   <div class="totals">
     <div><span>Principal / Interest Received</span><span>${safeHtml(money(summaryPrincipalInterestReceived))}</span></div>
+    ${summaryDirectProviderPayments || summaryDirectProviderRetainerFee ? `<div><span>Direct Payments to Provider</span><span>${safeHtml(money(summaryDirectProviderPayments))}</span></div>` : ""}
+    ${summaryDirectProviderPayments || summaryDirectProviderRetainerFee ? `<div><span>Direct Payment Retainer Fee</span><span>${safeHtml(money(summaryDirectProviderRetainerFee))}</span></div>` : ""}
     <div><span>Retainer Fee</span><span>${safeHtml(money(summaryRetainerFee))}</span></div>
     <div class="summary-emphasis"><span>Net Remit Before Costs</span><span>${safeHtml(money(summaryNetRemitToProvider))}</span></div>
     <div><span>Costs Expended During This Remittance Period</span><span>${safeHtml(money(printableCostSummary.costsExpendedTotal))}</span></div>
@@ -900,10 +927,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   const previewLines = Array.isArray(preview?.lines) ? preview.lines : [];
   const previewDiagnostics = preview?.receiptMarkDiagnostics || {};
   const principalInterestPreviewLines = previewLines.filter((line: any) => line?.lineType === "receipt");
+  const directProviderPaymentPreviewLines = previewLines.filter((line: any) => line?.lineType === "direct_pay_to_provider");
   const costsReceivedPreviewLines = previewLines.filter((line: any) => line?.lineType === "filing_fee_payment");
   const feesCostsExpendedPreviewLines = previewLines.filter((line: any) => line?.lineType === "cost_expended");
   const principalInterestPaymentCount = principalInterestPreviewLines.length;
   const principalInterestPaymentTotal = principalInterestPreviewLines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
+  const directProviderPaymentCount = directProviderPaymentPreviewLines.length;
+  const directProviderPaymentTotal = directProviderPaymentPreviewLines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
+  const directProviderRetainerFeeTotal = directProviderPaymentPreviewLines.reduce((sum: number, line: any) => sum + Number(line?.retainerFee || 0), 0);
   const costsReceivedPaymentCount = costsReceivedPreviewLines.length;
   const costsReceivedPaymentTotal = costsReceivedPreviewLines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
   const feesCostsExpendedCount = feesCostsExpendedPreviewLines.length;
@@ -927,7 +958,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     { key: "remitToProvider", label: "Remit to Provider", align: "right", principalOnly: true },
   ];
 
+  function isDirectProviderPaymentLine(line: any): boolean {
+    return String(line?.lineType || "").trim() === "direct_pay_to_provider";
+  }
+
   function previewRemitToProvider(line: any): number {
+    if (isDirectProviderPaymentLine(line)) return -Number(line?.retainerFee || 0);
     return Number(line?.amount || 0) - Number(line?.retainerFee || 0);
   }
 
@@ -1172,11 +1208,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const rawType = String(line?.description || line?.rowSnapshot?.transactionType || line?.lineType || "").trim();
     const normalizedType = rawType.toLowerCase();
 
+    if (line?.lineType === "direct_pay_to_provider") return "Direct Pay to Provider";
     if (line?.lineType === "filing_fee_payment") {
       if (normalizedType.includes("filing fee") || normalizedType.includes("index fee")) return "Index Fee";
       if (normalizedType.includes("service fee")) return "Service Fee";
       if (normalizedType.includes("other court costs") || normalizedType.includes("other court fees")) return "Other Court Costs";
     }
+    if (normalizedType === "voluntary payment") return "Voluntary";
+    if (normalizedType === "collection payment") return "Collection";
 
     return rawType || "—";
   }
@@ -1220,9 +1259,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const total = lines.reduce((sum: number, line: any) => sum + Number(line?.amount || 0), 0);
     const retainerTotal = lines.reduce((sum: number, line: any) => sum + Number(line?.retainerFee || 0), 0);
     const remitTotal = lines.reduce((sum: number, line: any) => sum + previewRemitToProvider(line), 0);
+    const isDirectProviderTable = title === "Direct Payments to Provider";
     const isCostsReceivedTable = title === "Costs Received";
     const isFeesCostsExpendedTable = title === "Fees and Costs Expended";
-    const showRemitToProvider = title === "Principal / Interest Received";
+    const showRemitToProvider = title === "Principal / Interest Received" || isDirectProviderTable;
     const showBilledAndRetainerColumns = !isCostsReceivedTable && !isFeesCostsExpendedTable;
     const showCheckColumns = !isFeesCostsExpendedTable;
     const activeColumns = previewTableColumns.filter((column) => {
@@ -1583,7 +1623,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
               <option value="">All</option>
               <option value="principal_interest">Principal / Interest</option>
-              <option value="filing_fee_payment">Costs Received</option>
+              <option value="direct_pay_to_provider">Direct Payments to Provider</option>
+              <option value="filing_fee_payment">All Costs Received (Index, Service, Other)</option>
               <option value="Index Fee">Index Fee</option>
               <option value="Service Fee">Service Fee</option>
               <option value="Other Court Costs">Other Court Costs</option>
@@ -1665,6 +1706,18 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
                 <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Direct Payments to Provider
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                  {money(directProviderPaymentTotal)}
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Retainer Fee: {money(directProviderRetainerFeeTotal)} · {directProviderPaymentCount} row{directProviderPaymentCount === 1 ? "" : "s"}
+                </div>
+              </div>
+
+              <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Costs Received
                 </div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
@@ -1706,6 +1759,14 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                   "Principal / Interest Received",
                   principalInterestPreviewLines,
                   "No principal or interest payments in this preview."
+                )}
+              </div>
+
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#ffffff" }}>
+                {renderPreviewLineTable(
+                  "Direct Payments to Provider",
+                  directProviderPaymentPreviewLines,
+                  "No direct payments to provider in this preview."
                 )}
               </div>
 

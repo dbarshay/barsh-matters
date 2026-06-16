@@ -45,6 +45,7 @@ console.log("=== VERIFY PROVIDER CLIENT INVOICE STEP 2 REVIEW TABLES ===");
 
 for (const required of [
   "Principal / Interest Received",
+  "Direct Payments to Provider",
   "Costs Received",
   "Fees and Costs Expended",
   "renderPreviewLineTable",
@@ -69,9 +70,9 @@ for (const required of [
 
 for (const required of [
   "previewRemitToProvider",
-  "return Number(line?.amount || 0) - Number(line?.retainerFee || 0);",
+  "if (isDirectProviderPaymentLine(line)) return -Number(line?.retainerFee || 0);",
   '{ key: "remitToProvider", label: "Remit to Provider", align: "right", principalOnly: true }',
-  'const showRemitToProvider = title === "Principal / Interest Received";',
+  'const showRemitToProvider = title === "Principal / Interest Received" || isDirectProviderTable;',
   "const remitTotal = lines.reduce((sum: number, line: any) => sum + previewRemitToProvider(line), 0);",
   "money(previewRemitToProvider(line))",
   "money(remitTotal)",
@@ -122,7 +123,7 @@ for (const required of [
   "retainerNfInterest",
   "retainerNfPrincipal",
   "if (isFeeRecoveryTransactionType(row?.transactionType)) return 0",
-  'lineType: isFeeRecoveryTransactionType(row?.transactionType) ? "filing_fee_payment" : "receipt"',
+  'lineType: receiptLineType(row)',
   'lineType: "cost_expended"',
 ]) {
   mustContain("create-preview route Step 2 data contract", route, required);

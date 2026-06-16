@@ -6,10 +6,11 @@ const packageJson = fs.readFileSync("package.json", "utf8");
 const expectedOrder = [
   "Collection Payment",
   "Interest",
-  "Attorney Fee",
   "Index Fee",
-  "Filing Fee",
+  "Service Fee",
   "Other Court Costs",
+  "PreC to Provider",
+  "Attorney Fee",
 ];
 
 function fail(message) {
@@ -34,9 +35,9 @@ if (!arrayMatch) {
   }
 
   if (values[0] !== "Collection Payment") {
-    fail("Collection Payment is not first/default-position option");
+    fail("Collection Payment internal value is not first/default-position option");
   } else {
-    pass("Collection Payment is first option");
+    pass("Collection display value is first/default-position option");
   }
 
   if (values.some((value) => !expectedOrder.includes(value))) {

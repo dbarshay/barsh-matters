@@ -29,18 +29,22 @@ const typeStart = page.indexOf("const fallbackMasterPaymentTransactionTypeOption
 const typeEnd = page.indexOf("];", typeStart);
 const typeBlock = typeStart >= 0 && typeEnd > typeStart ? page.slice(typeStart, typeEnd) : "";
 
-mustInclude("lawsuit payment defaults to Collection Payment", page, 'useState("Collection Payment")');
+mustInclude("lawsuit payment defaults internally to Collection Payment", page, 'useState("Collection Payment")');
+mustInclude("lawsuit payment displays Collection", page, 'return "Collection";');
+mustInclude("lawsuit payment displays direct provider pre-suit", page, 'Direct Pay to Provider (Pre-suit)');
+mustInclude("lawsuit payment enforces single child matter for direct provider pre-suit", page, 'Select exactly one child matter for Direct Pay to Provider (Pre-suit).');
 mustInclude("lawsuit payment reset defaults to Collection Payment", page, 'setMasterPaymentTransactionTypeInput("Collection Payment")');
 mustInclude("lawsuit transaction dropdown is locked to fallback list", page, "return fallbackMasterPaymentTransactionTypeOptions;");
 mustNotInclude("lawsuit transaction dropdown does not use loaded transaction types", page, "return loaded.length ? loaded : fallbackMasterPaymentTransactionTypeOptions;");
 
 [
-  "Attorney Fee",
   "Collection Payment",
-  "Filing Fee",
-  "Index Fee",
   "Interest",
+  "Index Fee",
+  "Service Fee",
   "Other Court Costs",
+  "PreC to Provider",
+  "Attorney Fee",
 ].forEach((transactionType) => {
   mustInclude(`lawsuit transaction type allows ${transactionType}`, typeBlock, `"${transactionType}"`);
 });

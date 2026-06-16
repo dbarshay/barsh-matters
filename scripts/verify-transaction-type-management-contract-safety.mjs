@@ -66,8 +66,11 @@ mustContain("admin reference page alias display", adminPage, "selectedRow.aliase
 mustContain("transaction seed", seed, "Collection Payment");
 mustContain("transaction seed", seed, "Voluntary Payment");
 mustContain("transaction seed", seed, "Attorney Fee");
+mustContain("transaction seed", seed, "Direct Pay to Provider");
+mustContain("transaction seed", seed, "Direct Pay to Provider (Pre-suit)");
 mustContain("transaction seed", seed, "Filing Fee Collected");
 mustContain("transaction seed", seed, "Index Fee Collected");
+mustContain("transaction seed", seed, "Service Fee");
 mustContain("transaction seed", seed, "Other Court Fees Collected");
 
 mustContain("direct page loads transaction types", directPage, "/api/reference-data/options?type=transaction_type");
@@ -78,6 +81,8 @@ mustNotContain("direct page must not hardcode Collection Payment in direct optio
 mustContain("master page loads transaction types", masterPage, "/api/reference-data/options?type=transaction_type");
 mustContain("master page loads transaction statuses", masterPage, "/api/reference-data/options?type=transaction_status");
 mustContain("master page default remains Collection Payment", masterPage, 'useState("Collection Payment")');
+mustContain("master page Collection display", masterPage, 'return "Collection";');
+mustContain("master page Direct Pay pre-suit display", masterPage, 'Direct Pay to Provider (Pre-suit)');
 mustContain("master page Attorney Fee status rule", masterPage, 'String(nextType || "").trim() === "Attorney Fee"');
 mustContain("master page Attorney Fee Do Not Show", masterPage, 'setMasterPaymentTransactionStatusInput("Do Not Show on Remittance")');
 

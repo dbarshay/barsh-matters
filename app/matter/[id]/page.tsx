@@ -1432,17 +1432,14 @@ const activeGroupKey =
 
   const fallbackPaymentTransactionTypeOptions = [
     "Voluntary Payment",
-    "Voluntary Payment",
-    "Attorney Fee",
-    "Filing Fee Collected",
     "Interest",
-    "Service Fee Collected",
-    "Other Court Fees Collected",
+    "PreC to Provider",
   ];
 
   const paymentTransactionTypeFallbackOptions = [
     "Voluntary Payment",
     "Interest",
+    "PreC to Provider",
   ];
 
   const fallbackPaymentTransactionStatusOptions = [
@@ -1452,6 +1449,14 @@ const activeGroupKey =
 
   function referenceOptionDisplayName(option: any): string {
     return String(option?.displayName || option?.label || option?.value || "").trim();
+  }
+
+  function directPaymentTransactionTypeDisplay(value: unknown): string {
+    const text = String(value ?? "").trim();
+    const normalized = text.toLowerCase();
+    if (normalized === "voluntary payment") return "Voluntary";
+    if (normalized === "prec to provider" || normalized === "direct pay to provider") return "Direct Pay to Provider";
+    return text || "—";
   }
 
   function paymentTransactionTypeDropdownOptions(): string[] {
@@ -2853,7 +2858,7 @@ function openClaimAmountEditDialog() {
           transactionStatus: paymentTransactionStatusInput,
           checkDate: paymentCheckDateInput,
           checkNumber: paymentCheckNumberInput,
-          description: paymentTransactionTypeInput,
+          description: directPaymentTransactionTypeDisplay(paymentTransactionTypeInput),
           postingContext: "direct-matter",
           claimAmount: num(matter?.claimAmount),
         }),
@@ -9383,7 +9388,9 @@ function openClaimAmountEditDialog() {
                           }}
                         >
                           {paymentTransactionTypeDropdownOptions().map((option) => (
-                            <option key={option} value={option}>{option}</option>
+                            <option key={option} value={option}>
+                                {directPaymentTransactionTypeDisplay(option)}
+                              </option>
                           ))}
                         </select>
                       </label>
@@ -9926,7 +9933,7 @@ function openClaimAmountEditDialog() {
                 </td>
 
                 <td style={{ padding: "7px 8px", border: "1px solid #e5e7eb" }}>
-                  {textValue(receipt.transactionType) || "—"}
+                  {directPaymentTransactionTypeDisplay(receipt.transactionType)}
                 </td>
 
                 <td style={{ padding: "7px 8px", border: "1px solid #e5e7eb" }}>
