@@ -28,6 +28,12 @@ function clean(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function displayEntityName(value: unknown): string {
+  const raw = clean(value);
+  if (!raw) return "";
+  return raw.toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase()).replace(/\bP\.c\.\b/g, "P.C.").replace(/\bP\.c\b/g, "P.C.").replace(/\bPc\b/g, "P.C.").replace(/\bLlc\b/g, "LLC").replace(/\bPllc\b/g, "PLLC").replace(/\bAaa\b/g, "AAA");
+}
+
 function validDateOnly(value: unknown): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(clean(value));
 }
@@ -181,10 +187,14 @@ async function enrichEvents(events: Array<any>, options: { hideClosedMatters?: b
 
   return events.map((event) => {
     const rows = byMaster.get(clean(event.masterLawsuitId)) || [];
-    const patients = Array.from(new Set(rows.map((row) => clean(row.patient_name)).filter(Boolean)));
-    const providers = Array.from(new Set(rows.map((row) => clean(row.provider_name || row.client_name)).filter(Boolean)));
-    const insurers = Array.from(new Set(rows.map((row) => clean(row.insurer_name)).filter(Boolean)));
+    const patients = Array.from(new Set(rows.map((row) => displayEntityName(row.patient_name)).filter(Boolean)));
+    const providers = Array.from(new Set(rows.map((row) => displayEntityName(row.provider_name || row.client_name)).filter(Boolean)));
+    const insurers = Array.from(new Set(rows.map((row) => displayEntityName(row.insurer_name)).filter(Boolean)));
     const claims = Array.from(new Set(rows.map((row) => clean(row.claim_number_raw || row.claim_number_normalized)).filter(Boolean)));
+    const lawsuitAmount = rows.reduce((sum, row) => sum + Number(row.claim_amount || 0), 0);
+    const lawsuitBalance = rows.reduce((sum, row) => sum + Number(row.balance_presuit || 0), 0);
+    const captionParts = [patients.join("; "), providers.join("; "), insurers.join("; ")].map(clean).filter(Boolean);
+    const caption = captionParts.length ? captionParts.join(" v. ") : null;
 
     return {
       ...event,
@@ -194,6 +204,9 @@ async function enrichEvents(events: Array<any>, options: { hideClosedMatters?: b
         providers,
         insurers,
         claimNumbers: claims,
+        lawsuitAmount,
+        lawsuitBalance,
+        caption,
         matters: rows.map((row) => ({
           matterId: row.matter_id,
           displayNumber: row.display_number,

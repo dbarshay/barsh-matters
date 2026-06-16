@@ -22,7 +22,6 @@ for (const token of [
   'masterActionGroup === "documents"',
   'masterActionGroup === "court_dates"',
   'data-barsh-master-action-section="court-dates"',
-  'data-barsh-master-add-new-court-date-placeholder="true"',
   'data-barsh-master-view-edit-court-dates-placeholder="true"',
   'Add New Court Date',
   'View / Edit Court Dates',

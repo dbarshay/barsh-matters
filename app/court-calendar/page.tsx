@@ -273,8 +273,8 @@ const moneyCellStyle: React.CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 
-const resultColumnWidths = [96, 150, 118, 136, 132, 142, 118, 118, 350];
-const resultTableMinWidth = resultColumnWidths.reduce((total, width) => total + width, 0);
+const resultColumnWidths = ["7%", "11%", "7%", "8%", "9%", "8%", "7%", "7%", "36%"];
+const resultTableMinWidth = 1280;
 
 export default function CourtCalendarPage() {
   const [masterLawsuitId, setMasterLawsuitId] = useState("");
@@ -289,6 +289,7 @@ export default function CourtCalendarPage() {
   const [filterOptions, setFilterOptions] = useState<FilterOptionsResult | null>(null);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [reportType, setReportType] = useState("all");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -333,13 +334,39 @@ export default function CourtCalendarPage() {
     return "";
   }
 
+  function sortableCalendarValue(event: CalendarEvent, key: CourtCalendarSortKey): string | number {
+    if (key === "eventDate") return text(event.eventDate);
+    if (key === "court") return text(event.court || event.venue).toLowerCase();
+    if (key === "calendarNumber") {
+      const numeric = Number(text(event.calendarNumber).replace(/[^0-9.]/g, ""));
+      return Number.isFinite(numeric) ? numeric : text(event.calendarNumber).toLowerCase();
+    }
+    if (key === "indexNumber") return text(event.indexAaaNumber).toLowerCase();
+    if (key === "lawsuitNumber") return text(event.displayNumber || event.masterLawsuitId).toLowerCase();
+    if (key === "appearanceType") return text(event.appearanceType || event.eventType).toLowerCase();
+    if (key === "lawsuitAmount") return Number(event.caseData?.lawsuitAmount || 0);
+    if (key === "lawsuitBalance") return Number(event.caseData?.lawsuitBalance || 0);
+    if (key === "caption") return text(event.caseData?.caption).toLowerCase();
+    return "";
+  }
+
   const events = useMemo(() => {
     const sorted = [...rawEvents];
     sorted.sort((a, b) => {
-      const av = calendarResultSortValue(a, calendarResultSort.key);
-      const bv = calendarResultSortValue(b, calendarResultSort.key);
-      const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: "base" });
-      return calendarResultSort.direction === "asc" ? cmp : -cmp;
+      if (calendarResultSort.key === "eventDate" && calendarResultSort.direction === "asc") {
+        const dateCompare = text(a.eventDate).localeCompare(text(b.eventDate));
+        if (dateCompare !== 0) return dateCompare;
+        const courtCompare = text(a.court || a.venue).localeCompare(text(b.court || b.venue));
+        if (courtCompare !== 0) return courtCompare;
+        const leftCalendarNumber = Number(text(a.calendarNumber).replace(/[^0-9.]/g, ""));
+        const rightCalendarNumber = Number(text(b.calendarNumber).replace(/[^0-9.]/g, ""));
+        if (Number.isFinite(leftCalendarNumber) || Number.isFinite(rightCalendarNumber)) return (Number.isFinite(leftCalendarNumber) ? leftCalendarNumber : 999999) - (Number.isFinite(rightCalendarNumber) ? rightCalendarNumber : 999999);
+        return text(a.calendarNumber).localeCompare(text(b.calendarNumber));
+      }
+      const left = sortableCalendarValue(a, calendarResultSort.key);
+      const right = sortableCalendarValue(b, calendarResultSort.key);
+      if (typeof left === "number" || typeof right === "number") return (Number(left) - Number(right)) * (calendarResultSort.direction === "asc" ? 1 : -1);
+      return String(left).localeCompare(String(right)) * (calendarResultSort.direction === "asc" ? 1 : -1);
     });
     return sorted;
   }, [rawEvents, calendarResultSort]);
@@ -605,10 +632,7 @@ export default function CourtCalendarPage() {
             <BarshHeaderQuickNav />
           </div>
           <div style={{ marginTop: 16 }}>
-            <div style={{ color: "#64748b", fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 12 }}>
-              Barsh Matters
-            </div>
-            <h1 style={{ margin: "4px 0 6px", fontSize: 30, lineHeight: 1.1 }}>Court Calendar</h1>
+            <h1 style={{ margin: "4px 0 6px", fontSize: 30, lineHeight: 1.1 }}>Court Calendars</h1>
             <p style={{ margin: 0, color: "#475569", fontWeight: 750 }}>
               
             </p>
@@ -779,11 +803,15 @@ export default function CourtCalendarPage() {
               {result?.ok ? `${events.length} event(s).` : "Run a search to load events."}
             </p>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <button type="button" onClick={printCalendarReport} style={secondaryButtonStyle} disabled={events.length === 0} data-barsh-court-calendar-print-filtered-results="true">Print / Save PDF</button>
-            <button type="button" onClick={() => setWebCivilImportOpen((open) => !open)} style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-toggle="true">Import Calendar Numbers from WebCivil Local</button>
-            <button type="button" onClick={exportCalendarReport} style={secondaryButtonStyle} disabled={!events.length} data-barsh-court-calendar-export-xlsx="true">Export XLSX</button>
-            <Link href="/matters" style={secondaryButtonStyle}>Open Matters</Link>
+          <div style={{ display: "grid", gap: 8, justifyItems: "end" }} data-barsh-court-calendar-report-controls="true">
+            <label style={{ ...labelStyle, minWidth: 260 }}>
+              Report Type
+              <select value={reportType} onChange={(event) => setReportType(event.target.value)} style={inputStyle} data-barsh-court-calendar-report-type-selector="true">
+                <option value="all">All</option>
+                <option value="trial-calendar">Trial Calendar Report</option>
+                <option value="appearance-calendar">Appearance Calendar Report</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -831,6 +859,12 @@ export default function CourtCalendarPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 14 }} data-barsh-court-calendar-result-bottom-actions="true">
+          <button type="button" onClick={printCalendarReport} style={secondaryButtonStyle} disabled={events.length === 0} data-barsh-court-calendar-print-filtered-results="true">Print / Save PDF</button>
+          <button type="button" onClick={exportCalendarReport} style={secondaryButtonStyle} disabled={!events.length} data-barsh-court-calendar-export-xlsx="true">Export XLSX</button>
+          <button type="button" onClick={() => setWebCivilImportOpen((open) => !open)} style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-toggle="true">Import Calendar Numbers from WebCivil Local</button>
         </div>
       </section>
     </main>

@@ -62,4 +62,11 @@ assertFileContains("app/api/court-calendar/filter-options/route.ts", "providerCl
 assertFileDoesNotContain("app/api/court-calendar/filter-options/route.ts", "provider_name", "Court Calendar Client Name dropdown must not use ClaimIndex provider_name / treating-person provider names.");
 assertFileDoesNotContain("app/api/court-calendar/filter-options/route.ts", "client_name", "Court Calendar Client Name dropdown must not use ClaimIndex client_name as its option source.");
 
+assertFileContains("app/api/court-calendar/filter-options/route.ts", "defaultCourt", "Court Calendar filter options must expose defaultCourt for Add New Court Date court defaults.");
+assertFileContains("app/api/court-calendar/filter-options/route.ts", "masterLawsuitId", "Court Calendar filter options must expose masterLawsuitId for Add New Court Date court defaults.");
+assertFileContains("app/api/court-calendar/filter-options/route.ts", "venueSelection", "Court Calendar filter options must expose venueSelection for Add New Court Date court defaults.");
+assertFileContains("app/api/court-calendar/events/route.ts", "lawsuitAmount", "Court Calendar event enrichment must return lawsuitAmount rollup.");
+assertFileContains("app/api/court-calendar/events/route.ts", "lawsuitBalance", "Court Calendar event enrichment must return lawsuitBalance rollup.");
+assertFileContains("app/api/court-calendar/events/route.ts", "caption", "Court Calendar event enrichment must return caption rollup.");
+assertFileContains("app/api/court-calendar/events/route.ts", "displayEntityName", "Court Calendar caption entities must use display-name normalization.");
 console.log("PASS: court calendar route safety");

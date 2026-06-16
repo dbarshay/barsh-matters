@@ -12,8 +12,16 @@ function uniqueSorted(values: unknown[]): string[] {
   return Array.from(new Set(values.map(clean).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const masterLawsuitId = clean(url.searchParams.get("masterLawsuitId"));
+    const defaultLawsuit = masterLawsuitId
+      ? await prisma.lawsuit.findUnique({ where: { masterLawsuitId }, select: { venue: true, venueSelection: true, venueOther: true, lawsuitOptions: true } })
+      : null;
+    const defaultOptions = defaultLawsuit?.lawsuitOptions && typeof defaultLawsuit.lawsuitOptions === "object" && !Array.isArray(defaultLawsuit.lawsuitOptions) ? defaultLawsuit.lawsuitOptions as Record<string, any> : {};
+    const defaultCourt = clean(defaultLawsuit?.venueSelection || defaultLawsuit?.venue || defaultOptions.venueSelection || defaultOptions.venue || defaultLawsuit?.venueOther);
+
     const [referenceVenues, lawsuitVenues, eventVenues, providerClientRows] = await Promise.all([
       prisma.referenceEntity.findMany({ where: { type: "court_venue", active: true }, orderBy: { displayName: "asc" }, select: { displayName: true }, take: 500 }),
       prisma.lawsuit.findMany({ select: { venue: true, venueSelection: true, venueOther: true }, take: 1000 }),
@@ -27,7 +35,9 @@ export async function GET() {
       localFirst: true,
       sourceOfTruth: "barsh-matters-local",
       appearanceTypes: ["Trial", "Conference", "Motion"],
-      venues: uniqueSorted([...referenceVenues.map((row) => row.displayName), ...lawsuitVenues.flatMap((row) => [row.venue, row.venueSelection, row.venueOther]), ...eventVenues.flatMap((row) => [row.venue, row.court])]),
+      defaultCourt,
+      defaultVenue: defaultCourt,
+      venues: uniqueSorted([defaultCourt, ...referenceVenues.map((row) => row.displayName), ...lawsuitVenues.flatMap((row) => [row.venue, row.venueSelection, row.venueOther]), ...eventVenues.flatMap((row) => [row.venue, row.court])]),
       clientNames: uniqueSorted(providerClientRows.map((row) => row.displayName)),
       safety: { readOnly: true, clioRecordsChanged: false, databaseRecordsChanged: false, externalCalendarEventsCreated: false, emailsSent: false, documentsGenerated: false, printQueueChanged: false },
     });
