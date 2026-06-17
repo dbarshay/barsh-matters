@@ -141,6 +141,19 @@ export function defaultAdminPermissionAllowed(permission: AdminPermissionKey): b
   return isKnownAdminPermissionKey(permission);
 }
 
+
+export const ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS = [
+  "/admin",
+  "/admin/permissions",
+  "/api/admin/permissions",
+  "/api/admin/permissions/check",
+] as const;
+
+export function isAdminPermissionNeverBlockPath(pathname: string): boolean {
+  const cleanPath = String(pathname || "").split("?")[0];
+  return ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS.some((pattern) => cleanPath === pattern || cleanPath.startsWith(`${pattern}/`));
+}
+
 export function adminPermissionForRoute(pathname: string, method = "GET"): AdminRoutePermission | null {
   const normalizedMethod = method.toUpperCase();
   return ADMIN_ROUTE_PERMISSIONS.find((entry) => {
@@ -263,6 +276,10 @@ export type AdminPermissionEnforcementDecision = {
 
 export function adminPermissionEnforcementDecision(pathname: string, method = "GET", overrides = configuredAdminPermissionOverridesFromEnv()): AdminPermissionEnforcementDecision {
   const enforcementEnabled = configuredAdminPermissionsEnforcementEnabled();
+  if (isAdminPermissionNeverBlockPath(pathname)) {
+    const matchedNeverBlockRoute = adminPermissionForRoute(pathname, method);
+    return { enforcementEnabled, matchedRoute: matchedNeverBlockRoute, permission: matchedNeverBlockRoute?.permission ?? null, allowed: true, blocked: false, reason: "Never-block safety route remains allowed to prevent administrator lockout." };
+  }
   const matchedRoute = adminPermissionForRoute(pathname, method);
   if (!matchedRoute) {
     return { enforcementEnabled, matchedRoute: null, permission: null, allowed: true, blocked: false, reason: "No permission mapping matched; default allow until explicit mapping is added." };
