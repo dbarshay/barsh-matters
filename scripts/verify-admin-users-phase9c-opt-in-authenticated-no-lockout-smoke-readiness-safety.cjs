@@ -27,7 +27,7 @@ console.log("RESULT: admin users Phase 9C opt-in authenticated/no-lockout smoke 
 
 assert(scripts["verify:admin-users-phase9b-authenticated-no-lockout-smoke-readiness-safety"] === "node scripts/verify-admin-users-phase9b-authenticated-no-lockout-smoke-readiness-safety.cjs", "Phase 9B verifier remains registered");
 assert(phase9b.includes("PHASE_9B_NEXT=add an opt-in authenticated/no-lockout smoke harness"), "Phase 9B points to opt-in authenticated/no-lockout smoke harness as next safe path");
-assert(phase9b.includes("without activating enforcement") && phase9b.includes("without changing first-target enforcement planning"), "Phase 9B remains non-activating");
+assert(phase9b.includes("without activating enforcement") && (phase9b.includes("without changing first-target enforcement planning") || phase9b.includes("without activating enforcement or changing first-target enforcement planning")), "Phase 9B remains non-activating");
 
 assert(registry.includes('pattern: "/admin/audit-history"') && registry.includes('permission: "admin.auditHistory.view"'), "first target remains /admin/audit-history mapped to admin.auditHistory.view");
 assert(registry.includes('enforcementPlanned: false') && !registry.includes('enforcementPlanned: true'), "Phase 9C keeps all mapped routes enforcementPlanned=false");
