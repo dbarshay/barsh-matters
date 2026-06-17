@@ -418,7 +418,8 @@
     "verify:admin-users-phase3-permission-override-ui-safety": "node scripts/verify-admin-users-phase3-permission-override-ui-safety.mjs",
     "verify:admin-users-phase3-completion-safety": "node scripts/verify-admin-users-phase3-completion-safety.mjs",
     "verify:admin-users-phase4-route-map-readiness-safety": "node scripts/verify-admin-users-phase4-route-map-readiness-safety.mjs",
-    "verify:admin-users-phase4-dry-run-decision-path-safety": "node scripts/verify-admin-users-phase4-dry-run-decision-path-safety.mjs"
+    "verify:admin-users-phase4-dry-run-decision-path-safety": "node scripts/verify-admin-users-phase4-dry-run-decision-path-safety.mjs",
+    "verify:admin-users-phase4-env-deployment-readiness-safety": "node scripts/verify-admin-users-phase4-env-deployment-readiness-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
