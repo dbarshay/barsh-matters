@@ -436,7 +436,8 @@
     "verify:admin-users-phase8-ephemeral-smoke-harness-safety": "node scripts/verify-admin-users-phase8-ephemeral-smoke-harness-safety.cjs",
     "verify:admin-users-phase8c-smoke-execution-boundary-safety": "node scripts/verify-admin-users-phase8c-smoke-execution-boundary-safety.cjs",
     "verify:admin-users-phase8-completion-safety": "node scripts/verify-admin-users-phase8-completion-safety.cjs",
-    "verify:admin-users-phase9-auth-session-planning-safety": "node scripts/verify-admin-users-phase9-auth-session-planning-safety.cjs"
+    "verify:admin-users-phase9-auth-session-planning-safety": "node scripts/verify-admin-users-phase9-auth-session-planning-safety.cjs",
+    "verify:admin-users-phase9b-authenticated-no-lockout-smoke-readiness-safety": "node scripts/verify-admin-users-phase9b-authenticated-no-lockout-smoke-readiness-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
