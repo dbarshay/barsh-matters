@@ -425,7 +425,8 @@
     "verify:admin-users-phase5-permission-check-negative-path-safety": "node scripts/verify-admin-users-phase5-permission-check-negative-path-safety.mjs",
     "verify:admin-users-phase5-simulation-completion-safety": "node scripts/verify-admin-users-phase5-simulation-completion-safety.mjs",
     "verify:admin-users-phase6-audit-visibility-readiness-safety": "node scripts/verify-admin-users-phase6-audit-visibility-readiness-safety.mjs",
-    "verify:admin-users-phase6-negative-path-diagnostics-readiness-safety": "node scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs"
+    "verify:admin-users-phase6-negative-path-diagnostics-readiness-safety": "node scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs",
+    "verify:admin-users-phase6-completion-safety": "node scripts/verify-admin-users-phase6-completion-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
