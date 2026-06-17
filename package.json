@@ -398,7 +398,8 @@
     "verify:admin-permissions-matrix-coverage-safety": "node scripts/verify-admin-permissions-matrix-coverage-safety.mjs",
     "verify:admin-users-planning-readonly-safety": "node scripts/verify-admin-users-planning-readonly-safety.mjs",
     "verify:admin-user-role-schema-foundation-safety": "node scripts/verify-admin-user-role-schema-foundation-safety.mjs",
-    "verify:admin-user-role-migration-sql-safety": "node scripts/verify-admin-user-role-migration-sql-safety.mjs"
+    "verify:admin-user-role-migration-sql-safety": "node scripts/verify-admin-user-role-migration-sql-safety.mjs",
+    "verify:admin-users-db-preview-readonly-safety": "node scripts/verify-admin-users-db-preview-readonly-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
