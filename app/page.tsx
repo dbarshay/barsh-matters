@@ -1355,49 +1355,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function runAdministratorGate(actionLabel: string, onAuthorized: () => void) {
-    const password = window.prompt(`ADMINISTRATOR ACCESS REQUIRED\n\n${actionLabel}\n\nEnter administrator password:`);
-    if (password === null) return;
-
-    try {
-      const response = await fetch("/api/admin/authorize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, action: actionLabel }),
-      });
-      const json = await response.json().catch(() => null);
-
-      if (!response.ok || !json?.ok || !json?.authorized) {
-        window.alert(json?.error || "Administrator authorization failed.");
-        return;
-      }
-
-      onAuthorized();
-    } catch (error: any) {
-      window.alert(error?.message || "Administrator authorization failed.");
-    }
-  }
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("adminRequired") !== "1") return;
-
-    const requestedPath = params.get("from") || "/admin";
-    const safeRequestedPath = requestedPath.startsWith("/admin") ? requestedPath : "/admin";
-
-    const cleanedUrl = new URL(window.location.href);
-    cleanedUrl.searchParams.delete("adminRequired");
-    cleanedUrl.searchParams.delete("from");
-    window.history.replaceState({ barshMattersAdminGatePrompted: true }, "", `${cleanedUrl.pathname}${cleanedUrl.search}${cleanedUrl.hash}`);
-
-    window.setTimeout(() => {
-      void runAdministratorGate("Open Administrator Home", () => {
-        window.location.href = safeRequestedPath;
-      });
-    }, 50);
-  }, []);
 
   function openAdministratorMenu() {
     window.location.href = "/admin";

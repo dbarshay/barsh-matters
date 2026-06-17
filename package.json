@@ -382,7 +382,8 @@
     "verify:admin-permissions-readonly-page-safety": "node scripts/verify-admin-permissions-readonly-page-safety.mjs",
     "verify:admin-permissions-config-preview-safety": "node scripts/verify-admin-permissions-config-preview-safety.mjs",
     "verify:admin-permissions-dry-run-safety": "node scripts/verify-admin-permissions-dry-run-safety.mjs",
-    "verify:admin-login-redirect-safety": "node scripts/verify-admin-login-redirect-safety.mjs"
+    "verify:admin-login-redirect-safety": "node scripts/verify-admin-login-redirect-safety.mjs",
+    "verify:admin-home-login-redirect-cleanup-safety": "node scripts/verify-admin-home-login-redirect-cleanup-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

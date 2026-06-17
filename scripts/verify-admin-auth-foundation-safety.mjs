@@ -69,13 +69,22 @@ for (const required of [
 }
 
 for (const required of [
-  'params.get("adminRequired") !== "1"',
-  'params.get("from") || "/admin"',
-  'requestedPath.startsWith("/admin") ? requestedPath : "/admin"',
-  'window.location.href = safeRequestedPath',
+  'redirectUrl.pathname = "/login";',
+  'redirectUrl.searchParams.set("from", requestedPath);',
+  'return adminUnauthorizedJson(401);',
 ]) {
-  if (!page.includes(required)) {
-    failures.push(`app/page.tsx no longer preserves visible admin gate receiver fragment: ${required}`);
+  if (!proxy.includes(required)) {
+    failures.push(`proxy.ts missing current login redirect/admin API auth fragment: ${required}`);
+  }
+}
+
+for (const forbidden of [
+  'adminRequired',
+  'barshMattersAdminGatePrompted',
+  'void runAdministratorGate("Open Administrator Home"',
+]) {
+  if (page.includes(forbidden)) {
+    failures.push(`app/page.tsx still has obsolete home prompt auth fragment: ${forbidden}`);
   }
 }
 
