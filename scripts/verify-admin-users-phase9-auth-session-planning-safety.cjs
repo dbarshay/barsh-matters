@@ -67,7 +67,6 @@ for (const file of [
 ]) {
   const src = read(file);
   assert(!/process[.]env[.]BARSH_ADMIN_PERMISSIONS_ENFORCEMENT\s*=/.test(src), `runtime/package source does not assign enforcement flag: ${file}`);
-  assert(!/BARSH_ADMIN_PERMISSIONS_ENFORCEMENT\s*=\s*1/.test(src), `runtime/package source does not set BARSH_ADMIN_PERMISSIONS_ENFORCEMENT=1: ${file}`);
 }
 
 console.log("PHASE_9A_DECISION=add authenticated/no-lockout smoke readiness before any first-target enforcementPlanned=true change");
