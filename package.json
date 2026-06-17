@@ -422,7 +422,8 @@
     "verify:admin-users-phase4-env-deployment-readiness-safety": "node scripts/verify-admin-users-phase4-env-deployment-readiness-safety.mjs",
     "verify:admin-users-phase4-completion-safety": "node scripts/verify-admin-users-phase4-completion-safety.mjs",
     "verify:admin-users-phase5-enforcement-simulation-negative-path-safety": "node scripts/verify-admin-users-phase5-enforcement-simulation-negative-path-safety.mjs",
-    "verify:admin-users-phase5-permission-check-negative-path-safety": "node scripts/verify-admin-users-phase5-permission-check-negative-path-safety.mjs"
+    "verify:admin-users-phase5-permission-check-negative-path-safety": "node scripts/verify-admin-users-phase5-permission-check-negative-path-safety.mjs",
+    "verify:admin-users-phase5-simulation-completion-safety": "node scripts/verify-admin-users-phase5-simulation-completion-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
