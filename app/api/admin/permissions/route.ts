@@ -4,6 +4,8 @@ import {
   ADMIN_ROUTE_PERMISSIONS,
   allAdminPermissionKeys,
   configuredAdminPermissionOverridesFromEnv,
+  adminPermissionDryRunDecisions,
+  adminRoutePermissionDryRunDecisions,
 } from "@/lib/adminPermissions";
 
 export const runtime = "nodejs";
@@ -20,5 +22,7 @@ export async function GET() {
     permissionKeys: allAdminPermissionKeys(),
     routePermissions: ADMIN_ROUTE_PERMISSIONS,
     overrideConfig: configuredAdminPermissionOverridesFromEnv(),
+    permissionDryRun: adminPermissionDryRunDecisions(),
+    routeDryRun: adminRoutePermissionDryRunDecisions(),
   });
 }

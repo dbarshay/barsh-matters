@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequestAuthorized } from "@/lib/adminAuth";
-import { allAdminPermissionKeys, configuredAdminPermissionOverridesFromEnv } from "@/lib/adminPermissions";
+import { allAdminPermissionKeys, configuredAdminPermissionOverridesFromEnv, adminPermissionDryRunDecisions } from "@/lib/adminPermissions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const authenticated = isAdminRequestAuthorized(req);
   const permissions = authenticated ? allAdminPermissionKeys() : [];
   const permissionOverrideConfig = configuredAdminPermissionOverridesFromEnv();
+  const permissionDryRun = authenticated ? adminPermissionDryRunDecisions(permissionOverrideConfig) : [];
 
   return NextResponse.json({
     ok: true,
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
     permissionsMode: "default-admin-allow-all",
     permissionsEnforced: false,
     permissionOverrideConfig,
+    permissionDryRun,
     twoFactorRequired: false,
     twoFactorMethod: null,
     twoFactorPlanned: "SMS or phone push 2FA is planned for a later auth phase.",

@@ -199,3 +199,48 @@ export function configuredAdminPermissionOverridesFromEnv(): AdminPermissionOver
     return { ok: false, source: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON", enforcementEnabled: false, overrides: [], errors: [error?.message || "Invalid permission override JSON."] };
   }
 }
+
+
+export type AdminPermissionDryRunDecision = {
+  permission: AdminPermissionKey;
+  defaultAllowed: boolean;
+  overrideAction: AdminPermissionOverrideAction | null;
+  wouldAllow: boolean;
+  wouldBlock: boolean;
+  enforcementEnabled: false;
+};
+
+export type AdminRoutePermissionDryRunDecision = AdminPermissionDryRunDecision & {
+  pattern: string;
+  method: string;
+  accessType: AdminRoutePermission["accessType"];
+};
+
+export function adminPermissionDryRunDecisions(overrides = configuredAdminPermissionOverridesFromEnv()): AdminPermissionDryRunDecision[] {
+  const overrideMap = new Map<AdminPermissionKey, AdminPermissionOverrideAction>();
+  for (const override of overrides.overrides) overrideMap.set(override.permission, override.action);
+  return ADMIN_PERMISSION_DEFINITIONS.map((definition) => {
+    const overrideAction = overrideMap.get(definition.key) || null;
+    const defaultAllowed = defaultAdminPermissionAllowed(definition.key);
+    const wouldAllow = overrideAction === "allow" ? true : overrideAction === "block" ? false : defaultAllowed;
+    return { permission: definition.key, defaultAllowed, overrideAction, wouldAllow, wouldBlock: !wouldAllow, enforcementEnabled: false };
+  });
+}
+
+export function adminRoutePermissionDryRunDecisions(overrides = configuredAdminPermissionOverridesFromEnv()): AdminRoutePermissionDryRunDecision[] {
+  const decisionMap = new Map(adminPermissionDryRunDecisions(overrides).map((decision) => [decision.permission, decision]));
+  return ADMIN_ROUTE_PERMISSIONS.map((route) => {
+    const decision = decisionMap.get(route.permission);
+    return {
+      permission: route.permission,
+      pattern: route.pattern,
+      method: route.method || "ANY",
+      accessType: route.accessType,
+      defaultAllowed: decision?.defaultAllowed ?? true,
+      overrideAction: decision?.overrideAction ?? null,
+      wouldAllow: decision?.wouldAllow ?? true,
+      wouldBlock: !(decision?.wouldAllow ?? true),
+      enforcementEnabled: false,
+    };
+  });
+}
