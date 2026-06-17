@@ -407,7 +407,8 @@
     "verify:admin-users-effective-permissions-readonly-safety": "node scripts/verify-admin-users-effective-permissions-readonly-safety.mjs",
     "verify:admin-users-write-controls-preview-safety": "node scripts/verify-admin-users-write-controls-preview-safety.mjs",
     "verify:admin-users-write-contract-preview-safety": "node scripts/verify-admin-users-write-contract-preview-safety.mjs",
-    "verify:admin-users-phase2-completion-safety": "node scripts/verify-admin-users-phase2-completion-safety.mjs"
+    "verify:admin-users-phase2-completion-safety": "node scripts/verify-admin-users-phase2-completion-safety.mjs",
+    "verify:admin-users-phase3-create-user-route-safety": "node scripts/verify-admin-users-phase3-create-user-route-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
