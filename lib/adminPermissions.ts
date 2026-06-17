@@ -101,6 +101,7 @@ export const ADMIN_ROUTE_PERMISSIONS: AdminRoutePermission[] = [
   { pattern: "/admin/document-templates/:key", permission: "admin.documentTemplates.view", accessType: "page", enforcementPlanned: false },
   { pattern: "/admin/backup-restore", permission: "admin.backups.view", accessType: "page", enforcementPlanned: false },
   { pattern: "/api/admin/permissions", permission: "admin.home.view", accessType: "api", method: "GET", enforcementPlanned: false },
+  { pattern: "/api/admin/permissions/check", permission: "admin.home.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/claim-index/search", permission: "admin.claimIndex.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/claim-index/audit", permission: "admin.claimIndex.audit", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/lawsuits/audit", permission: "admin.lawsuits.audit", accessType: "api", method: "GET", enforcementPlanned: false },
