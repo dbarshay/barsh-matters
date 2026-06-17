@@ -116,6 +116,7 @@ export const ADMIN_ROUTE_PERMISSIONS: AdminRoutePermission[] = [
   { pattern: "/api/admin/clients/:id", permission: "admin.clients.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/clients/:id", permission: "admin.clients.edit", accessType: "api", method: "PATCH", enforcementPlanned: false },
   { pattern: "/api/admin/clients/:id/invoice", permission: "admin.invoices.view", accessType: "api", method: "GET", enforcementPlanned: false },
+  { pattern: "/api/admin/clients/:id/invoice/:invoiceId", permission: "admin.invoices.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/clients/:id/invoice/cost-ledger", permission: "admin.invoices.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/clients/:id/invoice/create-preview", permission: "admin.invoices.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/clients/:id/invoice/create", permission: "admin.invoices.create", accessType: "api", method: "POST", enforcementPlanned: false },

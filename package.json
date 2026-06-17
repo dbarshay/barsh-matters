@@ -394,7 +394,8 @@
     "verify:admin-api-permission-enforcement-safety": "node scripts/verify-admin-api-permission-enforcement-safety.mjs",
     "verify:admin-permission-lockout-safety": "node scripts/verify-admin-permission-lockout-safety.mjs",
     "verify:admin-page-permission-enforcement-safety": "node scripts/verify-admin-page-permission-enforcement-safety.mjs",
-    "verify:admin-permissions-blocked-notice-safety": "node scripts/verify-admin-permissions-blocked-notice-safety.mjs"
+    "verify:admin-permissions-blocked-notice-safety": "node scripts/verify-admin-permissions-blocked-notice-safety.mjs",
+    "verify:admin-permissions-matrix-coverage-safety": "node scripts/verify-admin-permissions-matrix-coverage-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
