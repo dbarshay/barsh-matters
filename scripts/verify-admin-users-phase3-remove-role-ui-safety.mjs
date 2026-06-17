@@ -43,7 +43,7 @@ if (!fs.existsSync(pageFile)) {
   requireIncludes(pageFile, 'selectedRemoveUserRoleKeys', "remove UI uses assigned role keys for selected user");
   requireIncludes(pageFile, 'last active bootstrapSafe owner_admin user', "UI discloses last bootstrap owner protection");
   requireIncludes(pageFile, 'does not delete users, delete roles, create permission overrides, enable enforcement', "UI discloses no broader writes");
-  requireIncludes(pageFile, 'Create Admin User, Assign Role, and Remove Role are active in guarded preview/apply mode.', "roadmap labels remove role active");
+  requireIncludes(pageFile, 'Create Admin User, Assign Role, Remove Role, and Permission Override are active in guarded preview/apply mode.', "roadmap labels remove role active");
   requireIncludes(pageFile, 'Enforcement Disabled', "enforcement-disabled notice remains visible");
   requireNotIncludes(pageFile, 'Remove Role", "Block removal if it would leave no active bootstrapSafe owner_admin user.", "Preview only"', "stale remove-role preview-only roadmap text removed");
 }

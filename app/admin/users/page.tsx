@@ -46,6 +46,33 @@ function cleanEmail(value: string) {
   return String(value || "").trim().toLowerCase();
 }
 
+const ADMIN_PERMISSION_KEYS = [
+  "admin.home.view",
+  "admin.readiness.view",
+  "admin.claimIndex.view",
+  "admin.claimIndex.audit",
+  "admin.lawsuits.audit",
+  "admin.documentReadiness.audit",
+  "admin.lawsuitCleanup.view",
+  "admin.lawsuitCleanup.confirm",
+  "admin.ticklers.view",
+  "admin.ticklers.run",
+  "admin.clients.view",
+  "admin.clients.edit",
+  "admin.invoices.view",
+  "admin.invoices.create",
+  "admin.invoices.finalize",
+  "admin.invoices.void",
+  "admin.referenceData.view",
+  "admin.referenceData.import",
+  "admin.auditHistory.view",
+  "admin.documentTemplates.view",
+  "admin.documentTemplates.manage",
+  "admin.backups.view",
+  "admin.backups.run",
+  "admin.backups.restorePreview",
+] as const;
+
 export default function AdminUsersPlanningPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
@@ -69,6 +96,14 @@ export default function AdminUsersPlanningPage() {
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeMessage, setRemoveMessage] = useState("");
   const [removeResult, setRemoveResult] = useState<any>(null);
+  const [overrideTargetEmail, setOverrideTargetEmail] = useState("");
+  const [overridePermissionKey, setOverridePermissionKey] = useState("admin.invoices.view");
+  const [overrideAction, setOverrideAction] = useState("allow");
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideActorEmail, setOverrideActorEmail] = useState("dbarshay15@gmail.com");
+  const [overrideBusy, setOverrideBusy] = useState(false);
+  const [overrideMessage, setOverrideMessage] = useState("");
+  const [overrideResult, setOverrideResult] = useState<any>(null);
 
   async function loadAdminUsersPlanning() {
     try {
@@ -106,6 +141,13 @@ export default function AdminUsersPlanningPage() {
       removeResult?.mode === "preview" &&
       removeResult?.wouldRemove?.email === cleanEmail(removeTargetEmail) &&
       removeResult?.wouldRemove?.roleKey === removeRoleKey
+  );
+  const overridePreviewReady = Boolean(
+    overrideResult?.ok &&
+      overrideResult?.mode === "preview" &&
+      overrideResult?.wouldOverride?.email === cleanEmail(overrideTargetEmail) &&
+      overrideResult?.wouldOverride?.permissionKey === overridePermissionKey &&
+      overrideResult?.wouldOverride?.overrideAction === overrideAction
   );
 
   async function submitCreateAdminUser(apply: boolean) {
@@ -223,13 +265,51 @@ export default function AdminUsersPlanningPage() {
     }
   }
 
+  async function submitPermissionOverride(apply: boolean) {
+    try {
+      setOverrideBusy(true);
+      setOverrideMessage(apply ? "Applying guarded permission override request..." : "Previewing guarded permission override request...");
+      const response = await fetch("/api/admin/users/permission-override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          apply,
+          targetEmail: overrideTargetEmail,
+          permissionKey: overridePermissionKey,
+          overrideAction,
+          reason: overrideReason,
+          actorEmail: overrideActorEmail,
+        }),
+      });
+      const json = await response.json().catch(() => ({ ok: false, error: "Permission override route did not return JSON." }));
+      setOverrideResult({ ...json, httpStatus: response.status });
+      if (!response.ok || !json?.ok) {
+        setOverrideMessage(json?.error || `Permission override request failed with HTTP ${response.status}.`);
+        return;
+      }
+      if (apply) {
+        setOverrideMessage("Admin permission override saved. Permission enforcement remains disabled.");
+        setOverrideResult(null);
+        await loadAdminUsersPlanning();
+      } else {
+        setOverrideMessage("Preview complete. No AdminUserPermissionOverride row was saved. Review the result before Apply.");
+      }
+    } catch (err: any) {
+      setOverrideMessage(err?.message || "Permission override request failed.");
+      setOverrideResult({ ok: false, error: err?.message || "Permission override request failed." });
+    } finally {
+      setOverrideBusy(false);
+    }
+  }
+
   return (
     <main data-barsh-admin-users-planning-page="phase3-guarded" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <p style={{ margin: "0 0 8px", color: "#64748b", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>Phase 3 Guarded Write Controls</p>
           <h1 style={{ margin: 0, fontSize: 30 }}>Admin Users / Roles</h1>
-          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Guarded administrator user management surface. Active write controls in this phase are Create Admin User, Assign Role, and Remove Role. All use preview/apply mode, require an authenticated administrator session, require an active owner_admin actor, preserve lockout safety, and do not enable enforcement.</p>
+          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Guarded administrator user management surface. Active write controls in this phase are Create Admin User, Assign Role, Remove Role, and Permission Override. All use preview/apply mode, require an authenticated administrator session, require an active owner_admin actor, preserve lockout safety, and do not enable enforcement.</p>
         </section>
 
         {error ? <section data-barsh-admin-users-planning-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
@@ -385,6 +465,65 @@ export default function AdminUsersPlanningPage() {
           </div>
         </section>
 
+        <section data-barsh-admin-users-permission-override-control="phase3-guarded" style={{ ...cardStyle, border: "1px solid #ddd6fe", boxShadow: "0 12px 26px rgba(91, 33, 182, 0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Permission Override</h2>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply creates or updates only one AdminUserPermissionOverride row; it requires an explicit reason and blocks any block override mapped to administrator lockout safety routes. It does not change roles, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+            </div>
+            <span data-barsh-admin-users-permission-override-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Target Admin User
+              <select data-barsh-admin-users-override-target-email="true" value={overrideTargetEmail} onChange={(event) => { setOverrideTargetEmail(event.target.value); setOverrideResult(null); }} style={inputStyle}>
+                <option value="">Choose user...</option>
+                {dbUsers.map((user: any) => <option key={user.email} value={user.email}>{user.email}{user.displayName ? ` — ${user.displayName}` : ""}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Permission Key
+              <select data-barsh-admin-users-override-permission-key="true" value={overridePermissionKey} onChange={(event) => { setOverridePermissionKey(event.target.value); setOverrideResult(null); }} style={inputStyle}>
+                {ADMIN_PERMISSION_KEYS.map((permissionKey) => <option key={permissionKey} value={permissionKey}>{permissionKey}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Action
+              <select data-barsh-admin-users-override-action="true" value={overrideAction} onChange={(event) => { setOverrideAction(event.target.value); setOverrideResult(null); }} style={inputStyle}>
+                <option value="allow">allow</option>
+                <option value="block">block</option>
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Owner Admin Actor Email
+              <input data-barsh-admin-users-override-actor-email="true" value={overrideActorEmail} onChange={(event) => setOverrideActorEmail(event.target.value)} style={inputStyle} placeholder="owner_admin email" />
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850, gridColumn: "span 2" }}>
+              Explicit Reason
+              <input data-barsh-admin-users-override-reason="true" value={overrideReason} onChange={(event) => { setOverrideReason(event.target.value); setOverrideResult(null); }} style={inputStyle} placeholder="Required reason for allow/block override" />
+            </label>
+          </div>
+
+          <div style={{ marginTop: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 14, padding: 12, lineHeight: 1.45 }}>
+            <strong>Lockout protection:</strong> Block overrides are rejected if the permission maps to never-block safety routes, including /admin, /admin/permissions, /api/admin/permissions, and /api/admin/permissions/check.
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <button data-barsh-admin-users-override-preview-button="true" type="button" onClick={() => void submitPermissionOverride(false)} disabled={overrideBusy} style={{ ...secondaryButtonStyle, opacity: overrideBusy ? 0.7 : 1 }}>
+              {overrideBusy ? "Working..." : "Preview Permission Override"}
+            </button>
+            <button data-barsh-admin-users-override-apply-button="true" type="button" onClick={() => void submitPermissionOverride(true)} disabled={overrideBusy || !overridePreviewReady} style={{ ...primaryButtonStyle, opacity: overrideBusy || !overridePreviewReady ? 0.55 : 1, cursor: overrideBusy || !overridePreviewReady ? "not-allowed" : "pointer" }}>
+              Apply Permission Override
+            </button>
+          </div>
+
+          <div data-barsh-admin-users-override-result="true" style={{ marginTop: 14, background: overrideResult?.ok ? "#f0fdf4" : overrideResult ? "#fef2f2" : "#f8fafc", border: `1px solid ${overrideResult?.ok ? "#bbf7d0" : overrideResult ? "#fecaca" : "#e2e8f0"}`, borderRadius: 14, padding: 12 }}>
+            <div style={{ fontWeight: 950, color: overrideResult?.ok ? "#166534" : overrideResult ? "#991b1b" : "#475569" }}>{overrideMessage || "Preview the permission override before applying. Apply remains disabled until a matching preview succeeds."}</div>
+            {overrideResult ? <pre style={{ margin: "10px 0 0", whiteSpace: "pre-wrap", fontSize: 12, fontFamily: "monospace" }}>{JSON.stringify(overrideResult, null, 2)}</pre> : null}
+          </div>
+        </section>
+
         <section data-barsh-admin-users-db-preview="read-only" style={{ ...cardStyle, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Database-Backed Preview</h2>
           <p style={{ color: "#475569" }}>Preview of persisted admin users and roles. These records are not used for enforcement yet.</p>
@@ -411,7 +550,7 @@ export default function AdminUsersPlanningPage() {
 
         <section data-barsh-admin-users-write-controls-preview="phase3-mixed" style={{ ...cardStyle, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Write Controls Roadmap</h2>
-          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create Admin User, Assign Role, and Remove Role are active in guarded preview/apply mode. All other controls remain planning only and do not write records.</p>
+          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create Admin User, Assign Role, Remove Role, and Permission Override are active in guarded preview/apply mode. Enforcement remains unavailable and separate.</p>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
@@ -423,7 +562,7 @@ export default function AdminUsersPlanningPage() {
                 ["Create Admin User", "Requires active admin session, active owner_admin actor, duplicate-email check, active/inactive status validation, preview/apply, and audit logging on apply.", "Active guarded route"],
                 ["Assign Role", "Requires active admin session, active owner_admin actor, active target user, active role, duplicate-assignment prevention, preview/apply, bootstrap owner preservation, and audit logging on apply.", "Active guarded route"],
                 ["Remove Role", "Requires active admin session, active owner_admin actor, existing assignment, preview/apply, audit logging on apply, and last active bootstrapSafe owner_admin protection.", "Active guarded route"],
-                ["Permission Override", "Require explicit allow/block reason, never permit blocking /admin or /admin/permissions safety routes.", "Preview only"],
+                ["Permission Override", "Requires active admin session, active owner_admin actor, known permission key, allow/block action, explicit reason, preview/apply, audit logging on apply, and never-block safety route protection.", "Active guarded route"],
                 ["Enable Enforcement", "Separate phase only after persisted permissions are verified and lockout simulations pass.", "Not available"],
               ].map((row) => <tr key={row[0]}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{row[0]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{row[1]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", color: row[2].startsWith("Active") ? "#166534" : "#92400e", fontWeight: 900 }}>{row[2]}</td></tr>)}
             </tbody>
