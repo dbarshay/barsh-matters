@@ -3,7 +3,7 @@
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const adminCards = [
   {
@@ -97,6 +97,35 @@ const adminCards = [
 ];
 
 export default function AdminHomePage() {
+  const [adminSessionStatus, setAdminSessionStatus] = useState("Checking session...");
+  const [adminSessionBusy, setAdminSessionBusy] = useState(false);
+
+  async function loadAdminSessionStatus() {
+    try {
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      const json = await response.json().catch(() => null);
+      setAdminSessionStatus(response.ok && json?.authenticated ? "Signed in as Administrator" : "Not signed in");
+    } catch (error: any) {
+      setAdminSessionStatus(error?.message || "Session status unavailable");
+    }
+  }
+
+  async function logoutAdministrator() {
+    try {
+      setAdminSessionBusy(true);
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login?from=/admin";
+    } catch (error: any) {
+      setAdminSessionStatus(error?.message || "Logout failed");
+    } finally {
+      setAdminSessionBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAdminSessionStatus();
+  }, []);
+
   return (
     <main
       data-barsh-admin-home="true"
@@ -120,6 +149,16 @@ export default function AdminHomePage() {
           <BarshHeaderQuickNav />
           <BarshHeaderActions />
         </section>
+        <section data-barsh-admin-session-control="true" style={{ background: "#ffffff", border: "1px solid #dbeafe", borderRadius: 18, padding: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)" }}>
+          <div style={{ display: "grid", gap: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>Session</div>
+            <div data-barsh-admin-session-status="true" style={{ fontWeight: 900, color: "#0f172a" }}>{adminSessionStatus}</div>
+          </div>
+          <button data-barsh-admin-logout-button="true" type="button" onClick={logoutAdministrator} disabled={adminSessionBusy} style={{ border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", borderRadius: 999, padding: "9px 13px", fontSize: 12, fontWeight: 950, cursor: "pointer", opacity: adminSessionBusy ? 0.7 : 1 }}>
+            {adminSessionBusy ? "Logging out..." : "Logout"}
+          </button>
+        </section>
+
         <header
           style={{
             background: "#fff",
