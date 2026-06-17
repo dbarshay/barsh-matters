@@ -71,7 +71,7 @@ async function main() {
   if (!ready) {
     fail("/api/auth/session did not become reachable");
   } else {
-    const session = await request("/api/auth/session");
+    const session = await request("/api/auth/session", { auth: true });
     console.log("SESSION_STATUS=" + session.status);
     if (session.status !== 200) fail("/api/auth/session must return 200 for rollback/session proof");
     if (!session.body.includes("permissionsEnforced")) fail("/api/auth/session response should include permissionsEnforced rollback diagnostic");

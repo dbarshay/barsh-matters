@@ -22,6 +22,7 @@ assert(phase9c.includes("PHASE_9C_NEXT=build opt-in authenticated/no-lockout smo
 
 assert(harness.includes("BARSH_PHASE9D_AUTH_COOKIE"), "harness supports authenticated Cookie header input");
 assert(harness.includes("/api/auth/session"), "harness checks /api/auth/session rollback/session proof");
+assert(harness.includes(`request("/api/auth/session", { auth: true })`), "harness sends auth cookie to primary session authentication proof");
 assert(harness.includes("/admin/audit-history"), "harness targets read-only audit-history reachability");
 for (const path of ["/admin", "/admin/permissions", "/api/admin/permissions", "/api/admin/permissions/check"]) {
   assert(harness.includes(path), `harness checks never-block path: ${path}`);
