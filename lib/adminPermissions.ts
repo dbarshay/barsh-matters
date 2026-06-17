@@ -151,3 +151,51 @@ export function adminPermissionForRoute(pathname: string, method = "GET"): Admin
     return patternParts.every((part, index) => part.startsWith(":") || part === pathParts[index]);
   }) || null;
 }
+
+
+export type AdminPermissionOverrideAction = "allow" | "block";
+
+export type AdminPermissionOverride = {
+  permission: AdminPermissionKey;
+  action: AdminPermissionOverrideAction;
+  source: "env";
+};
+
+export type AdminPermissionOverrideConfig = {
+  ok: boolean;
+  source: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON";
+  enforcementEnabled: false;
+  overrides: AdminPermissionOverride[];
+  errors: string[];
+};
+
+function permissionOverrideEntriesFromArray(value: unknown, action: AdminPermissionOverrideAction, errors: string[]): AdminPermissionOverride[] {
+  if (!Array.isArray(value)) return [];
+  const overrides: AdminPermissionOverride[] = [];
+  for (const item of value) {
+    const permission = String(item ?? "").trim();
+    if (!permission) continue;
+    if (!isKnownAdminPermissionKey(permission)) {
+      errors.push(`Unknown admin permission override ignored: ${permission}`);
+      continue;
+    }
+    overrides.push({ permission, action, source: "env" });
+  }
+  return overrides;
+}
+
+export function configuredAdminPermissionOverridesFromEnv(): AdminPermissionOverrideConfig {
+  const raw = String(process.env.BARSH_ADMIN_PERMISSION_OVERRIDES_JSON ?? "").trim();
+  const errors: string[] = [];
+  if (!raw) {
+    return { ok: true, source: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON", enforcementEnabled: false, overrides: [], errors };
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    const allow = permissionOverrideEntriesFromArray(parsed?.allow, "allow", errors);
+    const block = permissionOverrideEntriesFromArray(parsed?.block, "block", errors);
+    return { ok: errors.length === 0, source: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON", enforcementEnabled: false, overrides: [...allow, ...block], errors };
+  } catch (error: any) {
+    return { ok: false, source: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON", enforcementEnabled: false, overrides: [], errors: [error?.message || "Invalid permission override JSON."] };
+  }
+}
