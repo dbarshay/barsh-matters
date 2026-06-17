@@ -451,7 +451,8 @@
     "smoke:admin-users-phase10f-ephemeral-activation-simulation": "node scripts/smoke-admin-users-phase10f-ephemeral-activation-simulation.cjs",
     "verify:admin-users-phase10f-ephemeral-activation-simulation-safety": "node scripts/verify-admin-users-phase10f-ephemeral-activation-simulation-safety.cjs",
     "verify:admin-users-phase10g-activation-rollback-package-safety": "node scripts/verify-admin-users-phase10g-activation-rollback-package-safety.cjs",
-    "verify:admin-users-phase10g-completion-safety": "node scripts/verify-admin-users-phase10g-completion-safety.cjs"
+    "verify:admin-users-phase10g-completion-safety": "node scripts/verify-admin-users-phase10g-completion-safety.cjs",
+    "verify:admin-users-phase10h-local-activation-rollback-proof-safety": "node scripts/verify-admin-users-phase10h-local-activation-rollback-proof-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
