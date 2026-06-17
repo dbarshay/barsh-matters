@@ -447,7 +447,9 @@
     "verify:admin-users-phase10b-first-target-enforcement-planned-safety": "node scripts/verify-admin-users-phase10b-first-target-enforcement-planned-safety.cjs",
     "verify:admin-users-phase10b-completion-safety": "node scripts/verify-admin-users-phase10b-completion-safety.cjs",
     "verify:admin-users-phase10e-activation-readiness-guardrails-safety": "node scripts/verify-admin-users-phase10e-activation-readiness-guardrails-safety.cjs",
-    "verify:admin-users-phase10e-completion-safety": "node scripts/verify-admin-users-phase10e-completion-safety.cjs"
+    "verify:admin-users-phase10e-completion-safety": "node scripts/verify-admin-users-phase10e-completion-safety.cjs",
+    "smoke:admin-users-phase10f-ephemeral-activation-simulation": "node scripts/smoke-admin-users-phase10f-ephemeral-activation-simulation.cjs",
+    "verify:admin-users-phase10f-ephemeral-activation-simulation-safety": "node scripts/verify-admin-users-phase10f-ephemeral-activation-simulation-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
