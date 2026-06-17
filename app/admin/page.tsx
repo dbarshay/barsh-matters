@@ -64,6 +64,12 @@ const adminCards = [
     href: "/admin/permissions",
     description:
       "Read-only view of admin permission keys and route/function mappings before enforcement is enabled.",
+  },
+  {
+    label: "Users / Roles",
+    href: "/admin/users",
+    description:
+      "Read-only Phase 2 planning surface for administrator users, roles, and effective permission review before write controls are added.",
     icon: "Permissions",
   },
   {
