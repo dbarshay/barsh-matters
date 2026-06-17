@@ -411,7 +411,8 @@
     "verify:admin-users-phase3-create-user-route-safety": "node scripts/verify-admin-users-phase3-create-user-route-safety.mjs",
     "verify:admin-users-phase3-create-user-ui-safety": "node scripts/verify-admin-users-phase3-create-user-ui-safety.mjs",
     "verify:admin-users-phase3-assign-role-route-safety": "node scripts/verify-admin-users-phase3-assign-role-route-safety.mjs",
-    "verify:admin-users-phase3-assign-role-ui-safety": "node scripts/verify-admin-users-phase3-assign-role-ui-safety.mjs"
+    "verify:admin-users-phase3-assign-role-ui-safety": "node scripts/verify-admin-users-phase3-assign-role-ui-safety.mjs",
+    "verify:admin-users-phase3-remove-role-route-safety": "node scripts/verify-admin-users-phase3-remove-role-route-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
