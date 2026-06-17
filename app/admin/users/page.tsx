@@ -62,6 +62,27 @@ export default function AdminUsersPlanningPage() {
           </table>
         </section>
 
+        <section data-barsh-admin-users-write-controls-preview="read-only" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, overflowX: "auto" }}>
+          <h2 style={{ marginTop: 0 }}>Future Write Controls Preview</h2>
+          <p style={{ color: "#475569", lineHeight: 1.5 }}>Planning only. These controls are not active yet. No button in this section creates users, edits roles, assigns permissions, writes database records, or enables enforcement.</p>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr>
+                {["Future Action", "Planned Guardrail", "Status"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Add Admin User", "Require active admin session, owner_admin role, duplicate-email check, and no lockout impact.", "Preview only"],
+                ["Assign Role", "Require owner_admin role, preserve at least one bootstrapSafe owner_admin user, and audit every change.", "Preview only"],
+                ["Remove Role", "Block removal if it would leave no active bootstrapSafe owner_admin user.", "Preview only"],
+                ["Permission Override", "Require explicit allow/block reason, never permit blocking /admin or /admin/permissions safety routes.", "Preview only"],
+                ["Enable Enforcement", "Separate phase only after persisted permissions are verified and lockout simulations pass.", "Not available"],
+              ].map((row) => <tr key={row[0]}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{row[0]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{row[1]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", color: "#92400e", fontWeight: 900 }}>{row[2]}</td></tr>)}
+            </tbody>
+          </table>
+        </section>
+
         <section data-barsh-admin-users-planning-users="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Planned Users</h2>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
