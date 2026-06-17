@@ -59,7 +59,8 @@ for (const required of [
   'matcher: ["/admin/:path*", "/api/admin/:path*"]',
   'const requestedPath = `${pathname}${req.nextUrl.search}`;',
   'redirectUrl.search = "";',
-  'redirectUrl.searchParams.set("adminRequired", "1");',
+  
+  'redirectUrl.pathname = "/login";',
   'redirectUrl.searchParams.set("from", requestedPath);',
 ]) {
   if (!proxy.includes(required)) {
@@ -91,4 +92,4 @@ if (failures.length) {
 }
 
 console.log("FAILURES=0");
-console.log("PASS: admin auth foundation is centralized and proxy protects admin pages plus admin APIs while preserving visible prompt authorization.");
+console.log("PASS: admin auth foundation is centralized and proxy protects admin pages plus admin APIs while preserving login redirect authorization.");

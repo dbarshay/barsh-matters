@@ -25,9 +25,8 @@ export function proxy(req: NextRequest) {
 
   const redirectUrl = req.nextUrl.clone();
   const requestedPath = `${pathname}${req.nextUrl.search}`;
-  redirectUrl.pathname = "/";
+  redirectUrl.pathname = "/login";
   redirectUrl.search = "";
-  redirectUrl.searchParams.set("adminRequired", "1");
   redirectUrl.searchParams.set("from", requestedPath);
 
   return NextResponse.redirect(redirectUrl);
@@ -36,3 +35,4 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
+

@@ -67,10 +67,11 @@ for (const required of [
   'matcher: ["/admin/:path*", "/api/admin/:path*"]',
   "pathname === ADMIN_AUTHORIZE_PATH",
   "return adminUnauthorizedJson(401);",
-  'redirectUrl.pathname = "/";',
+  'redirectUrl.pathname = "/login";',
+  'redirectUrl.searchParams.set("from", requestedPath);',
 ]) {
   if (!proxy.includes(required)) {
-    failures.push(`proxy.ts should remain on current visible-prompt admin gate during Phase 1B; missing: ${required}`);
+    failures.push(`proxy.ts should preserve current login redirect/admin API gate contract; missing: ${required}`);
   }
 }
 
@@ -87,4 +88,4 @@ if (failures.length) {
 }
 
 console.log("FAILURES=0");
-console.log("PASS: login/logout/session foundation exists without replacing the current admin prompt/proxy gate.");
+console.log("PASS: login/logout/session foundation exists without replacing the current admin login/proxy gate.");
