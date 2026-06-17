@@ -322,6 +322,16 @@ export default function AdminUsersPlanningPage() {
           <strong>Enforcement Disabled:</strong> persisted users, roles, role permissions, and effective permissions are still displayed for review only. They are not used to block pages or API functions in this phase.
         </section>
 
+        <section data-barsh-admin-users-audit-visibility="read-only" style={{ ...cardStyle, border: "1px solid #dbeafe", background: "#eff6ff" }}>
+          <h2 style={{ margin: "0 0 8px", fontSize: 20 }}>Admin Users Audit Visibility</h2>
+          <p style={{ margin: "0 0 12px", color: "#1e3a8a", lineHeight: 1.5 }}>
+            Read-only audit review for admin-user create, role assignment, role removal, and permission-override activity. Apply actions are audit logged, and permission enforcement remains disabled.
+          </p>
+          <a href="/admin/audit-history" data-barsh-admin-users-audit-history-link="true" style={{ ...secondaryButtonStyle, display: "inline-flex", textDecoration: "none" }}>
+            Open Audit History
+          </a>
+        </section>
+
         <section data-barsh-admin-users-create-user-control="phase3-guarded" style={{ ...cardStyle, border: "1px solid #bfdbfe", boxShadow: "0 12px 26px rgba(30, 58, 138, 0.08)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>

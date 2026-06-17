@@ -141,6 +141,27 @@ export default function AdminAuditHistoryPage() {
         )}
 
         <section
+          data-barsh-admin-users-audit-history-focus="read-only"
+          style={{
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: "0 10px 25px rgba(30, 58, 138, 0.06)",
+          }}
+        >
+          <h2 style={{ margin: "0 0 8px", fontSize: 18 }}>Admin Users Audit Focus</h2>
+          <p style={{ margin: "0 0 10px", color: "#1e3a8a", lineHeight: 1.5 }}>
+            Focused read-only review labels for admin-user-create, admin-user-assign-role, admin-user-remove-role, and admin-user-permission-override audit entries. This page only reads the existing audit-log API and does not enable permission enforcement.
+          </p>
+          <div data-barsh-admin-users-audit-action-labels="true" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {["admin-user-create", "admin-user-assign-role", "admin-user-remove-role", "admin-user-permission-override"].map((action) => (
+              <span key={action} style={{ border: "1px solid #bfdbfe", background: "#fff", color: "#1e3a8a", borderRadius: 999, padding: "6px 10px", fontWeight: 900, fontSize: 12, fontFamily: "monospace" }}>{action}</span>
+            ))}
+          </div>
+        </section>
+
+        <section
           style={{
             background: "#fff",
             border: "1px solid #e5e7eb",

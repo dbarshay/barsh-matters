@@ -1,4 +1,5 @@
 export type AdminPermissionKey =
+  | "admin.users.manage"
   | "admin.home.view"
   | "admin.readiness.view"
   | "admin.claimIndex.view"
@@ -25,6 +26,7 @@ export type AdminPermissionKey =
   | "admin.backups.restorePreview";
 
 export type AdminPermissionCategory =
+  | "Users / Roles"
   | "Admin"
   | "Audits"
   | "Clients"
@@ -52,7 +54,7 @@ export type AdminRoutePermission = {
 };
 
 export const ADMIN_PERMISSION_DEFINITIONS: AdminPermissionDefinition[] = [
-  { key: "admin.users.manage", label: "Users / Roles Manage", category: "Users / Roles", description: "Create admin users, assign roles, remove roles, and manage per-user permission overrides through guarded preview/apply workflows." },
+  { key: "admin.users.manage", label: "Users / Roles Manage", category: "Users / Roles", description: "Create admin users, assign roles, remove roles, and manage per-user permission overrides through guarded preview/apply workflows.", defaultAdminAllowed: true },
   { key: "admin.home.view", label: "Admin Home", description: "Open the Administrator landing page.", category: "Admin", defaultAdminAllowed: true },
   { key: "admin.readiness.view", label: "Readiness Dashboard", description: "View readiness dashboard and linked audit status.", category: "Audits", defaultAdminAllowed: true },
   { key: "admin.claimIndex.view", label: "ClaimIndex Viewer", description: "View and search the local ClaimIndex admin viewer.", category: "Audits", defaultAdminAllowed: true },
