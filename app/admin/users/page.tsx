@@ -63,6 +63,12 @@ export default function AdminUsersPlanningPage() {
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignMessage, setAssignMessage] = useState("");
   const [assignResult, setAssignResult] = useState<any>(null);
+  const [removeTargetEmail, setRemoveTargetEmail] = useState("");
+  const [removeRoleKey, setRemoveRoleKey] = useState("");
+  const [removeActorEmail, setRemoveActorEmail] = useState("dbarshay15@gmail.com");
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeMessage, setRemoveMessage] = useState("");
+  const [removeResult, setRemoveResult] = useState<any>(null);
 
   async function loadAdminUsersPlanning() {
     try {
@@ -92,6 +98,14 @@ export default function AdminUsersPlanningPage() {
       assignResult?.mode === "preview" &&
       assignResult?.wouldAssign?.email === cleanEmail(assignTargetEmail) &&
       assignResult?.wouldAssign?.roleKey === assignRoleKey
+  );
+  const selectedRemoveUser = dbUsers.find((user: any) => user.email === removeTargetEmail) || null;
+  const selectedRemoveUserRoleKeys = Array.isArray(selectedRemoveUser?.roleKeys) ? selectedRemoveUser.roleKeys : [];
+  const removePreviewReady = Boolean(
+    removeResult?.ok &&
+      removeResult?.mode === "preview" &&
+      removeResult?.wouldRemove?.email === cleanEmail(removeTargetEmail) &&
+      removeResult?.wouldRemove?.roleKey === removeRoleKey
   );
 
   async function submitCreateAdminUser(apply: boolean) {
@@ -172,13 +186,50 @@ export default function AdminUsersPlanningPage() {
     }
   }
 
+  async function submitRemoveAdminRole(apply: boolean) {
+    try {
+      setRemoveBusy(true);
+      setRemoveMessage(apply ? "Applying guarded remove-role request..." : "Previewing guarded remove-role request...");
+      const response = await fetch("/api/admin/users/remove-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          apply,
+          targetEmail: removeTargetEmail,
+          roleKey: removeRoleKey,
+          actorEmail: removeActorEmail,
+        }),
+      });
+      const json = await response.json().catch(() => ({ ok: false, error: "Remove role route did not return JSON." }));
+      setRemoveResult({ ...json, httpStatus: response.status });
+      if (!response.ok || !json?.ok) {
+        setRemoveMessage(json?.error || `Remove role request failed with HTTP ${response.status}.`);
+        return;
+      }
+      if (apply) {
+        setRemoveMessage("Admin role removed. Permission enforcement remains disabled.");
+        setRemoveRoleKey("");
+        setRemoveResult(null);
+        await loadAdminUsersPlanning();
+      } else {
+        setRemoveMessage("Preview complete. No AdminUserRole row was deleted. Review the result before Apply.");
+      }
+    } catch (err: any) {
+      setRemoveMessage(err?.message || "Remove role request failed.");
+      setRemoveResult({ ok: false, error: err?.message || "Remove role request failed." });
+    } finally {
+      setRemoveBusy(false);
+    }
+  }
+
   return (
     <main data-barsh-admin-users-planning-page="phase3-guarded" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <p style={{ margin: "0 0 8px", color: "#64748b", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>Phase 3 Guarded Write Controls</p>
           <h1 style={{ margin: 0, fontSize: 30 }}>Admin Users / Roles</h1>
-          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Guarded administrator user management surface. Active write controls in this phase are Create Admin User and Assign Role. Both use preview/apply mode, require an authenticated administrator session, require an active owner_admin actor, preserve lockout safety, and do not enable enforcement.</p>
+          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Guarded administrator user management surface. Active write controls in this phase are Create Admin User, Assign Role, and Remove Role. All use preview/apply mode, require an authenticated administrator session, require an active owner_admin actor, preserve lockout safety, and do not enable enforcement.</p>
         </section>
 
         {error ? <section data-barsh-admin-users-planning-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
@@ -286,6 +337,54 @@ export default function AdminUsersPlanningPage() {
           </div>
         </section>
 
+        <section data-barsh-admin-users-remove-role-control="phase3-guarded" style={{ ...cardStyle, border: "1px solid #fecaca", boxShadow: "0 12px 26px rgba(153, 27, 27, 0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Remove Admin Role</h2>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply deletes only an AdminUserRole join row; it blocks missing assignments and blocks removing owner_admin from the last active bootstrapSafe owner_admin user. It does not delete users, delete roles, create permission overrides, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+            </div>
+            <span data-barsh-admin-users-remove-role-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Target Admin User With Roles
+              <select data-barsh-admin-users-remove-target-email="true" value={removeTargetEmail} onChange={(event) => { setRemoveTargetEmail(event.target.value); setRemoveRoleKey(""); setRemoveResult(null); }} style={inputStyle}>
+                <option value="">Choose user...</option>
+                {dbUsers.filter((user: any) => (user.roleKeys || []).length > 0).map((user: any) => <option key={user.email} value={user.email}>{user.email}{user.displayName ? ` — ${user.displayName}` : ""}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Assigned Role To Remove
+              <select data-barsh-admin-users-remove-role-key="true" value={removeRoleKey} onChange={(event) => { setRemoveRoleKey(event.target.value); setRemoveResult(null); }} style={inputStyle}>
+                <option value="">Choose assigned role...</option>
+                {selectedRemoveUserRoleKeys.map((roleKey: string) => {
+                  const role = dbRoles.find((entry: any) => entry.key === roleKey);
+                  return <option key={roleKey} value={roleKey}>{roleKey}{role?.label ? ` — ${role.label}` : ""}</option>;
+                })}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Owner Admin Actor Email
+              <input data-barsh-admin-users-remove-actor-email="true" value={removeActorEmail} onChange={(event) => setRemoveActorEmail(event.target.value)} style={inputStyle} placeholder="owner_admin email" />
+            </label>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <button data-barsh-admin-users-remove-preview-button="true" type="button" onClick={() => void submitRemoveAdminRole(false)} disabled={removeBusy} style={{ ...secondaryButtonStyle, opacity: removeBusy ? 0.7 : 1 }}>
+              {removeBusy ? "Working..." : "Preview Remove Role"}
+            </button>
+            <button data-barsh-admin-users-remove-apply-button="true" type="button" onClick={() => void submitRemoveAdminRole(true)} disabled={removeBusy || !removePreviewReady} style={{ ...primaryButtonStyle, background: "#991b1b", border: "1px solid #991b1b", opacity: removeBusy || !removePreviewReady ? 0.55 : 1, cursor: removeBusy || !removePreviewReady ? "not-allowed" : "pointer" }}>
+              Apply Remove Role
+            </button>
+          </div>
+
+          <div data-barsh-admin-users-remove-result="true" style={{ marginTop: 14, background: removeResult?.ok ? "#f0fdf4" : removeResult ? "#fef2f2" : "#f8fafc", border: `1px solid ${removeResult?.ok ? "#bbf7d0" : removeResult ? "#fecaca" : "#e2e8f0"}`, borderRadius: 14, padding: 12 }}>
+            <div style={{ fontWeight: 950, color: removeResult?.ok ? "#166534" : removeResult ? "#991b1b" : "#475569" }}>{removeMessage || "Preview the role removal before applying. Apply remains disabled until a matching preview succeeds."}</div>
+            {removeResult ? <pre style={{ margin: "10px 0 0", whiteSpace: "pre-wrap", fontSize: 12, fontFamily: "monospace" }}>{JSON.stringify(removeResult, null, 2)}</pre> : null}
+          </div>
+        </section>
+
         <section data-barsh-admin-users-db-preview="read-only" style={{ ...cardStyle, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Database-Backed Preview</h2>
           <p style={{ color: "#475569" }}>Preview of persisted admin users and roles. These records are not used for enforcement yet.</p>
@@ -312,7 +411,7 @@ export default function AdminUsersPlanningPage() {
 
         <section data-barsh-admin-users-write-controls-preview="phase3-mixed" style={{ ...cardStyle, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Write Controls Roadmap</h2>
-          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create Admin User and Assign Role are active in guarded preview/apply mode. All other controls remain planning only and do not write records.</p>
+          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create Admin User, Assign Role, and Remove Role are active in guarded preview/apply mode. All other controls remain planning only and do not write records.</p>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
@@ -323,7 +422,7 @@ export default function AdminUsersPlanningPage() {
               {[
                 ["Create Admin User", "Requires active admin session, active owner_admin actor, duplicate-email check, active/inactive status validation, preview/apply, and audit logging on apply.", "Active guarded route"],
                 ["Assign Role", "Requires active admin session, active owner_admin actor, active target user, active role, duplicate-assignment prevention, preview/apply, bootstrap owner preservation, and audit logging on apply.", "Active guarded route"],
-                ["Remove Role", "Block removal if it would leave no active bootstrapSafe owner_admin user.", "Preview only"],
+                ["Remove Role", "Requires active admin session, active owner_admin actor, existing assignment, preview/apply, audit logging on apply, and last active bootstrapSafe owner_admin protection.", "Active guarded route"],
                 ["Permission Override", "Require explicit allow/block reason, never permit blocking /admin or /admin/permissions safety routes.", "Preview only"],
                 ["Enable Enforcement", "Separate phase only after persisted permissions are verified and lockout simulations pass.", "Not available"],
               ].map((row) => <tr key={row[0]}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{row[0]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{row[1]}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", color: row[2].startsWith("Active") ? "#166534" : "#92400e", fontWeight: 900 }}>{row[2]}</td></tr>)}

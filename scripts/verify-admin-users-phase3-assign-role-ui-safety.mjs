@@ -44,7 +44,7 @@ if (!fs.existsSync(pageFile)) {
   requireIncludes(pageFile, 'activeDbRoles', "assign UI uses active DB roles");
   requireIncludes(pageFile, 'bootstrapSafe owner_admin preservation', "UI discloses bootstrap owner preservation");
   requireIncludes(pageFile, 'does not create users, create roles, create permission overrides, enable enforcement', "UI discloses no broader writes");
-  requireIncludes(pageFile, 'Create Admin User and Assign Role are active in guarded preview/apply mode.', "roadmap labels assign role active");
+  requireIncludes(pageFile, 'Create Admin User, Assign Role, and Remove Role are active in guarded preview/apply mode.', "roadmap labels assign role active");
   requireIncludes(pageFile, 'Enforcement Disabled', "enforcement-disabled notice remains visible");
   requireNotIncludes(pageFile, 'Assign Role", "Require owner_admin role, preserve at least one bootstrapSafe owner_admin user, and audit every change.", "Preview only"', "stale assign-role preview-only roadmap text removed");
 }
