@@ -453,7 +453,8 @@
     "verify:admin-users-phase10g-activation-rollback-package-safety": "node scripts/verify-admin-users-phase10g-activation-rollback-package-safety.cjs",
     "verify:admin-users-phase10g-completion-safety": "node scripts/verify-admin-users-phase10g-completion-safety.cjs",
     "verify:admin-users-phase10h-local-activation-rollback-proof-safety": "node scripts/verify-admin-users-phase10h-local-activation-rollback-proof-safety.cjs",
-    "verify:vercel-backups-trace-exclusion-safety": "node scripts/verify-vercel-backups-trace-exclusion-safety.cjs"
+    "verify:vercel-backups-trace-exclusion-safety": "node scripts/verify-vercel-backups-trace-exclusion-safety.cjs",
+    "verify:admin-users-phase10i-production-activation-proof-safety": "node scripts/verify-admin-users-phase10i-production-activation-proof-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
