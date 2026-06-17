@@ -377,7 +377,8 @@
     "verify:attorney-fee-report-panel-safety": "node scripts/verify-attorney-fee-report-panel-safety.mjs",
     "verify:provider-hub-invoice-link-safety": "node scripts/verify-provider-hub-invoice-link-safety.mjs",
     "verify:admin-auth-foundation-safety": "node scripts/verify-admin-auth-foundation-safety.mjs",
-    "verify:admin-login-foundation-safety": "node scripts/verify-admin-login-foundation-safety.mjs"
+    "verify:admin-login-foundation-safety": "node scripts/verify-admin-login-foundation-safety.mjs",
+    "verify:admin-permissions-registry-safety": "node scripts/verify-admin-permissions-registry-safety.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
