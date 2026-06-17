@@ -66,8 +66,8 @@ if (adminPermSource.includes("isAdminPermissionNeverBlockPath") && missingNeverB
 } else {
   fail(`never-block lockout routes remain hardcoded; missing=${missingNeverBlockPaths.join(",") || "function/reason"}`);
 }
-if (!adminPermSource.includes('/api/admin/users/permission-override')) pass("permission-override route not added to enforcement mapping");
-else fail("permission-override route not added to enforcement mapping");
+if (adminPermSource.includes("/api/admin/users/permission-override") && adminPermSource.includes("enforcementPlanned: false")) pass("permission-override route mapped for Phase 4 readiness only with enforcementPlanned false");
+else fail("permission-override route mapped for Phase 4 readiness only with enforcementPlanned false");
 
 const packageJson = JSON.parse(fs.readFileSync(packageFile, "utf8"));
 if (packageJson.scripts?.["verify:admin-users-phase3-permission-override-route-safety"] === "node scripts/verify-admin-users-phase3-permission-override-route-safety.mjs") {

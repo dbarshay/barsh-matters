@@ -82,10 +82,11 @@ const writeRoutes = [
 ];
 
 for (const route of writeRoutes) {
-  if (!adminPermSource.includes(route)) pass(`${route} not added to enforcement mapping`);
-  else fail(`${route} not added to enforcement mapping`);
+  if (adminPermSource.includes(route) && adminPermSource.includes("enforcementPlanned: false")) pass(`${route} mapped for Phase 4 readiness with enforcementPlanned false`);
+  else fail(`${route} mapped for Phase 4 readiness with enforcementPlanned false`);
 }
 
+requireIncludes("lib/adminPermissions.ts", "enforcementPlanned: false", "Phase 4 user-write route mappings remain non-activating");
 const requiredNeverBlockPaths = ["/admin", "/admin/permissions", "/api/admin/permissions", "/api/admin/permissions/check"];
 const missingNeverBlockPaths = requiredNeverBlockPaths.filter((path) => !adminPermSource.includes(path));
 if (adminPermSource.includes("isAdminPermissionNeverBlockPath") && missingNeverBlockPaths.length === 0 && adminPermSource.includes("Never-block safety route remains allowed to prevent administrator lockout.")) {

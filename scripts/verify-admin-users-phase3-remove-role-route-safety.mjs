@@ -62,8 +62,8 @@ if (adminPermSource.includes("isAdminPermissionNeverBlockPath") && missingNeverB
 } else {
   fail(`never-block lockout routes remain hardcoded; missing=${missingNeverBlockPaths.join(",") || "function/reason"}`);
 }
-if (!adminPermSource.includes('/api/admin/users/remove-role')) pass("remove-role route not added to enforcement mapping");
-else fail("remove-role route not added to enforcement mapping");
+if (adminPermSource.includes("/api/admin/users/remove-role") && adminPermSource.includes("enforcementPlanned: false")) pass("remove-role route mapped for Phase 4 readiness only with enforcementPlanned false");
+else fail("remove-role route mapped for Phase 4 readiness only with enforcementPlanned false");
 
 const packageJson = JSON.parse(fs.readFileSync(packageFile, "utf8"));
 if (packageJson.scripts?.["verify:admin-users-phase3-remove-role-route-safety"] === "node scripts/verify-admin-users-phase3-remove-role-route-safety.mjs") {

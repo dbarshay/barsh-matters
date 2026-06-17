@@ -52,6 +52,7 @@ export type AdminRoutePermission = {
 };
 
 export const ADMIN_PERMISSION_DEFINITIONS: AdminPermissionDefinition[] = [
+  { key: "admin.users.manage", label: "Users / Roles Manage", category: "Users / Roles", description: "Create admin users, assign roles, remove roles, and manage per-user permission overrides through guarded preview/apply workflows." },
   { key: "admin.home.view", label: "Admin Home", description: "Open the Administrator landing page.", category: "Admin", defaultAdminAllowed: true },
   { key: "admin.readiness.view", label: "Readiness Dashboard", description: "View readiness dashboard and linked audit status.", category: "Audits", defaultAdminAllowed: true },
   { key: "admin.claimIndex.view", label: "ClaimIndex Viewer", description: "View and search the local ClaimIndex admin viewer.", category: "Audits", defaultAdminAllowed: true },
@@ -104,6 +105,10 @@ export const ADMIN_ROUTE_PERMISSIONS: AdminRoutePermission[] = [
   { pattern: "/api/admin/permissions", permission: "admin.home.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/permissions/check", permission: "admin.home.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/users/planning", permission: "admin.home.view", accessType: "api", method: "GET", enforcementPlanned: false },
+  { pattern: "/api/admin/users/create", permission: "admin.users.manage", accessType: "api", method: "POST", enforcementPlanned: false },
+  { pattern: "/api/admin/users/assign-role", permission: "admin.users.manage", accessType: "api", method: "POST", enforcementPlanned: false },
+  { pattern: "/api/admin/users/remove-role", permission: "admin.users.manage", accessType: "api", method: "POST", enforcementPlanned: false },
+  { pattern: "/api/admin/users/permission-override", permission: "admin.users.manage", accessType: "api", method: "POST", enforcementPlanned: false },
   { pattern: "/api/admin/claim-index/search", permission: "admin.claimIndex.view", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/claim-index/audit", permission: "admin.claimIndex.audit", accessType: "api", method: "GET", enforcementPlanned: false },
   { pattern: "/api/admin/lawsuits/audit", permission: "admin.lawsuits.audit", accessType: "api", method: "GET", enforcementPlanned: false },

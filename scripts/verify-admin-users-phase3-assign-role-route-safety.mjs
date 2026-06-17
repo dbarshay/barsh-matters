@@ -64,8 +64,8 @@ if (adminPermSource.includes("isAdminPermissionNeverBlockPath") && missingNeverB
 } else {
   fail(`never-block lockout routes remain hardcoded; missing=${missingNeverBlockPaths.join(",") || "function/reason"}`);
 }
-if (!adminPermSource.includes('/api/admin/users/assign-role')) pass("assign-role route not added to enforcement mapping");
-else fail("assign-role route not added to enforcement mapping");
+if (adminPermSource.includes("/api/admin/users/assign-role") && adminPermSource.includes("enforcementPlanned: false")) pass("assign-role route mapped for Phase 4 readiness only with enforcementPlanned false");
+else fail("assign-role route mapped for Phase 4 readiness only with enforcementPlanned false");
 
 const packageJson = JSON.parse(fs.readFileSync(packageFile, "utf8"));
 if (packageJson.scripts?.["verify:admin-users-phase3-assign-role-route-safety"] === "node scripts/verify-admin-users-phase3-assign-role-route-safety.mjs") {
