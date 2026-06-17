@@ -249,3 +249,27 @@ export function adminRoutePermissionDryRunDecisions(overrides = configuredAdminP
 export function configuredAdminPermissionsEnforcementEnabled(): boolean {
   return String(process.env.BARSH_ADMIN_PERMISSIONS_ENFORCEMENT ?? "").trim() === "1";
 }
+
+
+export type AdminPermissionEnforcementDecision = {
+  enforcementEnabled: boolean;
+  matchedRoute: AdminRoutePermission | null;
+  permission: AdminPermissionKey | null;
+  allowed: boolean;
+  blocked: boolean;
+  reason: string;
+};
+
+export function adminPermissionEnforcementDecision(pathname: string, method = "GET", overrides = configuredAdminPermissionOverridesFromEnv()): AdminPermissionEnforcementDecision {
+  const enforcementEnabled = configuredAdminPermissionsEnforcementEnabled();
+  const matchedRoute = adminPermissionForRoute(pathname, method);
+  if (!matchedRoute) {
+    return { enforcementEnabled, matchedRoute: null, permission: null, allowed: true, blocked: false, reason: "No permission mapping matched; default allow until explicit mapping is added." };
+  }
+  const routeDecision = adminRoutePermissionDryRunDecisions(overrides).find((decision) => decision.pattern === matchedRoute.pattern && decision.method === (matchedRoute.method || "ANY") && decision.permission === matchedRoute.permission) || null;
+  const wouldAllow = routeDecision ? routeDecision.wouldAllow : true;
+  if (!enforcementEnabled) {
+    return { enforcementEnabled, matchedRoute, permission: matchedRoute.permission, allowed: true, blocked: false, reason: wouldAllow ? "Enforcement disabled; route would be allowed." : "Enforcement disabled; route would be blocked if enforcement were enabled." };
+  }
+  return { enforcementEnabled, matchedRoute, permission: matchedRoute.permission, allowed: wouldAllow, blocked: !wouldAllow, reason: wouldAllow ? "Permission allowed by current defaults/overrides." : "Permission blocked by current overrides." };
+}
