@@ -150,11 +150,15 @@ export default function AdminPermissionsPage() {
   const simulatorPermissionOptions = catalog.length ? catalog.map((item: any) => item.key) : permissions.map((item: any) => item.key);
   const simulatorRow = roleMatrix.find((row: any) => row.roleKey === simulatorRoleKey && row.permissionKey === simulatorPermissionKey);
   const simulatorDecision = simulatorRow ? String(simulatorRow.decision || "").toLowerCase() : "";
+  const simulatorReason = simulatorRow ? String(simulatorRow.reason || "") : "";
+  const simulatorEnforcementStatus = simulatorRow ? String(simulatorRow.enforcementStatus || "") : "";
   const simulatorAllowed = simulatorRow ? !["block", "blocked", "deny", "denied", "false", "no"].includes(simulatorDecision) : simulatorRoleKey === "owner_admin";
   const simulatorRoute = routes[Number(simulatorRouteIndex)] || null;
   const simulatorRoutePermission = simulatorRoute ? String(simulatorRoute.permission || "") : "";
   const simulatorRouteMatrixRow = roleMatrix.find((row) => row.roleKey === simulatorRoleKey && row.permissionKey === simulatorRoutePermission);
   const simulatorRouteDecision = simulatorRouteMatrixRow ? String(simulatorRouteMatrixRow.decision || "").toLowerCase() : "";
+  const simulatorRouteReason = simulatorRouteMatrixRow ? String(simulatorRouteMatrixRow.reason || "") : "";
+  const simulatorRouteEnforcementStatus = simulatorRouteMatrixRow ? String(simulatorRouteMatrixRow.enforcementStatus || "") : "";
   const simulatorRouteAllowed = simulatorRouteMatrixRow ? !["block", "blocked", "deny", "denied", "false", "no"].includes(simulatorRouteDecision) : simulatorRoleKey === "owner_admin";
   const blockedRouteLabel = useMemo(() => blockedNotice.from || "the requested administrator page", [blockedNotice.from]);
   const blockedPermissionLabel = useMemo(() => blockedNotice.permission || "the mapped administrator permission", [blockedNotice.permission]);
@@ -247,7 +251,12 @@ export default function AdminPermissionsPage() {
               Simulated Result: {simulatorAllowed ? "ALLOW" : "BLOCK"}
             </div>
           </div>
-          <pre data-barsh-admin-permissions-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, permissionKey: simulatorPermissionKey, allowed: simulatorAllowed, matchedMatrixRow: simulatorRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
+          <div data-barsh-admin-permissions-simulator-diagnostics="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 14 }}>
+            <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Decision:</strong> {simulatorDecision || "unmapped"}</div>
+            <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Reason:</strong> {simulatorReason || "No matching matrix row"}</div>
+            <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Enforcement Status:</strong> {simulatorEnforcementStatus || "planning-only"}</div>
+          </div>
+          <pre data-barsh-admin-permissions-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, permissionKey: simulatorPermissionKey, decision: simulatorDecision || "unmapped", reason: simulatorReason || "No matching matrix row", enforcementStatus: simulatorEnforcementStatus || "planning-only", allowed: simulatorAllowed, matchedMatrixRow: simulatorRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
           <div data-barsh-admin-permissions-route-simulator="read-only" style={{ borderTop: "1px solid #e5e7eb", marginTop: 16, paddingTop: 16 }}>
             <h3 style={{ margin: "0 0 8px" }}>Route / Function Simulator</h3>
             <p style={{ color: "#475569", lineHeight: 1.45, marginTop: 0 }}>Read-only route simulation. It maps the selected route/function to its permission key and evaluates that key against the selected role. It does not enforce, save, or modify anything.</p>
@@ -261,7 +270,12 @@ export default function AdminPermissionsPage() {
                 Route Result: {simulatorRouteAllowed ? "ALLOW" : "BLOCK"}
               </div>
             </div>
-            <pre data-barsh-admin-permissions-route-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, route: simulatorRoute ? { pattern: simulatorRoute.pattern || "", method: simulatorRoute.method || "ANY", permission: simulatorRoutePermission } : null, allowed: simulatorRouteAllowed, matchedMatrixRow: simulatorRouteMatrixRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
+            <div data-barsh-admin-permissions-route-simulator-diagnostics="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 14 }}>
+              <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Decision:</strong> {simulatorRouteDecision || "unmapped"}</div>
+              <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Reason:</strong> {simulatorRouteReason || "No matching matrix row"}</div>
+              <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Enforcement Status:</strong> {simulatorRouteEnforcementStatus || "planning-only"}</div>
+            </div>
+            <pre data-barsh-admin-permissions-route-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, route: simulatorRoute ? { pattern: simulatorRoute.pattern || "", method: simulatorRoute.method || "ANY", permission: simulatorRoutePermission } : null, decision: simulatorRouteDecision || "unmapped", reason: simulatorRouteReason || "No matching matrix row", enforcementStatus: simulatorRouteEnforcementStatus || "planning-only", allowed: simulatorRouteAllowed, matchedMatrixRow: simulatorRouteMatrixRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
           </div>
         </section>
 

@@ -34,6 +34,8 @@ pass("route_simulator_runtime_no_change", page.includes("runtimeEnforcementChang
 pass("no_simulator_literal_slash_n", !simulatorRelatedLines.some((line) => line.includes("\\n")));
 pass("no_write_fetch_added", !page.includes("method: \"POST\"") && !page.includes("method: 'POST'") && !page.includes("/api/admin/users/"));
 pass("no_enforcement_claim", page.includes("does not save settings") && page.includes("enable runtime enforcement") && page.includes("does not enforce, save, or modify anything"));
+pass("phase16c_diagnostics", page.includes("data-barsh-admin-permissions-simulator-diagnostics") && page.includes("data-barsh-admin-permissions-route-simulator-diagnostics"));
+pass("phase16c_reason_enforcement_fields", page.includes("simulatorReason") && page.includes("simulatorEnforcementStatus") && page.includes("simulatorRouteReason") && page.includes("simulatorRouteEnforcementStatus"));
 
 if (process.exitCode) process.exit(process.exitCode);
 console.log("RESULT: Phase 16A/16B permission simulator safety verifier passed");
