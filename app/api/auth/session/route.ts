@@ -21,8 +21,10 @@ export async function GET(req: NextRequest) {
     user: authenticated
       ? {
           role: "admin",
-          displayName: "Administrator",
+          displayName: identityDiagnostics.username || "Administrator",
+          id: identityDiagnostics.id,
           email: identityDiagnostics.email,
+          username: identityDiagnostics.username,
           identityBound: identityDiagnostics.identityBound,
         }
       : null,
@@ -33,6 +35,6 @@ export async function GET(req: NextRequest) {
     permissionDryRun,
     twoFactorRequired: false,
     twoFactorMethod: null,
-    twoFactorPlanned: "SMS or phone push 2FA is planned for a later auth phase.",
+    twoFactorPlanned: "SMS/text push to the user’s cell phone is planned for a later auth phase.",
   });
 }

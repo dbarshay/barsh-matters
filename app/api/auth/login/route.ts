@@ -6,6 +6,7 @@ import {
   configuredAdminSessionToken,
   safeAdminAction,
   setAdminGateCookie,
+  setAdminIdentityCookie,
 } from "@/lib/adminAuth";
 
 const { Pool } = require("pg") as { Pool: any };
@@ -228,14 +229,14 @@ export async function POST(req: NextRequest) {
         adminAction: action,
         returnTo,
         credentialMode: "owner-username-password",
-        identityBound: false,
+        identityBound: true,
         user: {
           role: "admin",
           displayName: user.displayName || "Administrator",
           email: user.email,
           username: user.username,
           id: user.id,
-          identityBound: false,
+          identityBound: true,
           bootstrapSafe: user.bootstrapSafe,
           roleKeys: user.roleKeys,
           passwordChangeRequired: user.passwordChangeRequired,
@@ -246,10 +247,15 @@ export async function POST(req: NextRequest) {
         twoFactorMethod: null,
         twoFactorPlanned: "SMS or phone push 2FA is planned for a later auth phase.",
         passwordChangeRequired: user.passwordChangeRequired,
-        note: "Owner username/password accepted. Phase 12G still writes only the generic administrator gate cookie; session-bound AdminUser identity remains planned for Phase 12H.",
+        note: "Owner username/password accepted. Phase 12H writes a signed AdminUser identity cookie for owner username/password login; permission enforcement remains disabled.",
       });
 
       setAdminGateCookie(response);
+      setAdminIdentityCookie(response, {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      });
 
       return response;
     }
