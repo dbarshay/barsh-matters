@@ -1,0 +1,33 @@
+{
+  "phase": "22-combined-final-activation-package",
+  "mode": "manual-env-activation-required",
+  "generatedAt": "2026-06-18T20:23:49.688Z",
+  "scope": "admin-functions-only",
+  "activationEnv": {
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED": "true",
+    "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON": "{\"block\":[\"admin.users.manage\",\"admin.lawsuitCleanup.confirm\",\"admin.ticklers.run\",\"admin.clients.edit\",\"admin.invoices.create\",\"admin.invoices.finalize\",\"admin.invoices.void\",\"admin.referenceData.import\",\"admin.documentTemplates.manage\",\"admin.backups.run\",\"admin.backups.restorePreview\"],\"allow\":[\"admin.home.view\"]}"
+  },
+  "rollbackEnv": {
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED": "false"
+  },
+  "verificationSequence": [
+    "Before activation: run npm run verify:admin-users-phase22-final-activation-package-safety",
+    "Apply activation env manually in deployment environment.",
+    "Redeploy/restart.",
+    "Confirm owner_admin can access /admin and /admin/permissions.",
+    "Confirm read_only_admin/Jane Doe is blocked from administrator functions.",
+    "Confirm read_only_admin/Jane Doe retains intended non-admin operational access.",
+    "If any smoke fails, apply rollback env immediately and redeploy/restart."
+  ],
+  "noLockoutRequirements": [
+    "owner_admin must retain /admin access.",
+    "/admin/permissions must remain available as safety review path.",
+    "Rollback env must be known before activation."
+  ],
+  "forbidden": [
+    "No password visibility.",
+    "No impersonation or access-as.",
+    "No app-side self-activation.",
+    "No user, role, override, password, session, Clio, document, email, or print queue mutation from this package."
+  ]
+}

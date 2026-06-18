@@ -496,7 +496,9 @@
     "verify:admin-users-phase20-combined-activation-safety": "node scripts/verify-admin-users-phase20-combined-activation-safety.cjs",
     "smoke:admin-users-phase20-combined-activation-env": "node scripts/smoke-admin-users-phase20-combined-activation-env.cjs",
     "verify:admin-users-phase21-combined-deployment-package-safety": "node scripts/verify-admin-users-phase21-combined-deployment-package-safety.cjs",
-    "verify:admin-users-phase21-final-closeout-safety": "node scripts/verify-admin-users-phase21-final-closeout-safety.cjs"
+    "verify:admin-users-phase21-final-closeout-safety": "node scripts/verify-admin-users-phase21-final-closeout-safety.cjs",
+    "phase22:final-activation-package": "node scripts/phase22-final-activation-package.cjs",
+    "verify:admin-users-phase22-final-activation-package-safety": "node scripts/verify-admin-users-phase22-final-activation-package-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
