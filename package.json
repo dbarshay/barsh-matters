@@ -480,7 +480,8 @@
     "verify:admin-users-phase15e-static-role-permission-matrix-safety": "node scripts/verify-admin-users-phase15e-static-role-permission-matrix-safety.cjs",
     "verify:admin-users-phase15-final-closeout-safety": "node scripts/verify-admin-users-phase15-final-closeout-safety.cjs",
     "verify:admin-users-phase16a-permission-simulator-safety": "node scripts/verify-admin-users-phase16a-permission-simulator-safety.cjs",
-    "verify:admin-users-phase16d-simulator-closeout-safety": "node scripts/verify-admin-users-phase16d-simulator-closeout-safety.cjs"
+    "verify:admin-users-phase16d-simulator-closeout-safety": "node scripts/verify-admin-users-phase16d-simulator-closeout-safety.cjs",
+    "verify:admin-users-phase17a-user-effective-preview-safety": "node scripts/verify-admin-users-phase17a-user-effective-preview-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

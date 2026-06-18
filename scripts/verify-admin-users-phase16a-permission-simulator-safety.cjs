@@ -32,7 +32,7 @@ pass("route_simulator_result", page.includes("data-barsh-admin-permissions-route
 pass("route_simulator_uses_route_permission", page.includes("simulatorRoutePermission") && page.includes("simulatorRouteMatrixRow"));
 pass("route_simulator_runtime_no_change", page.includes("runtimeEnforcementChanged: false"));
 pass("no_simulator_literal_slash_n", !simulatorRelatedLines.some((line) => line.includes("\\n")));
-pass("no_write_fetch_added", !page.includes("method: \"POST\"") && !page.includes("method: 'POST'") && !page.includes("/api/admin/users/"));
+pass("no_write_fetch_added", !page.includes("method: \"POST\"") && !page.includes("method: 'POST'") && !page.includes("/api/admin/users/assign-role") && !page.includes("/api/admin/users/remove-role") && !page.includes("/api/admin/users/permission-override") && !page.includes("/api/admin/users/create") && !page.includes("/api/admin/users/lockout") && !page.includes("/api/admin/users/password-reset"));
 pass("no_enforcement_claim", page.includes("does not save settings") && page.includes("enable runtime enforcement") && page.includes("does not enforce, save, or modify anything"));
 pass("phase16c_diagnostics", page.includes("data-barsh-admin-permissions-simulator-diagnostics") && page.includes("data-barsh-admin-permissions-route-simulator-diagnostics"));
 pass("phase16c_reason_enforcement_fields", page.includes("simulatorReason") && page.includes("simulatorEnforcementStatus") && page.includes("simulatorRouteReason") && page.includes("simulatorRouteEnforcementStatus"));

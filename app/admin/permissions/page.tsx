@@ -55,6 +55,19 @@ type RoleMatrixData = {
   matrix?: RoleMatrixRow[];
 };
 
+type UserPreviewRow = {
+  id?: string;
+  name?: string;
+  email?: string;
+  username?: string;
+  displayName?: string;
+  roleKey?: string;
+  roles?: string[];
+  locked?: boolean;
+  lockout?: boolean;
+  isLocked?: boolean;
+};
+
 const thStyle: React.CSSProperties = {
   padding: 8,
   borderBottom: "1px solid #cbd5e1",
@@ -104,13 +117,16 @@ export default function AdminPermissionsPage() {
   const [data, setData] = useState<PermissionsData | null>(null);
   const [catalogData, setCatalogData] = useState<CatalogData | null>(null);
   const [roleMatrixData, setRoleMatrixData] = useState<RoleMatrixData | null>(null);
+  const [userPreviewData, setUserPreviewData] = useState<any>(null);
   const [error, setError] = useState("");
   const [catalogError, setCatalogError] = useState("");
   const [roleMatrixError, setRoleMatrixError] = useState("");
+  const [userPreviewError, setUserPreviewError] = useState("");
   const [blockedNotice, setBlockedNotice] = useState<{ blocked: boolean; from: string; permission: string }>({ blocked: false, from: "", permission: "" });
   const [simulatorRoleKey, setSimulatorRoleKey] = useState("read_only_admin");
   const [simulatorPermissionKey, setSimulatorPermissionKey] = useState("admin.home.view");
   const [simulatorRouteIndex, setSimulatorRouteIndex] = useState("0");
+  const [userPreviewIndex, setUserPreviewIndex] = useState("0");
 
   useEffect(() => {
     fetch("/api/admin/permissions", { cache: "no-store" })
@@ -127,6 +143,11 @@ export default function AdminPermissionsPage() {
       .then((r) => r.json())
       .then((j) => setRoleMatrixData(j))
       .catch((e) => setRoleMatrixError(e?.message || "Permission role matrix lookup failed."));
+
+    fetch("/api/admin/users/planning", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => setUserPreviewData(j))
+      .catch((e) => setUserPreviewError(e?.message || "User preview lookup failed."));
   }, []);
 
   useEffect(() => {
@@ -144,6 +165,7 @@ export default function AdminPermissionsPage() {
   const groups = Array.isArray(catalogData?.groups) ? catalogData.groups : [];
   const roleMatrix = Array.isArray(roleMatrixData?.matrix) ? roleMatrixData.matrix : [];
   const roleKeys = Array.isArray(roleMatrixData?.roles) ? roleMatrixData.roles : [];
+  const userPreviewRows: UserPreviewRow[] = Array.isArray(userPreviewData?.users) ? userPreviewData.users : Array.isArray(userPreviewData?.rows) ? userPreviewData.rows : Array.isArray(userPreviewData?.adminUsers) ? userPreviewData.adminUsers : [];
   const groupedCatalog = useMemo(() => groups.map((group) => ({ group, items: catalog.filter((item) => item.group === group) })), [groups, catalog]);
   const groupedRoleMatrix = useMemo(() => roleKeys.map((roleKey) => ({ roleKey, rows: roleMatrix.filter((row) => row.roleKey === roleKey) })), [roleKeys, roleMatrix]);
   const simulatorRoleOptions = roleKeys.length ? roleKeys : ["owner_admin", "read_only_admin"];
@@ -160,6 +182,12 @@ export default function AdminPermissionsPage() {
   const simulatorRouteReason = simulatorRouteMatrixRow ? String(simulatorRouteMatrixRow.reason || "") : "";
   const simulatorRouteEnforcementStatus = simulatorRouteMatrixRow ? String(simulatorRouteMatrixRow.enforcementStatus || "") : "";
   const simulatorRouteAllowed = simulatorRouteMatrixRow ? !["block", "blocked", "deny", "denied", "false", "no"].includes(simulatorRouteDecision) : simulatorRoleKey === "owner_admin";
+  const selectedUserPreview = userPreviewRows[Number(userPreviewIndex)] || null;
+  const selectedUserRoles = selectedUserPreview ? (Array.isArray(selectedUserPreview.roles) ? selectedUserPreview.roles : selectedUserPreview.roleKey ? [selectedUserPreview.roleKey] : []) : [];
+  const selectedUserPrimaryRole = selectedUserRoles[0] || "unassigned";
+  const selectedUserPermissionRows = roleMatrix.filter((row) => selectedUserRoles.includes(row.roleKey));
+  const selectedUserAllowedCount = selectedUserPermissionRows.filter((row) => !["block", "blocked", "deny", "denied", "false", "no"].includes(String(row.decision || "").toLowerCase())).length;
+  const selectedUserBlockedCount = selectedUserPermissionRows.length - selectedUserAllowedCount;
   const blockedRouteLabel = useMemo(() => blockedNotice.from || "the requested administrator page", [blockedNotice.from]);
   const blockedPermissionLabel = useMemo(() => blockedNotice.permission || "the mapped administrator permission", [blockedNotice.permission]);
 
@@ -180,6 +208,7 @@ export default function AdminPermissionsPage() {
         {error ? <section data-barsh-admin-permissions-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
         {catalogError ? <section data-barsh-admin-permissions-catalog-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{catalogError}</section> : null}
         {roleMatrixError ? <section data-barsh-admin-permissions-role-matrix-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{roleMatrixError}</section> : null}
+        {userPreviewError ? <section data-barsh-admin-permissions-user-preview-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{userPreviewError}</section> : null}
 
         {blockedNotice.blocked ? (
           <section data-barsh-admin-permissions-blocked-notice="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16, lineHeight: 1.5 }}>
@@ -277,6 +306,24 @@ export default function AdminPermissionsPage() {
             </div>
             <pre data-barsh-admin-permissions-route-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, route: simulatorRoute ? { pattern: simulatorRoute.pattern || "", method: simulatorRoute.method || "ANY", permission: simulatorRoutePermission } : null, decision: simulatorRouteDecision || "unmapped", reason: simulatorRouteReason || "No matching matrix row", enforcementStatus: simulatorRouteEnforcementStatus || "planning-only", allowed: simulatorRouteAllowed, matchedMatrixRow: simulatorRouteMatrixRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
           </div>
+        </section>
+
+        <section data-barsh-admin-permissions-user-effective-preview="read-only" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18 }}>
+          <h2 style={{ marginTop: 0 }}>Phase 17A User Effective-Permission Preview</h2>
+          <p style={{ color: "#475569", lineHeight: 1.45 }}>Read-only planning preview. This combines the selected user's assigned role keys with the Phase 15 static role matrix. It does not assign roles, remove roles, edit overrides, lock users, enable enforcement, block pages, block API routes, or modify records.</p>
+          <div data-barsh-admin-permissions-user-effective-runtime-flag="true" style={{ border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 14, padding: 12, marginBottom: 14 }}>
+            <strong>Runtime Enforcement Changed:</strong> No | <strong>Preview Mode:</strong> read-only | <strong>Source:</strong> /api/admin/users/planning + Phase 15 static role matrix
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) repeat(auto-fit, minmax(160px, 220px))", gap: 12, alignItems: "end" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>User
+              <select data-barsh-admin-permissions-user-effective-select="true" value={userPreviewIndex} onChange={(event) => setUserPreviewIndex(event.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }}>
+                {userPreviewRows.map((user: UserPreviewRow, index: number) => <option key={`${user.id || user.username || user.email || "user"}:${index}`} value={String(index)}>{user.displayName || user.name || user.username || user.email || `User ${index + 1}`}</option>)}
+              </select>
+            </label>
+            <div data-barsh-admin-permissions-user-effective-role="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Primary Role:</strong> {selectedUserPrimaryRole}</div>
+            <div data-barsh-admin-permissions-user-effective-counts="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Allow:</strong> {selectedUserAllowedCount} | <strong>Block:</strong> {selectedUserBlockedCount}</div>
+          </div>
+          <pre data-barsh-admin-permissions-user-effective-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ selectedUser: selectedUserPreview ? { id: selectedUserPreview.id || "", name: selectedUserPreview.displayName || selectedUserPreview.name || "", username: selectedUserPreview.username || "", emailPresent: Boolean(selectedUserPreview.email), locked: Boolean(selectedUserPreview.locked || selectedUserPreview.lockout || selectedUserPreview.isLocked), roles: selectedUserRoles } : null, allowedCount: selectedUserAllowedCount, blockedCount: selectedUserBlockedCount, matrixRows: selectedUserPermissionRows, runtimeEnforcementChanged: false }, null, 2)}</pre>
         </section>
 
         <section data-barsh-admin-permissions-role-matrix="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, overflowX: "auto" }}>
