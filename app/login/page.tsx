@@ -185,12 +185,12 @@ export default function LoginPage() {
           <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.85 }}>
             Barsh Matters
           </div>
-          <h1 style={{ margin: "8px 0 0", fontSize: 26, lineHeight: 1.1 }}>Administrator Login</h1>
+          <h1 style={{ margin: "8px 0 0", fontSize: 26, lineHeight: 1.1 }}>Login</h1>
         </header>
 
         <form data-barsh-login-form="true" onSubmit={handleSubmit} style={bodyStyle}>
           <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.5 }}>
-            Sign in with your owner username and password. During rollout, the legacy admin password still works if the username field is left blank. Two-factor authentication by SMS or phone push is planned for a later auth phase.
+            Sign in with your username and password. During rollout, the legacy admin password still works if the username field is left blank. Two-factor authentication by SMS or phone push is planned for a later auth phase.
           </p>
 
           <label style={labelStyle}>
