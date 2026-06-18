@@ -245,12 +245,13 @@ export async function POST(req: NextRequest) {
         note: "Username/password accepted for active AdminUser. Phase 13C allows active non-owner credential login with signed AdminUser identity; permission enforcement remains disabled.",
       });
 
-      setAdminGateCookie(response);
-      setAdminIdentityCookie(response, {
+      const identityCookieInput = {
         id: user.id,
         email: user.email,
         username: user.username,
-      });
+      };
+      setAdminGateCookie(response, identityCookieInput);
+      setAdminIdentityCookie(response, identityCookieInput);
 
       return response;
     }

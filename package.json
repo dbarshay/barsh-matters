@@ -470,7 +470,8 @@
     "verify:admin-users-phase13a-forced-password-change-safety": "node scripts/verify-admin-users-phase13a-forced-password-change-safety.cjs",
     "apply:admin-users-phase13b-jane-doe-credential": "node scripts/apply-admin-users-phase13b-jane-doe-credential.cjs",
     "verify:admin-users-phase13b-jane-doe-credential-safety": "node scripts/verify-admin-users-phase13b-jane-doe-credential-safety.cjs",
-    "verify:admin-users-phase13c-non-owner-login-readiness-safety": "node scripts/verify-admin-users-phase13c-non-owner-login-readiness-safety.cjs"
+    "verify:admin-users-phase13c-non-owner-login-readiness-safety": "node scripts/verify-admin-users-phase13c-non-owner-login-readiness-safety.cjs",
+    "verify:admin-users-phase14a-admin-function-block-safety": "node scripts/verify-admin-users-phase14a-admin-function-block-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

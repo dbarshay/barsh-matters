@@ -11,6 +11,7 @@ type SignedAdminGateCookie = {
   token: string;
   lastActivityAt: number;
   source: "signed-gate";
+  identity?: AdminIdentityCookieInput | null;
 };
 
 export type AdminIdentityCookieInput = { id: string; email: string; username: string | null; };
@@ -42,14 +43,23 @@ function base64UrlDecode(value: string): string { return Buffer.from(value, "bas
 function signAdminIdentityPayload(encodedPayload: string): string { const sessionToken = configuredAdminSessionToken(); if (!sessionToken) return ""; return createHmac("sha256", sessionToken).update(encodedPayload).digest("base64url"); }
 function signaturesMatch(actual: string, expected: string): boolean { if (!actual || !expected) return false; const actualBuffer = Buffer.from(actual); const expectedBuffer = Buffer.from(expected); if (actualBuffer.length !== expectedBuffer.length) return false; return timingSafeEqual(actualBuffer, expectedBuffer); }
 
-function createSignedAdminGateCookieValue(): string {
+function createSignedAdminGateCookieValue(identity?: AdminIdentityCookieInput | null): string {
   const token = configuredAdminSessionToken();
   if (!token) return "";
+
+  const cleanIdentity = identity && cleanAdminAuthValue(identity.id) && isLikelyAdminEmail(identity.email)
+    ? {
+        id: cleanAdminAuthValue(identity.id),
+        email: cleanAdminEmailValue(identity.email),
+        username: cleanAdminAuthValue(identity.username) || null,
+      }
+    : null;
 
   const payload: SignedAdminGateCookie = {
     token,
     lastActivityAt: Date.now(),
     source: "signed-gate",
+    identity: cleanIdentity,
   };
 
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
@@ -87,6 +97,13 @@ function readSignedAdminGateCookie(value: unknown): SignedAdminGateCookie | null
       token: parsed.token,
       lastActivityAt: Number(parsed.lastActivityAt),
       source: "signed-gate",
+      identity: parsed.identity && cleanAdminAuthValue(parsed.identity.id) && isLikelyAdminEmail(parsed.identity.email)
+        ? {
+            id: cleanAdminAuthValue(parsed.identity.id),
+            email: cleanAdminEmailValue(parsed.identity.email),
+            username: cleanAdminAuthValue(parsed.identity.username) || null,
+          }
+        : null,
     };
   } catch {
     return null;
@@ -135,8 +152,8 @@ export function adminSessionIdentityDiagnostics(req: NextRequest): AdminSessionI
 
 export function isAdminRequestAuthorized(req: NextRequest): boolean { return Boolean(readSignedAdminGateCookie(req.cookies.get(ADMIN_COOKIE_NAME)?.value)); }
 
-export function setAdminGateCookie(response: NextResponse): void {
-  const signedGateCookieValue = createSignedAdminGateCookieValue();
+export function setAdminGateCookie(response: NextResponse, identity?: AdminIdentityCookieInput | null): void {
+  const signedGateCookieValue = createSignedAdminGateCookieValue(identity);
   if (!signedGateCookieValue) return;
   response.cookies.set(ADMIN_COOKIE_NAME, signedGateCookieValue, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: ADMIN_SESSION_INACTIVITY_TIMEOUT_SECONDS });
 }

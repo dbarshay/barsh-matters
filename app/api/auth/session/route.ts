@@ -39,13 +39,16 @@ export async function GET(req: NextRequest) {
   });
 
   if (authenticated) {
-    setAdminGateCookie(response);
-    if (identityDiagnostics.identityBound && identityDiagnostics.id && identityDiagnostics.email) {
-      setAdminIdentityCookie(response, {
-        id: identityDiagnostics.id,
-        email: identityDiagnostics.email,
-        username: identityDiagnostics.username,
-      });
+    const identityCookieInput = identityDiagnostics.identityBound && identityDiagnostics.id && identityDiagnostics.email
+      ? {
+          id: identityDiagnostics.id,
+          email: identityDiagnostics.email,
+          username: identityDiagnostics.username,
+        }
+      : null;
+    setAdminGateCookie(response, identityCookieInput);
+    if (identityCookieInput) {
+      setAdminIdentityCookie(response, identityCookieInput);
     }
   }
 
