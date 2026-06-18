@@ -44,6 +44,10 @@ export async function GET() {
           effectivePermissionCount: effectivePermissionKeys.length,
           effectivePermissionKeys,
           explicitOverrides,
+          lockoutEligible: !user.bootstrapSafe,
+          lockedOut: user.status !== "active",
+          passwordConfigured: Boolean(user.passwordHash),
+          twoFactorRequired: Boolean(user.twoFactorRequired),
         };
       }),
       roles: dbRoles.map((role: any) => {

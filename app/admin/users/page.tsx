@@ -104,6 +104,13 @@ export default function AdminUsersPlanningPage() {
   const [overrideBusy, setOverrideBusy] = useState(false);
   const [overrideMessage, setOverrideMessage] = useState("");
   const [overrideResult, setOverrideResult] = useState<any>(null);
+  const [lockoutTargetEmail, setLockoutTargetEmail] = useState("");
+  const [lockoutAction, setLockoutAction] = useState("lock");
+  const [lockoutReason, setLockoutReason] = useState("");
+  const [lockoutActorEmail, setLockoutActorEmail] = useState("dbarshay15@gmail.com");
+  const [lockoutBusy, setLockoutBusy] = useState(false);
+  const [lockoutMessage, setLockoutMessage] = useState("");
+  const [lockoutResult, setLockoutResult] = useState<any>(null);
 
   async function loadAdminUsersPlanning() {
     try {
@@ -148,6 +155,13 @@ export default function AdminUsersPlanningPage() {
       overrideResult?.wouldOverride?.email === cleanEmail(overrideTargetEmail) &&
       overrideResult?.wouldOverride?.permissionKey === overridePermissionKey &&
       overrideResult?.wouldOverride?.overrideAction === overrideAction
+  );
+
+  const lockoutPreviewReady = Boolean(
+    lockoutResult?.ok &&
+      lockoutResult?.mode === "preview" &&
+      lockoutResult?.wouldChange?.email === cleanEmail(lockoutTargetEmail) &&
+      lockoutResult?.wouldChange?.lockoutAction === lockoutAction
   );
 
   async function submitCreateAdminUser(apply: boolean) {
@@ -265,6 +279,44 @@ export default function AdminUsersPlanningPage() {
     }
   }
 
+
+  async function submitAdminUserLockout(apply: boolean) {
+    try {
+      setLockoutBusy(true);
+      setLockoutMessage(apply ? "Applying guarded lock/unlock request..." : "Previewing guarded lock/unlock request...");
+      const response = await fetch("/api/admin/users/lockout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          apply,
+          targetEmail: lockoutTargetEmail,
+          lockoutAction,
+          reason: lockoutReason,
+          actorEmail: lockoutActorEmail,
+        }),
+      });
+      const json = await response.json().catch(() => ({ ok: false, error: "Lock/unlock route did not return JSON." }));
+      setLockoutResult({ ...json, httpStatus: response.status });
+      if (!response.ok || !json?.ok) {
+        setLockoutMessage(json?.error || `Lock/unlock request failed with HTTP ${response.status}.`);
+        return;
+      }
+      if (apply) {
+        setLockoutMessage(lockoutAction === "lock" ? "Admin user locked out. Credentials were not exposed and enforcement was not changed." : "Admin user unlocked. Credentials were not exposed and enforcement was not changed.");
+        setLockoutResult(null);
+        await loadAdminUsersPlanning();
+      } else {
+        setLockoutMessage("Preview complete. No AdminUser row was changed. Review the result before Apply.");
+      }
+    } catch (err: any) {
+      setLockoutMessage(err?.message || "Lock/unlock request failed.");
+      setLockoutResult({ ok: false, error: err?.message || "Lock/unlock request failed." });
+    } finally {
+      setLockoutBusy(false);
+    }
+  }
+
   async function submitPermissionOverride(apply: boolean) {
     try {
       setOverrideBusy(true);
@@ -316,6 +368,47 @@ export default function AdminUsersPlanningPage() {
 
         <section data-barsh-admin-users-planning-summary="true" style={cardStyle}>
           <strong>Mode:</strong> {data?.mode || "loading"} | <strong>Enforcement Enabled:</strong> {enforcementLabel} | <strong>Planning Roles:</strong> {roles.length} | <strong>Planning Users:</strong> {users.length} | <strong>DB Roles:</strong> {data?.databasePreview?.roleCount ?? 0} | <strong>DB Users:</strong> {data?.databasePreview?.userCount ?? 0}
+        </section>
+
+
+        <section data-barsh-admin-users-lockout-card="true" style={cardStyle}>
+          <h2 style={{ marginTop: 0 }}>Lock / Unlock Admin User</h2>
+          <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 12J guarded route. Preview is the default. Apply changes only AdminUser.status between active and inactive. It blocks locking the last active bootstrapSafe owner_admin user, does not expose passwords, does not impersonate users, and does not enable permission enforcement.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Target User
+              <select data-barsh-admin-users-lockout-target-email="true" value={lockoutTargetEmail} onChange={(event) => { setLockoutTargetEmail(event.target.value); setLockoutResult(null); }} style={inputStyle}>
+                <option value="">Choose user</option>
+                {dbUsers.map((user: any) => <option key={user.email} value={user.email}>{user.displayName || user.email} · {user.status}</option>)}
+              </select>
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Action
+              <select data-barsh-admin-users-lockout-action="true" value={lockoutAction} onChange={(event) => { setLockoutAction(event.target.value); setLockoutResult(null); }} style={inputStyle}>
+                <option value="lock">Lock out user</option>
+                <option value="unlock">Unlock user</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Actor Email
+              <input data-barsh-admin-users-lockout-actor-email="true" value={lockoutActorEmail} onChange={(event) => setLockoutActorEmail(event.target.value)} style={inputStyle} placeholder="owner_admin email" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Reason
+              <input data-barsh-admin-users-lockout-reason="true" value={lockoutReason} onChange={(event) => { setLockoutReason(event.target.value); setLockoutResult(null); }} style={inputStyle} placeholder="Required reason" />
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
+            <button data-barsh-admin-users-lockout-preview-button="true" type="button" onClick={() => void submitAdminUserLockout(false)} disabled={lockoutBusy} style={{ ...secondaryButtonStyle, opacity: lockoutBusy ? 0.7 : 1 }}>
+              Preview Lock / Unlock
+            </button>
+            <button data-barsh-admin-users-lockout-apply-button="true" type="button" onClick={() => void submitAdminUserLockout(true)} disabled={lockoutBusy || !lockoutPreviewReady} style={{ ...primaryButtonStyle, opacity: lockoutBusy || !lockoutPreviewReady ? 0.55 : 1, cursor: lockoutBusy || !lockoutPreviewReady ? "not-allowed" : "pointer" }}>
+              Apply Lock / Unlock
+            </button>
+            <span data-barsh-admin-users-lockout-message="true" style={{ color: lockoutResult?.ok ? "#166534" : "#991b1b", fontWeight: 900 }}>{lockoutMessage}</span>
+          </div>
+          {lockoutResult ? <pre data-barsh-admin-users-lockout-result="true" style={{ marginTop: 12, whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, maxHeight: 260, overflow: "auto" }}>{JSON.stringify(lockoutResult, null, 2)}</pre> : null}
+          <p style={{ margin: "12px 0 0", color: "#991b1b", fontWeight: 900 }}>Safety: owner/bootstrap no-lockout protection remains active. Password viewing and login impersonation are intentionally not available.</p>
         </section>
 
         <section data-barsh-admin-users-enforcement-banner="disabled" style={{ background: "#fefce8", border: "1px solid #fde68a", color: "#713f12", borderRadius: 18, padding: 16, lineHeight: 1.5 }}>
@@ -540,7 +633,7 @@ export default function AdminUsersPlanningPage() {
           <h3>DB Users</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["Name", "Email", "Status", "Bootstrap Safe", "Roles", "Overrides"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
-            <tbody>{dbUsers.length ? dbUsers.map((user: any) => <tr key={user.id}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.displayName || ""}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{user.email}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.status}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.bootstrapSafe ? "Yes" : "No"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{(user.roleKeys || []).join(", ") || "None"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.effectivePermissionCount ?? 0}</td></tr>) : <tr><td colSpan={6} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No persisted admin users yet.</td></tr>}</tbody>
+            <tbody>{dbUsers.length ? dbUsers.map((user: any) => <tr key={user.id}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.displayName || ""}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{user.email}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.status === "active" ? "Active" : "Locked / Inactive"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.bootstrapSafe ? "Yes" : "No"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{(user.roleKeys || []).join(", ") || "None"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.effectivePermissionCount ?? 0}</td></tr>) : <tr><td colSpan={6} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No persisted admin users yet.</td></tr>}</tbody>
           </table>
           <h3>DB Roles</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
