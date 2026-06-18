@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminSessionIdentityDiagnostics, isAdminRequestAuthorized } from "@/lib/adminAuth";
+import { adminSessionIdentityDiagnostics, isAdminRequestAuthorized, setAdminGateCookie, setAdminIdentityCookie } from "@/lib/adminAuth";
 import { allAdminPermissionKeys, configuredAdminPermissionOverridesFromEnv, adminPermissionDryRunDecisions, configuredAdminPermissionsEnforcementEnabled } from "@/lib/adminPermissions";
 
 export const runtime = "nodejs";
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const permissionOverrideConfig = configuredAdminPermissionOverridesFromEnv();
   const permissionDryRun = authenticated ? adminPermissionDryRunDecisions(permissionOverrideConfig) : [];
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     action: "auth-session",
     authenticated,
@@ -37,4 +37,17 @@ export async function GET(req: NextRequest) {
     twoFactorMethod: null,
     twoFactorPlanned: "SMS/text push to the user’s cell phone is planned for a later auth phase.",
   });
+
+  if (authenticated) {
+    setAdminGateCookie(response);
+    if (identityDiagnostics.identityBound && identityDiagnostics.id && identityDiagnostics.email) {
+      setAdminIdentityCookie(response, {
+        id: identityDiagnostics.id,
+        email: identityDiagnostics.email,
+        username: identityDiagnostics.username,
+      });
+    }
+  }
+
+  return response;
 }

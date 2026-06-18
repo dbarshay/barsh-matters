@@ -16,7 +16,8 @@ assert("adminAuth keeps identity cookie separate", adminAuth.includes("barsh_adm
 assert("adminAuth creates signed identity cookie value", adminAuth.includes("createAdminIdentityCookieValue") && adminAuth.includes("signAdminIdentityPayload"));
 assert("adminAuth reads signed identity cookie", adminAuth.includes("readSignedAdminIdentityCookie"));
 assert("adminAuth identity diagnostics include AdminUser.id", adminAuth.includes("id: string | null") && adminAuth.includes("id: signedIdentity?.id || null"));
-assert("adminAuth authorization still uses generic gate token equality", adminAuth.includes("actualToken === expectedToken"));
+assert("adminAuth authorization remains admin gate based", adminAuth.includes("isAdminRequestAuthorized") && adminAuth.includes("req.cookies.get(ADMIN_COOKIE_NAME)?.value"));
+assert("Phase 12I signed gate or prior raw gate check exists", adminAuth.includes("readSignedAdminGateCookie") || adminAuth.includes("actualToken === expectedToken"));
 assert("adminAuth can set identity cookie", adminAuth.includes("setAdminIdentityCookie") && adminAuth.includes("response.cookies.set(ADMIN_IDENTITY_COOKIE_NAME"));
 assert("adminAuth can clear identity cookie", adminAuth.includes("clearAdminIdentityCookie") && adminAuth.includes("maxAge: 0"));
 assert("login imports setAdminIdentityCookie", login.includes("setAdminIdentityCookie"));
@@ -26,9 +27,9 @@ assert("login preserves generic gate cookie", login.includes("setAdminGateCookie
 assert("logout clears identity cookie", logout.includes("clearAdminIdentityCookie(response)"));
 assert("session user exposes AdminUser.id from diagnostics", session.includes("id: identityDiagnostics.id"));
 assert("session user exposes username from diagnostics", session.includes("username: identityDiagnostics.username"));
-assert("session remains default allow-all", session.includes("default-admin-allow-all"));
+assert("session remains default allow-all", session.includes('default-admin-allow-all'));
 assert("session does not query AdminUser table", /prisma\.adminUser|adminUser\.find|SELECT[\s\S]*AdminUser/i.test(session) === false);
 assert("never-block routes remain present", permissions.includes("/admin") && permissions.includes("/admin/permissions") && permissions.includes("/api/admin/permissions") && permissions.includes("/api/admin/permissions/check"));
 console.log("CONTRACT: Phase 12H binds signed session identity diagnostics to AdminUser.id for owner username/password login.");
-console.log("CONTRACT: Phase 12H still authorizes from the generic gate cookie and does not enforce per-user permissions.");
-console.log("PASS: Phase 12H session identity binding is locked as no-enforcement.");
+console.log("CONTRACT: Permission enforcement remains off.");
+console.log("PASS: Phase 12H session identity binding remains locked.");

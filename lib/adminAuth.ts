@@ -4,8 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 export const ADMIN_COOKIE_NAME = "barsh_admin_gate";
 export const ADMIN_IDENTITY_COOKIE_NAME = "barsh_admin_identity";
 export const ADMIN_AUTHORIZE_PATH = "/api/admin/authorize";
+export const ADMIN_SESSION_INACTIVITY_TIMEOUT_SECONDS = 60 * 60;
 
 export type ConfiguredAdminPassword = { password: string; configured: boolean; devFallback: boolean; };
+type SignedAdminGateCookie = {
+  token: string;
+  lastActivityAt: number;
+  source: "signed-gate";
+};
+
 export type AdminIdentityCookieInput = { id: string; email: string; username: string | null; };
 export type BoundAdminIdentityCookie = AdminIdentityCookieInput & { issuedAt: number; source: "owner-username-password"; };
 export type AdminSessionIdentityDiagnostics = { authenticated: boolean; identityBound: boolean; id: string | null; email: string | null; username: string | null; source: "none" | "signed-cookie"; legacyGenericAdminSession: boolean; plannedIdentityCookieName: typeof ADMIN_IDENTITY_COOKIE_NAME; note: string; };
@@ -34,6 +41,57 @@ function base64UrlEncode(value: string): string { return Buffer.from(value, "utf
 function base64UrlDecode(value: string): string { return Buffer.from(value, "base64url").toString("utf8"); }
 function signAdminIdentityPayload(encodedPayload: string): string { const sessionToken = configuredAdminSessionToken(); if (!sessionToken) return ""; return createHmac("sha256", sessionToken).update(encodedPayload).digest("base64url"); }
 function signaturesMatch(actual: string, expected: string): boolean { if (!actual || !expected) return false; const actualBuffer = Buffer.from(actual); const expectedBuffer = Buffer.from(expected); if (actualBuffer.length !== expectedBuffer.length) return false; return timingSafeEqual(actualBuffer, expectedBuffer); }
+
+function createSignedAdminGateCookieValue(): string {
+  const token = configuredAdminSessionToken();
+  if (!token) return "";
+
+  const payload: SignedAdminGateCookie = {
+    token,
+    lastActivityAt: Date.now(),
+    source: "signed-gate",
+  };
+
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signature = signAdminIdentityPayload(encodedPayload);
+  if (!signature) return "";
+
+  return `${encodedPayload}.${signature}`;
+}
+
+function readSignedAdminGateCookie(value: unknown): SignedAdminGateCookie | null {
+  const cookieValue = cleanAdminAuthValue(value);
+
+  if (!cookieValue) return null;
+
+  // Phase 12I no longer treats the old raw token as a valid active session.
+  if (!cookieValue.includes(".")) return null;
+
+  const [encodedPayload, signature, extra] = cookieValue.split(".");
+  if (!encodedPayload || !signature || extra) return null;
+
+  const expectedSignature = signAdminIdentityPayload(encodedPayload);
+  if (!signaturesMatch(signature, expectedSignature)) return null;
+
+  try {
+    const parsed = JSON.parse(base64UrlDecode(encodedPayload)) as SignedAdminGateCookie;
+    if (!parsed || parsed.source !== "signed-gate") return null;
+    if (parsed.token !== configuredAdminSessionToken()) return null;
+    if (!Number.isFinite(Number(parsed.lastActivityAt))) return null;
+
+    const inactiveForMs = Date.now() - Number(parsed.lastActivityAt);
+    if (inactiveForMs < 0) return null;
+    if (inactiveForMs > ADMIN_SESSION_INACTIVITY_TIMEOUT_SECONDS * 1000) return null;
+
+    return {
+      token: parsed.token,
+      lastActivityAt: Number(parsed.lastActivityAt),
+      source: "signed-gate",
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function createAdminIdentityCookieValue(identity: AdminIdentityCookieInput): string {
   const payload: BoundAdminIdentityCookie = { id: cleanAdminAuthValue(identity.id), email: cleanAdminEmailValue(identity.email), username: cleanAdminAuthValue(identity.username) || null, issuedAt: Date.now(), source: "owner-username-password" };
@@ -80,13 +138,13 @@ export function isAdminRequestAuthorized(req: NextRequest): boolean { const expe
 export function setAdminGateCookie(response: NextResponse): void {
   const sessionToken = configuredAdminSessionToken();
   if (!sessionToken) return;
-  response.cookies.set(ADMIN_COOKIE_NAME, sessionToken, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 8 });
+  response.cookies.set(ADMIN_COOKIE_NAME, sessionToken, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: ADMIN_SESSION_INACTIVITY_TIMEOUT_SECONDS });
 }
 
 export function setAdminIdentityCookie(response: NextResponse, identity: AdminIdentityCookieInput): void {
   const cookieValue = createAdminIdentityCookieValue(identity);
   if (!cookieValue) return;
-  response.cookies.set(ADMIN_IDENTITY_COOKIE_NAME, cookieValue, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 8 });
+  response.cookies.set(ADMIN_IDENTITY_COOKIE_NAME, cookieValue, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: ADMIN_SESSION_INACTIVITY_TIMEOUT_SECONDS });
 }
 
 export function clearAdminGateCookie(response: NextResponse): void { response.cookies.set(ADMIN_COOKIE_NAME, "", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 0 }); }
