@@ -188,6 +188,10 @@ export default function AdminPermissionsPage() {
   const selectedUserPermissionRows = roleMatrix.filter((row) => selectedUserRoles.includes(row.roleKey));
   const selectedUserAllowedCount = selectedUserPermissionRows.filter((row) => !["block", "blocked", "deny", "denied", "false", "no"].includes(String(row.decision || "").toLowerCase())).length;
   const selectedUserBlockedCount = selectedUserPermissionRows.length - selectedUserAllowedCount;
+  const selectedUserRouteRows = roleMatrix.filter((row) => selectedUserRoles.includes(row.roleKey) && row.permissionKey === simulatorRoutePermission);
+  const selectedUserRouteBlocked = selectedUserRouteRows.some((row) => ["block", "blocked", "deny", "denied", "false", "no"].includes(String(row.decision || "").toLowerCase()));
+  const selectedUserRouteAllowed = selectedUserRouteRows.length ? !selectedUserRouteBlocked : selectedUserPrimaryRole === "owner_admin";
+  const selectedUserRouteDecision = selectedUserRouteRows.length ? (selectedUserRouteAllowed ? "allow" : "block") : "unmapped";
   const blockedRouteLabel = useMemo(() => blockedNotice.from || "the requested administrator page", [blockedNotice.from]);
   const blockedPermissionLabel = useMemo(() => blockedNotice.permission || "the mapped administrator permission", [blockedNotice.permission]);
 
@@ -322,6 +326,16 @@ export default function AdminPermissionsPage() {
             </label>
             <div data-barsh-admin-permissions-user-effective-role="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Primary Role:</strong> {selectedUserPrimaryRole}</div>
             <div data-barsh-admin-permissions-user-effective-counts="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Allow:</strong> {selectedUserAllowedCount} | <strong>Block:</strong> {selectedUserBlockedCount}</div>
+          </div>
+          <div data-barsh-admin-permissions-user-route-effective-preview="read-only" style={{ borderTop: "1px solid #e5e7eb", marginTop: 16, paddingTop: 16 }}>
+            <h3 style={{ margin: "0 0 8px" }}>Selected User Route / Function Preview</h3>
+            <p style={{ color: "#475569", lineHeight: 1.45, marginTop: 0 }}>Read-only preview using the selected user, selected route/function from the simulator above, and the Phase 15 static role matrix. It does not write, enforce, or change user permissions.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              <div data-barsh-admin-permissions-user-route-effective-route="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Route Permission:</strong> {simulatorRoutePermission || "unmapped"}</div>
+              <div data-barsh-admin-permissions-user-route-effective-result="true" style={{ border: selectedUserRouteAllowed ? "1px solid #bbf7d0" : "1px solid #fecaca", background: selectedUserRouteAllowed ? "#f0fdf4" : "#fef2f2", color: selectedUserRouteAllowed ? "#166534" : "#991b1b", borderRadius: 12, padding: 10, fontWeight: 950 }}>User Route Result: {selectedUserRouteAllowed ? "ALLOW" : "BLOCK"}</div>
+              <div data-barsh-admin-permissions-user-route-effective-decision="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Decision:</strong> {selectedUserRouteDecision}</div>
+            </div>
+            <pre data-barsh-admin-permissions-user-route-effective-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ selectedUser: selectedUserPreview ? { id: selectedUserPreview.id || "", name: selectedUserPreview.displayName || selectedUserPreview.name || "", username: selectedUserPreview.username || "", emailPresent: Boolean(selectedUserPreview.email), locked: Boolean(selectedUserPreview.locked || selectedUserPreview.lockout || selectedUserPreview.isLocked), roles: selectedUserRoles } : null, route: simulatorRoute ? { pattern: simulatorRoute.pattern || "", method: simulatorRoute.method || "ANY", permission: simulatorRoutePermission } : null, decision: selectedUserRouteDecision, allowed: selectedUserRouteAllowed, matchedMatrixRows: selectedUserRouteRows, runtimeEnforcementChanged: false }, null, 2)}</pre>
           </div>
           <pre data-barsh-admin-permissions-user-effective-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ selectedUser: selectedUserPreview ? { id: selectedUserPreview.id || "", name: selectedUserPreview.displayName || selectedUserPreview.name || "", username: selectedUserPreview.username || "", emailPresent: Boolean(selectedUserPreview.email), locked: Boolean(selectedUserPreview.locked || selectedUserPreview.lockout || selectedUserPreview.isLocked), roles: selectedUserRoles } : null, allowedCount: selectedUserAllowedCount, blockedCount: selectedUserBlockedCount, matrixRows: selectedUserPermissionRows, runtimeEnforcementChanged: false }, null, 2)}</pre>
         </section>
