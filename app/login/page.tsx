@@ -133,7 +133,7 @@ export default function LoginPage() {
     const trimmedUsername = clean(username);
     const trimmedPassword = clean(password);
     if (!trimmedPassword) {
-      setStatus(trimmedUsername ? "Enter your password." : "Enter the administrator password or your owner password.");
+      setStatus(trimmedUsername ? "Enter your password." : "Enter the password or your owner password.");
       return;
     }
 
@@ -190,7 +190,7 @@ export default function LoginPage() {
 
         <form data-barsh-login-form="true" onSubmit={handleSubmit} style={bodyStyle}>
           <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.5 }}>
-            Sign in with your owner username and password. During rollout, the legacy administrator password still works if the username field is left blank. Two-factor authentication by SMS or phone push is planned for a later auth phase.
+            Sign in with your owner username and password. During rollout, the legacy admin password still works if the username field is left blank. Two-factor authentication by SMS or phone push is planned for a later auth phase.
           </p>
 
           <label style={labelStyle}>
@@ -241,7 +241,7 @@ export default function LoginPage() {
               Back to Home
             </a>
             <a href={returnTo} style={{ ...secondaryButtonStyle, flex: "1 1 160px" }}>
-              Try Administrator
+              Login
             </a>
             {alreadyAuthenticated ? (
               <button type="button" onClick={handleLogout} disabled={busy} style={{ ...secondaryButtonStyle, flex: "1 1 160px", cursor: "pointer" }}>
