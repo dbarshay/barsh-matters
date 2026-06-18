@@ -473,7 +473,8 @@
     "verify:admin-users-phase13c-non-owner-login-readiness-safety": "node scripts/verify-admin-users-phase13c-non-owner-login-readiness-safety.cjs",
     "verify:admin-users-phase14a-admin-function-block-safety": "node scripts/verify-admin-users-phase14a-admin-function-block-safety.cjs",
     "verify:admin-users-phase14b-admin-block-smoke-safety": "node scripts/verify-admin-users-phase14b-admin-block-smoke-safety.cjs",
-    "verify:admin-users-phase15a-permission-inventory-contract-safety": "node scripts/verify-admin-users-phase15a-permission-inventory-contract-safety.cjs"
+    "verify:admin-users-phase15a-permission-inventory-contract-safety": "node scripts/verify-admin-users-phase15a-permission-inventory-contract-safety.cjs",
+    "verify:admin-users-phase15b-permission-ui-read-model-contract-safety": "node scripts/verify-admin-users-phase15b-permission-ui-read-model-contract-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
