@@ -477,7 +477,8 @@
     "verify:admin-users-phase15b-permission-ui-read-model-contract-safety": "node scripts/verify-admin-users-phase15b-permission-ui-read-model-contract-safety.cjs",
     "verify:admin-users-phase15c-static-permission-catalog-safety": "node scripts/verify-admin-users-phase15c-static-permission-catalog-safety.cjs",
     "verify:admin-users-phase15d-read-only-permission-catalog-ui-safety": "node scripts/verify-admin-users-phase15d-read-only-permission-catalog-ui-safety.cjs",
-    "verify:admin-users-phase15e-static-role-permission-matrix-safety": "node scripts/verify-admin-users-phase15e-static-role-permission-matrix-safety.cjs"
+    "verify:admin-users-phase15e-static-role-permission-matrix-safety": "node scripts/verify-admin-users-phase15e-static-role-permission-matrix-safety.cjs",
+    "verify:admin-users-phase15-final-closeout-safety": "node scripts/verify-admin-users-phase15-final-closeout-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
