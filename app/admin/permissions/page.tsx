@@ -247,6 +247,28 @@ export default function AdminPermissionsPage() {
     rollbackExpectation: "Any later activation phase must include a same-session rollback path and no-lockout verification before push.",
     runtimeEnforcementChanged: false,
   };
+  const activationRollbackPlan = {
+    phase: "19B",
+    mode: "rollback-plan-only",
+    sameSessionRollbackRequired: true,
+    noLockoutSmokeRequired: true,
+    ownerMustRetainAdminAccess: true,
+    readOnlyAdminExpectedBlock: "administrator functions only",
+    rollbackSteps: [
+      "Verify owner_admin can still open /admin and /admin/permissions.",
+      "Verify read_only_admin/Jane Doe is blocked from administrator functions targeted by activation.",
+      "Verify non-admin operational pages remain available to read_only_admin unless a later narrowed rule is approved.",
+      "If owner access fails, immediately restore previous enforcement state before any push.",
+      "If read_only_admin loses unintended non-admin access, roll back before any push.",
+    ],
+    forbiddenInThisPhase: [
+      "No runtime enforcement change.",
+      "No environment flag change.",
+      "No write route invocation.",
+      "No user, role, override, password, session, Clio, document, email, or print queue mutation.",
+    ],
+    runtimeEnforcementChanged: false,
+  };
   const blockedRouteLabel = useMemo(() => blockedNotice.from || "the requested administrator page", [blockedNotice.from]);
   const blockedPermissionLabel = useMemo(() => blockedNotice.permission || "the mapped administrator permission", [blockedNotice.permission]);
 
@@ -422,7 +444,17 @@ export default function AdminPermissionsPage() {
             </div>
             <pre data-barsh-admin-permissions-activation-design-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify(activationDesignContract, null, 2)}</pre>
           </section>
-          <pre data-barsh-admin-permissions-activation-readiness-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ catalogCount: activationCatalogCount, routeMappingCount: activationRouteMappingCount, roleMatrixCount: activationRoleMatrixCount, userPreviewCount: activationUserPreviewCount, selectedUserMismatchCount, preflightChecks: activationPreflightChecks, preflightPassedCount: activationPreflightPassedCount, decisionPackage: activationDecisionPackage, designContract: activationDesignContract, warnings: activationReadinessWarnings, readyForReview: activationReadyForReview, runtimeEnforcementChanged: false }, null, 2)}</pre>
+          <section data-barsh-admin-permissions-activation-rollback-plan="read-only" style={{ borderTop: "1px solid #e5e7eb", marginTop: 16, paddingTop: 16 }}>
+            <h3 style={{ margin: "0 0 8px" }}>Phase 19B Rollback / No-Lockout Plan</h3>
+            <p style={{ color: "#475569", lineHeight: 1.45, marginTop: 0 }}>Read-only activation safety plan. This records the required rollback and no-lockout checks for any later activation phase. It does not enable enforcement, change environment flags, call write routes, or modify users, roles, overrides, passwords, sessions, records, Clio, documents, email, or the print queue.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+              <div data-barsh-admin-permissions-activation-rollback-required="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 12, padding: 10, fontWeight: 950 }}>Same-Session Rollback: Required</div>
+              <div data-barsh-admin-permissions-activation-no-lockout-required="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 12, padding: 10, fontWeight: 950 }}>No-Lockout Smoke: Required</div>
+              <div data-barsh-admin-permissions-activation-owner-access-required="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 12, padding: 10, fontWeight: 950 }}>Owner Admin Access: Must Retain</div>
+            </div>
+            <pre data-barsh-admin-permissions-activation-rollback-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify(activationRollbackPlan, null, 2)}</pre>
+          </section>
+          <pre data-barsh-admin-permissions-activation-readiness-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ catalogCount: activationCatalogCount, routeMappingCount: activationRouteMappingCount, roleMatrixCount: activationRoleMatrixCount, userPreviewCount: activationUserPreviewCount, selectedUserMismatchCount, preflightChecks: activationPreflightChecks, preflightPassedCount: activationPreflightPassedCount, decisionPackage: activationDecisionPackage, designContract: activationDesignContract, rollbackPlan: activationRollbackPlan, warnings: activationReadinessWarnings, readyForReview: activationReadyForReview, runtimeEnforcementChanged: false }, null, 2)}</pre>
         </section>
 
         <section data-barsh-admin-permissions-user-effective-preview="read-only" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18 }}>
