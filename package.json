@@ -466,7 +466,8 @@
     "verify:admin-users-phase12h-session-identity-binding-safety": "node scripts/verify-admin-users-phase12h-session-identity-binding-safety.cjs",
     "verify:admin-users-phase12i-inactivity-timeout-safety": "node scripts/verify-admin-users-phase12i-inactivity-timeout-safety.cjs",
     "verify:admin-users-phase12j-lockout-controls-safety": "node scripts/verify-admin-users-phase12j-lockout-controls-safety.cjs",
-    "verify:admin-users-phase12k-password-reset-safety": "node scripts/verify-admin-users-phase12k-password-reset-safety.cjs"
+    "verify:admin-users-phase12k-password-reset-safety": "node scripts/verify-admin-users-phase12k-password-reset-safety.cjs",
+    "verify:admin-users-phase13a-forced-password-change-safety": "node scripts/verify-admin-users-phase13a-forced-password-change-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

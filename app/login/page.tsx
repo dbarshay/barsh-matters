@@ -151,6 +151,10 @@ export default function LoginPage() {
         return;
       }
 
+      if (json?.user?.passwordChangeRequired) {
+        window.location.href = "/change-password";
+        return;
+      }
       window.location.href = clean(json.returnTo) || returnTo;
     } catch (error: any) {
       setStatus(error?.message || "Administrator login failed.");
