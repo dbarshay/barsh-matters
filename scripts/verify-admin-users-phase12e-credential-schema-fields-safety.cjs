@@ -3,7 +3,7 @@ const fs = require("fs");
 function read(path){ if(fs.existsSync(path) === false){ console.error("FAIL missing "+path); process.exit(1); } return fs.readFileSync(path,"utf8"); }
 function assert(label, ok){ if(ok === false){ console.error("FAIL: "+label); process.exit(1); } console.log("PASS: "+label); }
 console.log("RUN: Phase 12E AdminUser credential schema fields safety verifier");
-console.log("Schema/migration only: validates credential storage fields exist while login, session binding, hashing dependency, and permission enforcement remain unchanged.");
+console.log("Schema/migration only: validates credential storage fields exist while login, session binding, and permission enforcement remain unchanged. Dependency checks are delegated to later phase verifiers once later phases begin.");
 const pkg = JSON.parse(read("package.json"));
 const schema = read("prisma/schema.prisma");
 const migration = read("prisma/migrations/20260618095000_add_admin_user_credential_fields/migration.sql");
@@ -27,7 +27,6 @@ assert("permission never-block route /admin remains present", permissions.includ
 assert("permission never-block route /admin/permissions remains present", permissions.includes("/admin/permissions"));
 assert("permission never-block route /api/admin/permissions remains present", permissions.includes("/api/admin/permissions"));
 assert("permission never-block route /api/admin/permissions/check remains present", permissions.includes("/api/admin/permissions/check"));
-assert("bcryptjs not installed in Phase 12E", ((pkg.dependencies && pkg.dependencies.bcryptjs) || (pkg.devDependencies && pkg.devDependencies.bcryptjs)) ? false : true);
 console.log("CONTRACT: Phase 12E adds nullable/safe AdminUser credential fields and migration only.");
-console.log("CONTRACT: Phase 12E does not enable username login, password hashing, owner bootstrap, session-bound user identity, or permission enforcement.");
-console.log("PASS: Phase 12E credential schema fields are locked as schema/migration only.");
+console.log("CONTRACT: Phase 12E still does not enable username login, owner bootstrap behavior, session-bound user identity, or permission enforcement.");
+console.log("PASS: Phase 12E credential schema fields remain locked as schema/migration only.");
