@@ -22,6 +22,7 @@ type PermissionsData = {
   routePermissions?: any[];
   routeDryRun?: any[];
   overrideConfig?: any;
+  phase20Activation?: any;
 };
 
 type CatalogData = {
@@ -218,6 +219,7 @@ export default function AdminPermissionsPage() {
     { key: "runtime-still-read-only", label: "Runtime enforcement remains unchanged", passed: !data?.enforcementEnabled && !catalogData?.runtimeEnforcementChanged && !roleMatrixData?.runtimeEnforcementChanged },
   ];
   const activationPreflightPassedCount = activationPreflightChecks.filter((check) => check.passed).length;
+  const phase20Activation = data?.phase20Activation || null;
   const activationDecisionPackage = {
     proposedScope: "admin-functions-only",
     runtimeEnforcementChanged: false,
@@ -412,6 +414,18 @@ export default function AdminPermissionsPage() {
             </div>
             <pre data-barsh-admin-permissions-route-simulator-row="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify({ roleKey: simulatorRoleKey, route: simulatorRoute ? { pattern: simulatorRoute.pattern || "", method: simulatorRoute.method || "ANY", permission: simulatorRoutePermission } : null, decision: simulatorRouteDecision || "unmapped", reason: simulatorRouteReason || "No matching matrix row", enforcementStatus: simulatorRouteEnforcementStatus || "planning-only", allowed: simulatorRouteAllowed, matchedMatrixRow: simulatorRouteMatrixRow || null, runtimeEnforcementChanged: false }, null, 2)}</pre>
           </div>
+        </section>
+
+        <section data-barsh-admin-permissions-phase20-activation-status="read-only" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18 }}>
+          <h2 style={{ marginTop: 0 }}>Phase 20 Combined Activation Status</h2>
+          <p style={{ color: "#475569", lineHeight: 1.45 }}>Guarded activation-ready status. Runtime remains controlled only by environment flags. This page does not enable enforcement, create an activation button, write configuration, edit users, expose passwords, impersonate users, call Clio, send email, generate documents, or change the print queue.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+            <div data-barsh-admin-permissions-phase20-scope="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Scope:</strong> {phase20Activation?.scope || "admin-functions-only"}</div>
+            <div data-barsh-admin-permissions-phase20-enforcement="true" style={{ border: phase20Activation?.enforcementEnabled ? "1px solid #fed7aa" : "1px solid #bbf7d0", background: phase20Activation?.enforcementEnabled ? "#fff7ed" : "#f0fdf4", color: phase20Activation?.enforcementEnabled ? "#9a3412" : "#166534", borderRadius: 12, padding: 10, fontWeight: 950 }}>Enforcement: {phase20Activation?.enforcementEnabled ? "ON BY ENV" : "OFF"}</div>
+            <div data-barsh-admin-permissions-phase20-ready="true" style={{ border: phase20Activation?.readyForActivation ? "1px solid #bbf7d0" : "1px solid #fed7aa", background: phase20Activation?.readyForActivation ? "#f0fdf4" : "#fff7ed", color: phase20Activation?.readyForActivation ? "#166534" : "#9a3412", borderRadius: 12, padding: 10, fontWeight: 950 }}>Ready: {phase20Activation?.readyForActivation ? "YES" : "REVIEW"}</div>
+            <div data-barsh-admin-permissions-phase20-missing="true" style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}><strong>Missing Blocks:</strong> {Array.isArray(phase20Activation?.missingRequiredBlocks) ? phase20Activation.missingRequiredBlocks.length : "—"}</div>
+          </div>
+          <pre data-barsh-admin-permissions-phase20-json="true" style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 14 }}>{JSON.stringify(phase20Activation || { phase: "20-combined", status: "loading" }, null, 2)}</pre>
         </section>
 
         <section data-barsh-admin-permissions-activation-readiness="read-only" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18 }}>

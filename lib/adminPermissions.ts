@@ -180,6 +180,63 @@ export function adminPermissionForRoute(pathname: string, method = "GET"): Admin
 }
 
 
+export const PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION = {
+  phase: "20-combined",
+  scope: "admin-functions-only",
+  activationFlag: "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED",
+  overrideFlag: "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON",
+  requiredBlockPermissionsForReadOnlyAdmin: [
+    "admin.users.manage",
+    "admin.lawsuitCleanup.confirm",
+    "admin.ticklers.run",
+    "admin.clients.edit",
+    "admin.invoices.create",
+    "admin.invoices.finalize",
+    "admin.invoices.void",
+    "admin.referenceData.import",
+    "admin.documentTemplates.manage",
+    "admin.backups.run",
+    "admin.backups.restorePreview",
+  ] as AdminPermissionKey[],
+  neverBlockPaths: ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS,
+  runtimeDefault: "off-unless-env-enabled",
+  rollbackExpectation: "Unset BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED or set it false, then redeploy/restart.",
+} as const;
+
+export function phase20ReadOnlyAdminBlockOverrides(): AdminPermissionKey[] {
+  return [...PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.requiredBlockPermissionsForReadOnlyAdmin];
+}
+
+export function phase20RecommendedOverrideJson(): { block: AdminPermissionKey[]; allow: AdminPermissionKey[] } {
+  return {
+    block: phase20ReadOnlyAdminBlockOverrides(),
+    allow: ["admin.home.view"],
+  };
+}
+
+export function phase20ActivationStatus() {
+  const enforcementEnabled = configuredAdminPermissionsEnforcementEnabled();
+  const overrideConfig = configuredAdminPermissionOverridesFromEnv();
+  const configuredBlocks = new Set(overrideConfig.overrides.filter((entry) => entry.action === "block").map((entry) => entry.permission));
+  const missingRequiredBlocks = phase20ReadOnlyAdminBlockOverrides().filter((permission) => !configuredBlocks.has(permission));
+  return {
+    ok: true,
+    phase: "20-combined",
+    scope: PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.scope,
+    enforcementEnabled,
+    runtimeDefault: PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.runtimeDefault,
+    activationFlag: PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.activationFlag,
+    overrideFlag: PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.overrideFlag,
+    recommendedOverrides: phase20RecommendedOverrideJson(),
+    configuredOverrideCount: overrideConfig.overrides.length,
+    missingRequiredBlocks,
+    readyForActivation: overrideConfig.ok && missingRequiredBlocks.length === 0,
+    rollbackExpectation: PHASE20_ADMIN_FUNCTIONS_ONLY_ACTIVATION.rollbackExpectation,
+    noLockoutPaths: [...ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS],
+  };
+}
+
+
 export type AdminPermissionOverrideAction = "allow" | "block";
 
 export type AdminPermissionOverride = {
