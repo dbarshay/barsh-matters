@@ -35,6 +35,26 @@ type CatalogData = {
   catalog?: PermissionCatalogItem[];
 };
 
+type RoleMatrixRow = {
+  roleKey: string;
+  permissionKey: string;
+  decision: string;
+  reason: string;
+  enforcementStatus: string;
+};
+
+type RoleMatrixData = {
+  ok?: boolean;
+  action?: string;
+  phase?: string;
+  enforcementScope?: string;
+  runtimeEnforcementChanged?: boolean;
+  matrixMode?: string;
+  roles?: string[];
+  rowCount?: number;
+  matrix?: RoleMatrixRow[];
+};
+
 const thStyle: React.CSSProperties = {
   padding: 8,
   borderBottom: "1px solid #cbd5e1",
@@ -83,8 +103,10 @@ function badgeStyle(value: string): React.CSSProperties {
 export default function AdminPermissionsPage() {
   const [data, setData] = useState<PermissionsData | null>(null);
   const [catalogData, setCatalogData] = useState<CatalogData | null>(null);
+  const [roleMatrixData, setRoleMatrixData] = useState<RoleMatrixData | null>(null);
   const [error, setError] = useState("");
   const [catalogError, setCatalogError] = useState("");
+  const [roleMatrixError, setRoleMatrixError] = useState("");
   const [blockedNotice, setBlockedNotice] = useState<{ blocked: boolean; from: string; permission: string }>({ blocked: false, from: "", permission: "" });
 
   useEffect(() => {
@@ -97,6 +119,11 @@ export default function AdminPermissionsPage() {
       .then((r) => r.json())
       .then((j) => setCatalogData(j))
       .catch((e) => setCatalogError(e?.message || "Permission catalog lookup failed."));
+
+    fetch("/api/admin/permissions/role-matrix", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => setRoleMatrixData(j))
+      .catch((e) => setRoleMatrixError(e?.message || "Permission role matrix lookup failed."));
   }, []);
 
   useEffect(() => {
@@ -112,7 +139,10 @@ export default function AdminPermissionsPage() {
   const routes = Array.isArray(data?.routePermissions) ? data.routePermissions : [];
   const catalog = Array.isArray(catalogData?.catalog) ? catalogData.catalog : [];
   const groups = Array.isArray(catalogData?.groups) ? catalogData.groups : [];
+  const roleMatrix = Array.isArray(roleMatrixData?.matrix) ? roleMatrixData.matrix : [];
+  const roleKeys = Array.isArray(roleMatrixData?.roles) ? roleMatrixData.roles : [];
   const groupedCatalog = useMemo(() => groups.map((group) => ({ group, items: catalog.filter((item) => item.group === group) })), [groups, catalog]);
+  const groupedRoleMatrix = useMemo(() => roleKeys.map((roleKey) => ({ roleKey, rows: roleMatrix.filter((row) => row.roleKey === roleKey) })), [roleKeys, roleMatrix]);
   const blockedRouteLabel = useMemo(() => blockedNotice.from || "the requested administrator page", [blockedNotice.from]);
   const blockedPermissionLabel = useMemo(() => blockedNotice.permission || "the mapped administrator permission", [blockedNotice.permission]);
 
@@ -132,6 +162,7 @@ export default function AdminPermissionsPage() {
 
         {error ? <section data-barsh-admin-permissions-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
         {catalogError ? <section data-barsh-admin-permissions-catalog-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{catalogError}</section> : null}
+        {roleMatrixError ? <section data-barsh-admin-permissions-role-matrix-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{roleMatrixError}</section> : null}
 
         {blockedNotice.blocked ? (
           <section data-barsh-admin-permissions-blocked-notice="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16, lineHeight: 1.5 }}>
@@ -140,7 +171,7 @@ export default function AdminPermissionsPage() {
         ) : null}
 
         <section data-barsh-admin-permissions-summary="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18 }}>
-          <strong>Mode:</strong> {data?.mode || "loading"} | <strong>Enforcement Enabled:</strong> {data?.enforcementEnabled ? "Yes" : "No"} | <strong>Legacy Definitions:</strong> {permissions.length} | <strong>Mappings:</strong> {routes.length} | <strong>Static Catalog:</strong> {catalogData?.catalogCount ?? catalog.length} | <strong>Catalog Scope:</strong> {catalogData?.enforcementScope || "loading"}
+          <strong>Mode:</strong> {data?.mode || "loading"} | <strong>Enforcement Enabled:</strong> {data?.enforcementEnabled ? "Yes" : "No"} | <strong>Legacy Definitions:</strong> {permissions.length} | <strong>Mappings:</strong> {routes.length} | <strong>Static Catalog:</strong> {catalogData?.catalogCount ?? catalog.length} | <strong>Catalog Scope:</strong> {catalogData?.enforcementScope || "loading"} | <strong>Role Matrix:</strong> {roleMatrixData?.rowCount ?? roleMatrix.length} | <strong>Matrix Mode:</strong> {roleMatrixData?.matrixMode || "loading"}
         </section>
 
         <section data-barsh-admin-permissions-static-catalog="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, overflowX: "auto" }}>
@@ -174,6 +205,39 @@ export default function AdminPermissionsPage() {
                       <td style={{ ...tdStyle, fontFamily: "monospace" }}>{listText(item.routeScopes)}</td>
                       <td style={{ ...tdStyle, fontFamily: "monospace" }}>{listText(item.functionScopes)}</td>
                       <td style={tdStyle}>{item.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </section>
+
+        <section data-barsh-admin-permissions-role-matrix="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, overflowX: "auto" }}>
+          <h2 style={{ marginTop: 0 }}>Static Role Permission Matrix</h2>
+          <p style={{ color: "#475569" }}>Phase 15E planning-only role matrix. These rows describe the intended owner_admin and read_only_admin baseline. Runtime enforcement remains <strong>admin-functions-only</strong>.</p>
+          <div data-barsh-admin-permissions-role-matrix-runtime-flag="true" style={{ border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 14, padding: 12, marginBottom: 14 }}>
+            <strong>Runtime Enforcement Changed:</strong> {roleMatrixData?.runtimeEnforcementChanged ? "Yes" : "No"} | <strong>Matrix Mode:</strong> {roleMatrixData?.matrixMode || "planning-only"} | <strong>Endpoint:</strong> /api/admin/permissions/role-matrix
+          </div>
+          {groupedRoleMatrix.map(({ roleKey, rows }) => (
+            <div key={roleKey} data-barsh-admin-permissions-role-matrix-role={roleKey} style={{ marginTop: 18 }}>
+              <h3 style={{ marginBottom: 8 }}>{roleKey}</h3>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Permission</th>
+                    <th style={thStyle}>Decision</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={`${row.roleKey}:${row.permissionKey}`} data-barsh-admin-permissions-role-matrix-key={`${row.roleKey}:${row.permissionKey}`}>
+                      <td style={monoCellStyle}>{row.permissionKey}</td>
+                      <td style={tdStyle}><span style={badgeStyle(row.decision)}>{row.decision}</span></td>
+                      <td style={tdStyle}><span style={badgeStyle(row.enforcementStatus)}>{row.enforcementStatus}</span></td>
+                      <td style={tdStyle}>{row.reason}</td>
                     </tr>
                   ))}
                 </tbody>
