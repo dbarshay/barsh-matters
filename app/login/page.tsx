@@ -236,19 +236,7 @@ export default function LoginPage() {
             {busy ? "Checking..." : "Login"}
           </button>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a href="/" style={{ ...secondaryButtonStyle, flex: "1 1 160px" }}>
-              Back to Home
-            </a>
-            <a href={returnTo} style={{ ...secondaryButtonStyle, flex: "1 1 160px" }}>
-              Login
-            </a>
-            {alreadyAuthenticated ? (
-              <button type="button" onClick={handleLogout} disabled={busy} style={{ ...secondaryButtonStyle, flex: "1 1 160px", cursor: "pointer" }}>
-                Logout
-              </button>
-            ) : null}
-          </div>
+          
         </form>
       </section>
     </main>
