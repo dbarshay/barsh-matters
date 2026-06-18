@@ -14,10 +14,10 @@ assert("Phase 12D npm script registered", pkg.scripts && pkg.scripts["verify:adm
 assert("legacy gate cookie remains", adminAuth.includes("barsh_admin_gate"));
 assert("identity cookie remains separate", adminAuth.includes("barsh_admin_identity"));
 assert("BARSH_ADMIN_PASSWORD support remains", adminAuth.includes("BARSH_ADMIN_PASSWORD"));
-assert("login route remains legacy password-only", login.includes("body?.password") && /body\?\.(username|email|adminEmail|userEmail)/.test(login) === false);
-assert("login route does not use credential hash verification", /bcrypt|bcryptjs|argon2|passwordHash/i.test(login) === false);
+assert("login route keeps legacy fallback and can evolve to username/password", login.includes("configuredAdminPassword") && login.includes("setAdminGateCookie(response)"));
+assert("login route does not bind identity cookie before Phase 12H", login.includes("ADMIN_IDENTITY_COOKIE_NAME") === false);
 assert("session route remains diagnostic", session.includes("identityDiagnostics"));
-assert("session route does not query AdminUser", /prisma\.adminUser|adminUser\.find/i.test(session) === false);
+assert("session route does not query AdminUser", /prisma\.adminUser|adminUser\.find|SELECT[\s\S]*AdminUser/i.test(session) === false);
 assert("permissions source still includes never-block route /admin", permissions.includes("/admin"));
 assert("permissions source still includes never-block route /admin/permissions", permissions.includes("/admin/permissions"));
 assert("planning retains owner email", planning.includes("dbarshay15@gmail.com"));

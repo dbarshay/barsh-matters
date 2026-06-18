@@ -3,7 +3,7 @@ const fs = require("fs");
 function read(path){ if(fs.existsSync(path) === false){ console.error("FAIL missing "+path); process.exit(1); } return fs.readFileSync(path,"utf8"); }
 function assert(label, ok){ if(ok === false){ console.error("FAIL: "+label); process.exit(1); } console.log("PASS: "+label); }
 console.log("RUN: Phase 12E AdminUser credential schema fields safety verifier");
-console.log("Schema/migration only: validates credential storage fields exist while login, session binding, and permission enforcement remain unchanged. Dependency checks are delegated to later phase verifiers once later phases begin.");
+console.log("Schema/migration only: validates credential storage fields exist while session binding and permission enforcement remain unchanged.");
 const pkg = JSON.parse(read("package.json"));
 const schema = read("prisma/schema.prisma");
 const migration = read("prisma/migrations/20260618095000_add_admin_user_credential_fields/migration.sql");
@@ -19,14 +19,14 @@ assert("AdminUser model exists", adminUser.length > 0);
 assert("legacy gate cookie remains", adminAuth.includes("barsh_admin_gate"));
 assert("identity cookie remains separate", adminAuth.includes("barsh_admin_identity"));
 assert("BARSH_ADMIN_PASSWORD support remains", adminAuth.includes("BARSH_ADMIN_PASSWORD"));
-assert("login route remains password-only and does not accept username yet", login.includes("body?.password") && /body\?\.(username|email|adminEmail|userEmail)/.test(login) === false);
-assert("login route does not use passwordHash yet", /passwordHash|bcrypt|bcryptjs|argon2/i.test(login) === false);
+assert("login route preserves generic gate cookie", login.includes("setAdminGateCookie(response)"));
+assert("login route does not set identity cookie", login.includes("ADMIN_IDENTITY_COOKIE_NAME") === false);
 assert("session route remains passive diagnostics", session.includes("identityDiagnostics"));
-assert("session route does not bind AdminUser.id yet", /prisma\.adminUser|adminUser\.find|adminUserId|userId.*identity|identity.*userId/i.test(session) === false);
+assert("session route does not bind AdminUser.id yet", /prisma\.adminUser|adminUser\.find|adminUserId|userId.*identity|identity.*userId|SELECT[\s\S]*AdminUser/i.test(session) === false);
 assert("permission never-block route /admin remains present", permissions.includes("/admin"));
 assert("permission never-block route /admin/permissions remains present", permissions.includes("/admin/permissions"));
 assert("permission never-block route /api/admin/permissions remains present", permissions.includes("/api/admin/permissions"));
 assert("permission never-block route /api/admin/permissions/check remains present", permissions.includes("/api/admin/permissions/check"));
 console.log("CONTRACT: Phase 12E adds nullable/safe AdminUser credential fields and migration only.");
-console.log("CONTRACT: Phase 12E still does not enable username login, owner bootstrap behavior, session-bound user identity, or permission enforcement.");
+console.log("CONTRACT: Session-bound user identity and permission enforcement remain off.");
 console.log("PASS: Phase 12E credential schema fields remain locked as schema/migration only.");

@@ -96,6 +96,7 @@ const statusStyle: React.CSSProperties = {
 };
 
 export default function LoginPage() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,9 +130,10 @@ export default function LoginPage() {
     event.preventDefault();
     setStatus("");
 
+    const trimmedUsername = clean(username);
     const trimmedPassword = clean(password);
     if (!trimmedPassword) {
-      setStatus("Enter the administrator password.");
+      setStatus(trimmedUsername ? "Enter your password." : "Enter the administrator password or your owner password.");
       return;
     }
 
@@ -140,7 +142,7 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: trimmedPassword, action: "Login", returnTo }),
+        body: JSON.stringify({ username: trimmedUsername || undefined, password: trimmedPassword, action: "Login", returnTo }),
       });
       const json = await response.json().catch(() => null);
 
@@ -162,6 +164,7 @@ export default function LoginPage() {
       setBusy(true);
       await fetch("/api/auth/logout", { method: "POST" });
       setAlreadyAuthenticated(false);
+      setUsername("");
       setPassword("");
       setStatus("Administrator session cleared.");
     } catch (error: any) {
@@ -183,11 +186,24 @@ export default function LoginPage() {
 
         <form data-barsh-login-form="true" onSubmit={handleSubmit} style={bodyStyle}>
           <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.5 }}>
-            Sign in to open Administrator functions. Two-factor authentication by SMS or phone push is planned for a later auth phase.
+            Sign in with your owner username and password. During rollout, the legacy administrator password still works if the username field is left blank. Two-factor authentication by SMS or phone push is planned for a later auth phase.
           </p>
 
           <label style={labelStyle}>
-            Administrator Password
+            Username
+            <input
+              data-barsh-login-username="true"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="dbarshay"
+              style={inputStyle}
+            />
+          </label>
+
+          <label style={labelStyle}>
+            Password
             <input
               data-barsh-login-password="true"
               type="password"

@@ -461,7 +461,8 @@
     "verify:admin-users-phase12c-passive-auth-identity-diagnostics-safety": "node scripts/verify-admin-users-phase12c-passive-auth-identity-diagnostics-safety.cjs",
     "verify:admin-users-phase12d-credential-design-contract-safety": "node scripts/verify-admin-users-phase12d-credential-design-contract-safety.cjs",
     "verify:admin-users-phase12e-credential-schema-fields-safety": "node scripts/verify-admin-users-phase12e-credential-schema-fields-safety.cjs",
-    "verify:admin-users-phase12f-owner-credential-bootstrap-safety": "node scripts/verify-admin-users-phase12f-owner-credential-bootstrap-safety.cjs"
+    "verify:admin-users-phase12f-owner-credential-bootstrap-safety": "node scripts/verify-admin-users-phase12f-owner-credential-bootstrap-safety.cjs",
+    "verify:admin-users-phase12g-username-password-login-safety": "node scripts/verify-admin-users-phase12g-username-password-login-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
