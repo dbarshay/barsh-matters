@@ -951,19 +951,33 @@ model ProviderClientInvoiceAudit {
 
 
 model AdminUser {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  displayName   String?
-  status        String   @default("active")
-  bootstrapSafe Boolean  @default(false)
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                     String    @id @default(cuid())
+  email                  String    @unique
+  username               String?
+  normalizedUsername     String?   @unique
+  passwordHash           String?
+  passwordSetAt          DateTime?
+  passwordChangeRequired Boolean   @default(false)
+  lastLoginAt            DateTime?
+  lastFailedLoginAt      DateTime?
+  failedLoginCount       Int       @default(0)
+  twoFactorRequired      Boolean   @default(false)
+  twoFactorMethod        String?
+  twoFactorConfiguredAt  DateTime?
+  displayName            String?
+  status                 String    @default("active")
+  bootstrapSafe          Boolean   @default(false)
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   roles               AdminUserRole[]
   permissionOverrides AdminUserPermissionOverride[]
 
   @@index([status])
+  @@index([username])
+  @@index([passwordChangeRequired])
+  @@index([lastLoginAt])
 }
 
 model AdminRole {
