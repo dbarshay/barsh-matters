@@ -34,7 +34,7 @@ export async function createClioFolderWithGuard(input: ClioFolderCreateExecutorI
     data: {
       name: folderName,
       matter: { id: matterId },
-      ...(parentId ? { parent: { id: parentId } } : {}),
+      ...(parentId ? { parent: { id: parentId, type: "Folder" } } : {}),
     },
   };
 
