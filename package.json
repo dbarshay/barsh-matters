@@ -520,7 +520,8 @@
     "verify:clio-storage-refactor-phase20-live-folder-create-smoke-safety": "node scripts/verify-clio-storage-refactor-phase20-live-folder-create-smoke-safety.cjs",
     "verify:clio-storage-refactor-phase21-live-folder-idempotency-proof-safety": "node scripts/verify-clio-storage-refactor-phase21-live-folder-idempotency-proof-safety.cjs",
     "verify:clio-storage-refactor-phase22-human-readable-folder-naming-safety": "node scripts/verify-clio-storage-refactor-phase22-human-readable-folder-naming-safety.cjs",
-    "verify:clio-storage-refactor-phase23-live-human-readable-folder-create-smoke-safety": "node scripts/verify-clio-storage-refactor-phase23-live-human-readable-folder-create-smoke-safety.cjs"
+    "verify:clio-storage-refactor-phase23-live-human-readable-folder-create-smoke-safety": "node scripts/verify-clio-storage-refactor-phase23-live-human-readable-folder-create-smoke-safety.cjs",
+    "verify:clio-storage-refactor-phase24-human-readable-folder-idempotency-proof-safety": "node scripts/verify-clio-storage-refactor-phase24-human-readable-folder-idempotency-proof-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
