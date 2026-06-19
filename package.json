@@ -530,7 +530,8 @@
     "verify:phase31-production-build-confirmation-safety": "node scripts/verify-phase31-production-build-confirmation-safety.cjs",
     "verify:phase32a-preview-route-env-fallback-safety": "node scripts/verify-phase32a-preview-route-env-fallback-safety.cjs",
     "verify:phase32-vercel-production-smoke-safety": "node scripts/verify-phase32-vercel-production-smoke-safety.cjs",
-    "verify:phase33-finalization-rewire-design-lock-safety": "node scripts/verify-phase33-finalization-rewire-design-lock-safety.cjs"
+    "verify:phase33-finalization-rewire-design-lock-safety": "node scripts/verify-phase33-finalization-rewire-design-lock-safety.cjs",
+    "verify:phase34a-finalize-single-master-dry-run-rewire-safety": "node scripts/verify-phase34a-finalize-single-master-dry-run-rewire-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

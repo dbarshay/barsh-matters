@@ -6,6 +6,9 @@ import {
   uploadBufferToClioMatterDocuments,
 } from "@/lib/clioDocumentUpload";
 import { convertWorkingDocxDriveItemToPdf } from "@/lib/documents/graphWorkingDocuments";
+import { buildClioStorageFolderResolutionPreview } from "@/lib/clioStorageFolderResolution";
+import { resolveClioMatterFolderWithGuard } from "@/lib/clioFolderResolverExecutor";
+import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
 
 export const runtime = "nodejs";
 
@@ -146,6 +149,47 @@ function getMasterMatterId(preview: any): number {
   return matterId;
 }
 
+
+function buildSingleMasterFinalizeTargetInput(preview: any, params: {
+  masterLawsuitId: string;
+  uploadTargetMode?: string;
+  directMatterId?: string;
+  directMatterDisplayNumber?: string;
+}): ClioStorageTargetInput {
+  const target = preview?.clioUploadTarget || {};
+  const displayNumber = clean(
+    target?.displayNumber ||
+      params.directMatterDisplayNumber ||
+      params.masterLawsuitId
+  );
+  const lawsuitId = clean(
+    params.masterLawsuitId ||
+      target?.lawsuitId ||
+      target?.masterLawsuitId ||
+      displayNumber
+  );
+  const bmMatterId = clean(
+    params.directMatterId ||
+      target?.bmMatterId ||
+      target?.bmMatterNumber ||
+      target?.localMatterId ||
+      lawsuitId ||
+      displayNumber
+  );
+
+  if (!bmMatterId && !lawsuitId && !displayNumber) {
+    throw new Error(
+      "Single-master Clio storage target cannot be derived without a Barsh Matters matter or lawsuit identifier."
+    );
+  }
+
+  return {
+    bmMatterId: bmMatterId || lawsuitId || displayNumber,
+    lawsuitId: lawsuitId || displayNumber || bmMatterId,
+    displayNumber: displayNumber || lawsuitId || bmMatterId,
+  };
+}
+
 async function generateDocumentBuffer(req: NextRequest, document: PlannedDocument) {
   const sourceUrl = new URL(document.sourceEndpoint, req.nextUrl.origin);
 
@@ -253,6 +297,64 @@ export async function POST(req: NextRequest) {
             directMatterDisplayNumber,
           });
     const validation = preview?.validation || {};
+
+    const useSingleMasterClioStorage = body?.useSingleMasterClioStorage === true;
+    const singleMasterDryRun = body?.singleMasterDryRun !== false;
+    const singleMasterResolveFolders = body?.singleMasterResolveFolders === true;
+
+    if (useSingleMasterClioStorage) {
+      const singleMasterTargetInput = buildSingleMasterFinalizeTargetInput(preview, {
+        masterLawsuitId,
+        uploadTargetMode,
+        directMatterId,
+        directMatterDisplayNumber,
+      });
+
+      if (!singleMasterDryRun) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "finalize-upload",
+            error: "Single-master finalize upload remains disabled in Phase 34A. Use singleMasterDryRun: true.",
+            finalizeRewired: true,
+            uploadRewired: false,
+            databaseMutation: false,
+            noUploadPerformed: true,
+            singleMasterTargetInput,
+          },
+          { status: 400 }
+        );
+      }
+
+      const folderResolution = singleMasterResolveFolders
+        ? await resolveClioMatterFolderWithGuard(singleMasterTargetInput)
+        : buildClioStorageFolderResolutionPreview(singleMasterTargetInput);
+
+      return NextResponse.json({
+        ok: true,
+        action: "finalize-upload",
+        finalizeRewired: true,
+        uploadRewired: false,
+        databaseMutation: false,
+        clioWrite: singleMasterResolveFolders,
+        noUploadPerformed: true,
+        generationSkipped: true,
+        singleMasterDryRun,
+        singleMasterResolveFolders,
+        folderResolutionMode: singleMasterResolveFolders
+          ? "guarded-live-folder-resolution-no-upload"
+          : "preview-only-no-clio-call",
+        singleMasterTargetInput,
+        folderResolution,
+        safety: {
+          clioIsStorageOnly: true,
+          barshMattersOwnsFileAndLawsuitNumbers: true,
+          noPatientProviderInsurerClaimFolderNames: true,
+          noDocumentUploadPerformed: true,
+          noDatabaseRecordsChanged: true,
+        },
+      });
+    }
 
     if (!validation.canGenerate) {
       return NextResponse.json(
