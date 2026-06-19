@@ -24,12 +24,40 @@ function loadEnvFile(file) {
   return true;
 }
 
+async function refreshAccessToken() {
+  const clientId = clean(process.env.CLIO_CLIENT_ID);
+  const clientSecret = clean(process.env.CLIO_CLIENT_SECRET);
+  const refreshToken = clean(process.env.CLIO_REFRESH_TOKEN);
+  if (!clientId || !clientSecret || !refreshToken) return "";
+  const base = clean(process.env.CLIO_API_BASE) || "https://app.clio.com";
+  const tokenUrl = base.replace(/\/$/, "") + "/oauth/token";
+  const body = new URLSearchParams();
+  body.set("grant_type", "refresh_token");
+  body.set("client_id", clientId);
+  body.set("client_secret", clientSecret);
+  body.set("refresh_token", refreshToken);
+  const res = await fetch(tokenUrl, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" }, body });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || !json.access_token) {
+    fail("OAuth refresh failed with status " + res.status + " " + res.statusText);
+    return "";
+  }
+  pass("OAuth refresh succeeded in memory only");
+  return clean(json.access_token);
+}
+
+async function getMatter(apiBase, masterId, token) {
+  const fields = encodeURIComponent("id,display_number,description");
+  const url = apiBase + "/matters/" + encodeURIComponent(masterId) + ".json?fields=" + fields;
+  return fetch(url, { method: "GET", headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
+}
+
 const doc = read("docs/implementation/clio-storage-refactor-phase6-live-master-readonly.md");
 const config = read("lib/clioStorageConfig.ts");
 const clio = read("lib/clio.ts");
 const pkg = JSON.parse(read("package.json") || "{}");
 
-for (const token of ["Barsh Matters Master Repository", "1885821245", "CLIO_PHASE6_LIVE=1", "GET/read-only", "No POST, PATCH, PUT, or DELETE"]) {
+for (const token of ["Barsh Matters Master Repository", "1885821245", "CLIO_PHASE6_LIVE=1", "GET/read-only", "OAuth token refresh"]) {
   if (doc.includes(token)) pass("Phase 6 doc contains " + token); else fail("Phase 6 doc missing " + token);
 }
 
@@ -50,34 +78,34 @@ async function liveCheck() {
     pass("live Clio check skipped unless CLIO_PHASE6_LIVE=1");
     return;
   }
-
   loadEnvFile(".env.local");
   loadEnvFile(process.env.CLIO_PHASE6_ENV_FILE || ".env.vercel.production");
-
   const masterId = clean(process.env.CLIO_MASTER_MATTER_ID);
   const masterName = clean(process.env.CLIO_MASTER_MATTER_NAME);
   if (masterId !== "1885821245") { fail("CLIO_MASTER_MATTER_ID is not 1885821245"); return; }
   if (masterName !== "Barsh Matters Master Repository") { fail("CLIO_MASTER_MATTER_NAME is not Barsh Matters Master Repository"); return; }
-
   const base = clean(process.env.CLIO_API_BASE) || "https://app.clio.com";
-  const token = clean(process.env.CLIO_ACCESS_TOKEN);
-  if (!token) { fail("CLIO_ACCESS_TOKEN missing for live read-only check"); return; }
-
+  let token = clean(process.env.CLIO_ACCESS_TOKEN);
+  if (!token) { token = await refreshAccessToken(); }
+  if (!token) { fail("No Clio access token available after refresh attempt"); return; }
   const baseTrimmed = base.replace(/\/$/, "");
   const apiBase = baseTrimmed.endsWith("/api/v4") ? baseTrimmed : baseTrimmed + "/api/v4";
-  const fields = encodeURIComponent("id,display_number,description");
-  const url = apiBase + "/matters/" + encodeURIComponent(masterId) + ".json?fields=" + fields;
-  const res = await fetch(url, { method: "GET", headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
+  let res = await getMatter(apiBase, masterId, token);
+  if (res.status === 401) {
+    pass("initial live GET returned 401; attempting memory-only OAuth refresh");
+    token = await refreshAccessToken();
+    if (!token) return;
+    res = await getMatter(apiBase, masterId, token);
+  }
   const text = await res.text();
   let json = null;
   try { json = text ? JSON.parse(text) : null; } catch { json = null; }
-
   if (!res.ok) { fail("live Clio master matter GET failed with status " + res.status + " " + res.statusText); return; }
   const data = json && json.data ? json.data : {};
   if (String(data.id || "") === masterId) pass("live Clio master matter ID matched"); else fail("live Clio master matter ID mismatch");
   const haystack = [data.display_number, data.description, JSON.stringify(data)].map(clean).join(" | ");
   if (haystack.includes(masterName)) pass("live Clio master matter name/description matched"); else pass("live Clio matter read succeeded; name not exposed in requested fields");
-  pass("live check used GET only and performed no folder/document/database writes");
+  pass("live check used GET-only Clio data API requests and performed no folder/document/database writes");
 }
 
 liveCheck().then(() => {
