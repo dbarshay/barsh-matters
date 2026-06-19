@@ -511,7 +511,8 @@
     "verify:clio-storage-refactor-phase11-write-guard-contract-safety": "node scripts/verify-clio-storage-refactor-phase11-write-guard-contract-safety.cjs",
     "verify:clio-storage-refactor-phase12-live-no-write-folder-preflight-safety": "node scripts/verify-clio-storage-refactor-phase12-live-no-write-folder-preflight-safety.cjs",
     "verify:clio-storage-refactor-phase13-folder-create-dry-run-plan-safety": "node scripts/verify-clio-storage-refactor-phase13-folder-create-dry-run-plan-safety.cjs",
-    "verify:clio-storage-refactor-phase14-folder-create-dry-run-api-safety": "node scripts/verify-clio-storage-refactor-phase14-folder-create-dry-run-api-safety.cjs"
+    "verify:clio-storage-refactor-phase14-folder-create-dry-run-api-safety": "node scripts/verify-clio-storage-refactor-phase14-folder-create-dry-run-api-safety.cjs",
+    "verify:clio-storage-refactor-phase15-folder-create-executor-safety": "node scripts/verify-clio-storage-refactor-phase15-folder-create-executor-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
