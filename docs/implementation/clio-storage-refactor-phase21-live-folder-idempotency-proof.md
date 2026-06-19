@@ -14,8 +14,8 @@ Phase 21 proves the Phase 20 live folder-create smoke is idempotent after live f
 
 ## Locked folder IDs
 
-- Bucket folder `bucket-002001-003000`: `22059823835`
-- Matter folder `matter-2026.05.00001`: `22059823955`
+- Bucket folder `2026-05 Matters`: `22059823835`
+- Matter folder `2026.05.00001`: `22059823955`
 
 ## Root/container detection repair
 

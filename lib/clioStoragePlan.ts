@@ -67,14 +67,24 @@ export function getBucketRange(matterOrdinal: number, bucketSize: number): { buc
   return { bucketIndex, bucketStart, bucketEnd };
 }
 
-export function buildBucketFolderName(bucketStart: number, bucketEnd: number): string {
-  return `bucket-${pad(bucketStart)}-${pad(bucketEnd)}`;
+function getMatterYearMonth(input: ClioStorageTargetInput): { year: string; month: string } {
+  const source = clean(input.displayNumber) || clean(input.bmMatterId) || clean(input.lawsuitId);
+  const match = source.match(/(20\d{2})[.-](\d{2})[.-]\d+/);
+  if (match) return { year: match[1], month: match[2] };
+  return { year: "undated", month: "unknown" };
+}
+
+export function buildBucketFolderName(input: ClioStorageTargetInput): string {
+  const { year, month } = getMatterYearMonth(input);
+  return year === "undated" ? "Undated Matters" : `${year}-${month} Matters`;
 }
 
 export function buildMatterFolderName(input: ClioStorageTargetInput, matterOrdinal = getMatterOrdinal(input)): string {
-  const display = safeFolderPart(input.displayNumber, `matter-${pad(matterOrdinal)}`);
-  const label = safeFolderPart(input.label || input.lawsuitId || "", "");
-  return label ? `${display} - ${label}`.slice(0, 180) : display;
+  const displayNumber = safeFolderPart(input.displayNumber || "");
+  if (displayNumber) return displayNumber;
+  const bmMatterId = safeFolderPart(input.bmMatterId || "");
+  if (bmMatterId) return bmMatterId;
+  return String(matterOrdinal);
 }
 
 export function buildClioStorageTargetPlan(input: ClioStorageTargetInput, config: ClioStorageConfig = getClioStorageConfig()): ClioStorageTargetPlan {
@@ -84,7 +94,7 @@ export function buildClioStorageTargetPlan(input: ClioStorageTargetInput, config
 
   const matterOrdinal = getMatterOrdinal(input);
   const range = getBucketRange(matterOrdinal, config.bucketSize);
-  const bucketFolderName = buildBucketFolderName(range.bucketStart, range.bucketEnd);
+  const bucketFolderName = buildBucketFolderName(input);
   const matterFolderName = buildMatterFolderName(input, matterOrdinal);
 
   return {

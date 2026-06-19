@@ -14,9 +14,9 @@ Phase 4 adds the non-operational read model that computes where a BM matter shou
 
 Example bucket folder names:
 
-- `bucket-000001-001000`
+- `YYYY-MM Matters`
 - `bucket-001001-002000`
-- `bucket-002001-003000`
+- `2026-05 Matters`
 
 ## Safety boundary
 

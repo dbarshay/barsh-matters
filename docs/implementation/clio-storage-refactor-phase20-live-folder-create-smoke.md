@@ -8,8 +8,8 @@ Phase 20 performs the first controlled live Clio folder creation under the singl
 
 - Master matter: `Barsh Matters Master Repository` / `1885821245`
 - BM test matter: `2026.05.00001`
-- Bucket folder: `bucket-002001-003000`
-- Matter folder: `matter-2026.05.00001`
+- Bucket folder: `2026-05 Matters`
+- Matter folder: `2026.05.00001`
 
 ## Safety boundary
 
