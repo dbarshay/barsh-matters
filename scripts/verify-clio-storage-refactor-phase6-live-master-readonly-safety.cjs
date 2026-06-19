@@ -18,15 +18,7 @@ function loadEnvFile(file) {
     if (!match) continue;
     const key = match[1];
     let value = match[2].trim();
-    if (value.length >= 2 && ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("
-+
-'
-+
-") && value.endsWith("
-+
-'
-+
-")))) value = value.slice(1, -1);
+    if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) value = value.slice(1, -1);
     if (!process.env[key]) process.env[key] = value;
   }
   return true;
@@ -71,8 +63,10 @@ async function liveCheck() {
   const token = clean(process.env.CLIO_ACCESS_TOKEN);
   if (!token) { fail("CLIO_ACCESS_TOKEN missing for live read-only check"); return; }
 
-  const apiBase = base.replace(/\/$/, "").endsWith("/api/v4") ? base.replace(/\/$/, "") : base.replace(/\/$/, "") + "/api/v4";
-  const url = apiBase + "/matters/" + encodeURIComponent(masterId) + ".json?fields=" + encodeURIComponent("id,display_number,description");
+  const baseTrimmed = base.replace(/\/$/, "");
+  const apiBase = baseTrimmed.endsWith("/api/v4") ? baseTrimmed : baseTrimmed + "/api/v4";
+  const fields = encodeURIComponent("id,display_number,description");
+  const url = apiBase + "/matters/" + encodeURIComponent(masterId) + ".json?fields=" + fields;
   const res = await fetch(url, { method: "GET", headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
   const text = await res.text();
   let json = null;
