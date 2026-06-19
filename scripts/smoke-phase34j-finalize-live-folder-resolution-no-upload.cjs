@@ -29,6 +29,7 @@ function loadLocalEnvWithoutPrintingSecrets() {
     ...parseDotEnvFile(".env.development.local"),
     ...parseDotEnvFile(".env.production"),
     ...parseDotEnvFile(".env.production.local"),
+    ...parseDotEnvFile(".env.vercel.production"),
     ...process.env,
   };
 }

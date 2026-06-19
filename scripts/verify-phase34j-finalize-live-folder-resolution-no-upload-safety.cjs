@@ -30,6 +30,7 @@ if (pkg.scripts && pkg.scripts[smokeScript] === "node scripts/smoke-phase34j-fin
 
 for (const token of [
   "loadLocalEnvWithoutPrintingSecrets",
+  ".env.vercel.production",
   "CLIO_CLIENT_ID",
   "LIVE_SMOKE_BLOCKED_REASON=missing_required_local_clio_env",
   "without printing secret values",
