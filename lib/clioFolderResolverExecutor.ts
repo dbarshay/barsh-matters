@@ -4,7 +4,7 @@ import { buildClioStorageTargetPlan, type ClioStorageTargetInput } from "./clioS
 export type ClioResolvedFolderSegment = {
   name: string;
   id: number;
-  parentId: number;
+  parentId: number | null;
   created: boolean;
 };
 
@@ -60,8 +60,14 @@ export async function resolveClioMatterFolderWithGuard(
     ? target.folderSegments
     : [target.bucketFolderName, target.matterFolderName];
 
+  const configuredRootFolderId = Number(env.CLIO_SINGLE_MASTER_ROOT_FOLDER_ID || env.CLIO_DOCUMENTS_ROOT_FOLDER_ID || 0);
+
+  if (!Number.isFinite(configuredRootFolderId) || configuredRootFolderId <= 0) {
+    throw new Error("[CLIO_STORAGE] Missing or invalid CLIO_SINGLE_MASTER_ROOT_FOLDER_ID for single-master folder resolution.");
+  }
+
   const folderSegments: ClioResolvedFolderSegment[] = [];
-  let parentId = target.masterMatterId;
+  let parentId: number | null = configuredRootFolderId;
 
   for (const segmentName of configuredSegments) {
     const resolved = await createClioFolderWithGuard({

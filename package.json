@@ -547,7 +547,9 @@
     "verify:phase34j-finalize-live-folder-resolution-no-upload-safety": "node scripts/verify-phase34j-finalize-live-folder-resolution-no-upload-safety.cjs",
     "smoke:phase34j-finalize-live-folder-resolution-no-upload": "node scripts/smoke-phase34j-finalize-live-folder-resolution-no-upload.cjs",
     "verify:phase34k-direct-matter-planner-taxonomy-safety": "node scripts/verify-phase34k-direct-matter-planner-taxonomy-safety.cjs",
-    "smoke:phase34k-direct-matter-planner-taxonomy": "node scripts/smoke-phase34k-direct-matter-planner-taxonomy.cjs"
+    "smoke:phase34k-direct-matter-planner-taxonomy": "node scripts/smoke-phase34k-direct-matter-planner-taxonomy.cjs",
+    "verify:phase34m-live-folder-resolution-no-upload-safety": "node scripts/verify-phase34m-live-folder-resolution-no-upload-safety.cjs",
+    "smoke:phase34m-finalize-live-folder-resolution-no-upload": "node scripts/smoke-phase34m-finalize-live-folder-resolution-no-upload.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
