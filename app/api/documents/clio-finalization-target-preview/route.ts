@@ -1,1 +1,78 @@
-import { NextRequest, NextResponse } from \"next/server\";\nimport { buildClioStorageFolderResolutionPreview } from \"@/lib/clioStorageFolderResolution\";\nimport type { ClioStorageTargetInput } from \"@/lib/clioStoragePlan\";\n\nexport const dynamic = \"force-dynamic\";\n\nfunction clean(value: unknown): string {\n  return String(value ?? \"\").trim();\n}\n\nfunction parseBoolean(value: unknown): boolean {\n  return value === true || clean(value) === \"1\" || clean(value).toLowerCase() === \"true\";\n}\n\nexport async function POST(req: NextRequest) {\n  try {\n    const body = await req.json().catch(() => ({}));\n    const input = (body?.targetInput || body || {}) as Partial<ClioStorageTargetInput> & Record<string, unknown>;\n    const lawsuitId = clean(input.lawsuitId || input.masterLawsuitId || input.lawsuitDisplayId || input.matterNumber || input.displayNumber);\n    const matterDisplayNumber = clean(input.matterDisplayNumber || input.displayNumber || lawsuitId);\n    const matterIdRaw = input.matterId ?? input.masterMatterId ?? input.claimId ?? lawsuitId;\n    const targetInput = {\n      ...input,\n      lawsuitId: lawsuitId || clean(input.lawsuitId),\n      matterDisplayNumber,\n      matterId: matterIdRaw,\n    } as ClioStorageTargetInput;\n    const preview = buildClioStorageFolderResolutionPreview(targetInput);\n    return NextResponse.json({\n      ok: true,\n      previewOnly: true,\n      uploadRewired: false,\n      databaseMutation: false,\n      clioWrite: false,\n      finalizeRewired: false,\n      routePurpose: \"no-write finalization target preview\",\n      targetPlan: preview.targetPlan,\n      resolutionPreview: preview,\n      guardSummary: {\n        requiresLiveWriteCommand: \"RUN_CLIO_SINGLE_MASTER_FOLDER_CREATE\",\n        requiresCreateFoldersEnabled: true,\n        requiresLiveWriteEnabled: true,\n        currentRequestAllowsWrite: false,\n      },\n      inputEcho: {\n        lawsuitId: targetInput.lawsuitId,\n        matterDisplayNumber: targetInput.matterDisplayNumber,\n        matterId: targetInput.matterId,\n        dryRunRequested: parseBoolean(body?.dryRun),\n      },\n    });\n  } catch (err) {\n    return NextResponse.json({ ok: false, previewOnly: true, clioWrite: false, databaseMutation: false, finalizeRewired: false, error: err instanceof Error ? err.message : String(err) }, { status: 400 });\n  }\n}\n\nexport async function GET() {\n  return NextResponse.json({\n    ok: true,\n    previewOnly: true,\n    uploadRewired: false,\n    databaseMutation: false,\n    clioWrite: false,\n    finalizeRewired: false,\n    routePurpose: \"no-write finalization target preview\",\n    usage: \"POST JSON with finalization target fields or targetInput; returns planned Clio single-master folder target only.\",\n  });\n}\n
+import { NextRequest, NextResponse } from "next/server";
+import { buildClioStorageFolderResolutionPreview } from "@/lib/clioStorageFolderResolution";
+import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
+
+export const dynamic = "force-dynamic";
+
+function clean(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function parseBoolean(value: unknown): boolean {
+  return value === true || clean(value) === "1" || clean(value).toLowerCase() === "true";
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const input = (body?.targetInput || body || {}) as Partial<ClioStorageTargetInput> & Record<string, unknown>;
+    const lawsuitId = clean(input.lawsuitId || input.masterLawsuitId || input.lawsuitDisplayId || input.matterNumber || input.displayNumber);
+    const matterDisplayNumber = clean(input.matterDisplayNumber || input.displayNumber || lawsuitId);
+    const matterIdRaw = input.bmMatterId ?? input.matterId ?? input.masterMatterId ?? input.claimId ?? lawsuitId;
+
+    const targetInput = {
+      ...input,
+      bmMatterId: matterIdRaw,
+      lawsuitId: lawsuitId || clean(input.lawsuitId),
+      displayNumber: matterDisplayNumber,
+    } as ClioStorageTargetInput;
+
+    const preview = buildClioStorageFolderResolutionPreview(targetInput);
+
+    return NextResponse.json({
+      ok: true,
+      previewOnly: true,
+      uploadRewired: false,
+      databaseMutation: false,
+      clioWrite: false,
+      finalizeRewired: false,
+      routePurpose: "no-write finalization target preview",
+      targetPlan: preview.targetPlan,
+      resolutionPreview: preview,
+      guardSummary: {
+        requiresLiveWriteCommand: "RUN_CLIO_SINGLE_MASTER_FOLDER_CREATE",
+        requiresCreateFoldersEnabled: true,
+        requiresLiveWriteEnabled: true,
+        currentRequestAllowsWrite: false,
+      },
+      inputEcho: {
+        lawsuitId: targetInput.lawsuitId,
+        matterDisplayNumber,
+        matterId: targetInput.bmMatterId,
+        dryRunRequested: parseBoolean(body?.dryRun),
+      },
+    });
+  } catch (err) {
+    return NextResponse.json({
+      ok: false,
+      previewOnly: true,
+      clioWrite: false,
+      databaseMutation: false,
+      finalizeRewired: false,
+      error: err instanceof Error ? err.message : String(err),
+    }, { status: 400 });
+  }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    previewOnly: true,
+    uploadRewired: false,
+    databaseMutation: false,
+    clioWrite: false,
+    finalizeRewired: false,
+    routePurpose: "no-write finalization target preview",
+    usage: "POST JSON with finalization target fields or targetInput; returns planned Clio single-master folder target only.",
+  });
+}

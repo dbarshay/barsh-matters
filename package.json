@@ -524,7 +524,8 @@
     "verify:clio-storage-refactor-phase24-human-readable-folder-idempotency-proof-safety": "node scripts/verify-clio-storage-refactor-phase24-human-readable-folder-idempotency-proof-safety.cjs",
     "verify:clio-storage-refactor-phase25-finalization-integration-map-refresh-safety": "node scripts/verify-clio-storage-refactor-phase25-finalization-integration-map-refresh-safety.cjs",
     "verify:clio-storage-refactor-phase26-finalization-rewire-readiness-guard-safety": "node scripts/verify-clio-storage-refactor-phase26-finalization-rewire-readiness-guard-safety.cjs",
-    "verify:clio-storage-refactor-phase27-finalization-target-preview-route-safety": "node scripts/verify-clio-storage-refactor-phase27-finalization-target-preview-route-safety.cjs"
+    "verify:clio-storage-refactor-phase27-finalization-target-preview-route-safety": "node scripts/verify-clio-storage-refactor-phase27-finalization-target-preview-route-safety.cjs",
+    "verify:clio-storage-refactor-phase28-storage-plan-typescript-safety": "node scripts/verify-clio-storage-refactor-phase28-storage-plan-typescript-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

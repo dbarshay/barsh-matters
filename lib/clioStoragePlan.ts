@@ -80,9 +80,9 @@ export function buildBucketFolderName(input: ClioStorageTargetInput): string {
 }
 
 export function buildMatterFolderName(input: ClioStorageTargetInput, matterOrdinal = getMatterOrdinal(input)): string {
-  const displayNumber = safeFolderPart(input.displayNumber || "");
+  const displayNumber = safeFolderPart(input.displayNumber || "", "");
   if (displayNumber) return displayNumber;
-  const bmMatterId = safeFolderPart(input.bmMatterId || "");
+  const bmMatterId = safeFolderPart(input.bmMatterId || "", "");
   if (bmMatterId) return bmMatterId;
   return String(matterOrdinal);
 }
