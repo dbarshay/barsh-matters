@@ -499,7 +499,8 @@
     "verify:admin-users-phase21-final-closeout-safety": "node scripts/verify-admin-users-phase21-final-closeout-safety.cjs",
     "phase22:final-activation-package": "node scripts/phase22-final-activation-package.cjs",
     "verify:admin-users-phase22-final-activation-package-safety": "node scripts/verify-admin-users-phase22-final-activation-package-safety.cjs",
-    "verify:admin-users-phase23-final-production-manual-smoke-proof-safety": "node scripts/verify-admin-users-phase23-final-production-manual-smoke-proof-safety.cjs"
+    "verify:admin-users-phase23-final-production-manual-smoke-proof-safety": "node scripts/verify-admin-users-phase23-final-production-manual-smoke-proof-safety.cjs",
+    "verify:clio-storage-refactor-phase3-config-contract-safety": "node scripts/verify-clio-storage-refactor-phase3-config-contract-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
