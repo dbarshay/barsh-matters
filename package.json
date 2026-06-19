@@ -507,7 +507,8 @@
     "verify:clio-storage-refactor-phase7-master-folder-inventory-preview-safety": "node scripts/verify-clio-storage-refactor-phase7-master-folder-inventory-preview-safety.cjs",
     "verify:clio-storage-refactor-phase8-upload-target-preview-safety": "node scripts/verify-clio-storage-refactor-phase8-upload-target-preview-safety.cjs",
     "verify:clio-storage-refactor-phase9-upload-target-preview-api-safety": "node scripts/verify-clio-storage-refactor-phase9-upload-target-preview-api-safety.cjs",
-    "verify:clio-storage-refactor-phase10-finalization-integration-map-safety": "node scripts/verify-clio-storage-refactor-phase10-finalization-integration-map-safety.cjs"
+    "verify:clio-storage-refactor-phase10-finalization-integration-map-safety": "node scripts/verify-clio-storage-refactor-phase10-finalization-integration-map-safety.cjs",
+    "verify:clio-storage-refactor-phase11-write-guard-contract-safety": "node scripts/verify-clio-storage-refactor-phase11-write-guard-contract-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
