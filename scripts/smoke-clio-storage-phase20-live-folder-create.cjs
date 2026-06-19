@@ -3,8 +3,8 @@ const fs = require("fs");
 
 const MASTER_MATTER_ID = "1885821245";
 const MASTER_MATTER_NAME = "Barsh Matters Master Repository";
-const BUCKET_FOLDER_NAME = "bucket-002001-003000";
-const MATTER_FOLDER_NAME = "matter-2026.05.00001";
+const BUCKET_FOLDER_NAME = "2026-05 Matters";
+const MATTER_FOLDER_NAME = "2026.05.00001";
 const COMMAND_PHRASE = "RUN_CLIO_SINGLE_MASTER_FOLDER_CREATE";
 
 function clean(value) { return String(value ?? "").trim(); }
