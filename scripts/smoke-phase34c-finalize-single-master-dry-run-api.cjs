@@ -55,9 +55,10 @@ function assert(condition, message) { if (!condition) throw new Error(message); 
     assert(res.json.folderResolution.callsClio === false, "folder resolution callsClio false");
     assert(res.json.folderResolution.uploadsDocuments === false, "folder resolution uploadsDocuments false");
     assert(res.json.folderResolution.mutatesDatabase === false, "folder resolution mutatesDatabase false");
-    assert(res.json.folderResolution.targetPlan.bucketFolderName === "2026-05 Matters", "target bucket folder is lawsuit month");
+    assert(res.json.folderResolution.targetPlan.rootFolderName === "Lawsuits", "target root folder is Lawsuits");
+    assert(res.json.folderResolution.targetPlan.groupFolderName === "2026-05", "target group folder is lawsuit month");
     assert(res.json.folderResolution.targetPlan.matterFolderName === "2026.05.00001", "target matter folder is lawsuit number");
-    assert(res.json.folderResolution.targetPlan.matterFolderPath === "2026-05 Matters/2026.05.00001", "target folder path is correct");
+    assert(res.json.folderResolution.targetPlan.matterFolderPath === "Lawsuits/2026-05/2026.05.00001", "target folder path is correct");
     console.log("RESULT: Phase 34C revised finalize single-master master-lawsuit dry-run API smoke passed");
   } finally {
     child.kill("SIGTERM");

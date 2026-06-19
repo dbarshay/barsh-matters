@@ -333,9 +333,27 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const folderResolution = singleMasterResolveFolders
-        ? await resolveClioMatterFolderWithGuard(singleMasterTargetInput)
-        : buildClioStorageFolderResolutionPreview(singleMasterTargetInput);
+      if (singleMasterResolveFolders) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "finalize-upload",
+            error: "Live folder resolution is blocked in Phase 34E until the resolver supports the locked multi-segment folder taxonomy.",
+            finalizeRewired: true,
+            uploadRewired: false,
+            databaseMutation: false,
+            clioWrite: false,
+            noUploadPerformed: true,
+            generationSkipped: true,
+            resolverBlocked: true,
+            resolverName: resolveClioMatterFolderWithGuard.name,
+            singleMasterTargetInput,
+          },
+          { status: 400 }
+        );
+      }
+
+      const folderResolution = buildClioStorageFolderResolutionPreview(singleMasterTargetInput);
 
       return NextResponse.json({
         ok: true,
@@ -343,7 +361,7 @@ export async function POST(req: NextRequest) {
         finalizeRewired: true,
         uploadRewired: false,
         databaseMutation: false,
-        clioWrite: singleMasterResolveFolders,
+        clioWrite: false,
         noUploadPerformed: true,
         confirmUploadRequired: false,
         generationSkipped: true,

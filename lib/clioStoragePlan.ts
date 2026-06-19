@@ -1,10 +1,14 @@
 import { getClioStorageConfig, type ClioStorageConfig } from "./clioStorageConfig";
 
 export type ClioStorageTargetInput = {
-  bmMatterId: string | number;
-  displayNumber?: string | null;
-  lawsuitId?: string | null;
-  label?: string | null;
+  bmMatterId?: string | number | null;
+  lawsuitId?: string | number | null;
+  masterLawsuitId?: string | number | null;
+  displayNumber?: string | number | null;
+  matterDisplayNumber?: string | number | null;
+  directMatterFileNumber?: string | number | null;
+  storageTargetKind?: "lawsuit" | "individual_matter" | "direct_matter" | null;
+  label?: string | number | null;
 };
 
 export type ClioStorageTargetPlan = {
@@ -12,6 +16,11 @@ export type ClioStorageTargetPlan = {
   masterMatterId: number;
   masterMatterName: string;
   bucketSize: number;
+  storageTargetKind: "lawsuit" | "individual_matter";
+  rootFolderName: string;
+  groupFolderName: string;
+  finalFolderName: string;
+  folderSegments: string[];
   matterOrdinal: number;
   bucketIndex: number;
   bucketStart: number;
@@ -74,40 +83,141 @@ function getMatterYearMonth(input: ClioStorageTargetInput): { year: string; mont
   return { year: "undated", month: "unknown" };
 }
 
-export function buildBucketFolderName(input: ClioStorageTargetInput): string {
-  const { year, month } = getMatterYearMonth(input);
-  return year === "undated" ? "Undated Matters" : `${year}-${month} Matters`;
+function getTargetKind(input: ClioStorageTargetInput): "lawsuit" | "individual_matter" {
+  const explicit = clean(input.storageTargetKind);
+  if (explicit === "individual_matter" || explicit === "direct_matter") return "individual_matter";
+  if (explicit === "lawsuit") return "lawsuit";
+
+  const candidates = [
+    input.directMatterFileNumber,
+    input.bmMatterId,
+    input.displayNumber,
+    input.matterDisplayNumber,
+    input.lawsuitId,
+    input.masterLawsuitId,
+  ].map(clean).filter(Boolean);
+
+  if (candidates.some((value) => /^BRL_\d{9}$/.test(value))) return "individual_matter";
+  return "lawsuit";
 }
 
-export function buildMatterFolderName(input: ClioStorageTargetInput, matterOrdinal = getMatterOrdinal(input)): string {
-  const displayNumber = safeFolderPart(input.displayNumber || "", "");
-  if (displayNumber) return displayNumber;
-  const bmMatterId = safeFolderPart(input.bmMatterId || "", "");
-  if (bmMatterId) return bmMatterId;
-  return String(matterOrdinal);
+function getLawsuitNumber(input: ClioStorageTargetInput): string {
+  const candidates = [
+    input.lawsuitId,
+    input.masterLawsuitId,
+    input.displayNumber,
+    input.matterDisplayNumber,
+    input.bmMatterId,
+  ].map(clean).filter(Boolean);
+
+  const lawsuitNumber =
+    candidates.find((value) => /^\d{4}\.\d{2}\.\d{5}$/.test(value)) ||
+    clean(input.lawsuitId || input.masterLawsuitId || input.displayNumber || input.bmMatterId);
+
+  if (!lawsuitNumber) {
+    throw new Error("Clio storage lawsuit target requires a Barsh Matters lawsuit number.");
+  }
+
+  return lawsuitNumber;
+}
+
+function getIndividualMatterFileNumber(input: ClioStorageTargetInput): string {
+  const candidates = [
+    input.directMatterFileNumber,
+    input.bmMatterId,
+    input.displayNumber,
+    input.matterDisplayNumber,
+  ].map(clean).filter(Boolean);
+
+  const fileNumber = candidates.find((value) => /^BRL_\d{9}$/.test(value));
+
+  if (!fileNumber) {
+    throw new Error("Clio storage individual matter target requires a Barsh Matters direct matter file number in BRL_YYYYNNNNN format.");
+  }
+
+  return fileNumber;
+}
+
+export function buildLawsuitGroupFolderName(input: ClioStorageTargetInput): string {
+  const lawsuitNumber = getLawsuitNumber(input);
+  const match = lawsuitNumber.match(/^(\d{4})\.(\d{2})\.\d{5}$/);
+  if (!match) return "Undated Lawsuits";
+  return `${match[1]}-${match[2]}`;
+}
+
+export function buildIndividualMatterRangeFolderName(input: ClioStorageTargetInput): string {
+  const fileNumber = getIndividualMatterFileNumber(input);
+  const match = fileNumber.match(/^BRL_(\d{4})(\d{5})$/);
+  if (!match) {
+    throw new Error("Barsh Matters direct matter file number must use BRL_YYYYNNNNN format.");
+  }
+  const year = match[1];
+  const sequence = Number(match[2]);
+  if (!Number.isFinite(sequence) || sequence <= 0) {
+    throw new Error("Barsh Matters direct matter file number sequence must be positive.");
+  }
+  const rangeStart = Math.floor((sequence - 1) / 999) * 999 + 1;
+  const rangeEnd = rangeStart + 998;
+  return `BRL-${year}${String(rangeStart).padStart(5, "0")}-BRL-${year}${String(rangeEnd).padStart(5, "0")}`;
+}
+
+export function buildRootFolderName(input: ClioStorageTargetInput): string {
+  return getTargetKind(input) === "individual_matter" ? "Individual Matters" : "Lawsuits";
+}
+
+export function buildGroupFolderName(input: ClioStorageTargetInput): string {
+  return getTargetKind(input) === "individual_matter"
+    ? buildIndividualMatterRangeFolderName(input)
+    : buildLawsuitGroupFolderName(input);
+}
+
+export function buildBucketFolderName(input: ClioStorageTargetInput): string {
+  return buildRootFolderName(input);
+}
+
+export function buildMatterFolderName(input: ClioStorageTargetInput): string {
+  return getTargetKind(input) === "individual_matter"
+    ? getIndividualMatterFileNumber(input)
+    : getLawsuitNumber(input);
 }
 
 export function buildClioStorageTargetPlan(input: ClioStorageTargetInput, config: ClioStorageConfig = getClioStorageConfig()): ClioStorageTargetPlan {
-  if (config.mode !== "single_master_matter" || !config.singleMasterEnabled || !config.masterMatterId) {
-    throw new Error("[CLIO_STORAGE] Single-master storage mode is not enabled.");
+  if (!config.singleMasterEnabled || config.mode !== "single_master_matter") {
+    throw new Error("Single-master storage mode is not enabled.");
   }
 
+  const storageTargetKind = getTargetKind(input);
   const matterOrdinal = getMatterOrdinal(input);
-  const range = getBucketRange(matterOrdinal, config.bucketSize);
-  const bucketFolderName = buildBucketFolderName(input);
-  const matterFolderName = buildMatterFolderName(input, matterOrdinal);
+  const bucketIndex = Math.floor((matterOrdinal - 1) / config.bucketSize) + 1;
+  const bucketStart = (bucketIndex - 1) * config.bucketSize + 1;
+  const bucketEnd = bucketIndex * config.bucketSize;
+  const rootFolderName = buildRootFolderName(input);
+  const groupFolderName = buildGroupFolderName(input);
+  const finalFolderName = buildMatterFolderName(input);
+  const folderSegments = [rootFolderName, groupFolderName, finalFolderName];
+  const matterFolderPath = folderSegments.join("/");
+  const masterMatterId = Number(config.masterMatterId);
+
+  if (!Number.isFinite(masterMatterId) || masterMatterId <= 0) {
+    throw new Error("Single-master storage mode requires a valid configured Clio master matter ID.");
+  }
 
   return {
     mode: "single_master_matter",
-    masterMatterId: config.masterMatterId,
+    masterMatterId,
     masterMatterName: config.masterMatterName,
     bucketSize: config.bucketSize,
+    storageTargetKind,
+    rootFolderName,
+    groupFolderName,
+    finalFolderName,
+    folderSegments,
     matterOrdinal,
-    bucketIndex: range.bucketIndex,
-    bucketStart: range.bucketStart,
-    bucketEnd: range.bucketEnd,
-    bucketFolderName,
-    matterFolderName,
-    matterFolderPath: `${bucketFolderName}/${matterFolderName}`,
+    bucketIndex,
+    bucketStart,
+    bucketEnd,
+    bucketFolderName: rootFolderName,
+    matterFolderName: finalFolderName,
+    matterFolderPath,
   };
 }
