@@ -536,7 +536,8 @@
     "verify:phase34c-finalize-single-master-dry-run-api-smoke-safety": "node scripts/verify-phase34c-finalize-single-master-dry-run-api-smoke-safety.cjs",
     "smoke:phase34c-finalize-single-master-dry-run-api": "node scripts/smoke-phase34c-finalize-single-master-dry-run-api.cjs",
     "verify:phase34d-folder-taxonomy-contract-safety": "node scripts/verify-phase34d-folder-taxonomy-contract-safety.cjs",
-    "verify:phase34e-folder-taxonomy-planner-safety": "node scripts/verify-phase34e-folder-taxonomy-planner-safety.cjs"
+    "verify:phase34e-folder-taxonomy-planner-safety": "node scripts/verify-phase34e-folder-taxonomy-planner-safety.cjs",
+    "verify:phase34f-multisegment-folder-resolver-safety": "node scripts/verify-phase34f-multisegment-folder-resolver-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
