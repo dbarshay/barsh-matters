@@ -502,7 +502,8 @@
     "verify:admin-users-phase23-final-production-manual-smoke-proof-safety": "node scripts/verify-admin-users-phase23-final-production-manual-smoke-proof-safety.cjs",
     "verify:clio-storage-refactor-phase3-config-contract-safety": "node scripts/verify-clio-storage-refactor-phase3-config-contract-safety.cjs",
     "verify:clio-storage-refactor-phase4-storage-plan-safety": "node scripts/verify-clio-storage-refactor-phase4-storage-plan-safety.cjs",
-    "verify:clio-storage-refactor-phase5-folder-resolution-preview-safety": "node scripts/verify-clio-storage-refactor-phase5-folder-resolution-preview-safety.cjs"
+    "verify:clio-storage-refactor-phase5-folder-resolution-preview-safety": "node scripts/verify-clio-storage-refactor-phase5-folder-resolution-preview-safety.cjs",
+    "verify:clio-storage-refactor-phase6-live-master-readonly-safety": "node scripts/verify-clio-storage-refactor-phase6-live-master-readonly-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
