@@ -82,9 +82,12 @@ function findFolder(rows, name, parentId) {
 }
 
 function findRootFolder(rows) {
+  const ids = new Set(rows.map((row) => clean(row.id)));
   const withoutParent = rows.find((row) => !clean(row.parent?.id || ""));
+  const parentOutsideInventory = rows.find((row) => clean(row.parent?.id || "") && !ids.has(clean(row.parent?.id || "")));
+  const namedMaster = rows.find((row) => clean(row.name) === MASTER_MATTER_NAME);
   const fallback = rows.length === 1 ? rows[0] : null;
-  const root = withoutParent || fallback;
+  const root = withoutParent || parentOutsideInventory || namedMaster || fallback;
   if (!root || !root.id) {
     console.log("DEBUG_FOLDER_ROWS=" + rows.map((row) => clean(row.id) + ":" + clean(row.name || "unnamed") + ":parent=" + clean(row.parent?.id || "")).join(","));
     throw new Error("Could not identify Clio root folder from master matter inventory");
