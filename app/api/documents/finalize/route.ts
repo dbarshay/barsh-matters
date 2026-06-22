@@ -72,14 +72,13 @@ function normalizeFinalizedGenerationLabel(value: unknown): string {
 
 function finalizedGenerationSuffix(label: string, timestamp: string): string {
   const cleanLabel = normalizeFinalizedGenerationLabel(label);
-  if (!cleanLabel) return "";
-
   const stamp =
     sanitizeFinalizedFilenamePart(timestamp)
       .replace(/\.\d{3}Z$/i, "Z")
       .replace(/:/g, "-") || "Generated";
 
-  return ` - ${cleanLabel} - Generated ${stamp}`;
+  if (!cleanLabel) return ` - Finalized ${stamp}`;
+  return ` - ${cleanLabel} - Finalized ${stamp}`;
 }
 
 function buildStorageIdentityFinalizedPdfFilename(params: {
@@ -651,7 +650,7 @@ export async function POST(req: NextRequest) {
           action: "finalize-upload",
           status: "nothing-uploaded-existing-documents-skipped",
           message:
-            "No upload was performed because all selected documents already exist in Clio by exact filename match.",
+            "This Document has Previously Been Uploaded. It Will Not Be Uploaded Again",
           requestedKeys,
           uploaded: [],
           skipped,

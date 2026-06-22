@@ -51,8 +51,10 @@ else fail("new direct file numbers are recognized");
 
 if (/\/\^\\\\d\{4\}\\\\\.\\\\d\{2\}\\\\\.\\\\d\{5\}\$\/\.test\(first\)/.test(route) || /\/\^\\d\{4\}\\\.\\d\{2\}\\\.\\d\{5\}\$\/\.test\(first\)/.test(route)) pass("lawsuit ids are recognized");
 else fail("lawsuit ids are recognized");
-mustInclude("original label does not create suffix", route, "/^original$/i.test(label)");
-mustInclude("non-original generation creates Generated suffix", route, " - Generated ");
+mustInclude("original label is normalized for response semantics", route, "/^original$/i.test(label)");
+mustInclude("default finalization timestamp suffix is created", route, " - Finalized ");
+mustInclude("non-original generation creates labeled Finalized suffix", route, " - ${cleanLabel} - Finalized ");
+mustInclude("true duplicate user message is exact", route, "This Document has Previously Been Uploaded. It Will Not Be Uploaded Again");
 mustNotInclude("no force duplicate upload default added", route, "allowDuplicateUploads = true");
 
 console.log("RESULT: Phase 45B finalized storage identity filename verifier");
