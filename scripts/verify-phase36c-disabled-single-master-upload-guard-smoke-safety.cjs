@@ -1,0 +1,30 @@
+const fs = require("fs");
+const path = require("path");
+let failed = false;
+const pass = (m) => console.log("PASS: " + m);
+const fail = (m) => { failed = true; console.error("FAIL: " + m); };
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const exists = (p) => fs.existsSync(path.join(root, p));
+const smoke = read("scripts/smoke-phase36c-finalize-single-master-upload-disabled.cjs");
+const finalize = read("app/api/documents/finalize/route.ts");
+const pkg = JSON.parse(read("package.json"));
+function contains(label, text, token) { text.includes(token) ? pass(label) : fail(label + " missing token: " + token); }
+function notContains(label, text, token) { !text.includes(token) ? pass(label) : fail(label + " contains forbidden token: " + token); }
+contains("smoke requests confirmed non-dry-run single-master upload", smoke, "singleMasterDryRun: false");
+contains("smoke sends confirmUpload true", smoke, "confirmUpload: true");
+contains("smoke disables upload rewire env", smoke, "CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED: \"\"");
+contains("smoke disables create folders env", smoke, "CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED: \"\"");
+contains("smoke disables live write env", smoke, "CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED: \"\"");
+contains("smoke expects 403", smoke, "res.status !== 403");
+contains("smoke checks no upload", smoke, "noDocumentUploadPerformed === true");
+contains("smoke checks no database mutation", smoke, "noDatabaseRecordsChanged === true");
+notContains("smoke does not allow upload rewire", smoke, "CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED: \"1\"");
+notContains("smoke does not allow live write", smoke, "CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED: \"1\"");
+contains("finalize has disabled upload guard", finalize, "Single-master finalize upload is disabled unless CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED=1");
+contains("finalize disabled branch returns 403", finalize, "{ status: 403 }");
+if (exists("scripts/smoke-phase36c-finalize-single-master-upload-disabled.cjs")) pass("Phase 36C smoke file exists"); else fail("Phase 36C smoke file missing");
+if (pkg.scripts && pkg.scripts["verify:phase36c-disabled-single-master-upload-guard-smoke-safety"] === "node scripts/verify-phase36c-disabled-single-master-upload-guard-smoke-safety.cjs") pass("package verifier script registered"); else fail("package verifier script missing");
+if (pkg.scripts && pkg.scripts["smoke:phase36c-finalize-single-master-upload-disabled"] === "node scripts/smoke-phase36c-finalize-single-master-upload-disabled.cjs") pass("package smoke script registered"); else fail("package smoke script missing");
+console.log("RESULT: Phase 36C disabled single-master upload guard smoke safety verifier");
+if (failed) process.exit(1);
