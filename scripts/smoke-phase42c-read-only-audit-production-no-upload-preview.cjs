@@ -33,7 +33,9 @@ function getFreePort() {
   });
 }
 
-async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function waitForServer(baseUrl, proc, output) {
   const deadline = Date.now() + 60000;
@@ -108,7 +110,7 @@ async function request(baseUrl, method, path, body) {
   return { status: res.status, text, json };
 }
 
-async function main() {
+(async () => {
   console.log("RESULT: Phase 42C read-only audit and production no-upload preview smoke starting");
   console.log("CONTRACT: no working DOCX creation, no finalize confirmUpload, no upload, no folder create/delete.");
 
@@ -161,6 +163,7 @@ async function main() {
   } catch (err) {
     productionText = err && err.message ? err.message : String(err);
   }
+
   console.log("PRODUCTION_PREVIEW_STATUS=" + productionStatus);
   console.log("PRODUCTION_PREVIEW_BODY_REDACTED=" + redact(productionText).slice(0, 12000));
   assert(productionStatus === 200 || productionStatus === 401 || productionStatus === 403 || productionStatus === 500, "production no-upload preview was attempted and did not perform upload");
@@ -179,9 +182,7 @@ async function main() {
   console.log("CONTRACT: Phase 42C performed read-only audit and production no-upload preview only.");
   console.log("RESULT: Phase 42C read-only audit and production no-upload preview smoke completed");
   if (failed) process.exit(1);
-}
-
-main().catch((err) => {
+})().catch((err) => {
   console.error(redact(err && err.stack ? err.stack : err));
   process.exit(1);
 });

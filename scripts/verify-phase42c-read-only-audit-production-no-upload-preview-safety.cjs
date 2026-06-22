@@ -19,14 +19,14 @@ const smoke = read(smokePath);
 const finalize = read("app/api/documents/finalize/route.ts");
 const pkg = JSON.parse(read("package.json"));
 
-for (const token of ["Phase 42C", "read-only", "production no-upload", "22070801495", "22062401000", "104", "does not upload another finalized PDF"]) {
+for (const token of ["Phase 42C", "read-only", "production no-upload", "22070801495", "22062401000", "104", "does not upload another finalized PDF", "Phase 42B locked audit proof"]) {
   contains("doc contains " + token, doc, token);
 }
-for (const token of ["confirmUpload: false", "singleMasterDryRun: true", "singleMasterResolveFolders: true", "noUploadPerformed true", "databaseMutation false", "production no-upload preview", "EXPECTED_CLIO_DOCUMENT_ID = 22070801495", "EXPECTED_FINALIZATION_ID = 104", "EXPECTED_FOLDER_ID = 22062401000", "DB_AUDIT_SOURCE=phase42b-finalize-response", "Phase 42B finalization audit record id 104 is recorded in locked proof"]) {
+for (const token of ["confirmUpload: false", "singleMasterDryRun: true", "singleMasterResolveFolders: true", "local finalize dry-run noUploadPerformed true", "local finalize dry-run databaseMutation false", "production no-upload preview", "EXPECTED_CLIO_DOCUMENT_ID = 22070801495", "EXPECTED_FINALIZATION_ID = 104", "EXPECTED_FOLDER_ID = 22062401000", "DB_AUDIT_SOURCE=phase42b-finalize-response", "Phase 42B finalization audit record id 104 is recorded in locked proof"]) {
   contains("smoke contains " + token, smoke, token);
 }
-for (const forbidden of ["confirmUpload: true", "uploadBufferToClioMatterDocuments({", "workingDocumentDriveItemId:"]) {
-  notContains("Phase 42C smoke avoids upload token", smoke, forbidden);
+for (const forbidden of ["confirmUpload: true", "workingDocumentDriveItemId:", "PrismaClient", "lib/prisma", "uploadBufferToClioMatterDocuments({"]) {
+  notContains("Phase 42C smoke avoids upload/DB-client token", smoke, forbidden);
 }
 for (const token of ["useDirectFinalizePreview", "singleMasterDryRun", "noUploadPerformed: true"]) {
   contains("finalize route retains no-upload dry-run anchor " + token, finalize, token);
