@@ -589,7 +589,9 @@
     "smoke:phase41l-armed-direct-upload-blocked-missing-working-docx-no-upload": "node scripts/smoke-phase41l-armed-direct-upload-blocked-missing-working-docx-no-upload.cjs",
     "verify:phase41l-armed-direct-upload-blocked-missing-working-docx-safety": "node scripts/verify-phase41l-armed-direct-upload-blocked-missing-working-docx-safety.cjs",
     "smoke:phase42a-working-docx-readiness-no-finalized-upload": "node scripts/smoke-phase42a-working-docx-readiness-no-finalized-upload.cjs",
-    "verify:phase42a-working-docx-readiness-no-finalized-upload-safety": "node scripts/verify-phase42a-working-docx-readiness-no-finalized-upload-safety.cjs"
+    "verify:phase42a-working-docx-readiness-no-finalized-upload-safety": "node scripts/verify-phase42a-working-docx-readiness-no-finalized-upload-safety.cjs",
+    "smoke:phase42b-controlled-live-direct-finalized-pdf-upload": "node scripts/smoke-phase42b-controlled-live-direct-finalized-pdf-upload.cjs",
+    "verify:phase42b-controlled-live-direct-finalized-pdf-upload-safety": "node scripts/verify-phase42b-controlled-live-direct-finalized-pdf-upload-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
