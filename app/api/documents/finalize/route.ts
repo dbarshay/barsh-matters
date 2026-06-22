@@ -11,6 +11,7 @@ import { buildClioStorageFolderResolutionPreview } from "@/lib/clioStorageFolder
 import { resolveClioMatterFolderWithGuard } from "@/lib/clioFolderResolverExecutor";
 import { getClioStorageWriteGuard } from "@/lib/clioStorageWriteGuard";
 import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
+import { adminUnauthorizedJson, isAdminRequestAuthorized } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
 
@@ -314,6 +315,17 @@ export async function POST(req: NextRequest) {
     }
 
     const useDirectFinalizePreview = uploadTargetMode === "direct-matter" && (!masterLawsuitId || useSingleMasterClioStorage);
+
+
+  const isDirectMatterLiveFinalizeRequest =
+    useDirectFinalizePreview &&
+    uploadTargetMode === "direct-matter" &&
+    confirmUpload === true &&
+    singleMasterDryRun !== true;
+
+  if (isDirectMatterLiveFinalizeRequest && !isAdminRequestAuthorized(req as any)) {
+    return adminUnauthorizedJson(403);
+  }
 
     const preview =
       useDirectFinalizePreview

@@ -613,7 +613,8 @@
     "verify:phase43l-local-route-level-direct-ui-dry-run-safety": "node scripts/verify-phase43l-local-route-level-direct-ui-dry-run-safety.cjs",
     "verify:phase43m-lawsuit-document-path-regression-audit-safety": "node scripts/verify-phase43m-lawsuit-document-path-regression-audit-safety.cjs",
     "verify:phase44a-controlled-direct-ui-finalize-enablement-inspection-safety": "node scripts/verify-phase44a-controlled-direct-ui-finalize-enablement-inspection-safety.cjs",
-    "verify:phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety": "node scripts/verify-phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety.cjs"
+    "verify:phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety": "node scripts/verify-phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety.cjs",
+    "verify:phase44c-server-side-direct-live-finalize-admin-guard-safety": "node scripts/verify-phase44c-server-side-direct-live-finalize-admin-guard-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
