@@ -99,6 +99,10 @@ async function main() {
   const driveItemId = driveItemIdFrom(working?.json);
   assert(Boolean(driveItemId), "working DOCX driveItemId returned");
 
+  const selectedDocumentKey = working?.json?.selectedDocument?.key || documentKey;
+  assert(Boolean(selectedDocumentKey), "selected direct document key returned");
+  console.log(`LIVE_DIRECT_SELECTED_DOCUMENT_KEY=${selectedDocumentKey}`);
+
   if (process.exitCode) process.exit(process.exitCode);
 
   const final = await post("/api/documents/finalize", {
@@ -108,9 +112,9 @@ async function main() {
     confirmUpload: true,
     singleMasterDryRun: false,
     singleMasterResolveFolders: true,
-    documentKeys: [documentKey],
+    documentKeys: [selectedDocumentKey],
     workingDocumentDriveItemId: driveItemId,
-    workingDocumentKey: documentKey,
+    workingDocumentKey: selectedDocumentKey,
   });
 
   assert(final.res.status === 200, "finalize returned HTTP 200");
