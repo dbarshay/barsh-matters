@@ -46,7 +46,8 @@ const pkgText = read("package.json");
   "BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED",
   "String(process.env.BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED || \"\").trim() === \"1\"",
   "if (isDirectMatterLiveFinalizeRequest && !directMatterLiveFinalizeServerEnabled)",
-  "return adminUnauthorizedJson(403)",
+  "direct-live-server-kill-switch",
+  "serverLiveFinalizeEnabled: false",
   "!isAdminRequestAuthorized(req as any)",
   "uploadBufferToClioMatterDocuments(",
 ].forEach((token) => contains("finalize route", route, token));
@@ -77,7 +78,8 @@ const envGuardBlock = route.slice(envGuardStart, envGuardEnd + 1);
 [
   "isDirectMatterLiveFinalizeRequest",
   "!directMatterLiveFinalizeServerEnabled",
-  "adminUnauthorizedJson(403)",
+  "direct-live-server-kill-switch",
+  "serverLiveFinalizeEnabled: false",
 ].forEach((token) => contains("server env kill switch block", envGuardBlock, token));
 
 const adminGuardStart = route.lastIndexOf("if (", adminGuardIdx);

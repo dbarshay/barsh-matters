@@ -616,7 +616,8 @@
     "verify:phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety": "node scripts/verify-phase44b-owner-admin-gate-discovery-direct-ui-finalize-safety.cjs",
     "verify:phase44c-server-side-direct-live-finalize-admin-guard-safety": "node scripts/verify-phase44c-server-side-direct-live-finalize-admin-guard-safety.cjs",
     "verify:phase44d-env-gated-direct-ui-live-finalize-control-safety": "node scripts/verify-phase44d-env-gated-direct-ui-live-finalize-control-safety.cjs",
-    "verify:phase44i-server-side-direct-live-env-kill-switch-safety": "node scripts/verify-phase44i-server-side-direct-live-env-kill-switch-safety.cjs"
+    "verify:phase44i-server-side-direct-live-env-kill-switch-safety": "node scripts/verify-phase44i-server-side-direct-live-env-kill-switch-safety.cjs",
+    "verify:phase44l-direct-live-server-kill-switch-response-marker-safety": "node scripts/verify-phase44l-direct-live-server-kill-switch-response-marker-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

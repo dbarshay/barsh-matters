@@ -327,7 +327,16 @@ export async function POST(req: NextRequest) {
     String(process.env.BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED || "").trim() === "1";
 
   if (isDirectMatterLiveFinalizeRequest && !directMatterLiveFinalizeServerEnabled) {
-    return adminUnauthorizedJson(403);
+    return NextResponse.json(
+      {
+        ok: false,
+        action: "direct-live-server-kill-switch",
+        authorized: true,
+        serverLiveFinalizeEnabled: false,
+        error: "Direct matter live finalize is disabled by server configuration.",
+      },
+      { status: 403 },
+    );
   }
 
 
