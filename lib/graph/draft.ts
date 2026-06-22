@@ -191,9 +191,9 @@ export function buildGraphDraftPayloadPreview(input: GraphDraftInput): GraphDraf
 
   const warnings: string[] = [];
   if (!to.length) warnings.push("No To recipient is available yet.");
-  if (!maildropEmail) warnings.push("No Clio MailDrop address is available yet.");
-  if (maildropEmail && !hasMaildropCc) warnings.push("Clio MailDrop must be included in Cc for thread capture.");
-  if (maildropInBcc) warnings.push("Clio MailDrop must not be placed in Bcc because Reply All will not preserve it.");
+  if (!maildropEmail) warnings.push("Clio MailDrop is deprecated; draft capture will rely on Barsh Matters local email workflow.");
+  if (maildropEmail && !hasMaildropCc) warnings.push("Deprecated Clio MailDrop address was available but not included in Cc.");
+  if (maildropInBcc) warnings.push("Deprecated Clio MailDrop should not be placed in Bcc.");
 
   const matter = input.matterContext || {};
   const extendedProperties = [
@@ -226,7 +226,7 @@ export function buildGraphDraftPayloadPreview(input: GraphDraftInput): GraphDraf
       hasToRecipient: to.length > 0,
       hasMaildropCc,
       maildropInCcOnly: hasMaildropCc && !maildropInBcc,
-      readyForGraphDraftCreate: to.length > 0 && hasMaildropCc && !maildropInBcc,
+      readyForGraphDraftCreate: to.length > 0 && !maildropInBcc,
       warnings,
     },
   };

@@ -5174,19 +5174,13 @@ function masterDocumentPreviewText(value: unknown): string {
   }
 
   async function resolveMasterMaildropForDelivery(context: DocumentDeliveryContext): Promise<DocumentDeliveryContext> {
-    const queryMasterLawsuitId = encodeURIComponent(String(context.masterLawsuitId || currentMasterLawsuitIdForDocumentPreview() || ""));
-    const response = await fetch(`/api/documents/clio-maildrop-resolve?source=master_lawsuit&masterLawsuitId=${queryMasterLawsuitId}`);
-    const json = await response.json().catch(() => ({}));
-
-    if (!response.ok || !json?.ok) {
-      throw new Error(json?.error || "Could not resolve the master lawsuit Clio Maildrop address.");
-    }
-
     return {
       ...context,
-      clioMaildropEmail: json.maildropEmail || context.clioMaildropEmail,
-      clioMaildropLabel: json.maildropLabel || context.clioMaildropLabel,
-    };
+      clioMaildropEmail: "",
+      clioMaildropLabel: "",
+      maildropDeprecated: true,
+      maildropDeprecationReason: "Clio MailDrop is deprecated because Barsh Matters no longer uses Clio matter shells.",
+    } as DocumentDeliveryContext;
   }
 
   function formatDocumentDeliveryRecipientList(value: any): string {
@@ -5539,7 +5533,7 @@ function masterDocumentPreviewText(value: unknown): string {
             "No email was sent.\n\n" +
             `Document: ${context.documentLabel || selectedTemplate?.label || "Document"}\n` +
             `To: ${draft.to || "not resolved"}\n` +
-            `Cc / MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
+            `Cc / Deprecated MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
             `Subject: ${draft.subject || "not resolved"}\n` +
             `Attachments planned: ${attachmentPlan.length}\n` +
             `Ready for Graph draft creation: ${readiness.readyForGraphDraftCreate ? "Yes" : "No"}\n\n` +
@@ -9006,7 +9000,7 @@ function masterDocumentPreviewText(value: unknown): string {
                       >
                         <div><strong>Document:</strong> {previewState?.documentLabel || context?.documentLabel || displayedSelectedTemplate?.label || "Document"}</div>
                         <div><strong>To:</strong> {toDisplay}</div>
-                        <div><strong>Cc / MailDrop:</strong> {ccDisplay}</div>
+                        <div><strong>Cc / Deprecated MailDrop:</strong> {ccDisplay}</div>
                         <div><strong>Subject:</strong> {subjectDisplay}</div>
                         <div><strong>Attachments planned:</strong> {attachmentPlan.length}</div>
                         <div><strong>Finalized PDF attachments uploaded:</strong> {Array.isArray(previewState?.attachmentUploads) ? previewState.attachmentUploads.length : 0}</div>
@@ -9058,7 +9052,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         <div>Writes Clio: No</div>
                         <div>Uploads document: No</div>
                         <div>Prints or queues document: No</div>
-                        <div>MailDrop in Cc only: {validation?.maildropInCcOnly ? "Yes" : "No"}</div>
+                        <div>MailDrop deprecated: {validation?.maildropInCcOnly ? "Yes" : "No"}</div>
                       </div>
 
                       {displayedWarnings.length > 0 && (

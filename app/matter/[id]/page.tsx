@@ -4842,20 +4842,13 @@ function openClaimAmountEditDialog() {
   }
 
   async function resolveMatterMaildropForDelivery(context: DocumentDeliveryContext): Promise<DocumentDeliveryContext> {
-    const queryMatterId = encodeURIComponent(String(context.matterId || matterId || ""));
-    const response = await fetch(`/api/documents/clio-maildrop-resolve?source=direct_matter&matterId=${queryMatterId}`);
-    const json = await response.json().catch(() => ({}));
-
-    if (!response.ok || !json?.ok) {
-      alert(json?.error || "Could not resolve this matter's Clio Maildrop address.");
-      return context;
-    }
-
     return {
       ...context,
-      clioMaildropEmail: json.maildropEmail || context.clioMaildropEmail,
-      clioMaildropLabel: json.maildropLabel || context.clioMaildropLabel,
-    };
+      clioMaildropEmail: "",
+      clioMaildropLabel: "",
+      maildropDeprecated: true,
+      maildropDeprecationReason: "Clio MailDrop is deprecated because Barsh Matters no longer uses Clio matter shells.",
+    } as DocumentDeliveryContext;
   }
 
   function finalizedMatterDocumentLooksLikePdf(candidate: any): boolean {
@@ -5025,7 +5018,7 @@ function openClaimAmountEditDialog() {
             "No email was sent.\n\n" +
             `Document: ${context.documentLabel || selectedTemplate?.label || "Document"}\n` +
             `To: ${draft.to || "not resolved"}\n` +
-            `Cc / MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
+            `Cc / Deprecated MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
             `Subject: ${draft.subject || "not resolved"}\n` +
             `Attachments planned: ${attachmentPlan.length}\n` +
             `Ready for Graph draft creation: ${readiness.readyForGraphDraftCreate ? "Yes" : "No"}\n\n` +
@@ -5056,7 +5049,7 @@ function openClaimAmountEditDialog() {
           `Finalized PDF attachments uploaded: ${Array.isArray(createResult?.attachmentUploads) ? createResult.attachmentUploads.length : 0}\n\n` +
           `Document: ${context.documentLabel || selectedTemplate?.label || "Document"}\n` +
           `To: ${draft.to || "not resolved"}\n` +
-          `Cc / MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
+          `Cc / Deprecated MailDrop: ${context.clioMaildropLabel || "MailDrop"} ${context.clioMaildropEmail ? "<" + context.clioMaildropEmail + ">" : "not resolved"}\n` +
           `Subject: ${draft.subject || "not resolved"}\n` +
           `Attachments planned: ${attachmentPlan.length}\n` +
           `Draft ID: ${createResult?.draft?.graphMessageId || "created"}`

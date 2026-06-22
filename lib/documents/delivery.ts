@@ -119,7 +119,7 @@ function formatEmailRecipient(label: unknown, email: unknown): string {
 export function buildMailtoHref(context: DocumentDeliveryContext): string {
   const to = clean(context.settledWithEmail) || clean(context.suggestedRecipientEmail);
   const cc =
-    formatEmailRecipient(context.clioMaildropLabel, context.clioMaildropEmail) ||
+    
     clean(context.suggestedCcEmail);
   const subject = buildDocumentEmailSubject(context);
   const body = buildDocumentEmailBody(context);
