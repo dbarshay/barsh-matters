@@ -414,7 +414,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           action: "settlement-document-finalize-local",
-          error: `No mapped Clio master matter exists for ${effectiveMasterLawsuitId}. Finalized settlement documents must upload to the mapped master Clio matter.`,
+          error: `No mapped Clio repository storage exists for ${effectiveMasterLawsuitId}. Finalized settlement documents must upload to the mapped legacy Clio storage reference.`,
           safety: {
             localFirst: true,
             databaseRecordsChanged: false,
@@ -550,7 +550,7 @@ export async function POST(req: NextRequest) {
         label: templateLabelInput || selectedDocument.label || templateKey,
         filename: finalPdfFilename,
         sourceDocxFilename: finalFilename,
-        reason: "A PDF document with this exact filename already exists in the mapped master Clio matter Documents tab.",
+        reason: "A PDF document with this exact filename already exists in the mapped legacy Clio storage reference Documents tab.",
         duplicatePrevention: true,
         clioUploaded: false,
         existingClioDocumentId: existingClioDocumentIdForSkippedPdf || null,
@@ -635,7 +635,7 @@ export async function POST(req: NextRequest) {
       clioUploadTargetDisplayNumber: clioDisplayNumber || null,
       printQueueRecordCreated: false,
       emailAttachmentReady: false,
-      note: "Local settlement finalization generated the settlement DOCX route and automatically stored the document in the mapped master Clio matter Documents tab when no exact filename duplicate existed.",
+      note: "Local settlement finalization generated the settlement DOCX route and automatically stored the document in the mapped legacy Clio storage reference Documents tab when no exact filename duplicate existed.",
     };
 
     const record = await prisma.documentFinalization.create({
@@ -762,8 +762,8 @@ export async function POST(req: NextRequest) {
       },
       note:
         uploaded.length > 0
-          ? "Created a persistent local Barsh Matters DocumentFinalization record and automatically uploaded the finalized settlement PDF to the mapped master Clio matter Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written."
-          : "Created a persistent local Barsh Matters DocumentFinalization record. Clio upload was skipped because an exact filename duplicate already exists in the mapped master Clio matter Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written.",
+          ? "Created a persistent local Barsh Matters DocumentFinalization record and automatically uploaded the finalized settlement PDF to the mapped legacy Clio storage reference Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written."
+          : "Created a persistent local Barsh Matters DocumentFinalization record. Clio upload was skipped because an exact filename duplicate already exists in the mapped legacy Clio storage reference Documents tab. No Outlook draft was created, no email was sent, and no print queue item was written.",
     });
   } catch (error: any) {
     return NextResponse.json(

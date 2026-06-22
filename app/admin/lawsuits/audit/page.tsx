@@ -199,7 +199,7 @@ function exportAuditCsv(result: AuditResult) {
     "Custom Amount",
     "Final Status",
     "Close Reason",
-    "Clio Master Matter ID",
+    "Legacy Clio Reference ID",
     "Clio Master Display Number",
     "Linked ClaimIndex Child Count",
     "Parsed Child Matter IDs",
@@ -420,7 +420,7 @@ export default function AdminLawsuitAuditPage() {
               <SummaryCard label="Checks with findings" value={result.summary?.checksWithFindings ?? 0} note={`${result.summary?.checksRun ?? 0} checks run`} />
               <SummaryCard label="Critical issues" value={result.summary?.criticalIssues ?? 0} />
               <SummaryCard label="Warnings" value={result.summary?.warningIssues ?? 0} />
-              <SummaryCard label="Mapped Clio shells" value={result.summary?.mappedMasterClioShellCount ?? 0} note={`${result.summary?.unmappedMasterClioShellCount ?? 0} unmapped`} />
+              <SummaryCard label="Legacy Clio storage references" value={result.summary?.mappedMasterClioShellCount ?? 0} note={`${result.summary?.unmappedMasterClioShellCount ?? 0} unmapped`} />
             </section>
 
             <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>

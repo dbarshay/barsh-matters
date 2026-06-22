@@ -45,7 +45,7 @@ const adminCards = [
     label: "Lawsuit Cleanup / Deaggregate",
     href: "/admin/lawsuit-cleanup",
     description:
-      "Preview extra local lawsuits, child matter links, and mapped Clio document shells before any separately approved cleanup.",
+      "Preview extra local lawsuits, child matter links, and legacy Clio storage references before any separately approved cleanup.",
   },
   {
     label: "Ticklers",

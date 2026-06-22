@@ -12,13 +12,13 @@ export function legacyClioOperationalRouteBlocked(routeName: string) {
       allowedClioUses: [
         "explicit BRL/document shell creation",
         "Clio document vault upload/list/open",
-        "Clio MailDrop resolution",
+        "Deprecated Clio MailDrop resolution",
         "separately approved transitional Clio writeback with explicit confirmation",
       ],
       prohibitedUses: [
         "using Clio to hydrate or overwrite ClaimIndex identity/reference/workflow fields",
         "using Clio as the source of truth for lawsuit grouping",
-        "creating Clio master matters through legacy aggregation",
+        "creating Clio repository storages through legacy aggregation",
         "PATCHing selected bill matters through legacy aggregation",
         "rebuilding local operational data from Clio without an explicit migration/import workflow",
       ],

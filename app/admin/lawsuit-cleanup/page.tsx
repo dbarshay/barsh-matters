@@ -184,7 +184,7 @@ export default function AdminLawsuitCleanupPage() {
           <div style={eyebrowStyle}>Administrator</div>
           <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.1 }}>Lawsuit Cleanup / Deaggregate</h1>
           <p style={subtitleStyle}>
-            Preview-only Admin utility for inspecting extra local lawsuit records, child matter links, and mapped Clio master document shells.
+            Preview-only Admin utility for inspecting extra local lawsuit records, child matter links, and legacy Clio storage references.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export default function AdminLawsuitCleanupPage() {
 
           <label style={checkLabelStyle}>
             <input type="checkbox" checked={onlyWithClioShell} onChange={(event) => setOnlyWithClioShell(event.target.checked)} />
-            Only lawsuits with mapped Clio shells
+            Only lawsuits with legacy Clio storage references
           </label>
         </div>
 
@@ -334,7 +334,7 @@ export default function AdminLawsuitCleanupPage() {
                       <div>
                         <strong>Guarded cleanup action</strong>
                         <div style={mutedTextStyle}>
-                          This will delete only the mapped Clio master shell when present, clear local child lawsuit links,
+                          This will clear local child lawsuit links, remove the local lawsuit record, and leave repository storage untouched,
                           delete this local Lawsuit row, and create an AuditLog entry.  It will not delete child/bill Clio matters.
                         </div>
                       </div>

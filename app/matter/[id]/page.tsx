@@ -3969,7 +3969,7 @@ function openClaimAmountEditDialog() {
     }
 
     const targetDisplay =
-      textValue(documentPreview?.clioUploadTarget?.displayNumber) || "the Clio master matter";
+      textValue(documentPreview?.clioUploadTarget?.displayNumber) || "the Clio repository storage";
     const targetMatterId = textValue(documentPreview?.clioUploadTarget?.matterId);
 
     const documentList = uploadableDocuments
@@ -4847,7 +4847,7 @@ function openClaimAmountEditDialog() {
       clioMaildropEmail: "",
       clioMaildropLabel: "",
       maildropDeprecated: true,
-      maildropDeprecationReason: "Clio MailDrop is deprecated because Barsh Matters no longer uses Clio matter shells.",
+      maildropDeprecationReason: "Deprecated Clio MailDrop is deprecated because Barsh Matters no longer uses legacy Clio storage references.",
     } as DocumentDeliveryContext;
   }
 
@@ -12861,7 +12861,7 @@ function openClaimAmountEditDialog() {
                       ))}
                     </ul>
                     <div style={{ marginTop: 8, color: "#475569" }}>
-                      These are proposed print candidates only.  Each listed document has been verified against the current Clio master matter Documents tab.
+                      These are proposed print candidates only.  Each listed document has been verified against the current Clio repository storage Documents tab.
                     </div>
                   </div>
                 )}

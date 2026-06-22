@@ -54,7 +54,7 @@ function buildLocalAuditCandidateDocuments(row: any) {
       clioDocumentVersionUuid: clean(doc.clioDocumentVersionUuid),
       fullyUploaded: doc.fullyUploaded === true,
       printCandidateReason:
-        "Document appears in local DocumentFinalization uploaded[] audit data and was verified against the current Clio master matter Documents tab.",
+        "Document appears in local DocumentFinalization uploaded[] audit data and was verified against the current Clio repository storage Documents tab.",
       localAuditOnly: false,
       currentClioExistenceVerified: false,
       currentClioExistenceMatch: null,
@@ -158,7 +158,7 @@ async function verifyCandidatesAgainstCurrentClioDocuments(finalizations: any[])
           currentClioExistenceVerified: false,
           currentClioExistenceMatch: null,
           currentClioExistenceReason:
-            "No current matching document was found in the Clio master matter Documents tab.",
+            "No current matching document was found in the Clio repository storage Documents tab.",
         };
       }
 
@@ -167,7 +167,7 @@ async function verifyCandidatesAgainstCurrentClioDocuments(finalizations: any[])
         currentClioExistenceVerified: true,
         currentClioExistenceMatch: normalizeClioDocumentMatch(match),
         currentClioExistenceReason:
-          "A current matching document was found in the Clio master matter Documents tab.",
+          "A current matching document was found in the Clio repository storage Documents tab.",
       };
     });
 
@@ -298,7 +298,7 @@ export async function GET(req: NextRequest) {
       excludedUnverifiedDocuments,
       verification: {
         currentClioExistenceVerified: true,
-        sourceOfTruth: "Clio master matter Documents tab",
+        sourceOfTruth: "Clio repository storage Documents tab",
         matterDocumentLookupCount: verification.matterDocumentLookupCount,
         verificationErrorCount: verification.verificationErrors.length,
         verificationErrors: verification.verificationErrors,
@@ -315,7 +315,7 @@ export async function GET(req: NextRequest) {
         noOneDriveOrSharePointFoldersCreated: true,
       },
       note:
-        "This endpoint proposes print candidates from local DocumentFinalization audit records only after verifying that each candidate still has a matching current document in the Clio master matter Documents tab.  It does not create print records or change Clio.",
+        "This endpoint proposes print candidates from local DocumentFinalization audit records only after verifying that each candidate still has a matching current document in the Clio repository storage Documents tab.  It does not create print records or change Clio.",
     });
   } catch (err: any) {
     return NextResponse.json(

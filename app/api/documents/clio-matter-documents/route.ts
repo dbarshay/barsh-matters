@@ -329,7 +329,7 @@ export async function GET(req: NextRequest) {
             targetType,
             masterLawsuitId,
             error:
-              "No mapped Clio master matter ID exists for this Barsh Matters Lawsuit ID.  Refusing to list Clio documents without an explicit mapping.",
+              "No Barsh Matters repository storage target exists for this Lawsuit ID. Refusing to list documents without an explicit repository context.",
             localSource,
           },
           { status: 409 }

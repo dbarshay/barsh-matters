@@ -199,7 +199,7 @@ export function buildClioStorageTargetPlan(input: ClioStorageTargetInput, config
   const masterMatterId = Number(config.masterMatterId);
 
   if (!Number.isFinite(masterMatterId) || masterMatterId <= 0) {
-    throw new Error("Single-master storage mode requires a valid configured Clio master matter ID.");
+    throw new Error("Single-master storage mode requires the configured Barsh Matters Master Repository Clio matter ID.");
   }
 
   return {

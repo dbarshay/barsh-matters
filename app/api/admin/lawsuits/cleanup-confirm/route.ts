@@ -128,7 +128,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "This lawsuit has a mapped Clio master shell.  deleteClioShell=true is required so cleanup does not leave an orphan Clio shell.",
+        error: "This lawsuit has legacy Clio shell metadata. Legacy shell cleanup is blocked under the current single-repository architecture.",
         masterLawsuitId,
         clioMasterMatterId,
         clioMasterDisplayNumber,
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Mapped Clio shell was not created by the approved Create Lawsuit workflow.  Refusing Clio deletion.",
+        error: "Legacy Clio storage reference was not created by the approved Create Lawsuit workflow.  Refusing Clio deletion.",
         masterLawsuitId,
         clioMasterMatterId,
         clioMasterDisplayNumber,
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Mapped Clio shell display number exists, but clioMasterMatterId is missing.  Refusing cleanup to avoid an orphan Clio shell.",
+        error: "Legacy Clio storage reference display number exists, but clioMasterMatterId is missing.  Refusing cleanup to avoid an orphan Clio shell.",
         masterLawsuitId,
         clioMasterDisplayNumber,
         writesLocalDb: false,
@@ -265,6 +265,6 @@ export async function POST(request: Request) {
     deletedClioShellOnly: Boolean(clioDeleteResult),
     deletedChildClioMatters: false,
     safetyDecision:
-      "Completed guarded Admin Lawsuit Cleanup.  Deleted only the mapped Clio master shell when present, cleared local child lawsuit links, deleted the local Lawsuit row, and wrote an AuditLog entry.",
+      "Completed guarded Admin Lawsuit Cleanup. Cleared local child lawsuit links, deleted the local Lawsuit row, left repository storage untouched, and wrote an AuditLog entry.",
   });
 }

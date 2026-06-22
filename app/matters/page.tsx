@@ -1506,7 +1506,7 @@ export default function FilteredMattersPage() {
             )}
 
             {masterClioDocumentsResult?.ok && docs.length === 0 && (
-              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>No documents are currently listed in the mapped Clio master matter Documents tab.</div>
+              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>No documents are currently listed in Barsh Matters Master Repository storage.</div>
             )}
 
             {docs.length > 0 && (
@@ -5179,7 +5179,7 @@ function masterDocumentPreviewText(value: unknown): string {
       clioMaildropEmail: "",
       clioMaildropLabel: "",
       maildropDeprecated: true,
-      maildropDeprecationReason: "Clio MailDrop is deprecated because Barsh Matters no longer uses Clio matter shells.",
+      maildropDeprecationReason: "Deprecated Clio MailDrop is deprecated because Barsh Matters no longer uses legacy Clio storage references.",
     } as DocumentDeliveryContext;
   }
 
@@ -5318,10 +5318,10 @@ function masterDocumentPreviewText(value: unknown): string {
     if (!selectedCandidate?.clioDocumentId) {
       if (draftWindow && !draftWindow.closed) draftWindow.close();
 
-      setMasterSettlementEmailNotice("Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped master Clio matter Documents tab.");
+      setMasterSettlementEmailNotice("Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.");
       setMasterDocumentDeliveryPreview({
         ok: false,
-        error: "Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped master Clio matter Documents tab.",
+        error: "Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.",
       });
       return;
     }
@@ -5454,7 +5454,7 @@ function masterDocumentPreviewText(value: unknown): string {
       if (!context.pdfUrl) {
         setMasterDocumentDeliveryPreview({
           ok: false,
-          error: "Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from the mapped master Clio matter Documents tab.",
+          error: "Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.",
           context,
           documentLabel: selectedTemplate?.label || "Document",
           draft: {},
@@ -5901,7 +5901,7 @@ function masterDocumentPreviewText(value: unknown): string {
   }
 
   async function saveMasterSettlementDocumentLocally(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const settlementFinalizedPdfSaveLocalSuccessCopy = "The finalized settlement PDF from the mapped master Clio matter Documents tab was opened for local saving.";
+    const settlementFinalizedPdfSaveLocalSuccessCopy = "The finalized settlement PDF from the mapped legacy Clio storage reference Documents tab was opened for local saving.";
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
     const isSettlementDocumentMode =
       masterDocumentLaunchMode === "settlement" ||
@@ -5988,7 +5988,7 @@ function masterDocumentPreviewText(value: unknown): string {
       const selectedCandidate = settlementFinalizedPdfCandidateFromResult();
 
       if (!selectedCandidate?.clioDocumentId && !selectedCandidate?.clioDocumentVersionUuid && !selectedCandidate?.downloadUrl) {
-        alert("Finalize the settlement document first.  The print workflow requires a finalized PDF from the mapped master Clio matter Documents tab.");
+        alert("Finalize the settlement document first.  The print workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.");
         return;
       }
 
@@ -6029,7 +6029,7 @@ function masterDocumentPreviewText(value: unknown): string {
         printablePdfReady: true,
         clioRecordsChanged: false,
         emailSent: false,
-        note: "Opened the finalized settlement PDF from the mapped master Clio matter Documents tab for printing.",
+        note: "Opened the finalized settlement PDF from the mapped legacy Clio storage reference Documents tab for printing.",
       });
       return;
     }
@@ -6176,7 +6176,7 @@ function masterDocumentPreviewText(value: unknown): string {
     }
 
     const targetDisplay =
-      masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "the mapped master Clio matter";
+      masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "the mapped legacy Clio storage reference";
     const targetMatterId = masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.matterId);
 
     const documentList = uploadableDocuments
@@ -6186,7 +6186,7 @@ function masterDocumentPreviewText(value: unknown): string {
     const confirmed = confirm(
       `FINALIZE AND UPLOAD MASTER/LAWSUIT DOCUMENTS TO CLIO\n\n` +
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
-        `This will upload the following final document copy/copies to the mapped master Clio matter Documents tab:\n\n` +
+        `This will upload the following final document copy/copies to the mapped legacy Clio storage reference Documents tab:\n\n` +
         `${documentList}\n\n` +
         `This is an explicit finalization action. Preview actions remain non-persistent.\n\n` +
         `WARNING: Running this again may create duplicate uploaded documents in Clio.\n\n` +
@@ -8085,7 +8085,7 @@ function masterDocumentPreviewText(value: unknown): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Finalization Details</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Run the finalization preview first.  If the mapped master Clio matter is resolved and the document plan is generation-ready, Upload Final Documents to Clio becomes available.
+                  Run the finalization preview first.  If the mapped legacy Clio storage reference is resolved and the document plan is generation-ready, Upload Final Documents to Clio becomes available.
                 </p>
               </div>
 
@@ -8190,7 +8190,7 @@ function masterDocumentPreviewText(value: unknown): string {
                       fontWeight: 850,
                     }}
                   >
-                    Existing Clio document warning: one or more planned final documents already exists in the mapped master Clio matter Documents tab.  The upload endpoint skips exact filename matches by default to prevent duplicates.
+                    Existing Clio document warning: one or more planned final documents already exists in the mapped legacy Clio storage reference Documents tab.  The upload endpoint skips exact filename matches by default to prevent duplicates.
                   </div>
                 )}
               </section>
@@ -8262,7 +8262,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         onClick={() => void launchSettlementFinalizedDocumentEmail()}
                         type="button"
                         disabled={!masterDocumentFinalizationResult?.finalizationRecord?.id}
-                        title="Create an Outlook draft with the finalized settlement PDF attached from the mapped master Clio matter."
+                        title="Create an Outlook draft with the finalized settlement PDF attached from the mapped legacy Clio storage reference."
                         style={{
                           border: "none",
                           background: masterDocumentFinalizationResult?.finalizationRecord?.id ? "#4f46e5" : "#c7d2fe",
