@@ -29,6 +29,7 @@ async function loadFinalizePreview(req: NextRequest, params: {
   directMatterDisplayNumber?: string | null;
   documentLaunchMode?: string | null;
   settlementRecordId?: string | null;
+  useSingleMasterClioStorage?: boolean;
 }) {
   const settlementMode = clean(params.documentLaunchMode) === "settlement";
   const previewUrl = new URL(
@@ -51,6 +52,10 @@ async function loadFinalizePreview(req: NextRequest, params: {
 
   if (!settlementMode && clean(params.directMatterDisplayNumber)) {
     previewUrl.searchParams.set("directMatterDisplayNumber", clean(params.directMatterDisplayNumber));
+  }
+
+  if (!settlementMode && params.useSingleMasterClioStorage) {
+    previewUrl.searchParams.set("singleMasterClioStorage", "1");
   }
 
   const previewRes = await fetch(previewUrl, {
@@ -165,6 +170,7 @@ export async function POST(req: NextRequest) {
             directMatterDisplayNumber,
             documentLaunchMode,
             settlementRecordId,
+            useSingleMasterClioStorage: singleMasterDirectStorage,
           });
 
     const plannedDocuments = Array.isArray(preview?.plannedDocuments) ? preview.plannedDocuments : [];
