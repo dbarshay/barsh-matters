@@ -1,0 +1,24 @@
+const fs = require("fs");
+const path = require("path");
+let failed = false;
+const pass = (m) => console.log("PASS: " + m);
+const fail = (m) => { failed = true; console.error("FAIL: " + m); };
+const root = process.cwd();
+const resolver = fs.readFileSync(path.join(root, "lib/clioFolderResolverExecutor.ts"), "utf8");
+function assert(condition, message) { condition ? pass(message) : fail(message); }
+console.log("RESULT: Phase 35B idempotent resolver no-network smoke starting");
+console.log("CONTRACT: this smoke performs no Clio upload, no Clio write, and no DB mutation");
+const loopMatch = resolver.match(/for \(const segmentName of configuredSegments\) \{[\s\S]*?folderSegments\.push\(resolved\);[\s\S]*?parentId = resolved\.id;[\s\S]*?\n  \}/);
+assert(Boolean(loopMatch), "resolver walks configured segments and advances parent to resolved child id");
+assert(resolver.includes("const existing = await findExactClioChildFolderByNameWithGuard(input);"), "resolver explicitly looks for an exact existing child first");
+assert(resolver.includes("if (existing) return existing;"), "resolver reuses exact existing child and skips create");
+assert(resolver.includes("const created = await createClioFolderWithGuard"), "resolver creates only through guarded folder create helper after lookup miss");
+assert(resolver.indexOf("const existing = await findExactClioChildFolderByNameWithGuard(input);") < resolver.indexOf("const created = await createClioFolderWithGuard"), "lookup precedes create in get-or-create helper");
+assert(resolver.includes("parent_id: String(parentId)"), "lookup is scoped to current parent folder");
+assert(resolver.includes("matter_id: String(matterId)"), "lookup is scoped to the configured Clio master matter");
+assert(resolver.includes("clean(row?.name) === folderName"), "lookup requires exact folder-name equality");
+assert(resolver.includes("Duplicate child folders named"), "duplicate same-name children are refused instead of silently choosing one");
+assert(!/uploadBufferToClio|documents\.json|documentFinalization\.create|prisma\./.test(resolver), "resolver does not upload documents or mutate database");
+assert(!/patient|provider|insurer|claimNumber|claim_number|denial/i.test(resolver), "resolver contains no privacy-sensitive folder naming inputs");
+console.log("RESULT: Phase 35B idempotent resolver no-network smoke completed");
+if (failed) process.exit(1);

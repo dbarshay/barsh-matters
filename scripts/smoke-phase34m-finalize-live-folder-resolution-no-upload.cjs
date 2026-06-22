@@ -132,6 +132,9 @@ function assert(condition, message) {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...localEnv,
+        CLIO_STORAGE_MODE: "single_master_matter",
+        CLIO_MASTER_MATTER_ID: localEnv.CLIO_MASTER_MATTER_ID || "1885821245",
+        CLIO_MASTER_MATTER_NAME: localEnv.CLIO_MASTER_MATTER_NAME || "Barsh Matters Master Repository",
         CLIO_SINGLE_MASTER_LIVE_WRITE_COMMAND: "RUN_CLIO_SINGLE_MASTER_FOLDER_CREATE",
         CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED: "1",
         CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED: "1",
