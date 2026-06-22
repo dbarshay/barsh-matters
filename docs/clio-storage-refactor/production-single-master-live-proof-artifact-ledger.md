@@ -1,6 +1,6 @@
 # Production Single-Master Live Proof Artifact Ledger
 
-Last updated: 2026-06-22T21:36:49Z
+Last updated: 2026-06-22T21:38:00Z
 
 ## Cleanup decision
 
@@ -48,12 +48,13 @@ Do not delete production smoke/live proof artifacts yet. These artifacts are cur
 ### Reusable gated direct script proof
 
 - Direct matter: `BRL_202600003`
-- Clio folder ID: `(see terminal proof output)`
-- Working DOCX drive item ID: `01YOF3GE6H3QR63CDWR5BJU2QBYA6IZSE5`
-- Final PDF Clio document ID: `(see terminal proof output)`
-- Finalization record ID: `(see terminal proof output)`
-- Final PDF filename: `(see terminal proof output)`
-- Result: `uploadRewired=false`, `fullyUploaded=false`
+- Selected document key: `harmless-stored-docx-test-template`
+- Clio folder ID: `22077086525`
+- Working DOCX drive item ID: `01YOF3GE7OCYYZ4R6BWZEZ3JWUYHU5RYGL`
+- Final PDF Clio document ID: `22077706940`
+- Finalization record ID: `115`
+- Final PDF filename: `BRL_202600003 - ATLANTIC MEDICAL - DIAGNOSTIC, P.C. aao David Barshay v Allstate Indemnity Company - Claim 1111 - Example Production Template - Finalized 2026-06-22T21-37-49Z.pdf`
+- Result: `uploadRewired=true`, `fullyUploaded=true`
 
 ## Reusable proof commands
 
