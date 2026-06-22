@@ -162,9 +162,32 @@ function buildSingleMasterFinalizeTargetInput(preview: any, params: {
   const isDirectMatter = params.uploadTargetMode === "direct-matter";
 
   if (isDirectMatter) {
-    throw new Error(
-      "Single-master Clio storage for direct matters is blocked until Barsh Matters direct-matter numbering/folder convention is defined."
+    const directMatterFileNumber = clean(
+      params.directMatterDisplayNumber ||
+        target?.directMatterFileNumber ||
+        target?.matterDisplayNumber ||
+        target?.displayNumber ||
+        params.directMatterId
     );
+
+    if (process.env.CLIO_DIRECT_INDIVIDUAL_FINALIZE_TARGET_INPUT_ENABLED !== "1") {
+      throw new Error(
+        "Single-master Clio storage for direct/individual matters is blocked until CLIO_DIRECT_INDIVIDUAL_FINALIZE_TARGET_INPUT_ENABLED=1."
+      );
+    }
+
+    if (!/^BRL_\d{9}$/.test(directMatterFileNumber)) {
+      throw new Error(
+        "Single-master Clio storage for direct/individual matters requires a Barsh Matters direct matter file number in BRL_YYYYNNNNN format."
+      );
+    }
+
+    return {
+      storageTargetKind: "individual_matter",
+      directMatterFileNumber,
+      bmMatterId: directMatterFileNumber,
+      displayNumber: directMatterFileNumber,
+    };
   }
 
   const displayNumber = clean(
