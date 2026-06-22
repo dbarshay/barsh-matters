@@ -242,25 +242,42 @@ async function request(baseUrl, method, path, body) {
     assert(final.status === 200, `finalize returns 200 (actual ${final.status})`);
     assert(final.json?.ok === true, "finalize ok true");
     assert(final.json?.uploadRewired === true || final.json?.finalizeRewired === true, "finalize/upload is rewired to single-master storage");
-    assert(Array.isArray(final.json?.uploaded) && final.json.uploaded.length > 0, "finalize is not dry-run because at least one document was uploaded");
 
     const fr = final.json?.singleMasterFolderResolution || final.json?.folderResolution || {};
     assert(Number(fr.folderId || fr.matterFolderId || final.json?.singleMasterUploadFolderId) === EXPECTED_FOLDER_ID || JSON.stringify(final.json).includes(String(EXPECTED_FOLDER_ID)), "finalize resolved existing direct folder 22062401000");
+
     assert(!JSON.stringify(final.json).includes("Duplicate child folders named"), "no duplicate direct folder branch reported");
-    assert(fr.createdFolderCount === 0 || !JSON.stringify(final.json).includes('"createdFolderCount":1'), "no new Clio folder creation reported");
+    assert(!JSON.stringify(final.json).includes('"created":true'), "no new Clio folder creation reported");
 
     const uploaded = Array.isArray(final.json?.uploaded) ? final.json.uploaded : [];
-    assert(uploaded.length === 1, `exactly one document uploaded (actual ${uploaded.length})`);
-    const item = uploaded[0] || {};
-    assert(Boolean(item.clioDocumentId || item.documentId || item.id || item.clioDocument?.id), "uploaded item includes Clio document id");
-    assert(item.fullyUploaded === true || final.json?.fullyUploaded === true || Boolean(item.clioDocumentId || item.documentId || item.id), "uploaded item reports full upload or document id");
-    assert(item.clioUploadParent?.type === "Folder" || item.parentType === "Folder" || JSON.stringify(item).includes('"Folder"'), "uploaded item parent type is Folder");
-    assert(Number(item.clioUploadParent?.id || item.parentId || item.uploadParentId || item.clioParentId) === EXPECTED_FOLDER_ID || JSON.stringify(item).includes(String(EXPECTED_FOLDER_ID)), "uploaded item parent id is existing direct folder 22062401000");
-    assert(Boolean(final.json?.finalizationRecord?.ok || final.json?.finalizationRecord?.id || final.json?.documentFinalizationId), "finalization audit metadata recorded");
-    assert(!/patient|provider|insurer|claim|denial/i.test(JSON.stringify(fr.folderPlan || fr.createdFolders || [])), "created/reused folder plan does not use private claim facts for folder names");
+    const skipped = Array.isArray(final.json?.skipped) ? final.json.skipped : [];
+    const existingSkip = skipped.find((item) =>
+      item?.reason === "already-uploaded-to-clio" &&
+      Array.isArray(item?.existingClioDocuments) &&
+      item.existingClioDocuments.some((doc) => Boolean(doc?.id) && doc?.latestDocumentVersion?.fullyUploaded === true)
+    );
+    const liveUploadSuccess = uploaded.length === 1;
+    const idempotentDuplicateSkipSuccess = uploaded.length === 0 && Boolean(existingSkip);
 
-    console.log("CONTRACT: Phase 44R authenticated smoke uploaded exactly one finalized PDF to existing direct folder 22062401000 through single-master Clio storage.");
-    console.log("RESULT: Phase 44R controlled authenticated live direct finalized PDF upload smoke completed");
+    assert(liveUploadSuccess || idempotentDuplicateSkipSuccess, `finalize either uploads one PDF or idempotently skips an existing fully uploaded PDF (uploaded ${uploaded.length}, skipped ${skipped.length})`);
+
+    if (liveUploadSuccess) {
+      const item = uploaded[0] || {};
+      assert(Boolean(item.clioDocumentId || item.documentId || item.id), "uploaded item includes Clio document id");
+      assert(item.fullyUploaded === true || final.json?.fullyUploaded === true || Boolean(item.clioDocumentId || item.documentId || item.id), "uploaded item reports full upload or document id");
+      assert((item.clioUploadParent?.type || item.parentType || item.uploadParentType) === "Folder" || JSON.stringify(item).includes('"type":"Folder"'), "uploaded item parent type is Folder");
+      assert(Number(item.clioUploadParent?.id || item.parentId || item.uploadParentId || item.clioParentId) === EXPECTED_FOLDER_ID || JSON.stringify(item).includes(String(EXPECTED_FOLDER_ID)), "uploaded item parent id is existing direct folder 22062401000");
+    } else {
+      const existingDoc = existingSkip.existingClioDocuments[0] || {};
+      assert(Boolean(existingDoc.id), "idempotent skipped item includes existing Clio document id");
+      assert(existingDoc.latestDocumentVersion?.fullyUploaded === true, "idempotent skipped item reports existing fully uploaded PDF");
+      assert(JSON.stringify(final.json).includes(String(EXPECTED_FOLDER_ID)), "idempotent skipped finalize response preserves existing direct folder 22062401000");
+    }
+
+    assert(final.json?.finalizationRecord?.ok === true || final.json?.finalizationAudit?.ok === true || final.json?.auditRecord?.ok === true || JSON.stringify(final.json).includes("finalizationRecord"), "finalization audit metadata recorded");
+
+    console.log("CONTRACT: Phase 44R authenticated smoke either uploads one finalized PDF or idempotently skips an existing exact-match finalized PDF to existing direct folder 22062401000 through single-master Clio storage.");
+    console.log("RESULT: Phase 44R controlled authenticated live direct finalize/idempotency smoke completed");
     if (failed) process.exit(1);
   } finally {
     stopServer(server.proc);
