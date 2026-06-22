@@ -1,0 +1,30 @@
+const fs = require("fs");
+const path = require("path");
+let failed = false;
+const pass = (m) => console.log("PASS: " + m);
+const fail = (m) => { failed = true; console.error("FAIL: " + m); };
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const exists = (p) => fs.existsSync(path.join(root, p));
+const smoke = read("scripts/smoke-phase36d-finalize-single-master-armed-no-working-doc-no-upload.cjs");
+const finalize = read("app/api/documents/finalize/route.ts");
+const pkg = JSON.parse(read("package.json"));
+function contains(label, text, token) { text.includes(token) ? pass(label) : fail(label + " missing token: " + token); }
+function notContains(label, text, token) { !text.includes(token) ? pass(label) : fail(label + " contains forbidden token: " + token); }
+contains("smoke enables upload rewire flag", smoke, "CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED: \"1\"");
+contains("smoke enables create folders flag", smoke, "CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED: \"1\"");
+contains("smoke enables live write flag", smoke, "CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED: \"1\"");
+contains("smoke sends confirmUpload true", smoke, "confirmUpload: true");
+contains("smoke sends non-dry-run single-master request", smoke, "singleMasterDryRun: false");
+contains("smoke omits workingDocumentDriveItemId intentionally", smoke, "requires a saved working Word document");
+contains("smoke allows duplicate uploads to avoid duplicate-skip DB audit path", smoke, "allowDuplicateUploads: true");
+contains("smoke expects no uploaded documents", smoke, "uploaded.length === 0");
+contains("smoke checks no DB mutation", smoke, "noDatabaseRecordsChanged === true");
+contains("finalize still requires working Word document before upload", finalize, "Finalize Document now requires a saved working Word document");
+contains("finalize upload call remains after working document branch", finalize, "uploadBufferToClioMatterDocuments({");
+notContains("smoke does not include working document id", smoke, "workingDocumentDriveItemId:");
+if (exists("scripts/smoke-phase36d-finalize-single-master-armed-no-working-doc-no-upload.cjs")) pass("Phase 36D smoke file exists"); else fail("Phase 36D smoke file missing");
+if (pkg.scripts && pkg.scripts["verify:phase36d-armed-no-working-doc-no-upload-smoke-safety"] === "node scripts/verify-phase36d-armed-no-working-doc-no-upload-smoke-safety.cjs") pass("package verifier script registered"); else fail("package verifier script missing");
+if (pkg.scripts && pkg.scripts["smoke:phase36d-finalize-single-master-armed-no-working-doc-no-upload"] === "node scripts/smoke-phase36d-finalize-single-master-armed-no-working-doc-no-upload.cjs") pass("package smoke script registered"); else fail("package smoke script missing");
+console.log("RESULT: Phase 36D armed no-working-doc no-upload smoke safety verifier");
+if (failed) process.exit(1);

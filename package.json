@@ -557,7 +557,9 @@
     "verify:phase36a-clio-document-folder-parent-helper-safety": "node scripts/verify-phase36a-clio-document-folder-parent-helper-safety.cjs",
     "verify:phase36b-finalize-single-master-folder-upload-wiring-safety": "node scripts/verify-phase36b-finalize-single-master-folder-upload-wiring-safety.cjs",
     "verify:phase36c-disabled-single-master-upload-guard-smoke-safety": "node scripts/verify-phase36c-disabled-single-master-upload-guard-smoke-safety.cjs",
-    "smoke:phase36c-finalize-single-master-upload-disabled": "node scripts/smoke-phase36c-finalize-single-master-upload-disabled.cjs"
+    "smoke:phase36c-finalize-single-master-upload-disabled": "node scripts/smoke-phase36c-finalize-single-master-upload-disabled.cjs",
+    "verify:phase36d-armed-no-working-doc-no-upload-smoke-safety": "node scripts/verify-phase36d-armed-no-working-doc-no-upload-smoke-safety.cjs",
+    "smoke:phase36d-finalize-single-master-armed-no-working-doc-no-upload": "node scripts/smoke-phase36d-finalize-single-master-armed-no-working-doc-no-upload.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
