@@ -4909,11 +4909,11 @@ function masterSettlementDateFiledValue(): string {
 
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.ok) {
-      window.alert(json?.error || "Direct matter Clio finalization failed.");
+      window.alert(json?.error || "Direct matter repository finalization failed.");
       return { ok: false, responseStatus: response.status, payload, result: json };
     }
 
-    window.alert("Direct matter finalized to Clio storage.");
+    window.alert("Direct matter finalized to Barsh Matters Master Repository storage.");
     return { ok: true, responseStatus: response.status, payload, result: json };
   }
 
@@ -5318,10 +5318,10 @@ function masterDocumentPreviewText(value: unknown): string {
     if (!selectedCandidate?.clioDocumentId) {
       if (draftWindow && !draftWindow.closed) draftWindow.close();
 
-      setMasterSettlementEmailNotice("Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.");
+      setMasterSettlementEmailNotice("Finalize the settlement document first.  The email workflow requires a finalized PDF from the Barsh Matters Master Repository document storage.");
       setMasterDocumentDeliveryPreview({
         ok: false,
-        error: "Finalize the settlement document first.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.",
+        error: "Finalize the settlement document first.  The email workflow requires a finalized PDF from the Barsh Matters Master Repository document storage.",
       });
       return;
     }
@@ -5454,7 +5454,7 @@ function masterDocumentPreviewText(value: unknown): string {
       if (!context.pdfUrl) {
         setMasterDocumentDeliveryPreview({
           ok: false,
-          error: "Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.",
+          error: "Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from the Barsh Matters Master Repository document storage.",
           context,
           documentLabel: selectedTemplate?.label || "Document",
           draft: {},
@@ -5664,7 +5664,7 @@ function masterDocumentPreviewText(value: unknown): string {
     const candidates = Array.isArray(json?.candidateDocuments) ? json.candidateDocuments : [];
 
     if (candidates.length === 0) {
-      throw new Error("No finalized Clio-verified documents are available.  Upload final documents to Clio first.");
+      throw new Error("No finalized repository documents are available. Finalize documents to Barsh Matters Master Repository storage first.");
     }
 
     const selectedKey = String(selectedTemplate?.key || "").trim().toLowerCase();
@@ -5901,7 +5901,7 @@ function masterDocumentPreviewText(value: unknown): string {
   }
 
   async function saveMasterSettlementDocumentLocally(selectedTemplate: { key: string; label: string; description: string } | null) {
-    const settlementFinalizedPdfSaveLocalSuccessCopy = "The finalized settlement PDF from the mapped legacy Clio storage reference Documents tab was opened for local saving.";
+    const settlementFinalizedPdfSaveLocalSuccessCopy = "The finalized settlement PDF from the Barsh Matters Master Repository document storage was opened for local saving.";
     const context = buildMasterDocumentDeliveryContext(selectedTemplate);
     const isSettlementDocumentMode =
       masterDocumentLaunchMode === "settlement" ||
@@ -5988,7 +5988,7 @@ function masterDocumentPreviewText(value: unknown): string {
       const selectedCandidate = settlementFinalizedPdfCandidateFromResult();
 
       if (!selectedCandidate?.clioDocumentId && !selectedCandidate?.clioDocumentVersionUuid && !selectedCandidate?.downloadUrl) {
-        alert("Finalize the settlement document first.  The print workflow requires a finalized PDF from the mapped legacy Clio storage reference Documents tab.");
+        alert("Finalize the settlement document first.  The print workflow requires a finalized PDF from the Barsh Matters Master Repository document storage.");
         return;
       }
 
@@ -6029,7 +6029,7 @@ function masterDocumentPreviewText(value: unknown): string {
         printablePdfReady: true,
         clioRecordsChanged: false,
         emailSent: false,
-        note: "Opened the finalized settlement PDF from the mapped legacy Clio storage reference Documents tab for printing.",
+        note: "Opened the finalized settlement PDF from the Barsh Matters Master Repository document storage for printing.",
       });
       return;
     }
@@ -6050,7 +6050,7 @@ function masterDocumentPreviewText(value: unknown): string {
         : selectedFinalizedDocumentUrl(selectedCandidate, "download");
 
       if (!printableUrl) {
-        throw new Error("Barsh Matters found a current Clio-verified finalized document, but the preview contract did not expose an openable file URL.");
+        throw new Error("Barsh Matters found a current finalized document in repository storage, but the preview contract did not expose an openable file URL.");
       }
 
       const printWindow = window.open("", "_blank");
@@ -6160,7 +6160,7 @@ function masterDocumentPreviewText(value: unknown): string {
     }
 
     if (masterFinalizePreview?.action !== "finalize-preview" || !masterFinalizePreview?.ok) {
-      alert("Run Master Finalization Preview successfully before uploading final documents to Clio.");
+      alert("Run Master Finalization Preview successfully before uploading final documents to Barsh Matters Master Repository storage.");
       return;
     }
 
@@ -6176,7 +6176,7 @@ function masterDocumentPreviewText(value: unknown): string {
     }
 
     const targetDisplay =
-      masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "the mapped legacy Clio storage reference";
+      masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.displayNumber) || "the Barsh Matters Master Repository storage";
     const targetMatterId = masterDocumentPreviewText(masterFinalizePreview?.clioUploadTarget?.matterId);
 
     const documentList = uploadableDocuments
@@ -6186,7 +6186,7 @@ function masterDocumentPreviewText(value: unknown): string {
     const confirmed = confirm(
       `FINALIZE AND UPLOAD MASTER/LAWSUIT DOCUMENTS TO CLIO\n\n` +
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
-        `This will upload the following final document copy/copies to the mapped legacy Clio storage reference Documents tab:\n\n` +
+        `This will upload the following final document copy/copies to the Barsh Matters Master Repository document storage:\n\n` +
         `${documentList}\n\n` +
         `This is an explicit finalization action. Preview actions remain non-persistent.\n\n` +
         `WARNING: Running this again may create duplicate uploaded documents in Clio.\n\n` +
@@ -6649,7 +6649,7 @@ function masterDocumentPreviewText(value: unknown): string {
       const settlementClioDisplayNumber = json?.clioUploadTarget?.displayNumber || json?.masterLawsuitId || "Barsh Matters Master Repository";
       const settlementUploadMessage =
         settlementUploadedCount > 0
-          ? `Uploaded finalized PDF to Clio matter ${settlementClioDisplayNumber}`
+          ? `Uploaded finalized PDF to Barsh Matters Master Repository storage target ${settlementClioDisplayNumber}`
           : `Finalized PDF already exists in Clio matter ${settlementClioDisplayNumber}; duplicate upload skipped`;
 
       setMasterSettlementUploadNotice(settlementUploadMessage);
@@ -6733,7 +6733,7 @@ function masterDocumentPreviewText(value: unknown): string {
       "SEND FINALIZED DOCUMENTS TO PRINT QUEUE\n\n" +
         "Lawsuit ID: " + masterLawsuitId + "\n" +
         "Document: " + (context.documentLabel || selectedTemplate?.label || "Selected finalized document(s)") + "\n\n" +
-        "Barsh Matters will add currently Clio-verified finalized document file(s) to the print queue.  Existing queue records are skipped.\n\n" +
+        "Barsh Matters will add currently finalized document file(s) in repository storage to the print queue.  Existing queue records are skipped.\n\n" +
         "Continue?"
     );
 
@@ -8085,7 +8085,7 @@ function masterDocumentPreviewText(value: unknown): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Finalization Details</h3>
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Run the finalization preview first.  If the mapped legacy Clio storage reference is resolved and the document plan is generation-ready, Upload Final Documents to Clio becomes available.
+                  Run the finalization preview first.  If the Barsh Matters Master Repository storage is resolved and the document plan is generation-ready, Upload Final Documents to Repository becomes available.
                 </p>
               </div>
 
@@ -8098,7 +8098,7 @@ function masterDocumentPreviewText(value: unknown): string {
                 )}
 
                 {actionButton(
-                  masterFinalizeUploadLoading ? "Uploading..." : "Upload Final Documents to Clio",
+                  masterFinalizeUploadLoading ? "Uploading..." : "Upload Final Documents to Repository",
                   uploadMasterFinalDocumentsToClio,
                   masterDocumentFinalizing ||
                     masterFinalizeUploadLoading ||
@@ -8190,7 +8190,7 @@ function masterDocumentPreviewText(value: unknown): string {
                       fontWeight: 850,
                     }}
                   >
-                    Existing Clio document warning: one or more planned final documents already exists in the mapped legacy Clio storage reference Documents tab.  The upload endpoint skips exact filename matches by default to prevent duplicates.
+                    Existing repository document warning: one or more planned final documents already exists in the Barsh Matters Master Repository document storage.  The upload endpoint skips exact filename matches by default to prevent duplicates.
                   </div>
                 )}
               </section>
@@ -8262,7 +8262,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         onClick={() => void launchSettlementFinalizedDocumentEmail()}
                         type="button"
                         disabled={!masterDocumentFinalizationResult?.finalizationRecord?.id}
-                        title="Create an Outlook draft with the finalized settlement PDF attached from the mapped legacy Clio storage reference."
+                        title="Create an Outlook draft with the finalized settlement PDF attached from the Barsh Matters Master Repository storage."
                         style={{
                           border: "none",
                           background: masterDocumentFinalizationResult?.finalizationRecord?.id ? "#4f46e5" : "#c7d2fe",
@@ -8848,7 +8848,7 @@ function masterDocumentPreviewText(value: unknown): string {
             <div>
               <h2 style={{ margin: 0, fontSize: 22 }}>Document Delivery</h2>
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                Use this delivery popup after Master/Lawsuit final upload completes or is safely processed with duplicate-file skipping.  Email prepares an Outlook draft preview, Print opens a current Clio-verified finalized document, and Queue adds current Clio-verified finalized document records to the Barsh Matters print queue.
+                Use this delivery popup after Master/Lawsuit final upload completes or is safely processed with duplicate-file skipping.  Email prepares an Outlook draft preview, Print opens a current finalized document in repository storage, and Queue adds current finalized document in repository storage records to the Barsh Matters print queue.
               </p>
             </div>
             <button
@@ -8882,7 +8882,7 @@ function masterDocumentPreviewText(value: unknown): string {
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Delivery Options</h3>
                 <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                  Choose how to deliver the finalized document.  Email prepares an Outlook draft preview; Edit opens DOCX files through Word when available; Print opens PDFs inline and DOCX files as a browser-controlled file; Queue adds finalized Clio-verified files to the Barsh Matters print queue.
+                  Choose how to deliver the finalized document.  Email prepares an Outlook draft preview; Edit opens DOCX files through Word when available; Print opens PDFs inline and DOCX files as a browser-controlled file; Queue adds finalized repository files to the Barsh Matters print queue.
                 </p>
               </div>
 

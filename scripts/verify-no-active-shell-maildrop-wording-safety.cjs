@@ -43,6 +43,11 @@ const suspicious = [
   /MailDrop must not/i,
   /Could not resolve.*MailDrop/i,
   /BRL30148/,
+  /mapped legacy Clio storage reference/i,
+  /Clio-verified/i,
+  /final documents to Clio/i,
+  /Upload final documents to Clio/i,
+  /Uploaded finalized PDF to Clio matter/i,
   /BRL30121/,
 ];
 

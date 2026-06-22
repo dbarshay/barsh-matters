@@ -3951,7 +3951,7 @@ function openClaimAmountEditDialog() {
     }
 
     if (documentPreview?.action !== "finalize-preview" || !documentPreview?.ok) {
-      alert("Run Finalize Documents Preview successfully before uploading final documents to Clio.");
+      alert("Run Finalize Documents Preview successfully before uploading final documents to Barsh Matters Master Repository storage.");
       return;
     }
 
@@ -5134,7 +5134,7 @@ function openClaimAmountEditDialog() {
       "SEND FINALIZED DOCUMENT TO PRINT QUEUE\n\n" +
         "Matter: " + (directMatterDisplayNumber || directMatterId) + "\n" +
         "Document: " + (context.documentLabel || selectedTemplate?.label || "Selected finalized document") + "\n\n" +
-        "Barsh Matters will add the currently Clio-verified finalized PDF to the print queue.  Existing queue records are skipped.\n\n" +
+        "Barsh Matters will add the currently finalized repository PDF to the print queue.  Existing queue records are skipped.\n\n" +
         "Continue?"
     );
 

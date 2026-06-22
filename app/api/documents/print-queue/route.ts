@@ -412,7 +412,7 @@ export async function POST(req: NextRequest) {
           ok: false,
           action: "print-queue-add",
           masterLawsuitId,
-          error: "No currently Clio-verified print candidates were available to add.",
+          error: "No currently finalized repository print candidates were available to add.",
           previewSummary: {
             candidateDocumentCount: preview?.candidateDocumentCount ?? null,
             currentClioExistenceVerified:
