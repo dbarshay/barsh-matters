@@ -553,7 +553,8 @@
     "verify:phase35a-live-individual-folder-resolution-no-upload-safety": "node scripts/verify-phase35a-live-individual-folder-resolution-no-upload-safety.cjs",
     "smoke:phase35a-live-individual-folder-resolution-no-upload": "node scripts/smoke-phase35a-live-individual-folder-resolution-no-upload.cjs",
     "verify:phase35b-idempotent-folder-resolver-safety": "node scripts/verify-phase35b-idempotent-folder-resolver-safety.cjs",
-    "smoke:phase35b-idempotent-folder-resolver-contract": "node scripts/smoke-phase35b-idempotent-folder-resolver-contract.cjs"
+    "smoke:phase35b-idempotent-folder-resolver-contract": "node scripts/smoke-phase35b-idempotent-folder-resolver-contract.cjs",
+    "verify:phase36a-clio-document-folder-parent-helper-safety": "node scripts/verify-phase36a-clio-document-folder-parent-helper-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

@@ -12,6 +12,8 @@ type ClioUploadResult = {
   fullyUploaded: boolean;
 };
 
+export type ClioDocumentParentType = "Matter" | "Folder";
+
 export type ClioMatterDocument = {
   id: number;
   name: string;
@@ -33,6 +35,11 @@ export type ClioMatterDocument = {
 
 function clean(value: unknown): string {
   return String(value ?? "").trim();
+}
+
+function positiveId(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 function headersFromClioPutHeaders(putHeaders: ClioPutHeader[]): Headers {
@@ -69,21 +76,65 @@ async function readClioJson(res: Response, fallback: string): Promise<any> {
   return json;
 }
 
+function mapClioDocumentRow(row: any): ClioMatterDocument {
+  const version = row?.latest_document_version || null;
+
+  return {
+    id: Number(row?.id),
+    name: clean(row?.name),
+    filename: clean(row?.filename),
+    createdAt: clean(row?.created_at),
+    updatedAt: clean(row?.updated_at),
+    latestDocumentVersion: version
+      ? {
+          id: version?.id == null ? null : Number(version.id),
+          uuid: clean(version?.uuid),
+          filename: clean(version?.filename),
+          size: version?.size == null ? null : Number(version.size),
+          contentType: clean(version?.content_type),
+          fullyUploaded: Boolean(version?.fully_uploaded),
+          receivedAt: clean(version?.received_at),
+          createdAt: clean(version?.created_at),
+          updatedAt: clean(version?.updated_at),
+        }
+      : null,
+  };
+}
+
+function documentListFields(): string {
+  return [
+    "id",
+    "name",
+    "filename",
+    "created_at",
+    "updated_at",
+    "latest_document_version{id,uuid,filename,size,content_type,fully_uploaded,received_at,created_at,updated_at}",
+  ].join(",");
+}
+
 export async function uploadBufferToClioMatterDocuments(params: {
   matterId: number;
   filename: string;
   buffer: Buffer;
   contentType: string;
+  parentType?: ClioDocumentParentType;
+  parentId?: number;
 }): Promise<ClioUploadResult> {
-  const matterId = Number(params.matterId);
+  const matterId = positiveId(params.matterId);
+  const parentType: ClioDocumentParentType = params.parentType === "Folder" ? "Folder" : "Matter";
+  const parentId = parentType === "Folder" ? positiveId(params.parentId) : matterId;
   const filename = clean(params.filename);
   const contentType = clean(params.contentType) || "application/octet-stream";
   const buffer = Buffer.isBuffer(params.buffer)
     ? params.buffer
     : Buffer.from(params.buffer);
 
-  if (!Number.isFinite(matterId) || matterId <= 0) {
+  if (!matterId) {
     throw new Error("Missing valid Clio matter ID for document upload.");
+  }
+
+  if (!parentId) {
+    throw new Error(`Missing valid Clio ${parentType} parent ID for document upload.`);
   }
 
   if (!filename) {
@@ -105,8 +156,8 @@ export async function uploadBufferToClioMatterDocuments(params: {
         data: {
           name: filename,
           parent: {
-            id: matterId,
-            type: "Matter",
+            id: parentId,
+            type: parentType,
           },
         },
       }),
@@ -196,23 +247,14 @@ export async function uploadBufferToClioMatterDocuments(params: {
 }
 
 export async function listClioMatterDocuments(matterIdInput: number): Promise<ClioMatterDocument[]> {
-  const matterId = Number(matterIdInput);
+  const matterId = positiveId(matterIdInput);
 
-  if (!Number.isFinite(matterId) || matterId <= 0) {
+  if (!matterId) {
     throw new Error("Missing valid Clio matter ID for document lookup.");
   }
 
-  const fields = [
-    "id",
-    "name",
-    "filename",
-    "created_at",
-    "updated_at",
-    "latest_document_version{id,uuid,filename,size,content_type,fully_uploaded,received_at,created_at,updated_at}",
-  ].join(",");
-
   const res = await clioFetch(
-    `/api/v4/documents.json?matter_id=${encodeURIComponent(String(matterId))}&limit=200&fields=${encodeURIComponent(fields)}`
+    `/api/v4/documents.json?matter_id=${encodeURIComponent(String(matterId))}&limit=200&fields=${encodeURIComponent(documentListFields())}`
   );
 
   const json = await readClioJson(
@@ -222,30 +264,28 @@ export async function listClioMatterDocuments(matterIdInput: number): Promise<Cl
 
   const rows = Array.isArray(json?.data) ? json.data : [];
 
-  return rows.map((row: any) => {
-    const version = row?.latest_document_version || null;
+  return rows.map(mapClioDocumentRow);
+}
 
-    return {
-      id: Number(row?.id),
-      name: clean(row?.name),
-      filename: clean(row?.filename),
-      createdAt: clean(row?.created_at),
-      updatedAt: clean(row?.updated_at),
-      latestDocumentVersion: version
-        ? {
-            id: version?.id == null ? null : Number(version.id),
-            uuid: clean(version?.uuid),
-            filename: clean(version?.filename),
-            size: version?.size == null ? null : Number(version.size),
-            contentType: clean(version?.content_type),
-            fullyUploaded: Boolean(version?.fully_uploaded),
-            receivedAt: clean(version?.received_at),
-            createdAt: clean(version?.created_at),
-            updatedAt: clean(version?.updated_at),
-          }
-        : null,
-    };
-  });
+export async function listClioFolderDocuments(folderIdInput: number): Promise<ClioMatterDocument[]> {
+  const folderId = positiveId(folderIdInput);
+
+  if (!folderId) {
+    throw new Error("Missing valid Clio folder ID for document lookup.");
+  }
+
+  const res = await clioFetch(
+    `/api/v4/documents.json?parent_id=${encodeURIComponent(String(folderId))}&limit=200&fields=${encodeURIComponent(documentListFields())}`
+  );
+
+  const json = await readClioJson(
+    res,
+    `Clio document lookup failed for folder ${folderId}`
+  );
+
+  const rows = Array.isArray(json?.data) ? json.data : [];
+
+  return rows.map(mapClioDocumentRow);
 }
 
 export function findExistingClioDocumentsByFilename(

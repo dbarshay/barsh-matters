@@ -1,0 +1,30 @@
+const fs = require("fs");
+const path = require("path");
+let failed = false;
+const pass = (m) => console.log("PASS: " + m);
+const fail = (m) => { failed = true; console.error("FAIL: " + m); };
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const helper = read("lib/clioDocumentUpload.ts");
+const finalize = read("app/api/documents/finalize/route.ts");
+const settlements = read("app/api/settlements/documents-finalize-local/route.ts");
+const pkg = JSON.parse(read("package.json"));
+function contains(label, text, token) { text.includes(token) ? pass(label) : fail(label + " missing token: " + token); }
+function notContains(label, text, token) { !text.includes(token) ? pass(label) : fail(label + " contains forbidden token: " + token); }
+contains("helper defines ClioDocumentParentType", helper, "export type ClioDocumentParentType = \"Matter\" | \"Folder\"");
+contains("upload helper accepts optional parentType", helper, "parentType?: ClioDocumentParentType");
+contains("upload helper accepts optional parentId", helper, "parentId?: number");
+contains("upload helper defaults old callers to Matter", helper, "params.parentType === \"Folder\" ? \"Folder\" : \"Matter\"");
+contains("upload helper uses parentId for Folder", helper, "params.parentId");
+contains("upload helper writes dynamic parent type", helper, "type: parentType");
+contains("upload helper writes dynamic parent id", helper, "id: parentId");
+contains("helper exports folder document lister", helper, "export async function listClioFolderDocuments");
+contains("folder lister queries parent_id", helper, "parent_id=${encodeURIComponent(String(folderId))}");
+contains("matter lister remains matter_id based", helper, "matter_id=${encodeURIComponent(String(matterId))}");
+contains("duplicate finder remains exact filename matcher", helper, "findExistingClioDocumentsByFilename");
+contains("finalize route still uses existing matter upload call before Phase 36B", finalize, "uploadBufferToClioMatterDocuments({");
+notContains("finalize route not yet wired to folder parent", finalize, "parentType: \"Folder\"");
+contains("settlement finalize old caller remains compatible", settlements, "uploadBufferToClioMatterDocuments({");
+if (pkg.scripts && pkg.scripts["verify:phase36a-clio-document-folder-parent-helper-safety"] === "node scripts/verify-phase36a-clio-document-folder-parent-helper-safety.cjs") pass("package verifier script registered"); else fail("package verifier script missing");
+console.log("RESULT: Phase 36A Clio document folder-parent helper safety verifier");
+if (failed) process.exit(1);
