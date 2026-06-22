@@ -627,7 +627,9 @@
     "verify:working-docx-single-master-preview-propagation": "node scripts/verify-working-docx-single-master-preview-propagation.cjs",
     "smoke:production-single-master-finalize-no-upload-contract": "node scripts/smoke-production-single-master-finalize-no-upload-contract.cjs",
     "verify:production-ui-single-master-finalize-bundle-tokens": "node scripts/verify-production-ui-single-master-finalize-bundle-tokens.cjs",
-    "smoke:production-live-master-finalize-single-master-gated": "node scripts/smoke-production-live-master-finalize-single-master-gated.cjs"
+    "smoke:production-live-master-finalize-single-master-gated": "node scripts/smoke-production-live-master-finalize-single-master-gated.cjs",
+    "smoke:production-live-direct-finalize-single-master-gated": "node scripts/smoke-production-live-direct-finalize-single-master-gated.cjs",
+    "verify:single-master-production-readiness-suite": "node scripts/verify-single-master-production-readiness-suite.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
