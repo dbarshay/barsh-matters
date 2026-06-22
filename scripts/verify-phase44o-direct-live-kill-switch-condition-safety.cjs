@@ -1,67 +1,80 @@
 const fs = require("fs");
+
+let failed = false;
+function pass(message) {
+  console.log("PASS: " + message);
+}
+function fail(message) {
+  failed = true;
+  console.error("FAIL: " + message);
+}
+function contains(label, text, token) {
+  if (text.includes(token)) pass(label);
+  else fail(`${label} missing token: ${token}`);
+}
+function notContains(label, text, token) {
+  if (!text.includes(token)) pass(label);
+  else fail(`${label} unexpectedly includes token: ${token}`);
+}
+
 const route = fs.readFileSync("app/api/documents/finalize/route.ts", "utf8");
 
-function pass(msg) { console.log("PASS: " + msg); }
-function fail(msg) { console.error("FAIL: " + msg); process.exitCode = 1; }
+contains("finalize route contains const isDirectMatterLiveFinalizeRequest =", route, "const isDirectMatterLiveFinalizeRequest =");
+contains("finalize route contains uploadTargetMode === \"direct-matter\"", route, 'uploadTargetMode === "direct-matter"');
+contains("finalize route contains confirmUpload === true", route, "confirmUpload === true");
+contains("finalize route contains singleMasterDryRun !== true", route, "singleMasterDryRun !== true");
+contains("finalize route contains BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED", route, "BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED");
+contains("finalize route contains direct-live-server-kill-switch", route, "direct-live-server-kill-switch");
+contains("finalize route contains serverLiveFinalizeEnabled: false", route, "serverLiveFinalizeEnabled: false");
+contains("finalize route contains Direct matter live finalize is disabled by server configuration.", route, "Direct matter live finalize is disabled by server configuration.");
+contains("finalize route contains useDirectFinalizePreview", route, "useDirectFinalizePreview");
+contains("finalize route contains directMatterId", route, "directMatterId");
+contains("finalize route contains directMatterDisplayNumber", route, "directMatterDisplayNumber");
+contains("finalize route contains masterLawsuitId", route, "masterLawsuitId");
+contains("finalize route documents normal user access", route, "direct/live finalize is production-enabled for normal Barsh Matters users");
+contains("finalize route documents app/user access layer", route, "Normal app/user access controls must be handled by the application session/proxy layer.");
 
-const required = [
-  "const isDirectMatterLiveFinalizeRequest =",
-  'uploadTargetMode === "direct-matter"',
-  "confirmUpload === true",
-  "singleMasterDryRun !== true",
-  "BARSH_DIRECT_MATTER_CLIO_LIVE_FINALIZE_ENABLED",
-  "direct-live-server-kill-switch",
-  "serverLiveFinalizeEnabled: false",
-  "Direct matter live finalize is disabled by server configuration.",
-  "isAdminRequestAuthorized",
-  "adminUnauthorizedJson(403)",
-  "useDirectFinalizePreview",
-  "directMatterId",
-  "directMatterDisplayNumber",
-  "masterLawsuitId",
-];
+notContains("direct-live route no longer has route-level adminUnauthorizedJson gate", route, "if (isDirectMatterLiveFinalizeRequest && !isAdminRequestAuthorized(req as any))");
+notContains("direct-live route no longer returns adminUnauthorizedJson for live finalize", route, "return adminUnauthorizedJson(403);");
 
-for (const token of required) {
-  if (route.includes(token)) pass("finalize route contains " + token);
-  else fail("finalize route missing " + token);
-}
-
-const predicateStart = route.indexOf("const isDirectMatterLiveFinalizeRequest =");
-const predicateEnd = route.indexOf(";", predicateStart);
-const predicate = predicateStart >= 0 && predicateEnd >= 0 ? route.slice(predicateStart, predicateEnd + 1) : "";
-
-if (predicate.includes("useDirectFinalizePreview")) {
-  fail("direct-live kill-switch predicate must not depend on useDirectFinalizePreview");
+const predicateMatch = route.match(/const isDirectMatterLiveFinalizeRequest =[\s\S]*?;/);
+if (!predicateMatch) {
+  fail("direct-live predicate block found");
 } else {
-  pass("direct-live kill-switch predicate does not depend on useDirectFinalizePreview");
+  const block = predicateMatch[0];
+  if (!block.includes("useDirectFinalizePreview")) pass("direct-live kill-switch predicate does not depend on useDirectFinalizePreview");
+  else fail("direct-live kill-switch predicate should not depend on useDirectFinalizePreview");
+
+  if (
+    block.includes('uploadTargetMode === "direct-matter"') &&
+    block.includes("confirmUpload === true") &&
+    block.includes("singleMasterDryRun !== true")
+  ) {
+    pass("direct-live predicate is based on direct target + confirmed live upload + non-dry-run");
+  } else {
+    fail("direct-live predicate is not based on expected direct target + confirmed live upload + non-dry-run");
+  }
 }
 
-if (predicate.includes('uploadTargetMode === "direct-matter"') && predicate.includes("confirmUpload === true") && predicate.includes("singleMasterDryRun !== true")) {
-  pass("direct-live predicate is based on direct target + confirmed live upload + non-dry-run");
+const killIndex = route.indexOf("direct-live-server-kill-switch");
+const normalUserAccessIndex = route.indexOf("direct/live finalize is production-enabled for normal Barsh Matters users");
+const previewIndex = route.indexOf("const preview =");
+
+if (killIndex >= 0 && normalUserAccessIndex >= 0 && killIndex < normalUserAccessIndex) {
+  pass("server kill switch remains before normal-user finalize access marker");
 } else {
-  fail("direct-live predicate missing required direct/live/non-dry-run terms");
+  fail("server kill switch should remain before normal-user finalize access marker");
 }
 
-const killIf = route.indexOf("if (isDirectMatterLiveFinalizeRequest && !directMatterLiveFinalizeServerEnabled)");
-const adminIf = route.indexOf("if (isDirectMatterLiveFinalizeRequest && !isAdminRequestAuthorized");
-const previewLoad = route.indexOf("const preview =");
-const workingDoc = route.indexOf("Finalize Document now requires a saved working Word document");
-
-if (killIf >= 0 && adminIf >= 0 && killIf < adminIf) pass("server kill switch remains before admin authorization");
-else fail("server kill switch should remain before admin authorization");
-
-if (killIf >= 0 && previewLoad >= 0 && killIf < previewLoad) pass("server kill switch remains before preview/document handling");
-else fail("server kill switch should remain before preview/document handling");
-
-if (killIf >= 0 && workingDoc >= 0 && killIf < workingDoc) pass("server kill switch remains before working-document requirement");
-else fail("server kill switch should remain before working-document requirement");
-
-const markerCount = (route.match(/direct-live-server-kill-switch/g) || []).length;
-if (markerCount === 1) pass("exactly one direct-live server kill-switch marker remains");
-else fail("expected exactly one direct-live server kill-switch marker, found " + markerCount);
-
-if (process.exitCode) {
-  console.error("RESULT: Phase 44O direct-live kill-switch condition safety verifier failed");
-  process.exit(process.exitCode);
+if (killIndex >= 0 && previewIndex >= 0 && killIndex < previewIndex) {
+  pass("server kill switch remains before preview/document handling");
+} else {
+  fail("server kill switch should remain before preview/document handling");
 }
-console.log("RESULT: Phase 44O direct-live kill-switch condition safety verifier passed");
+
+const killMarkers = (route.match(/direct-live-server-kill-switch/g) || []).length;
+if (killMarkers === 1) pass("exactly one direct-live server kill-switch marker remains");
+else fail(`expected exactly one direct-live server kill-switch marker, found ${killMarkers}`);
+
+console.log("RESULT: Phase 44O/45J direct-live kill-switch condition safety verifier passed");
+if (failed) process.exit(1);

@@ -398,9 +398,10 @@ export async function POST(req: NextRequest) {
   }
 
 
-  if (isDirectMatterLiveFinalizeRequest && !isAdminRequestAuthorized(req as any)) {
-    return adminUnauthorizedJson(403);
-  }
+  // Phase 45J: direct/live finalize is production-enabled for normal Barsh Matters users.
+  // The server kill switch above remains required, but this route is no longer limited
+  // to the separate administrator password gate.
+  // Normal app/user access controls must be handled by the application session/proxy layer.
 
     const preview =
       useDirectFinalizePreview
