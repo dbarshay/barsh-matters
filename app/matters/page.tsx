@@ -4910,6 +4910,11 @@ function masterSettlementDateFiledValue(): string {
   }
 
 
+  function directMatterSingleMasterDryRunSurfaceRow(): MatterRow | null {
+    const directRows = rows.filter((row: any) => row && !row.isMaster && !row.is_master);
+    return directRows[0] || rows[0] || null;
+  }
+
   function renderDirectMatterSingleMasterDryRunControlForRow(row: MatterRow) {
     return renderDirectMatterSingleMasterDryRunControl({
       directMatterId: row.id,
@@ -10705,7 +10710,7 @@ function masterSettlementDateFiledValue(): string {
                           <button type="button" title="Open the Master Lawsuit Clio document picker." onClick={() => void openMasterViewDocumentsPopup()} style={{ minHeight: 36, border: "1px solid #8b5e3c", borderRadius: 999, background: "#f8efe7", color: "#7c4a22", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-documents-button="true">View Documents</button>
                           <button type="button" title="Open master lawsuit email/thread records and preview-first Microsoft Graph sync." onClick={() => { setActiveMasterWorkspaceTab("email_threads"); void loadMasterEmailThreadPreview(); }} style={{ minHeight: 36, border: "1px solid #8b5e3c", borderRadius: 999, background: "#f8efe7", color: "#7c4a22", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-emails-button="true">View Emails</button>
                           <button type="button" title="Open the Master Lawsuit document generation preview popup." onClick={() => void launchMasterDocumentGenerationDialog()} style={{ minHeight: 36, border: "1px solid #8b5e3c", borderRadius: 999, background: "#f8efe7", color: "#7c4a22", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-generate-documents-button="true">Generate Documents</button>
-                      <span data-phase43f-direct-matter-ui-surface-attachment="true">{rows[0] ? renderDirectMatterSingleMasterDryRunControlForRow(rows[0] as MatterRow) : null}</span>
+                      <span data-phase43f-direct-matter-ui-surface-attachment="true">{(() => { const phase43fDirectMatterDryRunRow = directMatterSingleMasterDryRunSurfaceRow(); return phase43fDirectMatterDryRunRow ? renderDirectMatterSingleMasterDryRunControlForRow(phase43fDirectMatterDryRunRow) : null; })()}</span>
                         </div>
                       )}
 

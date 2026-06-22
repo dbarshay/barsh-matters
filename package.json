@@ -602,7 +602,8 @@
     "verify:phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety": "node scripts/verify-phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety.cjs",
     "verify:phase43e-explicit-direct-matter-ui-dry-run-control-safety": "node scripts/verify-phase43e-explicit-direct-matter-ui-dry-run-control-safety.cjs",
     "smoke:phase43e-explicit-direct-matter-ui-dry-run-control": "node scripts/smoke-phase43e-explicit-direct-matter-ui-dry-run-control.cjs",
-    "verify:phase43f-guarded-direct-matter-ui-surface-attachment-safety": "node scripts/verify-phase43f-guarded-direct-matter-ui-surface-attachment-safety.cjs"
+    "verify:phase43f-guarded-direct-matter-ui-surface-attachment-safety": "node scripts/verify-phase43f-guarded-direct-matter-ui-surface-attachment-safety.cjs",
+    "verify:phase43g-replace-placeholder-direct-ui-row-bridge-safety": "node scripts/verify-phase43g-replace-placeholder-direct-ui-row-bridge-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
