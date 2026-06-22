@@ -42,10 +42,19 @@ for (const token of [
 ]) {
   contains("matters page contains current UI anchor " + token, mattersPage, token);
 }
-notContains("matters page currently lacks directMatterId UI payload wiring", mattersPage, "directMatterId");
-notContains("matters page currently lacks directMatterDisplayNumber UI payload wiring", mattersPage, "directMatterDisplayNumber");
-contains("doc records current UI gap directMatterId", doc, "does not yet send `directMatterId`");
-contains("doc records current UI gap directMatterDisplayNumber", doc, "does not yet send `directMatterDisplayNumber`");
+if (mattersPage.includes("buildDirectMatterSingleMasterFinalizePayload")) {
+  contains("matters page now has guarded direct helper foundation", mattersPage, "buildDirectMatterSingleMasterFinalizePayload");
+  contains("matters page helper includes directMatterId", mattersPage, "directMatterId");
+  contains("matters page helper includes directMatterDisplayNumber", mattersPage, "directMatterDisplayNumber");
+  contains("matters page helper keeps duplicate prevention off", mattersPage, "allowDuplicateUploads: false");
+  contains("doc records original UI gap directMatterId", doc, "does not yet send `directMatterId`");
+  contains("doc records original UI gap directMatterDisplayNumber", doc, "does not yet send `directMatterDisplayNumber`");
+} else {
+  notContains("matters page currently lacks directMatterId UI payload wiring", mattersPage, "directMatterId");
+  notContains("matters page currently lacks directMatterDisplayNumber UI payload wiring", mattersPage, "directMatterDisplayNumber");
+  contains("doc records current UI gap directMatterId", doc, "does not yet send `directMatterId`");
+  contains("doc records current UI gap directMatterDisplayNumber", doc, "does not yet send `directMatterDisplayNumber`");
+}
 
 for (const token of [
   "useDirectFinalizePreview",

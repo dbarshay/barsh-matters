@@ -596,7 +596,8 @@
     "verify:phase42c-read-only-audit-production-no-upload-preview-safety": "node scripts/verify-phase42c-read-only-audit-production-no-upload-preview-safety.cjs",
     "smoke:phase42d-production-deployment-no-upload-readiness": "node scripts/smoke-phase42d-production-deployment-no-upload-readiness.cjs",
     "verify:phase42d-production-deployment-no-upload-readiness-safety": "node scripts/verify-phase42d-production-deployment-no-upload-readiness-safety.cjs",
-    "verify:phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety": "node scripts/verify-phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety.cjs"
+    "verify:phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety": "node scripts/verify-phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety.cjs",
+    "verify:phase43b-guarded-direct-matter-ui-payload-foundation-safety": "node scripts/verify-phase43b-guarded-direct-matter-ui-payload-foundation-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

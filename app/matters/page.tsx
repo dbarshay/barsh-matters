@@ -422,6 +422,45 @@ function workflowNote(workflowKind: WorkflowKind) {
   return "";
 }
 
+type DirectMatterSingleMasterDocumentPayloadParams = {
+  directMatterId: string | number;
+  directMatterDisplayNumber: string;
+  documentKeys: string[];
+  workingDocumentDriveItemId?: string;
+  workingDocumentKey?: string;
+  confirmUpload?: boolean;
+  singleMasterDryRun?: boolean;
+  singleMasterResolveFolders?: boolean;
+};
+
+function buildDirectMatterSingleMasterWorkingDocxPayload(params: DirectMatterSingleMasterDocumentPayloadParams) {
+  return {
+    confirmCreate: true,
+    uploadTargetMode: "direct-matter",
+    directMatterId: String(params.directMatterId || ""),
+    directMatterDisplayNumber: params.directMatterDisplayNumber,
+    useSingleMasterClioStorage: true,
+    singleMasterDirectStorage: true,
+    documentKeys: params.documentKeys,
+  };
+}
+
+function buildDirectMatterSingleMasterFinalizePayload(params: DirectMatterSingleMasterDocumentPayloadParams) {
+  return {
+    uploadTargetMode: "direct-matter",
+    directMatterId: String(params.directMatterId || ""),
+    directMatterDisplayNumber: params.directMatterDisplayNumber,
+    useSingleMasterClioStorage: true,
+    confirmUpload: params.confirmUpload === true,
+    singleMasterDryRun: params.singleMasterDryRun !== false,
+    singleMasterResolveFolders: params.singleMasterResolveFolders === true,
+    allowDuplicateUploads: false,
+    documentKeys: params.documentKeys,
+    workingDocumentDriveItemId: params.workingDocumentDriveItemId || "",
+    workingDocumentKey: params.workingDocumentKey || "",
+  };
+}
+
 export default function FilteredMattersPage() {
   const [kind, setKind] = useState<FilterKind | "">("");
   const [workflowKind, setWorkflowKind] = useState<WorkflowKind>("");
