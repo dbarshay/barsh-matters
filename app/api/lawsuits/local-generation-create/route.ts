@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildMasterId } from "@/lib/buildMasterId";
-import { clioFetch } from "@/lib/clio";
 
 function normalizeMatterIds(raw: unknown): number[] {
   if (!Array.isArray(raw)) return [];
@@ -61,151 +60,6 @@ function normalizeClioDisplayNumber(value: unknown): string {
   if (/^BRL\d+$/.test(raw)) return raw;
   if (/^\d+$/.test(raw)) return `BRL${raw}`;
   return raw;
-}
-
-async function readClioMatterClient(matterId: number | string) {
-  const id = Number(matterId);
-  if (!Number.isFinite(id) || id <= 0) return null;
-
-  const fields = "id,display_number,client{id,name}";
-  const res = await clioFetch(
-    `/api/v4/matters/${encodeURIComponent(String(id))}.json?fields=${encodeURIComponent(fields)}`
-  );
-
-  const bodyText = await res.text();
-  let json: any = {};
-  try {
-    json = bodyText ? JSON.parse(bodyText) : {};
-  } catch {
-    json = { raw: bodyText };
-  }
-
-  if (!res.ok) {
-    return {
-      ok: false,
-      matterId: id,
-      error: `Could not read Clio matter client: status ${res.status}; body ${bodyText || "(empty)"}`,
-    };
-  }
-
-  const matter = json?.data || {};
-  const client = matter?.client || {};
-  const clientId = Number(client?.id);
-
-  if (!Number.isFinite(clientId) || clientId <= 0) {
-    return {
-      ok: false,
-      matterId: id,
-      displayNumber: text(matter?.display_number),
-      error: "Child Clio matter did not include a valid client id.",
-    };
-  }
-
-  return {
-    ok: true,
-    matterId: id,
-    displayNumber: text(matter?.display_number),
-    clientId,
-    clientName: text(client?.name),
-  };
-}
-
-async function findClientFromChildClioMatters(rows: Array<{ matter_id: number | null; display_number?: string | null }>) {
-  const candidates = rows
-    .map((row) => ({
-      matterId: Number(row.matter_id),
-      displayNumber: text(row.display_number),
-    }))
-    .filter((row) => Number.isFinite(row.matterId) && row.matterId > 0);
-
-  const attempts = [];
-
-  for (const candidate of candidates) {
-    const result = await readClioMatterClient(candidate.matterId);
-    attempts.push({
-      candidate,
-      result,
-    });
-
-    if (result?.ok && result.clientId) {
-      return {
-        ok: true,
-        clientId: result.clientId,
-        clientName: result.clientName,
-        sourceMatterId: result.matterId,
-        sourceDisplayNumber: result.displayNumber || candidate.displayNumber,
-        attempts,
-      };
-    }
-  }
-
-  return {
-    ok: false,
-    clientId: null,
-    clientName: "",
-    sourceMatterId: null,
-    sourceDisplayNumber: "",
-    attempts,
-    error: "No child Clio matter with a readable client was found.",
-  };
-}
-
-async function createClioMasterMatter(params: {
-  masterLawsuitId: string;
-  description: string;
-  clientId: number;
-}) {
-  const fields = "id,display_number,description,status";
-
-  const res = await clioFetch(`/api/v4/matters.json?fields=${encodeURIComponent(fields)}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      data: {
-        description: params.description,
-        client: { id: params.clientId },
-        client_id: params.clientId,
-      },
-    }),
-  });
-
-  const bodyText = await res.text();
-  let json: any = {};
-
-  try {
-    json = bodyText ? JSON.parse(bodyText) : {};
-  } catch {
-    json = { raw: bodyText };
-  }
-
-  if (!res.ok) {
-    throw new Error(
-      `Failed to create Clio master matter: status ${res.status}; body ${bodyText || "(empty)"}`
-    );
-  }
-
-  const matter = json?.data || null;
-  const matterId = positiveNumber(matter?.id);
-  const displayNumber = normalizeClioDisplayNumber(matter?.display_number);
-  const description = text(matter?.description);
-
-  if (!matterId) {
-    throw new Error("Clio created matter response did not include a valid matter id.");
-  }
-
-  if (!displayNumber) {
-    throw new Error("Clio created matter response did not include a display number / BRL number.");
-  }
-
-  return {
-    matter,
-    matterId,
-    displayNumber,
-    description,
-    raw: json,
-  };
 }
 
 export async function POST(req: NextRequest) {
@@ -373,28 +227,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const childClient = await findClientFromChildClioMatters(selectedRows);
+    const childClient = {
+      ok: false,
+      skipped: true,
+      reason: "Create Lawsuit is local-only; Clio child matter client lookup is not used.",
+      clientId: null,
+      clientName: "",
+      sourceMatterId: null,
+      sourceDisplayNumber: "",
+      attempts: [],
+    };
 
-    if (!childClient.ok || !childClient.clientId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          created: false,
-          error: childClient.error || "Could not derive the Clio client from the selected child matters.",
-          childClient,
-          writes: {
-            createsLawsuit: false,
-            updatesClaimIndex: false,
-            writesClio: false,
-            createsClioMasterMatter: false,
-            consumesMasterSequence: false,
-          },
-        },
-        { status: 409 }
-      );
-    }
+    const normalizedClaimNumber =
+      String(selectedRows[0]?.claim_number_normalized || selectedRows[0]?.claim_number_raw || "")
+        .replace(/\D+/g, "") ||
+      String(selectedRows[0]?.claim_number_raw || "").trim();
 
-    const normalizedClaimNumber = Array.from(claimSet)[0];
     const claimNumber = text(selectedRows[0]?.claim_number_raw || normalizedClaimNumber);
     const lawsuitMatters = normalizeLawsuitMatterList(selectedMatterIds);
     const amountComponents = selectedRows.map((row) => ({
@@ -416,11 +264,6 @@ export async function POST(req: NextRequest) {
     const masterLawsuitId = await buildMasterId();
     const clioMatterDescription = buildClioMatterDescription(masterLawsuitId);
 
-    const createdClioMatter = await createClioMasterMatter({
-      masterLawsuitId,
-      description: clioMatterDescription,
-      clientId: childClient.clientId,
-    });
 
     const result = await prisma.$transaction(async (tx) => {
       const lawsuit = await tx.lawsuit.create({
@@ -444,9 +287,9 @@ export async function POST(req: NextRequest) {
             venueSelection: venueSelection || venue,
             venueOther: venueOther || null,
             createsClioDocumentShell: true,
-            clioMasterMatterId: createdClioMatter.matterId,
-            clioMasterDisplayNumber: createdClioMatter.displayNumber,
-            clioMasterMatterDescription: createdClioMatter.description || clioMatterDescription,
+            clioMasterMatterId: null,
+            clioMasterDisplayNumber: null,
+            clioMasterMatterDescription: null,
             clioClientId: childClient.clientId,
             clioClientName: childClient.clientName,
             noClioOperationalHydration: true,
@@ -464,11 +307,11 @@ export async function POST(req: NextRequest) {
             selectedMatterCount: selectedRows.length,
             components: amountComponents,
           },
-          clioMasterMatterId: createdClioMatter.matterId,
-          clioMasterDisplayNumber: createdClioMatter.displayNumber,
-          clioMasterMatterDescription: createdClioMatter.description || clioMatterDescription,
-          clioMasterMappedAt: new Date(),
-          clioMasterMappingSource: "barsh-matters-create-lawsuit-confirm",
+          clioMasterMatterId: null,
+          clioMasterDisplayNumber: null,
+          clioMasterMatterDescription: null,
+          clioMasterMappedAt: null,
+          clioMasterMappingSource: "none-local-only-create-lawsuit",
         },
       });
 
@@ -514,22 +357,20 @@ export async function POST(req: NextRequest) {
       venueOther: venueOther || null,
       indexAaaNumber: null,
       childClient,
-      createdClioMatter: {
-        id: createdClioMatter.matterId,
-        displayNumber: createdClioMatter.displayNumber,
-        description: createdClioMatter.description || clioMatterDescription,
-      },
-      clioMasterMatterId: result.lawsuit.clioMasterMatterId,
-      clioMasterDisplayNumber: result.lawsuit.clioMasterDisplayNumber,
-      clioMasterMatterDescription: result.lawsuit.clioMasterMatterDescription,
-      clioMasterMappedAt: result.lawsuit.clioMasterMappedAt,
-      clioMasterMappingSource: result.lawsuit.clioMasterMappingSource,
-      proposedNextStep: "Use the mapped Clio document shell for finalized master lawsuit documents, Maildrop, document retrieval, and Microsoft Graph draft attachments.",
+      clioMasterMatter: null,
+      createdClioMatter: null,
+      localLawsuitDescription: clioMatterDescription,
+      clioMasterMatterId: null,
+      clioMasterDisplayNumber: null,
+      clioMasterMatterDescription: null,
+      clioMasterMappedAt: null,
+      clioMasterMappingSource: "none-local-only-create-lawsuit",
+      proposedNextStep: "Use the local lawsuit record for aggregation and the Barsh Matters Master Repository for document storage/finalization.",
       writes: {
         createsLawsuit: true,
         updatesClaimIndex: true,
-        writesClio: true,
-        createsClioMasterMatter: true,
+        writesClio: false,
+        createsClioMasterMatter: false,
         consumesMasterSequence: true,
         uploadsDocuments: false,
         downloadsDocuments: false,
