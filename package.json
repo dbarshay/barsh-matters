@@ -581,7 +581,9 @@
     "verify:phase41g-direct-individual-finalize-target-input-guarded-wiring": "node scripts/verify-phase41g-direct-individual-finalize-target-input-guarded-wiring.cjs",
     "verify:phase41h-guarded-direct-branch-inspection": "node scripts/verify-phase41h-guarded-direct-branch-inspection.cjs",
     "smoke:phase41i-direct-individual-finalize-route-dry-run-no-upload": "node scripts/smoke-phase41i-direct-individual-finalize-route-dry-run-no-upload.cjs",
-    "verify:phase41i-direct-individual-finalize-route-dry-run-safety": "node scripts/verify-phase41i-direct-individual-finalize-route-dry-run-safety.cjs"
+    "verify:phase41i-direct-individual-finalize-route-dry-run-safety": "node scripts/verify-phase41i-direct-individual-finalize-route-dry-run-safety.cjs",
+    "smoke:phase41j-live-direct-folder-resolution-no-upload": "node scripts/smoke-phase41j-live-direct-folder-resolution-no-upload.cjs",
+    "verify:phase41j-live-direct-folder-resolution-no-upload-safety": "node scripts/verify-phase41j-live-direct-folder-resolution-no-upload-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
