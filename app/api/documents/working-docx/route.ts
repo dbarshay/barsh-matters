@@ -174,8 +174,30 @@ export async function POST(req: NextRequest) {
           });
 
     const plannedDocuments = Array.isArray(preview?.plannedDocuments) ? preview.plannedDocuments : [];
+    const requestedDocument =
+      plannedDocuments.find((document: any) => requestedKeys.includes(clean(document?.key))) || null;
+
+    if (requestedKeys.length > 0 && !requestedDocument) {
+      return NextResponse.json(
+        {
+          ok: false,
+          action: "working-docx-create",
+          error: "Requested document key is not available for this matter/template context.",
+          requestedKeys,
+          availableDocumentKeys: plannedDocuments.map((document: any) => clean(document?.key)).filter(Boolean),
+          plannedDocumentCount: plannedDocuments.length,
+          selectionPolicy: {
+            allowsFallbackWhenRequestedKeyMissing: false,
+            fallbackOnlyWhenNoRequestedKeys: true,
+          },
+          validation: preview?.validation || null,
+        },
+        { status: 422 }
+      );
+    }
+
     const selectedDocument =
-      plannedDocuments.find((document: any) => requestedKeys.includes(clean(document?.key))) ||
+      requestedDocument ||
       plannedDocuments.find((document: any) => document?.wouldGenerate && document?.availableNow);
 
     if (!selectedDocument?.sourceEndpoint) {

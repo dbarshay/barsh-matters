@@ -630,7 +630,8 @@
     "smoke:production-live-master-finalize-single-master-gated": "node scripts/smoke-production-live-master-finalize-single-master-gated.cjs",
     "smoke:production-live-direct-finalize-single-master-gated": "node scripts/smoke-production-live-direct-finalize-single-master-gated.cjs",
     "verify:single-master-production-readiness-suite": "node scripts/verify-single-master-production-readiness-suite.cjs",
-    "verify:phase46a-template-selection-architecture-inspection-safety": "node scripts/verify-phase46a-template-selection-architecture-inspection-safety.cjs"
+    "verify:phase46a-template-selection-architecture-inspection-safety": "node scripts/verify-phase46a-template-selection-architecture-inspection-safety.cjs",
+    "verify:phase46b-requested-document-key-mismatch-guard": "node scripts/verify-phase46b-requested-document-key-mismatch-guard.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
