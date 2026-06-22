@@ -599,7 +599,9 @@
     "verify:phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety": "node scripts/verify-phase43a-direct-matter-ui-finalize-integration-inspection-plan-safety.cjs",
     "verify:phase43b-guarded-direct-matter-ui-payload-foundation-safety": "node scripts/verify-phase43b-guarded-direct-matter-ui-payload-foundation-safety.cjs",
     "verify:phase43c-guarded-direct-matter-ui-dry-run-payload-wiring-safety": "node scripts/verify-phase43c-guarded-direct-matter-ui-dry-run-payload-wiring-safety.cjs",
-    "verify:phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety": "node scripts/verify-phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety.cjs"
+    "verify:phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety": "node scripts/verify-phase43d-guarded-direct-matter-ui-dry-run-button-flow-handler-safety.cjs",
+    "verify:phase43e-explicit-direct-matter-ui-dry-run-control-safety": "node scripts/verify-phase43e-explicit-direct-matter-ui-dry-run-control-safety.cjs",
+    "smoke:phase43e-explicit-direct-matter-ui-dry-run-control": "node scripts/smoke-phase43e-explicit-direct-matter-ui-dry-run-control.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

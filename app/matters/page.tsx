@@ -4872,6 +4872,43 @@ function masterSettlementDateFiledValue(): string {
     };
   }
 
+
+  // Phase 43E static/no-server/no-upload guarded direct matter dry-run control.
+  const directMatterSingleMasterDryRunControlEnabled = false;
+
+  async function handleDirectMatterSingleMasterDryRunControl(params: DirectMatterSingleMasterDocumentPayloadParams) {
+    return runDirectMatterSingleMasterFinalizeDryRunFromUi({
+      ...params,
+      confirmUpload: false,
+      singleMasterDryRun: true,
+      singleMasterResolveFolders: true,
+    });
+  }
+
+  function renderDirectMatterSingleMasterDryRunControl(params: DirectMatterSingleMasterDocumentPayloadParams) {
+    if (!directMatterSingleMasterDryRunControlEnabled) return null;
+
+    return (
+      <button
+        type="button"
+        data-phase43e-direct-matter-dry-run-control="true"
+        onClick={() => void handleDirectMatterSingleMasterDryRunControl(params)}
+        style={{
+          border: "1px solid #bfdbfe",
+          background: "#eff6ff",
+          color: "#1d4ed8",
+          borderRadius: 999,
+          padding: "8px 12px",
+          fontSize: 12,
+          fontWeight: 900,
+          cursor: "pointer",
+        }}
+      >
+        Direct Matter Clio Dry Run
+      </button>
+    );
+  }
+
   function masterDocumentPreviewText(value: unknown): string {
     return String(value ?? "").trim();
   }
