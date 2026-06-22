@@ -593,7 +593,9 @@
     "smoke:phase42b-controlled-live-direct-finalized-pdf-upload": "node scripts/smoke-phase42b-controlled-live-direct-finalized-pdf-upload.cjs",
     "verify:phase42b-controlled-live-direct-finalized-pdf-upload-safety": "node scripts/verify-phase42b-controlled-live-direct-finalized-pdf-upload-safety.cjs",
     "smoke:phase42c-read-only-audit-production-no-upload-preview": "node scripts/smoke-phase42c-read-only-audit-production-no-upload-preview.cjs",
-    "verify:phase42c-read-only-audit-production-no-upload-preview-safety": "node scripts/verify-phase42c-read-only-audit-production-no-upload-preview-safety.cjs"
+    "verify:phase42c-read-only-audit-production-no-upload-preview-safety": "node scripts/verify-phase42c-read-only-audit-production-no-upload-preview-safety.cjs",
+    "smoke:phase42d-production-deployment-no-upload-readiness": "node scripts/smoke-phase42d-production-deployment-no-upload-readiness.cjs",
+    "verify:phase42d-production-deployment-no-upload-readiness-safety": "node scripts/verify-phase42d-production-deployment-no-upload-readiness-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
