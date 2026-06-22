@@ -244,7 +244,16 @@ export async function GET(req: NextRequest) {
     const packetDocumentData = packet?.metadata?.documentData || {};
     const templateFields = packetDocumentData?.templateFields || packet?.templateFields || {};
     const resolvedDisplay = normalizeBrl(templateFields.displayNumber || directMatterDisplayNumber || (directMatterId ? `BRL${directMatterId}` : ""));
-    const clioResolution = await resolveClioMatterByDisplayNumber(resolvedDisplay);
+    const singleMasterDirectStorage = req.nextUrl.searchParams.get("singleMasterDirectStorage") === "1";
+    const clioResolution = singleMasterDirectStorage
+      ? {
+          ok: true,
+          displayNumber: resolvedDisplay,
+          clioMatterId: null,
+          clioDisplayNumber: resolvedDisplay,
+          error: "",
+        }
+      : await resolveClioMatterByDisplayNumber(resolvedDisplay);
 
     const validation = {
       warnings: [] as string[],
@@ -252,12 +261,12 @@ export async function GET(req: NextRequest) {
       canGenerate: true,
     };
 
-    if (!clioResolution.ok || !clioResolution.clioMatterId) {
+    if (!singleMasterDirectStorage && (!clioResolution.ok || !clioResolution.clioMatterId)) {
       validation.blockingErrors.push(clioResolution.error || "Could not resolve direct matter Clio upload target.");
       validation.canGenerate = false;
     }
 
-    const canGenerate = Boolean(validation.canGenerate && clioResolution.clioMatterId);
+    const canGenerate = Boolean(validation.canGenerate && (singleMasterDirectStorage || clioResolution.clioMatterId));
     const baseName = directBaseName(packet, resolvedDisplay);
     const plannedDocuments = await buildStoredDbDocxTemplateDocuments(baseName, canGenerate);
 
@@ -299,7 +308,9 @@ export async function GET(req: NextRequest) {
       directMatterDisplayNumber: resolvedDisplay,
       uploadTargetMode: "direct-matter",
       clioUploadTarget: {
-        type: "direct-matter-documents-tab",
+        type: singleMasterDirectStorage ? "single-master-direct-individual-storage" : "direct-matter-documents-tab",
+        directMatterFileNumber: singleMasterDirectStorage ? resolvedDisplay : null,
+        matterDisplayNumber: resolvedDisplay,
         matterId: clioResolution.clioMatterId,
         displayNumber: clioResolution.clioDisplayNumber || resolvedDisplay,
         uploadTargetMode: "direct-matter",

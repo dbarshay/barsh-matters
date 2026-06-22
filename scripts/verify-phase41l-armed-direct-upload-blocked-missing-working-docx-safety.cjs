@@ -1,0 +1,33 @@
+const fs = require("fs");
+const path = require("path");
+let failed = false;
+const pass = (m) => console.log("PASS: " + m);
+const fail = (m) => { failed = true; console.error("FAIL: " + m); };
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const exists = (p) => fs.existsSync(path.join(root, p));
+function contains(label, text, token) { text.includes(token) ? pass(label) : fail(label + " missing token: " + token); }
+function notContains(label, text, token) { !text.includes(token) ? pass(label) : fail(label + " contains forbidden token: " + token); }
+const docPath = "docs/clio-storage-refactor/phase41l-armed-direct-upload-blocked-missing-working-docx-no-upload.md";
+const smokePath = "scripts/smoke-phase41l-armed-direct-upload-blocked-missing-working-docx-no-upload.cjs";
+const finalizePath = "app/api/documents/finalize/route.ts";
+const directPreviewPath = "app/api/documents/direct-finalize-preview/route.ts";
+for (const f of [docPath, smokePath, finalizePath, directPreviewPath, "package.json"]) exists(f) ? pass("required Phase 41L file exists: " + f) : fail("missing required Phase 41L file: " + f);
+const doc = exists(docPath) ? read(docPath) : "";
+const smoke = exists(smokePath) ? read(smokePath) : "";
+const finalize = read(finalizePath);
+const directPreview = read(directPreviewPath);
+const pkg = JSON.parse(read("package.json"));
+for (const token of ["Phase 41L", "missing working DOCX", "not a live upload", "confirmUpload: true", "singleMasterDryRun: false", "CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED=1", "CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED=1", "CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED=1", "saved working Word document", "must not upload documents"]) contains("doc contains " + token, doc, token);
+for (const token of ["confirmUpload: true", "singleMasterDryRun: false", "singleMasterResolveFolders: true", "directMatterId: \"1881278195\"", "directMatterDisplayNumber: DIRECT_FILE_NUMBER", "CLIO_DIRECT_INDIVIDUAL_FINALIZE_TARGET_INPUT_ENABLED: \"1\"", "CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED: \"1\"", "CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED: \"1\"", "CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED: \"1\"", "saved working Word document", "Edit Document", "json.uploaded", "json.skipped", "noDatabaseRecordsChanged === true"]) contains("smoke contains " + token, smoke, token);
+for (const forbidden of ["masterLawsuitId: MASTER_PREVIEW_CONTEXT", "workingDocumentDriveItemId:", "workingDriveItemId:", "PHASE41L_BODY_START", "confirmUpload: false", "singleMasterDryRun: true"]) notContains("smoke omits old/unsafe diagnostic or working DOCX inputs", smoke, forbidden);
+for (const token of ["useDirectFinalizePreview", "uploadTargetMode === \"direct-matter\"", "useSingleMasterClioStorage", "singleMasterDirectStorage", "Finalize Document now requires a saved working Word document", "uploadBufferToClioMatterDocuments("]) contains("finalize route contains Phase 41L route token " + token, finalize, token);
+for (const token of ["singleMasterDirectStorage", "single-master-direct-individual-storage", "directMatterFileNumber", "matterDisplayNumber", "singleMasterDirectStorage || clioResolution.clioMatterId"]) contains("direct preview contains single-master direct bypass token " + token, directPreview, token);
+const workingDocIndex = finalize.indexOf("Finalize Document now requires a saved working Word document");
+const uploadIndex = finalize.indexOf("uploadBufferToClioMatterDocuments(");
+if (workingDocIndex >= 0 && uploadIndex >= 0 && workingDocIndex < uploadIndex) pass("saved working document guard occurs before Clio upload call"); else fail("saved working document guard does not occur before Clio upload call");
+contains("package Phase 41L smoke registered", JSON.stringify(pkg.scripts || {}), "smoke:phase41l-armed-direct-upload-blocked-missing-working-docx-no-upload");
+contains("package Phase 41L verifier registered", JSON.stringify(pkg.scripts || {}), "verify:phase41l-armed-direct-upload-blocked-missing-working-docx-safety");
+console.log("CONTRACT: Phase 41L is local armed-blocked/no-upload only.");
+console.log("RESULT: Phase 41L missing working-DOCX no-upload safety verifier");
+if (failed) process.exit(1);

@@ -313,12 +313,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const useDirectFinalizePreview = uploadTargetMode === "direct-matter" && (!masterLawsuitId || useSingleMasterClioStorage);
+
     const preview =
-      uploadTargetMode === "direct-matter" && !masterLawsuitId
+      useDirectFinalizePreview
         ? await (async () => {
             const previewUrl = new URL("/api/documents/direct-finalize-preview", req.nextUrl.origin);
             if (directMatterId) previewUrl.searchParams.set("directMatterId", directMatterId);
             if (directMatterDisplayNumber) previewUrl.searchParams.set("directMatterDisplayNumber", directMatterDisplayNumber);
+            if (useSingleMasterClioStorage) previewUrl.searchParams.set("singleMasterDirectStorage", "1");
             const previewRes = await fetch(previewUrl, { method: "GET", cache: "no-store" });
             const previewJson = await previewRes.json().catch(() => null);
             if (!previewRes.ok || !previewJson) {

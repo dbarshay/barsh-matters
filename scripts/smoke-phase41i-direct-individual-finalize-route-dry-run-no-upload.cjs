@@ -87,8 +87,8 @@ function stopServer(proc) {
 
 async function postFinalize(baseUrl) {
   const body = {
-    masterLawsuitId: MASTER_PREVIEW_CONTEXT,
     uploadTargetMode: "direct-matter",
+    directMatterId: "1881278195",
     directMatterDisplayNumber: DIRECT_FILE_NUMBER,
     confirmUpload: false,
     useSingleMasterClioStorage: true,
@@ -126,12 +126,6 @@ async function runGuardEnabledDryRunCase() {
   const server = await startServer({ CLIO_DIRECT_INDIVIDUAL_FINALIZE_TARGET_INPUT_ENABLED: "1" });
   try {
     const result = await postFinalize(server.baseUrl);
-    if (result.status !== 200) {
-      console.log("GUARD_ENABLED_STATUS=" + result.status);
-      console.log("GUARD_ENABLED_BODY_START");
-      console.log(result.text);
-      console.log("GUARD_ENABLED_BODY_END");
-    }
     assert(result.status === 200, `guard-enabled direct dry-run returns 200 (actual ${result.status})`);
     const json = result.json || {};
     assert(json.ok === true, "guard-enabled direct dry-run ok true");
