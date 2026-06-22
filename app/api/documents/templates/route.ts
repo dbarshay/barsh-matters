@@ -155,13 +155,19 @@ function fallbackRegistryTemplates(category: BarshDocumentTemplateCategory | "al
 export async function GET(req: NextRequest) {
   try {
     const category = normalizeCategory(req.nextUrl.searchParams.get("category") || "all");
+    const allowFallbackRegistry =
+      req.nextUrl.searchParams.get("includeFallbackRegistry") === "1" ||
+      process.env.BARSH_DOCUMENT_TEMPLATE_ALLOW_CODE_REGISTRY_FALLBACK === "1";
 
     let repositorySource = "barsh-matters-db";
     let templates = await readDatabaseTemplates(category);
+    let fallbackSuppressed = false;
 
-    if (templates.length === 0) {
+    if (templates.length === 0 && allowFallbackRegistry) {
       repositorySource = "barsh-matters-code-registry-fallback";
       templates = fallbackRegistryTemplates(category);
+    } else if (templates.length === 0) {
+      fallbackSuppressed = true;
     }
 
     return NextResponse.json({
@@ -171,13 +177,25 @@ export async function GET(req: NextRequest) {
       sourceOfTruth: "barsh-matters-local-template-repository",
       repositoryMode: "database-ready-read-only",
       repositorySource,
+      fallbackSuppressed,
+      fallbackRegistryAvailable: templates.length === 0 && fallbackSuppressed,
+      fallbackRegistryOptIn: allowFallbackRegistry,
       repositoryFuture: "editable document-template repository with versioning, merge fields, uploaded Word templates, and finalized document vault integration",
       category,
       count: templates.length,
       templates,
-      safety: safetyDocumentTemplateRepository(),
+      safety: {
+        ...safetyDocumentTemplateRepository(),
+        databaseTemplateRowsOnlyByDefault: true,
+        codeRegistryFallbackHiddenByDefault: true,
+        codeRegistryFallbackRequiresExplicitOptIn: true,
+      },
       note:
-        "Read-only document-template repository endpoint.  It reads local Barsh Matters DocumentTemplate tables when records exist and falls back to seeded code-registry templates when the database repository is empty.  It does not edit templates, seed templates, generate documents, upload to Clio, create drafts, send email, print, or queue documents.",
+        repositorySource === "barsh-matters-db" && templates.length > 0
+          ? "Templates loaded from the local Barsh Matters database repository."
+          : repositorySource === "barsh-matters-code-registry-fallback"
+            ? "Fallback registry templates are shown because includeFallbackRegistry=1 or BARSH_DOCUMENT_TEMPLATE_ALLOW_CODE_REGISTRY_FALLBACK=1 was explicitly provided."
+            : "No database templates exist for this category. Code-registry fallback templates are hidden by default after test template cleanup.",
     });
   } catch (error: any) {
     return NextResponse.json(

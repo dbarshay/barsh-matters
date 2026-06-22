@@ -35,3 +35,10 @@ This phase does not:
 ## Next step
 
 The next phase should define and create the first real production template metadata/DOCX import path without relying on fallback registry entries.
+
+## Phase 46D repair
+
+The first Phase 46D attempt wrote the intended documentation and verifier but did not patch `/api/documents/templates/route.ts` because the patch anchor did not match the current route text. The repair applied the actual route change and updated the older repository-foundation verifier so it no longer expects fallback templates to appear by default when the DB is empty.
+
+Normal `/api/documents/templates` responses now return database rows only by default. Code-registry fallback templates require explicit opt-in through `includeFallbackRegistry=1` or `BARSH_DOCUMENT_TEMPLATE_ALLOW_CODE_REGISTRY_FALLBACK=1`.
+
