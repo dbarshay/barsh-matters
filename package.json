@@ -606,7 +606,9 @@
     "verify:phase43g-replace-placeholder-direct-ui-row-bridge-safety": "node scripts/verify-phase43g-replace-placeholder-direct-ui-row-bridge-safety.cjs",
     "verify:phase43h-strict-direct-only-dry-run-surface-row-safety": "node scripts/verify-phase43h-strict-direct-only-dry-run-surface-row-safety.cjs",
     "verify:phase43i-require-selected-document-fields-direct-ui-dry-run-bridge-safety": "node scripts/verify-phase43i-require-selected-document-fields-direct-ui-dry-run-bridge-safety.cjs",
-    "verify:phase43j-direct-ui-dry-run-prerequisite-gate-safety": "node scripts/verify-phase43j-direct-ui-dry-run-prerequisite-gate-safety.cjs"
+    "verify:phase43j-direct-ui-dry-run-prerequisite-gate-safety": "node scripts/verify-phase43j-direct-ui-dry-run-prerequisite-gate-safety.cjs",
+    "smoke:phase43k-local-direct-ui-dry-run-payload-builder": "node scripts/smoke-phase43k-local-direct-ui-dry-run-payload-builder.cjs",
+    "verify:phase43k-local-direct-ui-dry-run-payload-builder-safety": "node scripts/verify-phase43k-local-direct-ui-dry-run-payload-builder-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
