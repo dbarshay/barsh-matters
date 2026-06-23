@@ -97,7 +97,7 @@ if (productionHits.length > 0) {
   fail("layout composition validation stack is wired into production paths");
 }
 
-pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 through 12 and isolation guardrails");
+pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 through 13 and isolation guardrails");
 
 await import('node:child_process').then(({ spawnSync }) => {
   const result = spawnSync(process.execPath, ['scripts/verify-templates-phase13-template-file-inventory-merge-field-contract.mjs'], { stdio: 'inherit' });

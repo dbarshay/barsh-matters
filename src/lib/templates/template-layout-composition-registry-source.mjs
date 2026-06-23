@@ -1,4 +1,29 @@
 export const templateLayoutCompositionRegistrySource = {
+  mergeFieldDefinitions: {
+    "addressee.address": { label: "addressee.address" },
+    "addressee.fax": { label: "addressee.fax" },
+    "addressee.name": { label: "addressee.name" },
+    "caption.defendant": { label: "caption.defendant" },
+    "caption.indexNumber": { label: "caption.indexNumber" },
+    "caption.plaintiff": { label: "caption.plaintiff" },
+    "court.county": { label: "court.county" },
+    "court.name": { label: "court.name" },
+    "fax.pageCount": { label: "fax.pageCount" },
+    "firm.address": { label: "firm.address" },
+    "firm.fax": { label: "firm.fax" },
+    "firm.name": { label: "firm.name" },
+    "firm.phone": { label: "firm.phone" },
+    "letter.reLine": { label: "letter.reLine" },
+    "matter.amountClaimed": { label: "matter.amountClaimed" },
+    "matter.claimNumber": { label: "matter.claimNumber" },
+    "matter.dateOfLoss": { label: "matter.dateOfLoss" },
+    "matter.insurerName": { label: "matter.insurerName" },
+    "matter.patientName": { label: "matter.patientName" },
+    "matter.providerName": { label: "matter.providerName" },
+    "signer.email": { label: "signer.email" },
+    "signer.name": { label: "signer.name" },
+  },
+
   "templates": [
     {
       "templateId": "template-letterhead-demand-letter",
