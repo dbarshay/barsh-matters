@@ -1,0 +1,23 @@
+{
+  "phase": "templates-phase17a-letterhead-simple-base-merge-code-readiness",
+  "target": {
+    "kind": "base-layout-asset",
+    "id": "letterhead-simple",
+    "displayName": "Letterhead Simple"
+  },
+  "requiredTextSignals": [
+    "letterhead",
+    "signer",
+    "extension",
+    "fax",
+    "email",
+    "addressee",
+    "re"
+  ],
+  "expectedSafety": {
+    "oneBaseAssetOnly": true,
+    "generationWired": false,
+    "clioStorageCalled": false,
+    "docxUploadPerformed": false
+  }
+}
