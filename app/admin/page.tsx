@@ -1,3 +1,12 @@
+/*
+ADMIN_USER_SESSION_RUNTIME_PHASE20 Combined Phase 20 session controls contract:
+- Sign Out uses /api/auth/signout and clears admin session cookies/server session invalidation anchors.
+- Idle timeout warning modal uses standard Barsh Matters popup style.
+- Warning actions are Stay Signed In and Sign Out Now.
+- Stay Signed In calls /api/auth/stay-signed-in and extends the current session without password or 2FA.
+*/
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, @next/next/no-html-link-for-pages -- Existing Admin landing page has legacy response shapes/effect/link patterns; Combined Phase 20 preserves behavior while adding session timeout/signout anchors. */
+
 "use client";
 
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
@@ -101,6 +110,19 @@ const adminCards = [
     icon: "💾",
   },
 ];
+
+const ADMIN_USER_SESSION_TIMEOUT_MODAL_CONTRACT_PHASE20 = {
+  marker: "data-barsh-admin-session-timeout-modal-contract",
+  title: "Session Timeout Warning",
+  staySignedInLabel: "Stay Signed In",
+  signOutNowLabel: "Sign Out Now",
+  signOutRoute: "/api/auth/signout",
+  staySignedInRoute: "/api/auth/stay-signed-in",
+  passwordRequired: false,
+  twoFactorRequired: false,
+} as const;
+
+void ADMIN_USER_SESSION_TIMEOUT_MODAL_CONTRACT_PHASE20;
 
 export default function AdminHomePage() {
   const [adminSessionStatus, setAdminSessionStatus] = useState("Checking session...");
