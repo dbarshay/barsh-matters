@@ -653,7 +653,8 @@
     "verify:phase48f-signer-addressee-court-source-resolution-inspection": "node scripts/verify-phase48f-signer-addressee-court-source-resolution-inspection.cjs",
     "verify:phase48g-signer-profile-addressee-source-design": "node scripts/verify-phase48g-signer-profile-addressee-source-design.cjs",
     "verify:templates:layout-composition": "node scripts/verify-templates-layout-composition-validation-suite.mjs",
-    "verify:templates:phase18a-initial-billing-letter": "node scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs"
+    "verify:templates:phase18a-initial-billing-letter": "node scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs",
+    "verify:templates:phase18b-initial-billing-letter-docx-import-gate": "node scripts/verify-templates-phase18b-initial-billing-letter-docx-import-gate.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

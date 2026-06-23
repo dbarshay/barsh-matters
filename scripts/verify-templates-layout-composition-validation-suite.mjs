@@ -120,3 +120,8 @@ await import('node:child_process').then(({ spawnSync }) => {
   const phase18AChildProcess = await import("node:child_process");
   phase18AChildProcess.execFileSync(process.execPath, ["scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs"], { stdio: "inherit" });
 }
+
+{
+  const phase18BChildProcess = await import("node:child_process");
+  phase18BChildProcess.execFileSync(process.execPath, ["scripts/verify-templates-phase18b-initial-billing-letter-docx-import-gate.mjs"], { stdio: "inherit" });
+}

@@ -1,0 +1,53 @@
+{
+  "phase": "Templates Phase 18B",
+  "templateId": "initial-billing-letter",
+  "templateName": "Initial Billing Letter",
+  "documentKind": "letter",
+  "matterScope": "individual",
+  "sourceDocxPath": "templates/docx/incoming/Initial Billing Letter.docx",
+  "committedDocxPath": "templates/docx/letters/initial-billing-letter.docx",
+  "layoutDependency": "letterhead-simple",
+  "testMatterFileNumber": "BRL_202600003",
+  "generationWired": false,
+  "storageCallsAllowed": false,
+  "clioCallsAllowed": false,
+  "normalizedVisibleTextRequired": true,
+  "legacyTokensAllowedUntilTransformPhase": true,
+  "legacyTokenInventory": [
+    "<<BALANCE_AMOUNT>>",
+    "<<CASE_ID>>",
+    "<<DOS_END>>",
+    "<<DOS_START>>",
+    "<<INJUREDPARTY_NAME>>",
+    "<<INSURANCECOMPANY_LOCAL_CITY>>",
+    "<<INSURANCECOMPANY_LOCAL_STATE>>",
+    "<<INSURANCECOMPANY_LOCAL_ZIP>>",
+    "<<INS_CLAIM_NUMBER>>",
+    "<<NOWDT>>",
+    "<<PROVIDER_SUITNAME>>"
+  ],
+  "requiredStandardTokens": [
+    "letter.date",
+    "insurer.name",
+    "insurer.mailingAddress",
+    "provider.name",
+    "patient.name",
+    "claim.number",
+    "claim.amount",
+    "claim.dosRange",
+    "matter.fileNumber"
+  ],
+  "requiredVisiblePhrases": [
+    "Barshay, Rizzo & Lopez",
+    "Provider:",
+    "Patient:",
+    "Claim No.:",
+    "Amount:",
+    "Date of Service:",
+    "Our File Number:",
+    "Dear Sir or Madam"
+  ],
+  "docxXmlPartCount": 1,
+  "visibleTextCharacterCount": 2442,
+  "docxSha256": "ebab9d0c1dfa15526f620d18810b06f51b92d8ab0389c5885a86a43a2ded4580"
+}
