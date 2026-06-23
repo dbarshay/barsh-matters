@@ -1,0 +1,198 @@
+{
+  "phase": "Admin Users / Signer Profile Phase 5",
+  "baseline": "admin-users-phase4-owner-admin-all-permissions-seed-anchors-20260623",
+  "requirement": "Dave/the primary admin defaults to all permissions; owner_admin must receive every registered permission or behave as allow-all.",
+  "registrySources": [
+    {
+      "path": "app/admin/permissions/page.tsx",
+      "keyCount": 12
+    },
+    {
+      "path": "scripts/verify-admin-user-role-seed-preview-safety.mjs",
+      "keyCount": 6
+    },
+    {
+      "path": "scripts/verify-admin-users-write-contract-preview-safety.mjs",
+      "keyCount": 7
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-completion-safety.mjs",
+      "keyCount": 7
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-activation-planning-readiness-safety.mjs",
+      "keyCount": 8
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs",
+      "keyCount": 13
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-completion-safety.mjs",
+      "keyCount": 9
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-audit-visibility-readiness-safety.mjs",
+      "keyCount": 16
+    },
+    {
+      "path": "scripts/verify-admin-users-phase5-simulation-completion-safety.mjs",
+      "keyCount": 5
+    },
+    {
+      "path": "scripts/verify-admin-users-phase5-permission-check-negative-path-safety.mjs",
+      "keyCount": 6
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-env-deployment-readiness-safety.mjs",
+      "keyCount": 10
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-dry-run-decision-path-safety.mjs",
+      "keyCount": 13
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-completion-safety.mjs",
+      "keyCount": 17
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-ui-safety.mjs",
+      "keyCount": 9
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-route-safety.mjs",
+      "keyCount": 11
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-permission-override-ui-safety.mjs",
+      "keyCount": 11
+    }
+  ],
+  "registeredPermissionKeyCount": 95,
+  "registeredPermissionKeys": [
+    "ADMIN_PERMISSION_KEYS",
+    "ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS",
+    "AdminUser",
+    "AdminUserPermissionOverride",
+    "AdminUserRole",
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT",
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED",
+    "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON",
+    "activeBootstrapOwnerAdminCount",
+    "admin-api-permission-blocked",
+    "admin-functions-only",
+    "admin-permission-check",
+    "admin-permission-check-blocked",
+    "admin-user-assign-role",
+    "admin-user-create",
+    "admin-user-permission-override",
+    "admin-user-remove-role",
+    "admin-user-role-seed-preview",
+    "admin-users-phase3",
+    "admin-users-write-contract-preview",
+    "admin.auditHistory.view",
+    "admin.home.view",
+    "admin.users.manage",
+    "adminPermissionDryRunDecisions",
+    "adminPermissionEnforcementDecision",
+    "adminPermissionForRoute",
+    "adminRole.create",
+    "adminRoutePermissionDryRunDecisions",
+    "adminUser.create",
+    "adminUserPermissionOverride.create",
+    "adminUserRole.create",
+    "adminUserRole.delete",
+    "admin_user",
+    "admin_user_permission_override",
+    "admin_user_role",
+    "administrative",
+    "audit-history",
+    "blockedPermissionLabel",
+    "configuredAdminPermissionOverridesFromEnv",
+    "configuredAdminPermissionsEnforcementEnabled",
+    "createMatterAuditLogEntry",
+    "default-admin-allow-all",
+    "defaultAdminPermissionAllowed",
+    "isAdminPermissionNeverBlockPath",
+    "neverBlockPermissionKeys",
+    "neverBlockRoutesForPermission",
+    "overridePreviewReady",
+    "owner_admin",
+    "permission",
+    "permissionDryRun",
+    "permissionOverrideConfig",
+    "permissionOverrideEntriesFromArray",
+    "permissionRegistryCount",
+    "planningSourceHasOwnerAdmin",
+    "preview:admin-user-role-seed",
+    "prisma.adminUser.create",
+    "prisma.adminUser.delete",
+    "prisma.adminUser.update",
+    "prisma.adminUserRole.create",
+    "prisma.adminUserRole.delete",
+    "prisma.auditLog.findMany",
+    "read-only",
+    "read_only_admin",
+    "removePreviewReady",
+    "runtime-still-read-only",
+    "selected-user-mismatch-reviewed",
+    "selectedRemoveUserRoleKeys",
+    "tx.adminUserPermissionOverride.create",
+    "tx.adminUserPermissionOverride.update",
+    "tx.adminUserRole.delete",
+    "user",
+    "user-preview-present",
+    "usersWouldInsertIfDatabaseEmpty",
+    "verify:admin-user-role-seed-preview-safety",
+    "verify:admin-users-phase3-assign-role-route-safety",
+    "verify:admin-users-phase3-permission-override-route-safety",
+    "verify:admin-users-phase3-permission-override-ui-safety",
+    "verify:admin-users-phase3-remove-role-route-safety",
+    "verify:admin-users-phase3-remove-role-ui-safety",
+    "verify:admin-users-phase4-completion-safety",
+    "verify:admin-users-phase4-dry-run-decision-path-safety",
+    "verify:admin-users-phase4-env-deployment-readiness-safety",
+    "verify:admin-users-phase4-route-map-readiness-safety",
+    "verify:admin-users-phase5-enforcement-simulation-negative-path-safety",
+    "verify:admin-users-phase5-permission-check-negative-path-safety",
+    "verify:admin-users-phase5-simulation-completion-safety",
+    "verify:admin-users-phase6-audit-visibility-readiness-safety",
+    "verify:admin-users-phase6-completion-safety",
+    "verify:admin-users-phase6-negative-path-diagnostics-readiness-safety",
+    "verify:admin-users-phase7-activation-planning-readiness-safety",
+    "verify:admin-users-phase7-completion-safety",
+    "verify:admin-users-phase7-first-target-planning-readiness-safety",
+    "verify:admin-users-phase7-no-lockout-smoke-plan-readiness-safety",
+    "verify:admin-users-write-contract-preview-safety",
+    "writeClio"
+  ],
+  "seedApplyPaths": [
+    "scripts/verify-admin-user-role-seed-preview-safety.mjs",
+    "scripts/apply-admin-user-role-seed.mjs",
+    "scripts/preview-admin-user-role-seed.mjs",
+    "scripts/verify-admin-user-role-seed-apply-guard-safety.mjs"
+  ],
+  "patchedFiles": [
+    "scripts/apply-admin-user-role-seed.mjs",
+    "scripts/preview-admin-user-role-seed.mjs"
+  ],
+  "manualReview": [
+    {
+      "path": "scripts/verify-admin-user-role-seed-preview-safety.mjs",
+      "reason": "owner_admin not found"
+    },
+    {
+      "path": "scripts/apply-admin-user-role-seed.mjs",
+      "reason": "no safe owner_admin permissions array anchor"
+    },
+    {
+      "path": "scripts/preview-admin-user-role-seed.mjs",
+      "reason": "no safe owner_admin permissions array anchor"
+    },
+    {
+      "path": "scripts/verify-admin-user-role-seed-apply-guard-safety.mjs",
+      "reason": "owner_admin not found"
+    }
+  ],
+  "runtimeMutation": true
+}

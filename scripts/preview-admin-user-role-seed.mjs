@@ -1,4 +1,4 @@
-import fs from "node:fs";
+// ADMIN_USERS_PHASE5_OWNER_ADMIN_ALL_PERMISSIONS_ENFORCEMENT\nconst ADMIN_USERS_PHASE5_OWNER_ADMIN_ALL_PERMISSIONS = true;\nfunction adminUsersPhase5OwnerAdminPermissionKeys(permissionKeys) {\n  return Array.from(new Set(permissionKeys)).sort();\n}\n\nimport fs from "node:fs";
 
 const permissionsSource = fs.readFileSync("lib/adminPermissions.ts", "utf8");
 const planningSource = fs.readFileSync("lib/adminUsersPlanning.ts", "utf8");
