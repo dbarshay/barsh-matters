@@ -1,0 +1,309 @@
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
+import { createMatterAuditLogEntry } from "@/lib/auditLog";
+import { prisma } from "@/lib/prisma";
+import {
+  buildAdminUserSignerProfileWritePayloadPhase7,
+  getAdminUserSignerProfileChangedFieldsPhase7,
+} from "@/src/lib/admin-users/admin-user-signer-profile-write-contract-phase7";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type AdminSignerProfileUpdateBody = {
+  actorEmail?: unknown;
+  userId?: unknown;
+  firstName?: unknown;
+  lastName?: unknown;
+  displayName?: unknown;
+  username?: unknown;
+  email?: unknown;
+  phoneExtension?: unknown;
+  faxNumber?: unknown;
+  signatureBlockName?: unknown;
+  locked?: unknown;
+  inactive?: unknown;
+  twoFactorPhone?: unknown;
+  twoFactorDisabled?: unknown;
+  twoFactorPendingSetup?: unknown;
+  apply?: unknown;
+};
+
+function cleanString(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function cleanEmail(value: unknown): string {
+  return cleanString(value).toLowerCase();
+}
+
+function cleanBoolean(value: unknown): boolean {
+  return value === true || value === "true" || value === "1" || value === "yes";
+}
+
+function nullableString(value: unknown): string | null {
+  const cleaned = cleanString(value);
+  return cleaned.length === 0 ? null : cleaned;
+}
+
+async function requireOwnerAdminActor(actorEmail: string) {
+  if (!actorEmail) return null;
+  return prisma.adminUser.findFirst({
+    where: {
+      email: actorEmail,
+      status: "active",
+      roles: {
+        some: {
+          role: {
+            key: "owner_admin",
+            status: "active",
+          },
+        },
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+    },
+  });
+}
+
+function profileSnapshot(user: {
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  username: string | null;
+  email: string;
+  emailNormalized: string | null;
+  usernameNormalized: string | null;
+  phoneExtension: string | null;
+  faxNumber: string | null;
+  signatureBlockName: string | null;
+  locked: boolean;
+  inactive: boolean;
+  twoFactorPhone: string | null;
+  twoFactorDisabled: boolean;
+  twoFactorPendingSetup: boolean;
+}) {
+  return {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    displayName: user.displayName,
+    username: user.username,
+    email: user.email,
+    emailNormalized: user.emailNormalized,
+    usernameNormalized: user.usernameNormalized,
+    phoneExtension: user.phoneExtension,
+    faxNumber: user.faxNumber,
+    signatureBlockName: user.signatureBlockName,
+    locked: user.locked,
+    inactive: user.inactive,
+    twoFactorPhone: user.twoFactorPhone,
+    twoFactorDisabled: user.twoFactorDisabled,
+    twoFactorPendingSetup: user.twoFactorPendingSetup,
+  };
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!isAdminRequestAuthorized(req)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+
+  try {
+    const body = (await req.json().catch(() => ({}))) as AdminSignerProfileUpdateBody;
+    const actorEmail = cleanEmail(body.actorEmail);
+    const userId = cleanString(body.userId);
+    const apply = cleanBoolean(body.apply);
+
+    if (!actorEmail) {
+      return NextResponse.json({ ok: false, error: "actorEmail is required." }, { status: 400 });
+    }
+    if (!userId) {
+      return NextResponse.json({ ok: false, error: "userId is required." }, { status: 400 });
+    }
+
+    const actor = await requireOwnerAdminActor(actorEmail);
+    if (!actor) {
+      return NextResponse.json({
+        ok: false,
+        error: "Only an active owner_admin user may edit admin signer profiles in Phase 11.",
+        actorRoleRequired: "owner_admin",
+      }, { status: 403 });
+    }
+
+    const existing = await prisma.adminUser.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        username: true,
+        emailNormalized: true,
+        usernameNormalized: true,
+        phoneExtension: true,
+        faxNumber: true,
+        signatureBlockName: true,
+        locked: true,
+        inactive: true,
+        twoFactorPhone: true,
+        twoFactorDisabled: true,
+        twoFactorPendingSetup: true,
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "Admin user not found." }, { status: 404 });
+    }
+
+    const payload = buildAdminUserSignerProfileWritePayloadPhase7({
+      firstName: nullableString(body.firstName) ?? existing.firstName,
+      lastName: nullableString(body.lastName) ?? existing.lastName,
+      displayName: nullableString(body.displayName) ?? existing.displayName,
+      username: nullableString(body.username) ?? existing.username,
+      email: nullableString(body.email) ?? existing.email,
+      phoneExtension: body.phoneExtension === undefined ? existing.phoneExtension : String(body.phoneExtension ?? ""),
+      faxNumber: body.faxNumber === undefined ? existing.faxNumber : String(body.faxNumber ?? ""),
+      signatureBlockName: nullableString(body.signatureBlockName) ?? existing.signatureBlockName,
+      locked: body.locked === undefined ? existing.locked : cleanBoolean(body.locked),
+      inactive: body.inactive === undefined ? existing.inactive : cleanBoolean(body.inactive),
+      twoFactorPhone: nullableString(body.twoFactorPhone) ?? existing.twoFactorPhone,
+      twoFactorDisabled: body.twoFactorDisabled === undefined ? existing.twoFactorDisabled : cleanBoolean(body.twoFactorDisabled),
+      twoFactorPendingSetup: body.twoFactorPendingSetup === undefined ? existing.twoFactorPendingSetup : cleanBoolean(body.twoFactorPendingSetup),
+    });
+
+    if (payload.emailNormalized !== existing.emailNormalized) {
+      const duplicateEmail = await prisma.adminUser.findFirst({
+        where: {
+          emailNormalized: payload.emailNormalized,
+          id: { not: userId },
+        },
+        select: { id: true, email: true },
+      });
+      if (duplicateEmail) {
+        return NextResponse.json({ ok: false, error: "Another admin user already has that email." }, { status: 409 });
+      }
+    }
+
+    if (payload.usernameNormalized !== existing.usernameNormalized && payload.usernameNormalized !== null) {
+      const duplicateUsername = await prisma.adminUser.findFirst({
+        where: {
+          usernameNormalized: payload.usernameNormalized,
+          id: { not: userId },
+        },
+        select: { id: true, username: true },
+      });
+      if (duplicateUsername) {
+        return NextResponse.json({ ok: false, error: "Another admin user already has that username." }, { status: 409 });
+      }
+    }
+
+    const before = profileSnapshot(existing);
+    const after = {
+      ...before,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      displayName: payload.displayName,
+      username: payload.username,
+      email: payload.email ?? existing.email,
+      emailNormalized: payload.emailNormalized,
+      usernameNormalized: payload.usernameNormalized,
+      phoneExtension: payload.phoneExtension,
+      faxNumber: payload.faxNumber,
+      signatureBlockName: payload.signatureBlockName,
+      locked: payload.locked,
+      inactive: payload.inactive,
+      twoFactorPhone: payload.twoFactorPhone,
+      twoFactorDisabled: payload.twoFactorDisabled,
+      twoFactorPendingSetup: payload.twoFactorPendingSetup,
+    };
+    const changedFields = getAdminUserSignerProfileChangedFieldsPhase7(before, after);
+
+    if (!apply) {
+      return NextResponse.json({
+        ok: true,
+        mode: "preview",
+        previewOnly: true,
+        userId,
+        changedFields,
+        signerProfileStatus: payload.signerProfileStatus,
+        signerMissingFields: payload.signerMissingFields,
+        twoFactorStatus: payload.twoFactorStatus,
+        note: "Preview only. No AdminUser row, password, lockout route, role, permission, document, or Clio record was changed.",
+      });
+    }
+
+    const updated = await prisma.adminUser.update({
+      where: { id: userId },
+      data: {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        displayName: payload.displayName,
+        username: payload.username,
+        email: payload.email ?? existing.email,
+        emailNormalized: payload.emailNormalized,
+        usernameNormalized: payload.usernameNormalized,
+        phoneExtension: payload.phoneExtension,
+        faxNumber: payload.faxNumber,
+        signatureBlockName: payload.signatureBlockName,
+        locked: payload.locked,
+        inactive: payload.inactive,
+        twoFactorPhone: payload.twoFactorPhone,
+        twoFactorDisabled: payload.twoFactorDisabled,
+        twoFactorPendingSetup: payload.twoFactorPendingSetup,
+      },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        username: true,
+        locked: true,
+        inactive: true,
+        twoFactorDisabled: true,
+        twoFactorPendingSetup: true,
+      },
+    });
+
+    await createMatterAuditLogEntry({
+      action: "admin-user-signer-profile-update",
+      summary: `Updated admin signer profile for ${updated.email}.`,
+      entityType: "admin_user",
+      fieldName: "AdminUser.signerProfile",
+      priorValue: before as unknown as Prisma.InputJsonValue,
+      newValue: {
+        changedFields,
+        after,
+        signerProfileStatus: payload.signerProfileStatus,
+        signerMissingFields: payload.signerMissingFields,
+        twoFactorStatus: payload.twoFactorStatus,
+        auditContext: {
+          actorEmail,
+          actorId: actor.id,
+          source: "admin-users-signer-profile-phase11",
+          noPasswordReset: true,
+          noLockoutRouteUsed: true,
+          noDocumentGenerationWiring: true,
+        },
+      } as Prisma.InputJsonValue,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      mode: "apply",
+      user: updated,
+      changedFields,
+      signerProfileStatus: payload.signerProfileStatus,
+      signerMissingFields: payload.signerMissingFields,
+      twoFactorStatus: payload.twoFactorStatus,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Could not update admin signer profile.",
+    }, { status: 500 });
+  }
+}
