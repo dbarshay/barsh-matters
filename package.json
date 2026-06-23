@@ -655,7 +655,8 @@
     "verify:templates:layout-composition": "node scripts/verify-templates-layout-composition-validation-suite.mjs",
     "verify:templates:phase18a-initial-billing-letter": "node scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs",
     "verify:templates:phase18b-initial-billing-letter-docx-import-gate": "node scripts/verify-templates-phase18b-initial-billing-letter-docx-import-gate.mjs",
-    "verify:templates:phase18c-initial-billing-letter-local-dry-run": "node scripts/verify-templates-phase18c-initial-billing-letter-local-dry-run.cjs"
+    "verify:templates:phase18c-initial-billing-letter-local-dry-run": "node scripts/verify-templates-phase18c-initial-billing-letter-local-dry-run.cjs",
+    "verify:templates:phase18d-hidden-field-merge-source-mapping-contract": "node scripts/verify-templates-phase18d-hidden-field-merge-source-mapping-contract.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

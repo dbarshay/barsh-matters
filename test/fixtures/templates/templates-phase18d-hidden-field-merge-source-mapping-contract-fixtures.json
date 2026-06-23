@@ -1,0 +1,84 @@
+{
+  "phase": "Templates Phase 18D",
+  "contractName": "Hidden Field Merge-Source Mapping Contract",
+  "generationWired": false,
+  "storageCallsAllowed": false,
+  "clioCallsAllowed": false,
+  "dbMutationAllowed": false,
+  "hiddenFieldsMustBeMappable": true,
+  "requiredCapabilities": [
+    "Discover hidden/import JSON fields from relevant source tables.",
+    "Expose hidden fields as selectable merge sources when a template requires them.",
+    "Preserve full source path provenance for every hidden field.",
+    "Allow hidden fields to be composed into higher-level merge fields.",
+    "Fail readiness when a required hidden field source is missing.",
+    "Keep hidden-field mapping read-only during template dry-runs."
+  ],
+  "canonicalHiddenFieldPathSyntax": {
+    "jsonPathStyle": "Table.column.path.to.field",
+    "example": "ReferenceEntity.details._hiddenImportFields.hidden_street"
+  },
+  "knownHiddenFieldSources": [
+    {
+      "sourceTable": "ReferenceEntity",
+      "sourceColumn": "details",
+      "jsonRoot": "_hiddenImportFields",
+      "entityType": "insurer_company",
+      "sourceRole": "insurer",
+      "fields": [
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_street",
+          "mergeUse": "insurer.mailingAddress.line1"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_city",
+          "mergeUse": "insurer.mailingAddress.city"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_state",
+          "mergeUse": "insurer.mailingAddress.state"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_zipcode",
+          "mergeUse": "insurer.mailingAddress.zip"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_website",
+          "mergeUse": "insurer.website"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_domicile",
+          "mergeUse": "insurer.domicile"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_group_name",
+          "mergeUse": "insurer.groupName"
+        },
+        {
+          "path": "ReferenceEntity.details._hiddenImportFields.hidden_naic_number",
+          "mergeUse": "insurer.naicNumber"
+        }
+      ]
+    }
+  ],
+  "composedMergeSources": [
+    {
+      "mergeCode": "insurer.mailingAddress",
+      "sourcePaths": [
+        "ReferenceEntity.details._hiddenImportFields.hidden_street",
+        "ReferenceEntity.details._hiddenImportFields.hidden_city",
+        "ReferenceEntity.details._hiddenImportFields.hidden_state",
+        "ReferenceEntity.details._hiddenImportFields.hidden_zipcode"
+      ],
+      "format": "street newline city comma state space zipcode",
+      "phase18CTestValue": "3100 Sanders Road, Suite 201\nNorthbrook, Illinois 60062"
+    }
+  ],
+  "phase18CContinuity": {
+    "templateId": "initial-billing-letter",
+    "testMatterFileNumber": "BRL_202600003",
+    "insurerName": "Allstate Indemnity Company",
+    "source": "ReferenceEntity.details._hiddenImportFields",
+    "resolvedAddress": "3100 Sanders Road, Suite 201\nNorthbrook, Illinois 60062"
+  }
+}
