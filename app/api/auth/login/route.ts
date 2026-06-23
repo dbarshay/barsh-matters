@@ -1,4 +1,10 @@
 /*
+ADMIN_USER_TWO_FACTOR_RUNTIME_PHASE21 login enforcement anchors:
+- Login flow should require 2FA challenge/verification when adminUserTwoFactorRequiredPhase21 is true.
+- Per-user twoFactorDisabled bypass remains explicit.
+- 2FA code must never be logged, returned, or stored in plaintext.
+*/
+/*
 ADMIN_USER_PASSWORD_AUTH_RUNTIME_PHASE19 Combined Phase 19 password auth enforcement anchors:
 - Login flow must expose forcePasswordChange/passwordChangeRequired when present.
 - Failed-login tracking must use failedLoginCount and failedLoginLockedAt with lockout threshold 5.

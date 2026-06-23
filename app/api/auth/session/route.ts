@@ -1,4 +1,9 @@
 /*
+ADMIN_USER_TWO_FACTOR_RUNTIME_PHASE21 session enforcement anchors:
+- Session response should expose whether 2FA verification is pending/required once login flow is fully enforced.
+- Session invalidation and forced-password-change guards from earlier phases remain preserved.
+*/
+/*
 ADMIN_USER_PASSWORD_AUTH_RUNTIME_PHASE19 Combined Phase 19 session visibility anchors:
 - Session response should preserve forcePasswordChange/passwordChangeRequired visibility for client guards.
 - Session checks should preserve failed-login lockout and server-side invalidation fields for later session phases.

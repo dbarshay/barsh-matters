@@ -1,4 +1,9 @@
 /*
+ADMIN_USER_TWO_FACTOR_RUNTIME_PHASE21 login page anchors:
+- Login UI should route to 2FA challenge/verification UX when login response requires 2FA.
+- 2FA code must not be persisted outside transient client state.
+*/
+/*
 ADMIN_USER_PASSWORD_AUTH_RUNTIME_PHASE19 Combined Phase 19 login page anchors:
 - If login apply response includes forcePasswordChange/passwordChangeRequired, route user to /forced-password-change.
 - Preserve existing login behavior unless those flags are present.
