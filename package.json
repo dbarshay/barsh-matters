@@ -634,7 +634,9 @@
     "verify:phase46b-requested-document-key-mismatch-guard": "node scripts/verify-phase46b-requested-document-key-mismatch-guard.cjs",
     "verify:phase46c-template-db-empty-safety": "node scripts/verify-phase46c-template-db-empty-safety.cjs",
     "verify:phase46d-code-registry-fallback-hidden-safety": "node scripts/verify-phase46d-code-registry-fallback-hidden-safety.cjs",
-    "verify:phase47a-production-template-creation-plan-safety": "node scripts/verify-phase47a-production-template-creation-plan-safety.cjs"
+    "verify:phase47a-production-template-creation-plan-safety": "node scripts/verify-phase47a-production-template-creation-plan-safety.cjs",
+    "import:phase47b-lawsuit-stipulation-template": "node scripts/import-phase47b-lawsuit-stipulation-template.cjs",
+    "verify:phase47b-lawsuit-stipulation-template-safety": "node scripts/verify-phase47b-lawsuit-stipulation-template-safety.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
