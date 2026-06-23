@@ -645,7 +645,9 @@
     "verify:phase48a-invoice-remittance-template-source-inspection": "node scripts/verify-phase48a-invoice-remittance-template-source-inspection.cjs",
     "import:phase48b-pleading-layout-asset": "node scripts/import-phase48b-pleading-layout-asset.cjs",
     "verify:phase48b-pleading-layout-asset-safety": "node scripts/verify-phase48b-pleading-layout-asset-safety.cjs",
-    "verify:phase48c-letterhead-signer-aware-standard-safety": "node scripts/verify-phase48c-letterhead-signer-aware-standard-safety.cjs"
+    "verify:phase48c-letterhead-signer-aware-standard-safety": "node scripts/verify-phase48c-letterhead-signer-aware-standard-safety.cjs",
+    "inspect:phase48d-comprehensive-bm-merge-field-catalog": "node scripts/inspect-phase48d-comprehensive-bm-merge-field-catalog.cjs",
+    "verify:phase48d-comprehensive-bm-merge-field-catalog-inspection": "node scripts/verify-phase48d-comprehensive-bm-merge-field-catalog-inspection.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
