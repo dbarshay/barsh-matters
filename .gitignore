@@ -57,3 +57,5 @@ backups/indexes/*
 backups/manual-claimindex-normalizations/
 
 templates/docx/incoming/
+
+.tmp-phase18c-output/

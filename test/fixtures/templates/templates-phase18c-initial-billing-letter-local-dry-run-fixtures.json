@@ -1,0 +1,36 @@
+{
+  "phase": "Templates Phase 18C",
+  "templateId": "initial-billing-letter",
+  "templateName": "Initial Billing Letter",
+  "matterScope": "individual",
+  "testMatterFileNumber": "BRL_202600003",
+  "claimIndexTable": "public.ClaimIndex",
+  "insurerReferenceTable": "public.ReferenceEntity",
+  "insurerReferenceType": "insurer_company",
+  "committedDocxPath": "templates/docx/letters/initial-billing-letter.docx",
+  "localOutputDirectory": ".tmp-phase18c-output",
+  "generationWired": false,
+  "storageCallsAllowed": false,
+  "clioCallsAllowed": false,
+  "committedOutputAllowed": false,
+  "expectedResolvedValues": {
+    "matter.fileNumber": "BRL_202600003",
+    "provider.name": "ATLANTIC MEDICAL & DIAGNOSTIC, P.C.",
+    "patient.name": "David Barshay",
+    "insurer.name": "Allstate Indemnity Company",
+    "insurer.mailingAddress": "3100 Sanders Road, Suite 201\nNorthbrook, Illinois 60062",
+    "claim.number": "1111",
+    "claim.amount": "$836.75",
+    "claim.dosRange": "02/03/2021"
+  },
+  "insurerAddressSource": "ReferenceEntity.details._hiddenImportFields",
+  "legacyTokensMustBeAbsentFromDryRunOutput": true,
+  "hiddenFieldsMustBeMappable": true,
+  "hiddenFieldSourceUsed": [
+    "ReferenceEntity.details._hiddenImportFields.hidden_street",
+    "ReferenceEntity.details._hiddenImportFields.hidden_city",
+    "ReferenceEntity.details._hiddenImportFields.hidden_state",
+    "ReferenceEntity.details._hiddenImportFields.hidden_zipcode"
+  ],
+  "futureHiddenFieldMappingRequirement": "All hidden fields from all relevant data-source tables must be discoverable and mappable as template merge sources."
+}
