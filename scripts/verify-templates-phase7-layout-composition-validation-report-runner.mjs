@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -73,7 +73,9 @@ if (invalidArgsRun.status !== 2) {
   fail(`expected invalid argument exit 2; got ${invalidArgsRun.status}`);
 }
 
-const tempDir = mkdtempSync(join(tmpdir(), "template-report-runner-"));
+const tempParentDir = process.env.TMPDIR || tmpdir();
+mkdirSync(tempParentDir, { recursive: true });
+const tempDir = mkdtempSync(join(tempParentDir, "template-report-runner-"));
 const outputPath = join(tempDir, "report.md");
 try {
   const outputRun = spawnSync("node", [runnerPath, "--input", fixture.inputPath, "--format", "markdown", "--output", outputPath], {
