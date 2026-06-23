@@ -8,6 +8,7 @@ const verifierScripts = [
   "scripts/verify-templates-phase7-layout-composition-validation-report-runner.mjs",
   "scripts/verify-templates-phase9-layout-composition-admin-readiness-payload.mjs",
   "scripts/verify-templates-phase10-admin-exposure-readiness-plan.mjs",
+  "scripts/verify-templates-phase11-read-only-admin-exposure.mjs",
 ];
 
 const isolatedRuntimeFiles = [
@@ -73,9 +74,18 @@ const productionSearch = spawnSync("rg", [
   encoding: "utf8",
 });
 
+const allowedProductionExposureFiles = new Set([
+  "app/admin/templates/layout-composition-validation/page.tsx",
+  "app/api/admin/templates/layout-composition-validation/route.ts",
+]);
+
 const productionHits = (productionSearch.stdout || "")
   .split("\n")
   .filter(Boolean)
+  .filter((line) => {
+    const filePath = line.split(":")[0];
+    return !allowedProductionExposureFiles.has(filePath);
+  })
   .filter((line) => !line.includes("src/lib/templates/layout-composition-validator.mjs"))
   .filter((line) => !line.includes("src/lib/templates/layout-composition-batch-validator.mjs"))
   .filter((line) => !line.includes("src/lib/templates/layout-composition-validation-report.mjs"))
@@ -86,4 +96,4 @@ if (productionHits.length > 0) {
   fail("layout composition validation stack is wired into production paths");
 }
 
-pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 and 10 and isolation guardrails");
+pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 through 11 and isolation guardrails");

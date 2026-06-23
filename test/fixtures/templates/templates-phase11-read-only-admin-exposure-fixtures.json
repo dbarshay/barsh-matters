@@ -1,0 +1,18 @@
+{
+  "page": "app/admin/templates/layout-composition-validation/page.tsx",
+  "api": "app/api/admin/templates/layout-composition-validation/route.ts",
+  "route": "/admin/templates/layout-composition-validation",
+  "apiRoute": "/api/admin/templates/layout-composition-validation",
+  "requiredApiMethods": [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE"
+  ],
+  "requiredText": [
+    "read-only",
+    "locked Phase 5 fixture",
+    "does not generate documents",
+    "external document-storage services"
+  ]
+}
