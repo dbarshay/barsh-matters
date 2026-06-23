@@ -1,0 +1,22 @@
+{
+  "phase": "Templates Phase 18G",
+  "document": "Initial Billing Letter",
+  "sourceDocx": "templates/docx/letters/initial-billing-letter.docx",
+  "outputDir": ".tmp-phase18g-output",
+  "outputDocx": ".tmp-phase18g-output/initial-billing-letter-BRL_202600003-phase18g-canonical-render.docx",
+  "matter": "BRL_202600003",
+  "canonicalMergeMap": {
+    "{{letter.date}}": "06/23/2026",
+    "{{insurer.name}}": "Allstate Indemnity Company",
+    "{{insurer.mailingAddress.line1}}": "3100 Sanders Road, Suite 201",
+    "{{insurer.mailingAddress.city}}": "Northbrook",
+    "{{insurer.mailingAddress.state}}": "Illinois",
+    "{{insurer.mailingAddress.zip}}": "60062",
+    "{{provider.name}}": "ATLANTIC MEDICAL & DIAGNOSTIC, P.C.",
+    "{{patient.name}}": "David Barshay",
+    "{{claim.number}}": "1111",
+    "{{claim.amount}}": "$836.75",
+    "{{claim.dosRange}}": "02/03/2021",
+    "{{matter.fileNumber}}": "BRL_202600003"
+  }
+}
