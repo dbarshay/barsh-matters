@@ -1,4 +1,5 @@
 import { buildTemplateLayoutCompositionValidationReport } from "./layout-composition-validation-report.mjs";
+import { buildTemplateFileReadinessReport } from "./template-file-readiness-report.mjs";
 
 function statusFromReport(report) {
   if (report.ok) return "ready";
@@ -84,7 +85,20 @@ export function buildTemplateLayoutCompositionAdminReadinessPayload(input) {
     },
   ];
 
+  const registryForTemplateFileReadiness =
+    input && typeof input === "object" && Array.isArray(input.templates)
+      ? input
+      : input && typeof input === "object" && input.registry
+        ? input.registry
+        : null;
+  const templateFileReadiness = buildTemplateFileReadinessReport(registryForTemplateFileReadiness, {
+    approvedTemplatePathPrefixes: ["templates/docx/", "templates/production/"],
+    physicalFileExists: () => false,
+    generatedAt: null,
+  });
+
   return {
+    templateFileReadiness,
     status,
     ok: report.ok,
     cards,
