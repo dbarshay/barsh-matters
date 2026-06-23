@@ -12,7 +12,14 @@
     "tel": "Tel: (631) 210-7272",
     "fax": "Fax: (516) 706-5055",
     "email": "Email: info@brlfirm.com",
-    "signatureName": "Barshay, Rizzo & Lopez, PLLC"
+    "signatureName": "Barshay, Rizzo & Lopez, PLLC",
+    "approvedHeaderLayout": {
+      "scope": "initial-billing-letter-only",
+      "rightSideContactBlock": "one compact hard-break block",
+      "positioning": "moved down one line and right one tab",
+      "sharedLetterheadAssetMutated": false,
+      "otherTemplatesRemainDynamic": true
+    }
   },
   "otherTemplatesRemainDynamic": true,
   "forbiddenVisibleValuesInInitialBillingLetterProof": [

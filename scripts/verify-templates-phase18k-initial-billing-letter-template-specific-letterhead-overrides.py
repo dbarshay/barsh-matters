@@ -21,7 +21,10 @@ overrides = fixture["templateSpecificLetterheadOverrides"]
 body_pattern = re.compile(r"(<w:body\b[^>]*>)(.*?)(</w:body>)", re.DOTALL)
 sectpr_pattern = re.compile(r"<w:sectPr\b.*?</w:sectPr>", re.DOTALL)
 pgmar_pattern = re.compile(r"<w:pgMar\b[^>]*/>")
-text_node_pattern = re.compile(r"(<(?:w|a):t\b[^>]*>)(.*?)(</(?:w|a):t>)", re.DOTALL)
+text_node_pattern = re.compile(r"(<(?:w|a):t(?:\s[^>]*)?>)(.*?)(</(?:w|a):t>)", re.DOTALL)
+para_pattern = re.compile(r"<(?P<prefix>w|a):p(?:\s[^>]*)?>.*?</(?P=prefix):p>", re.DOTALL)
+arpr_pattern = re.compile(r"<a:rPr(?:\s[^>]*)?/>|<a:rPr(?:\s[^>]*)?>.*?</a:rPr>", re.DOTALL)
+wrpr_pattern = re.compile(r"<w:rPr(?:\s[^>]*)?/>|<w:rPr(?:\s[^>]*)?>.*?</w:rPr>", re.DOTALL)
 
 def text_nodes(xml):
     return "".join(html.unescape(m.group(2)) for m in text_node_pattern.finditer(xml))
@@ -45,8 +48,7 @@ def enforce_margins_and_header_distance(sectpr):
         "\" w:right=\"" + str(margins["right"]) +
         "\" w:bottom=\"" + str(margins["bottom"]) +
         "\" w:left=\"" + str(margins["left"]) +
-        "\" w:header=\"" + str(fmt["headerDistanceTwips"]) +
-        "\" w:footer=\"720\" w:gutter=\"0\"/>"
+        "\" w:header=\"180\" w:footer=\"720\" w:gutter=\"0\"/>"
     )
     if pgmar_pattern.search(sectpr):
         return pgmar_pattern.sub(pgmar, sectpr, count=1)
@@ -55,32 +57,96 @@ def enforce_margins_and_header_distance(sectpr):
 def esc(value):
     return html.escape(value, quote=False)
 
+def normalize_contact_rpr(rpr, prefix):
+    if prefix == "a":
+        if "<a:rPr" not in rpr:
+            rpr = "<a:rPr lang=\"en-US\" sz=\"1050\"/>"
+        rpr = re.sub(r"\ssz=\"[0-9]+\"", " sz=\"1050\"", rpr)
+        if " sz=" not in rpr:
+            rpr = rpr.replace("<a:rPr", "<a:rPr sz=\"1050\"", 1)
+        return rpr
+
+    if "<w:rPr" not in rpr:
+        return "<w:rPr><w:rFonts w:ascii=\"Times New Roman\" w:hAnsi=\"Times New Roman\"/><w:sz w:val=\"21\"/></w:rPr>"
+    rpr = re.sub(r"<w:sz\s+w:val=\"[0-9]+\"\s*/>", "<w:sz w:val=\"21\"/>", rpr)
+    if "<w:sz" not in rpr:
+        rpr = rpr.replace("</w:rPr>", "<w:sz w:val=\"21\"/></w:rPr>")
+    return rpr
+
+def make_approved_contact_para(template_para):
+    contact_lines = [
+        "445 Broadhollow Road | Suite CL18",
+        "Melville, New York 11747",
+        overrides["tel"],
+        overrides["fax"],
+        overrides["email"],
+    ]
+    prefix_match = re.match(r"<(w|a):p", template_para)
+    prefix = prefix_match.group(1) if prefix_match else "w"
+
+    if prefix == "a":
+        rpr_match = arpr_pattern.search(template_para)
+        rpr = normalize_contact_rpr(rpr_match.group(0) if rpr_match else "", "a")
+        ppr = "<a:pPr><a:lnSpc><a:spcPct val=\"90000\"/></a:lnSpc><a:spcBef><a:spcPts val=\"0\"/></a:spcBef><a:spcAft><a:spcPts val=\"0\"/></a:spcAft></a:pPr>"
+        runs = ["<a:br/>"]
+        for idx, line in enumerate(contact_lines):
+            if idx > 0:
+                runs.append("<a:br/>")
+            runs.append("<a:r>" + rpr + "<a:tab/><a:t>" + esc(line) + "</a:t></a:r>")
+        return "<a:p>" + ppr + "".join(runs) + "</a:p>"
+
+    rpr_match = wrpr_pattern.search(template_para)
+    rpr = normalize_contact_rpr(rpr_match.group(0) if rpr_match else "", "w")
+    ppr = "<w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"210\" w:lineRule=\"auto\"/></w:pPr>"
+    runs = ["<w:r><w:br/></w:r>"]
+    for idx, line in enumerate(contact_lines):
+        if idx > 0:
+            runs.append("<w:r><w:br/></w:r>")
+        runs.append("<w:r>" + rpr + "<w:tab/><w:t xml:space=\"preserve\">" + esc(line) + "</w:t></w:r>")
+    return "<w:p>" + ppr + "".join(runs) + "</w:p>"
+
 def rewrite_header_text_nodes(xml):
-    matches = list(text_node_pattern.finditer(xml))
-    if not matches:
+    paras = list(para_pattern.finditer(xml))
+    if not paras:
         return xml
 
-    visible = "".join(html.unescape(m.group(2)) for m in matches)
+    signals = [
+        "Broadhollow",
+        "Melville",
+        "Tel:",
+        "Fax:",
+        "Email:",
+        "signer.extension",
+        "signer.fax",
+        "signer.email",
+        "210-7272",
+    ]
+    contact_indexes = []
+    for idx, match in enumerate(paras):
+        text = text_nodes(match.group(0))
+        if any(signal in text for signal in signals):
+            contact_indexes.append(idx)
 
-    # Template-specific Initial Billing Letter overrides only.
-    visible = visible.replace("Tel: (631) 210-7272, signer.extension", overrides["tel"])
-    visible = visible.replace("Tel: (631) 210-7272 signer.extension", overrides["tel"])
-    visible = visible.replace("Tel: (631) 210-7272, ", overrides["tel"])
-    visible = visible.replace("signer.extension", "")
-    visible = visible.replace("Fax: signer.fax", overrides["fax"])
-    visible = visible.replace("Fax:", overrides["fax"])
-    visible = visible.replace("signer.fax", "")
-    visible = visible.replace("Email: signer.email", overrides["email"])
-    visible = visible.replace("signer.email", "info@brlfirm.com")
+    if not contact_indexes:
+        return xml
 
-    # Put the full visible header text into the first text node and clear the rest.
+    first = min(contact_indexes)
+    last = max(contact_indexes)
+    approved_contact_para = make_approved_contact_para(paras[first].group(0))
+
     rebuilt = []
     cursor = 0
-    for index, match in enumerate(matches):
-        rebuilt.append(xml[cursor:match.start()])
-        text = visible if index == 0 else ""
-        rebuilt.append(match.group(1) + esc(text) + match.group(3))
-        cursor = match.end()
+    for idx, match in enumerate(paras):
+        if idx == first:
+            rebuilt.append(xml[cursor:match.start()])
+            rebuilt.append(approved_contact_para)
+            cursor = match.end()
+        elif first < idx <= last:
+            cursor = match.end()
+        else:
+            rebuilt.append(xml[cursor:match.start()])
+            rebuilt.append(match.group(0))
+            cursor = match.end()
     rebuilt.append(xml[cursor:])
     return "".join(rebuilt)
 

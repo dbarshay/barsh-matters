@@ -33,3 +33,15 @@ These dynamic fields should be collected and managed in BM user creation/profile
 ## Non-goals
 
 This phase does not wire app/API generation, does not upload to Clio, and does not write to storage. Generated proof output remains under ignored local output.
+
+## Phase 18L approved visual correction
+
+After visual QA, the Initial Billing Letter contact block is locked as template-specific behavior only:
+
+- This applies only to `initial-billing-letter`.
+- The shared `templates/docx/base/letterhead-simple.docx` asset is not mutated.
+- Other letterhead-based templates remain dynamic for signer extension, fax, email, and signer-specific contact fields unless separately approved.
+- The right-side contact block is rendered as one compact hard-break block.
+- The contact block is positioned one line lower and one tab farther right than the inherited source position.
+- Approved contact text: `445 Broadhollow Road | Suite CL18`; `Melville, New York 11747`; `Tel: (631) 210-7272`; `Fax: (516) 706-5055`; `Email: info@brlfirm.com`.
+- Approved signature override: `Barshay, Rizzo & Lopez, PLLC`.
