@@ -22,7 +22,7 @@ assert("password hash field exists", schema.includes("passwordHash"));
 assert("no plaintext password field", schema.includes("plainTextPassword") === false && schema.includes("plaintextPassword") === false);
 assert("password history schema exists", schema.includes("passwordHistoryJson"));
 assert("password history last-three prevention exists", password.includes("PASSWORD_HISTORY_LIMIT = 3") && password.includes("passwordReusesLastThree"));
-assert("documentation says never log passwords", docs.includes("never stored in plaintext") || docs.includes("Never log"));
+assert("documentation says never log passwords", docs.includes("never be logged") || docs.includes("Never log") || docs.includes("never stored in plaintext"));
 
 const failed = checks.filter((c) => c.pass === false);
 for (const c of checks) console.log(`${c.pass ? "PASS" : "FAIL"}: ${c.name}`);

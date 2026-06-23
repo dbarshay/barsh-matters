@@ -17,6 +17,8 @@ Signer completeness is derived from the current admin user profile. Required Pha
 
 Password setup/reset stores hashes only. Temporary passwords are one-time display values for the owner/admin reset modal. Password history blocks reuse of the last three passwords on all password-setting paths.
 
+Passwords and 2FA codes must never be logged in plaintext or otherwise exposed in audit entries, routine diagnostics, or verifier output.
+
 ## 2FA
 
 Phase 1 supports SMS/text-message 2FA scaffolding and guards. A live SMS provider may be wired only if a reliable provider/config path already exists. 2FA phone numbers are separate from signer phone extension and must be masked in routine audit display.
