@@ -1,0 +1,30 @@
+{
+  "approvedTemplatePathPrefixes": [
+    "templates/docx/",
+    "templates/production/"
+  ],
+  "missingAllExpected": {
+    "templateCount": 4,
+    "availableCount": 0,
+    "missingCount": 4,
+    "requiredMissingCount": 4,
+    "unapprovedPathCount": 0,
+    "generationReady": false,
+    "missingPaths": [
+      "templates/docx/template-fax-cover-and-letter.docx",
+      "templates/docx/template-letterhead-demand-letter.docx",
+      "templates/docx/template-pleading-summons-complaint.docx",
+      "templates/docx/template-pleading-with-letterhead.docx"
+    ]
+  },
+  "availableAllExpected": {
+    "templateCount": 4,
+    "availableCount": 4,
+    "missingCount": 0,
+    "requiredMissingCount": 0,
+    "unapprovedPathCount": 0,
+    "generationReady": true,
+    "missingPaths": []
+  },
+  "notes": "Phase 15 report builder is pure. It accepts a physicalFileExists function and does not read from or write to storage by itself."
+}

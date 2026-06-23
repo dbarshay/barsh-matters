@@ -32,6 +32,10 @@ function pass(message) {
 const phase14ReadinessInventoryResult = spawnSync(process.execPath, ["scripts/verify-templates-phase14-template-file-readiness-inventory.mjs"], { stdio: "inherit" });
 if (phase14ReadinessInventoryResult.status) process.exit(phase14ReadinessInventoryResult.status);
 
+
+const phase15TemplateFileReadinessReportResult = spawnSync(process.execPath, ["scripts/verify-templates-phase15-template-file-readiness-report.mjs"], { stdio: "inherit" });
+if (phase15TemplateFileReadinessReportResult.status) process.exit(phase15TemplateFileReadinessReportResult.status);
+
 console.log(`\x1b[1;32mPASS:\x1b[0m ${message}`);
 }
 
@@ -101,7 +105,7 @@ if (productionHits.length > 0) {
   fail("layout composition validation stack is wired into production paths");
 }
 
-pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 through 14 and isolation guardrails");
+pass("Templates layout composition validation suite passed Phases 4 through 7 plus Phases 9 through 15 and isolation guardrails");
 
 await import('node:child_process').then(({ spawnSync }) => {
   const result = spawnSync(process.execPath, ['scripts/verify-templates-phase13-template-file-inventory-merge-field-contract.mjs'], { stdio: 'inherit' });
