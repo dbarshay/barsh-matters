@@ -20,8 +20,10 @@ The target base asset is:
 
 The letterhead simple base asset must have registry-backed merge codes for:
 
+- `signer.name`
 - `signer.email`
 - `signer.extension`
+- `signer.fax`
 - `addressee.name`
 - `letter.reLine`
 

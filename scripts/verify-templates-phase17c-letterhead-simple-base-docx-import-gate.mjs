@@ -43,7 +43,21 @@ function collectObjects(value, out = []) {
 
 const layoutAsset = collectObjects(templateLayoutCompositionRegistrySource).find((asset) => asset.role === fixture.target.role && asset.assetKey === fixture.target.assetKey && Array.isArray(asset.requiredMergeFields));
 assert.ok(layoutAsset, "Letterhead simple base layout asset contract must exist");
-assert.deepEqual(layoutAsset.requiredMergeFields, ["signer.email", "signer.extension"]);
+assert.deepEqual(layoutAsset.requiredMergeFields, ["signer.email", "signer.extension", "signer.fax"]);
+
+function decodeXmlText(value) {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, String.fromCharCode(34))
+    .replace(/&apos;/g, String.fromCharCode(39));
+}
+
+function extractVisibleText(partXml) {
+  const textNodePattern = new RegExp("<w:t[^>]*>(.*?)</w:t>", "gs");
+  return Array.from(partXml.matchAll(textNodePattern), (match) => decodeXmlText(match[1])).join("");
+}
 
 const dropPath = path.join(repoRoot, fixture.target.dropPath);
 if (!fs.existsSync(dropPath)) {
@@ -51,15 +65,21 @@ if (!fs.existsSync(dropPath)) {
 } else {
   assert.ok(fs.statSync(dropPath).isFile(), "Letterhead simple DOCX drop path must be a file when present");
   const listing = execFileSync("unzip", ["-Z1", dropPath], { encoding: "utf8" });
-  assert.ok(listing.split(/\\r?\\n/).includes("word/document.xml"), "DOCX must contain word/document.xml");
-  const xml = execFileSync("unzip", ["-p", dropPath, "word/document.xml"], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
+  const entries = listing.split(/\r?\n/).map((entry) => entry.trim()).filter(Boolean);
+  const xmlEntries = entries.filter((entry) => entry.startsWith("word/") && entry.endsWith(".xml"));
+  assert.ok(xmlEntries.length > 0, "DOCX must contain Word XML parts");
+  const xmlParts = xmlEntries.map((entry) => execFileSync("unzip", ["-p", dropPath, entry], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }));
+  const separator = String.fromCharCode(10);
+  const rawXml = xmlParts.join(separator);
+  const normalizedVisibleText = xmlParts.map((partXml) => extractVisibleText(partXml)).join(separator);
+  const searchableText = rawXml + separator + normalizedVisibleText;
   for (const token of fixture.expectedMergeTokensWhenPresent) {
-    assert.ok(xml.includes(token), `DOCX is missing expected merge-code token: ${token}`);
+    assert.ok(searchableText.includes(token), `DOCX is missing expected merge-code token: ${token}`);
   }
   for (const token of fixture.forbiddenTokens) {
-    assert.ok(!xml.includes(token), `DOCX contains forbidden stale merge-code token: ${token}`);
+    assert.ok(!searchableText.includes(token), `DOCX contains forbidden stale merge-code token: ${token}`);
   }
-  console.log("PASS: Letterhead simple DOCX present and merge-code tokens verified");
+  console.log(`PASS: Letterhead simple DOCX present and merge-code tokens verified across ${xmlEntries.length} Word XML parts using raw XML plus normalized visible text`);
 }
 
 const phaseDoc = fs.readFileSync(docPath, "utf8");
@@ -69,7 +89,7 @@ assert.ok(phaseDoc.includes("does not call Clio/storage"), "Phase doc must prese
 
 const status = process.env.PHASE17C_GIT_STATUS || "";
 const forbiddenProductionPrefixes = ["app/", "pages/", "src/app/", "src/pages/", "src/api/", "app/api/"];
-for (const line of status.split("\\n").filter(Boolean)) {
+for (const line of status.split(String.fromCharCode(10)).filter(Boolean)) {
   const file = line.slice(3);
   assert.ok(!forbiddenProductionPrefixes.some((prefix) => file.startsWith(prefix)), `Phase 17C must not touch production app/API path: ${file}`);
 }

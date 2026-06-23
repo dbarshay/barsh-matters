@@ -9,8 +9,10 @@
     "pendingAllowed": true
   },
   "expectedMergeTokensWhenPresent": [
+    "signer.name",
     "signer.email",
     "signer.extension",
+    "signer.fax",
     "addressee.name",
     "letter.reLine"
   ],

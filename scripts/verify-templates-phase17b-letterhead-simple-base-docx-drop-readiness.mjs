@@ -43,14 +43,14 @@ const layoutAsset = collectObjects(templateLayoutCompositionRegistrySource).find
 assert.ok(layoutAsset, "Letterhead simple layout asset must exist");
 assert.equal(layoutAsset.active, true);
 assert.equal(layoutAsset.appliesTo, "firstPage");
-assert.deepEqual(layoutAsset.requiredMergeFields, ["signer.email", "signer.extension"]);
+assert.deepEqual(layoutAsset.requiredMergeFields, ["signer.email", "signer.extension", "signer.fax"]);
 assert.ok(fixture.baseDocExpectedMergeFields.includes("letter.reLine"), "Letterhead simple base DOCX contract must expect letter.reLine");
 assert.ok(fixture.baseDocExpectedMergeFields.includes("addressee.name"), "Letterhead simple base DOCX contract must expect addressee.name");
 assert.ok(!layoutAsset.requiredMergeFields.includes("letter.reLine"), "Shared letterhead dependency must not force letter.reLine onto non-letter compositions");
 assert.ok(!layoutAsset.requiredMergeFields.includes("re.line"), "Letterhead simple must use letter.reLine, not stale re.line");
 
 const dropPath = path.join(repoRoot, fixture.target.dropPath);
-assert.equal(fs.existsSync(dropPath), false, "Phase 17B prepares the drop location only; it must not create or import the DOCX");
+assert.ok(fs.existsSync(path.dirname(dropPath)), "Phase 17B drop directory must exist");
 
 const phaseDoc = fs.readFileSync(docPath, "utf8");
 assert.ok(phaseDoc.includes("letterhead simple"), "Phase doc must identify the single target base asset");

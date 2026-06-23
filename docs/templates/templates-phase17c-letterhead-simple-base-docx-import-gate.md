@@ -20,8 +20,10 @@ It does not create, import, upload, or generate a DOCX file. It creates only the
 
 ## Required merge-code tokens when the DOCX is present
 
+- `signer.name`
 - `signer.email`
 - `signer.extension`
+- `signer.fax`
 - `addressee.name`
 - `letter.reLine`
 
