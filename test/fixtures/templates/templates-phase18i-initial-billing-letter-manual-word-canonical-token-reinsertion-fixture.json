@@ -1,0 +1,32 @@
+{
+  "phase": "Templates Phase 18I",
+  "document": "Initial Billing Letter",
+  "sourceDocx": "templates/docx/letters/initial-billing-letter.docx",
+  "manualWordEditRequired": true,
+  "requiredVisibleCanonicalTokens": [
+    "{{letter.date}}",
+    "{{insurer.name}}",
+    "{{insurer.mailingAddress.line1}}",
+    "{{insurer.mailingAddress.city}}",
+    "{{insurer.mailingAddress.state}}",
+    "{{insurer.mailingAddress.zip}}",
+    "{{provider.name}}",
+    "{{patient.name}}",
+    "{{claim.number}}",
+    "{{claim.amount}}",
+    "{{claim.dosRange}}",
+    "{{matter.fileNumber}}"
+  ],
+  "requiredVisiblePhrases": [
+    "Provider:",
+    "Patient:",
+    "Claim No.:",
+    "Amount:",
+    "Date of Service:",
+    "Our File Number:",
+    "Dear Sir or Madam:"
+  ],
+  "generationWired": false,
+  "clioCallsAllowed": false,
+  "storageCallsAllowed": false
+}
