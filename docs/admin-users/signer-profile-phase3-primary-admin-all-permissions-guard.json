@@ -1,0 +1,1553 @@
+{
+  "phase": "Admin Users / Signer Profile Phase 3",
+  "purpose": "Ensure Dave/the primary admin and owner_admin/bootstrap path default to all registered permissions.",
+  "baseline": "admin-users-signer-profile-phase2-real-wiring-map-20260623",
+  "requirement": "Dave/the primary admin should default to access to all permissions. Owner-admin/bootstrap behavior must preserve full permission access unless explicitly changed.",
+  "candidatePermissionFiles": [
+    {
+      "path": "app/court-calendar/page.tsx",
+      "hits": []
+    },
+    {
+      "path": "app/admin/page.tsx",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "app/admin/permissions/page.tsx",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/admin/users/page.tsx",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/admin/audit-history/page.tsx",
+      "hits": []
+    },
+    {
+      "path": "app/api/auth/login/route.ts",
+      "hits": [
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/auth/session/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/graph/token-health/route.ts",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/deployment-package/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/catalog/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/activation-status/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/role-matrix/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/check/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/remove-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/assign-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/planning/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/password-reset/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/create/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/permission-override/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/lockout/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminPermissions.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "lib/adminUsersWriteContracts.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminUsersPlanning.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminAuth.ts",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "lib/admin-permissions/roleMatrix.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "lib/admin-permissions/catalog.ts",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-route-map-readiness-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-create-user-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permission-lockout-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-prod-auth-admin-smoke.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-completion-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-registry-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-seed-preview-safety.mjs",
+      "hits": [
+        "permissions",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-db-preview-readonly-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-page-permission-enforcement-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-write-contract-preview-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase5-simulation-completion-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-audit-visibility-readiness-safety.mjs",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-activation-planning-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-migration-sql-safety.mjs",
+      "hits": [
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-matrix-coverage-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-permission-override-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase5-enforcement-simulation-negative-path-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-planning-readonly-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/apply-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permission-check-endpoint-enforcement-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-api-permission-enforcement-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-completion-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-session-control-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-write-controls-preview-safety.mjs",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-no-lockout-smoke-plan-readiness-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-permission-override-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/preview-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-create-user-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-dry-run-decision-path-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-blocked-notice-safety.mjs",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-first-target-planning-readiness-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase10-admin-exposure-readiness-plan.mjs",
+      "hits": []
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-completion-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase5-permission-check-negative-path-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-enforcement-engine-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-readonly-page-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-signer-profile-phase2-real-wiring-map.mjs",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-schema-foundation-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase4-env-deployment-readiness-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-dry-run-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase2-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-seed-apply-guard-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permission-check-endpoint-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-enforcement-flag-preview-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-effective-permissions-readonly-safety.mjs",
+      "hits": [
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-config-preview-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "hits": [
+        "permissions",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    }
+  ],
+  "candidateRoleSeedFiles": [
+    {
+      "path": "app/admin/permissions/page.tsx",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/admin/users/page.tsx",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/permissions/role-matrix/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/remove-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/assign-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/planning/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/password-reset/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/create/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/permission-override/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/lockout/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminUsersWriteContracts.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminUsersPlanning.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/admin-permissions/roleMatrix.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-create-user-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-db-preview-readonly-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-write-contract-preview-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-activation-planning-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-migration-sql-safety.mjs",
+      "hits": [
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-permission-override-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/apply-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-permission-override-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/preview-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-create-user-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-schema-foundation-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase2-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-seed-apply-guard-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminrolepermission"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "hits": [
+        "permissions",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    }
+  ],
+  "candidateBootstrapFiles": [
+    {
+      "path": "app/admin/users/page.tsx",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/auth/login/route.ts",
+      "hits": [
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/remove-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/assign-role/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/planning/route.ts",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/password-reset/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/create/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/permission-override/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "app/api/admin/users/lockout/route.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminUsersWriteContracts.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "lib/adminUsersPlanning.ts",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-write-contract-preview-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase7-activation-planning-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-permissions-matrix-coverage-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/apply-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase6-negative-path-diagnostics-readiness-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/preview-admin-user-role-seed.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap",
+        "permissionRegistry"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-user-role-schema-foundation-safety.mjs",
+      "hits": [
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-assign-role-ui-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase2-completion-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-phase3-remove-role-route-safety.mjs",
+      "hits": [
+        "owner_admin",
+        "permissions",
+        "adminpermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "hits": [
+        "permissions",
+        "adminrolepermission",
+        "bootstrapSafe",
+        "bootstrap"
+      ]
+    }
+  ],
+  "candidatePermissionKeys": [
+    "${file}\\n${read(file)}",
+    "${permission}",
+    "${row.roleKey}:${row.permissionKey}",
+    ");\n\nassert(auditHistoryPage.includes(",
+    ");\n\nassert(permissionCheck.includes(",
+    ");\n\nassert(permissionsPage.includes(",
+    ");\n\nassert(usersPage.includes(",
+    ");\nassert(auditPage.includes(",
+    ");\nassert(permissionCheck.includes(",
+    ");\nassert(permissionsApi.includes(",
+    ");\nassert(permissionsPage.includes(",
+    ");\nassert(read(envDeploymentVerifierFile).includes(",
+    ");\nassert(read(files.phase4Completion).includes(",
+    ");\nassert(usersPage.includes(",
+    ");\n}\n\nassert(read(envDeploymentVerifierFile).includes(",
+    ");\n}\n\nassert(read(files.phase4Env).includes(",
+    "--apply-admin-user-role-seed",
+    ".audit",
+    ".create(",
+    ".createMany(",
+    ".delete(",
+    ".deleteMany(",
+    ".update(",
+    ".updateMany(",
+    "ADMIN_PERMISSION_DEFINITIONS",
+    "ADMIN_PERMISSION_KEYS",
+    "ADMIN_PERMISSION_NEVER_BLOCK_PATTERNS",
+    "ADMIN_ROLE_PLANNING_DEFINITIONS",
+    "ADMIN_ROUTE_PERMISSIONS",
+    "ADMIN_USER_PLANNING_ROWS",
+    "Admin",
+    "AdminPermissionDryRunDecision",
+    "AdminPermissionEnforcementDecision",
+    "AdminPermissionOverrideConfig",
+    "AdminRole",
+    "AdminRolePermission",
+    "AdminRolePermission\\",
+    "AdminRolePermission_roleId_fkey",
+    "AdminRolePermission_roleId_permissionKey_key",
+    "AdminRole\\",
+    "AdminRole_key_key",
+    "AdminUser",
+    "AdminUser.passwordHash",
+    "AdminUser.status",
+    "AdminUserPermissionOverride",
+    "AdminUserPermissionOverride.find",
+    "AdminUserPermissionOverride_userId_fkey",
+    "AdminUserPermissionOverride_userId_permissionKey_key",
+    "AdminUserRole",
+    "AdminUserRole\\",
+    "AdminUserRole_roleId_fkey",
+    "AdminUserRole_userId_fkey",
+    "AdminUserRole_userId_roleId_key",
+    "AdminUser\\",
+    "AdminUser_email_key",
+    "Administrator",
+    "Audits",
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT",
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT=1",
+    "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT_ENABLED",
+    "BARSH_ADMIN_PERMISSION_OVERRIDES_JSON",
+    "Clients",
+    "Court",
+    "Created",
+    "Created.",
+    "DELETE",
+    "DELETE\\\\\\",
+    "Documents",
+    "Invoices",
+    "Lawsuits",
+    "Matters",
+    "Permissions",
+    "Permissions\\",
+    "UPDATE",
+    "Updated",
+    "User",
+    "VALID_ADMIN_USER_STATUSES",
+    "activeBootstrapOwnerAdminCount",
+    "activeDbUsers",
+    "admin",
+    "admin-api-permission-blocked",
+    "admin-apis",
+    "admin-client-info",
+    "admin-functions-only",
+    "admin-page-permission-blocked\\",
+    "admin-pages",
+    "admin-permission-check",
+    "admin-permission-check-blocked",
+    "admin-permissions-catalog",
+    "admin-permissions-phase20-activation-status",
+    "admin-permissions-phase21-deployment-package",
+    "admin-permissions-read-only",
+    "admin-permissions-role-matrix",
+    "admin-proxy",
+    "admin-user-assign-role",
+    "admin-user-create",
+    "admin-user-lock",
+    "admin-user-lockout",
+    "admin-user-management",
+    "admin-user-password-reset",
+    "admin-user-permission-override",
+    "admin-user-remove-role",
+    "admin-user-role-seed-apply",
+    "admin-user-role-seed-preview",
+    "admin-user-unlock",
+    "admin-users-phase12j",
+    "admin-users-phase12k",
+    "admin-users-phase3",
+    "admin-users-roles-planning-read-only",
+    "admin-users-roles-planning-read-only\\",
+    "admin-users-signer-profile-phase1-security-repair-20260623",
+    "admin-users-write-contract-preview",
+    "admin.access",
+    "admin.auditHistory.view",
+    "admin.backups.restorePreview",
+    "admin.backups.run",
+    "admin.backups.view",
+    "admin.claimIndex.audit",
+    "admin.claimIndex.view",
+    "admin.clients.edit",
+    "admin.clients.view",
+    "admin.documentReadiness.audit",
+    "admin.documentTemplates.manage",
+    "admin.documentTemplates.view",
+    "admin.home.view",
+    "admin.invoices.",
+    "admin.invoices.create",
+    "admin.invoices.finalize",
+    "admin.invoices.view",
+    "admin.invoices.view\\",
+    "admin.invoices.void",
+    "admin.lawsuitCleanup.confirm",
+    "admin.lawsuitCleanup.view",
+    "admin.lawsuits.audit",
+    "admin.permissions.manage",
+    "admin.readiness.view",
+    "admin.referenceData.import",
+    "admin.referenceData.view",
+    "admin.ticklers.run",
+    "admin.ticklers.view",
+    "admin.users.manage",
+    "adminPermissionDryRunDecisions",
+    "adminPermissionEnforcementDecision",
+    "adminPermissionEnforcementDecision(",
+    "adminPermissionForRoute",
+    "adminRole.create",
+    "adminRolePermission.find",
+    "adminRoutePermissionDryRunDecisions",
+    "adminUser.create",
+    "adminUserPermissionOverride.create",
+    "adminUserPermissionOverride.find",
+    "adminUserRole.create",
+    "adminUserRole.delete",
+    "admin_user",
+    "admin_user_permission_override",
+    "admin_user_role",
+    "administrative",
+    "allAdminPermissionKeys",
+    "apply:admin-user-role-seed",
+    "assignPreviewReady",
+    "audit-history",
+    "barsh-admin-dev",
+    "barsh-admin-dev-session",
+    "barsh-admin-user-role-seed-${Date.now()}.sql",
+    "barsh-matters-local",
+    "barsh_admin_gate",
+    "barsh_admin_identity",
+    "billing_admin",
+    "blockedPermissionLabel",
+    "clearAdminGateCookie(response)",
+    "clientName",
+    "client_credentials",
+    "configuredAdminPermissionOverridesFromEnv",
+    "configuredAdminPermissionsEnforcementEnabled",
+    "configuredAdminPermissionsEnforcementEnabled()",
+    "court",
+    "court-calendar",
+    "court-calendar-read",
+    "court-calendar-report",
+    "court-calendar-write",
+    "court-group\\",
+    "court-heading\\",
+    "courtCalendar.edit",
+    "courtCalendar.view",
+    "create-new-override",
+    "create-preview",
+    "createMatterAuditLogEntry",
+    "createdAt",
+    "data-barsh-admin-audit-history=",
+    "data-barsh-admin-logout-button=\\",
+    "data-barsh-admin-permissions-blocked-notice=",
+    "data-barsh-admin-permissions-blocked-notice=\\",
+    "data-barsh-admin-permissions-definitions=\\",
+    "data-barsh-admin-permissions-dry-run=\\",
+    "data-barsh-admin-permissions-override-config=\\",
+    "data-barsh-admin-permissions-page=\\",
+    "data-barsh-admin-permissions-route-map=\\",
+    "data-barsh-admin-permissions-summary=\\",
+    "data-barsh-admin-session-control=\\",
+    "data-barsh-admin-session-status=\\",
+    "data-barsh-admin-users-assign-actor-email=",
+    "data-barsh-admin-users-assign-role-control=",
+    "data-barsh-admin-users-assign-role-key=",
+    "data-barsh-admin-users-assign-target-email=",
+    "data-barsh-admin-users-audit-history-focus=",
+    "data-barsh-admin-users-audit-history-link=",
+    "data-barsh-admin-users-audit-visibility=",
+    "data-barsh-admin-users-create-user-control=",
+    "data-barsh-admin-users-db-preview=",
+    "data-barsh-admin-users-effective-permissions=",
+    "data-barsh-admin-users-enforcement-banner=",
+    "data-barsh-admin-users-override-action=",
+    "data-barsh-admin-users-override-actor-email=",
+    "data-barsh-admin-users-override-permission-key=",
+    "data-barsh-admin-users-override-reason=",
+    "data-barsh-admin-users-override-target-email=",
+    "data-barsh-admin-users-permission-override-control=",
+    "data-barsh-admin-users-planning-page=",
+    "data-barsh-admin-users-planning-page=\\",
+    "data-barsh-admin-users-planning-roles=\\",
+    "data-barsh-admin-users-planning-summary=\\",
+    "data-barsh-admin-users-planning-users=\\",
+    "data-barsh-admin-users-remove-actor-email=",
+    "data-barsh-admin-users-remove-role-control=",
+    "data-barsh-admin-users-remove-role-key=",
+    "data-barsh-admin-users-remove-target-email=",
+    "data-barsh-admin-users-write-controls-preview=",
+    "data-barsh-court-calendar-results-table=",
+    "data-barsh-court-calendar-search-text-filter=",
+    "date-write-line\\",
+    "dedicated-court-calendar-page-create",
+    "default-admin-allow-all",
+    "default-admin-allow-all\\",
+    "defaultAdminPermissionAllowed",
+    "direct-payment-post",
+    "direct-payment-void",
+    "document-finalize",
+    "document-generate",
+    "document-read",
+    "documents.finalize",
+    "documents.generate",
+    "documents.printQueue.manage",
+    "documents.view",
+    "docx-template",
+    "effectiveAdminUserPlanningRows",
+    "effectivePermissionCount",
+    "effectivePermissionKeys",
+    "hideClosedMatters",
+    "isAdminPermissionNeverBlockPath",
+    "isAdminRequestAuthorized(req)",
+    "isKnownAdminPermissionKey",
+    "lawsuit-close",
+    "lawsuit-create",
+    "lawsuit-payment-post",
+    "lawsuit-payment-void",
+    "lawsuit-read",
+    "lawsuit-write",
+    "lawsuitAmount",
+    "lawsuitBalance",
+    "lawsuitNumber",
+    "lawsuits.close",
+    "lawsuits.create",
+    "lawsuits.edit",
+    "lawsuits.payments.post",
+    "lawsuits.payments.void",
+    "lawsuits.view",
+    "legacy-admin-password",
+    "masterLawsuitId",
+    "matter-close",
+    "matter-read",
+    "matter-write",
+    "matters.close",
+    "matters.edit",
+    "matters.payments.post",
+    "matters.payments.void",
+    "matters.view",
+    "neverBlockPermissionKeys",
+    "neverBlockRoutesForPermission",
+    "new-admin@example.com",
+    "normalizedUsername",
+    "operations_admin",
+    "overridePreviewReady",
+    "owner-username-password",
+    "owner_admin",
+    "owner_admin\\",
+    "permission",
+    "permission-management",
+    "permission-override-preview",
+    "permission:",
+    "permissionDryRun",
+    "permissionDryRun:",
+    "permissionKey",
+    "permissionOverrideConfig",
+    "permissionOverrideEntriesFromArray",
+    "permissionRegistryCount",
+    "permission\\",
+    "permissions,",
+    "permissionsMode:",
+    "planningSourceHasOwnerAdmin",
+    "preview:admin-user-role-seed",
+    "previewReady",
+    "print-queue-read",
+    "prisma-client-js",
+    "prisma.adminRole.create",
+    "prisma.adminRole.delete",
+    "prisma.adminRole.findMany",
+    "prisma.adminRole.update",
+    "prisma.adminRolePermission.count",
+    "prisma.adminUser.create",
+    "prisma.adminUser.delete",
+    "prisma.adminUser.findMany",
+    "prisma.adminUser.update",
+    "prisma.adminUserPermissionOverride.count",
+    "prisma.adminUserRole.count",
+    "prisma.adminUserRole.create",
+    "prisma.adminUserRole.delete",
+    "prisma.auditLog.findMany",
+    "process.env.BARSH_ADMIN_PERMISSIONS_ENFORCEMENT",
+    "read-only",
+    "read-only\\",
+    "read_only_admin",
+    "ready",
+    "removePreviewReady",
+    "rolePermissionCount",
+    "runtime-still-read-only",
+    "selected-user-mismatch-reviewed",
+    "selectedRemoveUserRoleKeys",
+    "settlement-read",
+    "settlement-write",
+    "tx.adminUser.create",
+    "tx.adminUserPermissionOverride.create",
+    "tx.adminUserPermissionOverride.update",
+    "tx.adminUserRole.create",
+    "tx.adminUserRole.delete",
+    "update-existing-override",
+    "updated",
+    "updatedAt",
+    "user",
+    "user-agent",
+    "user-preview-present",
+    "userId",
+    "username",
+    "username-password",
+    "usersApi",
+    "usersPage",
+    "usersWouldInsertIfDatabaseEmpty",
+    "verify-templates-layout-composition-validation-suite.mjs",
+    "verify:admin-api-permission-enforcement-safety",
+    "verify:admin-permission-check-endpoint-safety",
+    "verify:admin-permissions-blocked-notice-safety",
+    "verify:admin-permissions-config-preview-safety",
+    "verify:admin-permissions-dry-run-safety",
+    "verify:admin-permissions-enforcement-flag-preview-safety",
+    "verify:admin-permissions-matrix-coverage-safety",
+    "verify:admin-permissions-readonly-page-safety",
+    "verify:admin-permissions-registry-safety",
+    "verify:admin-session-control-safety",
+    "verify:admin-user-role-seed-apply-guard-safety",
+    "verify:admin-user-role-seed-preview-safety",
+    "verify:admin-users-effective-permissions-readonly-safety",
+    "verify:admin-users-phase3-assign-role-route-safety",
+    "verify:admin-users-phase3-assign-role-ui-safety",
+    "verify:admin-users-phase3-create-user-route-safety",
+    "verify:admin-users-phase3-create-user-ui-safety",
+    "verify:admin-users-phase3-permission-override-route-safety",
+    "verify:admin-users-phase3-permission-override-ui-safety",
+    "verify:admin-users-phase3-remove-role-route-safety",
+    "verify:admin-users-phase3-remove-role-ui-safety",
+    "verify:admin-users-phase4-completion-safety",
+    "verify:admin-users-phase4-dry-run-decision-path-safety",
+    "verify:admin-users-phase4-env-deployment-readiness-safety",
+    "verify:admin-users-phase4-route-map-readiness-safety",
+    "verify:admin-users-phase5-enforcement-simulation-negative-path-safety",
+    "verify:admin-users-phase5-permission-check-negative-path-safety",
+    "verify:admin-users-phase5-simulation-completion-safety",
+    "verify:admin-users-phase6-audit-visibility-readiness-safety",
+    "verify:admin-users-phase6-completion-safety",
+    "verify:admin-users-phase6-negative-path-diagnostics-readiness-safety",
+    "verify:admin-users-phase7-activation-planning-readiness-safety",
+    "verify:admin-users-phase7-completion-safety",
+    "verify:admin-users-phase7-first-target-planning-readiness-safety",
+    "verify:admin-users-phase7-no-lockout-smoke-plan-readiness-safety",
+    "verify:admin-users-planning-readonly-safety",
+    "verify:admin-users-write-contract-preview-safety",
+    "verify:admin-users-write-controls-preview-safety",
+    "writeClio",
+    "writeContracts"
+  ],
+  "guardedImplementationPlan": [
+    "Verify owner_admin is treated as the all-permissions role.",
+    "Verify seed/apply logic assigns all registered permissions to owner_admin or otherwise treats owner_admin as allow-all.",
+    "Verify bootstrapSafe or primary admin seed path preserves owner_admin/all-permission access.",
+    "Avoid changing signer/document-generation behavior.",
+    "Avoid stale exact-fragment verifiers that depend on old schema formatting."
+  ]
+}
