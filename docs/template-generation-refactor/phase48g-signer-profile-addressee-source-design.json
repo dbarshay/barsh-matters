@@ -1,0 +1,90 @@
+{
+  "phase": "48G",
+  "title": "Signer Profile and Addressee Source Design Proposal",
+  "scope": {
+    "readOnlyDesign": true,
+    "dbMutation": false,
+    "prismaMigration": false,
+    "docxConversion": false,
+    "templateFieldMapping": false,
+    "documentFinalization": false,
+    "clioAction": false,
+    "graphAction": false,
+    "emailAction": false,
+    "printAction": false,
+    "printQueueAction": false
+  },
+  "baseline": {
+    "phase48fHead": "e0e2cc8932ba8945f201cfa5bfbe6ed5cbb3f667",
+    "phase48fTag": "signer-addressee-court-source-resolution-inspection-phase48f-20260622-210955"
+  },
+  "decisions": {
+    "nonLoginSignersAllowed": true,
+    "signerEligibilitySeparateFromAdminUser": true,
+    "signerEligibilityDefaultEnabled": true,
+    "incompleteSignerProfilesAllowed": true,
+    "blockGenerationWhenTemplateRequiredSignerFieldsMissing": true,
+    "addresseeDefaultSourceOwner": "template",
+    "workflowOverrideAllowed": true,
+    "missingAddresseeDataBehavior": "warn_require_manual_completion",
+    "lawsuitMatterInsurerControls": true,
+    "childInsurerConflictExpected": false,
+    "settledWithContactResolution": "settlement_contact_only",
+    "settledWithContactFallbackAllowed": false
+  },
+  "signerProfile": {
+    "recommendedStorage": "separate_signer_profile_table",
+    "doNotStoreDirectlyOnAdminUser": true,
+    "adminUserIdNullable": true,
+    "supportsNonLoginSigners": true,
+    "fields": [
+      "id",
+      "adminUserId",
+      "displayName",
+      "signatureName",
+      "title",
+      "phoneExtension",
+      "fax",
+      "email",
+      "signerEnabled",
+      "status",
+      "isDefaultForAdminUser",
+      "sortOrder",
+      "notes",
+      "createdAt",
+      "updatedAt"
+    ]
+  },
+  "addressee": {
+    "sourceTypes": [
+      "adversary_attorney",
+      "insurer",
+      "court",
+      "settled_with_contact",
+      "manual"
+    ],
+    "missingDataBehavior": "warn_require_manual_completion",
+    "sourceRules": {
+      "adversary_attorney": {
+        "source": "lawsuit_master_selected_adversary_attorney",
+        "fallback": "warn_require_manual_completion"
+      },
+      "insurer": {
+        "source": "lawsuit_matter_insurer_controls",
+        "childConflictWorkflowRequired": false
+      },
+      "court": {
+        "source": "lawsuit_master_court_reference",
+        "fallback": "warn_require_manual_completion"
+      },
+      "settled_with_contact": {
+        "source": "settlement_contact_only",
+        "fallbackToOtherSourcesAllowed": false
+      },
+      "manual": {
+        "saveBack": false
+      }
+    }
+  },
+  "futureImplementationRequiresSeparateApproval": true
+}
