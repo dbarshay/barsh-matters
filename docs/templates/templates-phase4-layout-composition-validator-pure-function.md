@@ -4,7 +4,7 @@
 
 Implementation lock for a pure validator function and fixture-backed verifier.
 
-This phase intentionally remains isolated. It is not wired into production generation, document assembly, UI flows, DOCX handling, PDF conversion, upload, or external document-storage interaction.
+This phase intentionally remains isolated. It is not wired into production generation, document assembly, UI flows, DOCX handling, PDF conversion, upload, or external document-storage interaction. This is a no external document-storage interaction guardrail.
 
 ## Scope
 

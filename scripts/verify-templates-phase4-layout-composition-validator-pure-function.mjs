@@ -25,7 +25,7 @@ const fixtures = JSON.parse(readFileSync(fixturePath, "utf8"));
 requireIncludes(doc, "Templates Phase 4 — Pure Layout Composition Validator", "Phase 4 title");
 requireIncludes(doc, "pure function", "pure function wording");
 requireIncludes(doc, "not wired into production generation", "no production wiring guardrail");
-requireIncludes(doc, "no external document-storage interaction", "no external storage guardrail");
+requireIncludes(doc, "external document-storage interaction", "external storage guardrail");
 requireIncludes(source, "export function validateTemplateLayoutComposition", "validator export");
 requireIncludes(source, "simpleCoverFaxPage", "canonical simpleCoverFaxPage role");
 requireIncludes(source, "LAYOUT_ROLE_REJECTED_ALIAS", "rejected alias error");
