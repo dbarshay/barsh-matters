@@ -652,7 +652,7 @@
     "inspect:phase48f-signer-addressee-court-source-resolution": "node scripts/inspect-phase48f-signer-addressee-court-source-resolution.cjs",
     "verify:phase48f-signer-addressee-court-source-resolution-inspection": "node scripts/verify-phase48f-signer-addressee-court-source-resolution-inspection.cjs",
     "verify:phase48g-signer-profile-addressee-source-design": "node scripts/verify-phase48g-signer-profile-addressee-source-design.cjs",
-    "verify:templates:layout-composition": "node scripts/verify-templates-layout-composition-validation-suite.mjs && npm run verify:templates:phase18i-initial-billing-letter-manual-word-canonical-token-reinsertion && npm run verify:templates:phase18j-initial-billing-letter-preferred-letter-formatting",
+    "verify:templates:layout-composition": "node scripts/verify-templates-layout-composition-validation-suite.mjs && npm run verify:templates:phase18i-initial-billing-letter-manual-word-canonical-token-reinsertion && npm run verify:templates:phase18j-initial-billing-letter-preferred-letter-formatting && npm run verify:templates:phase18k-initial-billing-letter-template-specific-letterhead-overrides",
     "verify:templates:phase18a-initial-billing-letter": "node scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs",
     "verify:templates:phase18b-initial-billing-letter-docx-import-gate": "node scripts/verify-templates-phase18b-initial-billing-letter-docx-import-gate.mjs",
     "verify:templates:phase18c-initial-billing-letter-local-dry-run": "node scripts/verify-templates-phase18c-initial-billing-letter-local-dry-run.cjs",
@@ -662,7 +662,8 @@
     "verify:templates:phase18g-initial-billing-letter-canonical-render-contract": "node scripts/verify-templates-phase18g-initial-billing-letter-canonical-render-contract.mjs",
     "verify:templates:phase18h-initial-billing-letter-word-openable-source-restore": "python3 scripts/verify-templates-phase18h-initial-billing-letter-word-openable-source-restore.py",
     "verify:templates:phase18i-initial-billing-letter-manual-word-canonical-token-reinsertion": "python3 scripts/verify-templates-phase18i-initial-billing-letter-manual-word-canonical-token-reinsertion.py",
-    "verify:templates:phase18j-initial-billing-letter-preferred-letter-formatting": "python3 scripts/verify-templates-phase18j-initial-billing-letter-preferred-letter-formatting.py"
+    "verify:templates:phase18j-initial-billing-letter-preferred-letter-formatting": "python3 scripts/verify-templates-phase18j-initial-billing-letter-preferred-letter-formatting.py",
+    "verify:templates:phase18k-initial-billing-letter-template-specific-letterhead-overrides": "python3 scripts/verify-templates-phase18k-initial-billing-letter-template-specific-letterhead-overrides.py"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

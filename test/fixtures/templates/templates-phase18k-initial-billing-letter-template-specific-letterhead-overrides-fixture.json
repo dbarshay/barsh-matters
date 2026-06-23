@@ -1,0 +1,42 @@
+{
+  "phase": "Templates Phase 18K",
+  "document": "Initial Billing Letter",
+  "templateId": "initial-billing-letter",
+  "letterheadAsset": "templates/docx/base/letterhead-simple.docx",
+  "bodyTemplate": "templates/docx/letters/initial-billing-letter.docx",
+  "phase18JPreferredFormattingFixture": "test/fixtures/templates/templates-phase18j-initial-billing-letter-preferred-letter-formatting-fixture.json",
+  "outputDir": ".tmp-phase18k-output",
+  "outputDocx": ".tmp-phase18k-output/initial-billing-letter-BRL_202600003-phase18k-template-specific-overrides.docx",
+  "templateSpecificLetterheadOverrides": {
+    "scope": "initial-billing-letter-only",
+    "tel": "Tel: (631) 210-7272",
+    "fax": "Fax: (516) 706-5055",
+    "email": "Email: info@brlfirm.com",
+    "signatureName": "Barshay, Rizzo & Lopez, PLLC"
+  },
+  "otherTemplatesRemainDynamic": true,
+  "forbiddenVisibleValuesInInitialBillingLetterProof": [
+    "signer.extension",
+    "signer.fax",
+    "signer.email"
+  ],
+  "expectedVisibleValues": [
+    "Tel: (631) 210-7272",
+    "Fax: (516) 706-5055",
+    "Email: info@brlfirm.com",
+    "Barshay, Rizzo & Lopez, PLLC",
+    "June 23, 2026",
+    "Allstate Indemnity Company",
+    "3100 Sanders Road, Suite 201",
+    "Northbrook, Illinois 60062",
+    "Re:Provider: ATLANTIC MEDICAL & DIAGNOSTIC, P.C.",
+    "Patient: David Barshay",
+    "Claim No.: 1111",
+    "Amount: $836.75",
+    "Date of Service: 02/03/2021",
+    "Our File Number: BRL_202600003"
+  ],
+  "generationWired": false,
+  "clioCallsAllowed": false,
+  "storageCallsAllowed": false
+}
