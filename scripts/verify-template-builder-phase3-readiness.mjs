@@ -59,20 +59,25 @@ for (const token of [
 
 const build = read("app/admin/document-templates/build/page.tsx");
 for (const token of [
-  "Phase 3 locks",
   "TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS",
-  "TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELD_TYPES",
-  "TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS",
-  "TEMPLATE_BUILDER_STARTING_CATEGORIES",
   "TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS",
   "Search merge fields",
   "Example matter",
-  "Format for copy",
+  "Formats for copy",
   "toggleSort",
   "CopyIcon",
-  "Production DOCX upload, token mutation, and matter-side Generate Documents remain intentionally unwired",
+  "TrashIcon",
+  "Delete Field",
 ]) {
   add(`Build page contains ${token}`, build.includes(token));
+}
+for (const removed of [
+  "Phase 3 locks",
+  "Category readiness",
+  "Custom manual placeholder readiness",
+  "Production DOCX upload, token mutation, and matter-side Generate Documents remain intentionally unwired",
+]) {
+  add(`Build page no longer exposes removed readiness text ${removed}`, !build.includes(removed));
 }
 
 const doc = read("docs/templates/template-builder-phase3-merge-field-library-readiness.md");

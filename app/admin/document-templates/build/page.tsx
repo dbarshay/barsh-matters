@@ -3,11 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS,
-  TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELD_TYPES,
-  TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS,
-  TEMPLATE_BUILDER_STARTING_CATEGORIES,
   TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS,
-  templateBuilderTokenForCustomLabel,
 } from "@/src/lib/templates/template-builder-merge-field-library";
 
 type SortKey = "category" | "fieldLabel" | "mergeField" | "exampleOutput";
@@ -17,9 +13,8 @@ function categoryLabel(field: { category: string; subcategory?: string }) {
   return field.subcategory ? field.category + " → " + field.subcategory : field.category;
 }
 
-function sortValue(field: any, sortKey: SortKey, exampleMatter: string) {
+function sortValue(field: any, sortKey: SortKey) {
   if (sortKey === "category") return categoryLabel(field);
-  if (sortKey === "exampleOutput") return field.kind === "canonical" ? field.exampleOutput + " from " + exampleMatter : field.exampleOutput;
   return String(field[sortKey] || "");
 }
 
@@ -37,23 +32,41 @@ function CopyIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M6 6l1 15h10l1-15" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function formatLabel(value: string) {
+  if (value === "date:MM/DD/YYYY") return "date:MM/DD/YYYY";
+  if (value === "date:Month D, YYYY") return "date:Month D, YYYY";
+  return value;
+}
+
 export default function BuildTemplatePage() {
   const [query, setQuery] = useState("");
-  const [format, setFormat] = useState("As Stored");
+  const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [exampleMatter, setExampleMatter] = useState("BRL_202600003");
-  const [customLabel, setCustomLabel] = useState("Settlement Deadline");
   const [sortKey, setSortKey] = useState<SortKey>("category");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [copiedToken, setCopiedToken] = useState("");
+  const [deletedTokens, setDeletedTokens] = useState<string[]>([]);
+  const [deleteCandidate, setDeleteCandidate] = useState<any | null>(null);
 
-  const withFormat = (token: string) => {
-    if (format === "As Stored") return token;
-    return token.replace("}}", "|" + format + "}}");
-  };
+  const availableFields = useMemo(() => {
+    return TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.filter((field) => !deletedTokens.includes(field.mergeField));
+  }, [deletedTokens]);
 
   const visibleFields = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const searched = TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.filter((field) => {
+    const searched = availableFields.filter((field) => {
       if (q.length === 0) return true;
       return [
         field.category,
@@ -68,17 +81,12 @@ export default function BuildTemplatePage() {
     });
 
     return [...searched].sort((a, b) => {
-      const left = sortValue(a, sortKey, exampleMatter).toLowerCase();
-      const right = sortValue(b, sortKey, exampleMatter).toLowerCase();
+      const left = sortValue(a, sortKey).toLowerCase();
+      const right = sortValue(b, sortKey).toLowerCase();
       const result = left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
       return sortDirection === "asc" ? result : -result;
     });
-  }, [query, sortKey, sortDirection, exampleMatter]);
-
-  const categoryRows = TEMPLATE_BUILDER_STARTING_CATEGORIES.flatMap((category) => [
-    { label: category.label, type: "Top-level", rules: category.fixed ? "Fixed name; cannot be renamed or deleted" : "Admin managed; can be reordered" },
-    ...(category.subcategories || []).map((sub) => ({ label: category.label + " → " + sub.label, type: "Subcategory", rules: "Admin managed; fields move to General if deleted" })),
-  ]);
+  }, [availableFields, query, sortKey, sortDirection]);
 
   function toggleSort(nextKey: SortKey) {
     if (sortKey === nextKey) {
@@ -88,6 +96,38 @@ export default function BuildTemplatePage() {
 
     setSortKey(nextKey);
     setSortDirection("asc");
+  }
+
+  function toggleFormat(format: string) {
+    setSelectedFormats((current) => {
+      if (current.includes(format)) return current.filter((item) => item !== format);
+
+      const next = [...current, format];
+      if (format.startsWith("date:")) {
+        return next.filter((item) => !item.startsWith("date:") || item === format);
+      }
+
+      if (["upper", "lower", "title"].includes(format)) {
+        return next.filter((item) => !["upper", "lower", "title"].includes(item) || item === format);
+      }
+
+      return next;
+    });
+  }
+
+  function compatibleFormatsFor(field: any) {
+    return TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.filter((format) => field.compatibleModifiers.includes(format));
+  }
+
+  function appliedFormatsFor(field: any) {
+    const compatible = compatibleFormatsFor(field);
+    return selectedFormats.filter((format) => compatible.includes(format as any));
+  }
+
+  function withFormats(token: string, field: any) {
+    const formats = appliedFormatsFor(field);
+    if (formats.length === 0) return token;
+    return token.replace("}}", "|" + formats.join("|") + "}}");
   }
 
   async function copyToken(token: string) {
@@ -111,6 +151,12 @@ export default function BuildTemplatePage() {
     } catch {
       setCopiedToken("");
     }
+  }
+
+  function confirmDeleteField() {
+    if (!deleteCandidate?.mergeField) return;
+    setDeletedTokens((current) => Array.from(new Set([...current, deleteCandidate.mergeField])));
+    setDeleteCandidate(null);
   }
 
   const headerStyle = {
@@ -139,12 +185,9 @@ export default function BuildTemplatePage() {
   return (
     <main style={{ padding: "32px", maxWidth: "1280px", margin: "0 auto" }}>
       <a href="/admin/document-templates" style={{ color: "#1e3a8a", fontWeight: 700 }}>Back to Document Templates</a>
-      <h1 style={{ margin: "18px 0 10px", fontSize: "30px", color: "#0f172a" }}>Build Template</h1>
-      <p style={{ margin: "0 0 22px", color: "#334155", lineHeight: 1.6 }}>
-        Phase 3 locks the searchable merge-field library, category rules, format choices, and custom manual placeholder contract. Production DOCX upload, token mutation, and matter-side Generate Documents remain intentionally unwired.
-      </p>
+      <h1 style={{ margin: "18px 0 18px", fontSize: "30px", color: "#0f172a" }}>Build Template</h1>
 
-      <section style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 240px 220px", gap: "14px", marginBottom: "18px" }}>
+      <section style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 240px", gap: "14px", marginBottom: "16px" }}>
         <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
           Search merge fields
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search category, label, token, example output, aliases, type" style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "10px" }} />
@@ -157,19 +200,41 @@ export default function BuildTemplatePage() {
             <option>2026.06.00002</option>
           </select>
         </label>
-        <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
-          Format for copy
-          <select value={format} onChange={(event) => setFormat(event.target.value)} style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "10px", background: "#ffffff" }}>
-            <option>As Stored</option>
-            {TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
+      </section>
+
+      <section style={{ marginBottom: "18px", padding: "14px", border: "1px solid #cbd5e1", borderRadius: "12px", background: "#ffffff" }}>
+        <div style={{ marginBottom: "10px", fontWeight: 800, color: "#0f172a" }}>Formats for copy</div>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format) => {
+            const checked = selectedFormats.includes(format);
+            return (
+              <button
+                key={format}
+                type="button"
+                onClick={() => toggleFormat(format)}
+                aria-pressed={checked}
+                style={{
+                  border: checked ? "1px solid #1e3a8a" : "1px solid #cbd5e1",
+                  borderRadius: "999px",
+                  background: checked ? "#dbeafe" : "#ffffff",
+                  color: checked ? "#1e3a8a" : "#334155",
+                  padding: "8px 12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                {checked ? "✓ " : ""}{formatLabel(format)}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       <div style={{ maxHeight: "560px", overflow: "auto", border: "1px solid #cbd5e1", borderRadius: "12px" }}>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, background: "#ffffff" }}>
           <thead>
             <tr>
+              <th style={{ ...headerStyle, width: "78px" }}>Action</th>
               <th style={headerStyle}>
                 <button type="button" onClick={() => toggleSort("category")} style={sortButtonStyle}>
                   Category <span>{sortIndicator(sortKey === "category", sortDirection)}</span>
@@ -194,11 +259,33 @@ export default function BuildTemplatePage() {
           </thead>
           <tbody>
             {visibleFields.map((field) => {
-              const token = withFormat(field.mergeField);
+              const token = withFormats(field.mergeField, field);
               const copied = copiedToken === token;
 
               return (
                 <tr key={field.mergeField} style={{ borderTop: "1px solid #e2e8f0" }}>
+                  <td style={{ padding: "12px", verticalAlign: "top", borderTop: "1px solid #e2e8f0" }}>
+                    <button
+                      type="button"
+                      aria-label={"Delete " + field.fieldLabel}
+                      title="Delete field"
+                      onClick={() => setDeleteCandidate(field)}
+                      style={{
+                        width: "34px",
+                        height: "30px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid #fecaca",
+                        borderRadius: "8px",
+                        background: "#fef2f2",
+                        color: "#991b1b",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </td>
                   <td style={{ padding: "12px", verticalAlign: "top", borderTop: "1px solid #e2e8f0" }}>{categoryLabel(field)}</td>
                   <td style={{ padding: "12px", verticalAlign: "top", borderTop: "1px solid #e2e8f0" }}>
                     <div style={{ fontWeight: 800 }}>{field.fieldLabel}</div>
@@ -230,7 +317,7 @@ export default function BuildTemplatePage() {
                     </span>
                   </td>
                   <td style={{ padding: "12px", verticalAlign: "top", color: "#334155", borderTop: "1px solid #e2e8f0" }}>
-                    {field.kind === "canonical" ? field.exampleOutput + " from " + exampleMatter : field.exampleOutput}
+                    {field.exampleOutput}
                   </td>
                 </tr>
               );
@@ -239,6 +326,31 @@ export default function BuildTemplatePage() {
         </table>
       </div>
 
+      {deleteCandidate ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-field-title" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "20px" }}>
+          <section style={{ width: "min(520px, 100%)", borderRadius: "14px", overflow: "hidden", background: "#ffffff", boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)" }}>
+            <header style={{ background: "#1e3a8a", padding: "14px 18px" }}>
+              <h2 id="delete-field-title" style={{ margin: 0, color: "#ffffff", textAlign: "center", fontSize: "20px" }}>Delete Field</h2>
+            </header>
+            <div style={{ padding: "18px", color: "#0f172a", lineHeight: 1.55 }}>
+              <p style={{ margin: "0 0 14px" }}>
+                Delete <strong>{deleteCandidate.fieldLabel}</strong> from this Build Template view?
+              </p>
+              <p style={{ margin: 0, color: "#475569" }}>
+                This removes the field from the current UI session only. Persistent field deletion will be wired in a later Template Builder management phase.
+              </p>
+              <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button type="button" onClick={() => setDeleteCandidate(null)} style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #dc2626", background: "#ffffff", color: "#dc2626", fontWeight: 800, cursor: "pointer" }}>
+                  Cancel
+                </button>
+                <button type="button" onClick={confirmDeleteField} style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", fontWeight: 800, cursor: "pointer" }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -9,7 +9,7 @@ const build = read("app/admin/document-templates/build/page.tsx");
 for (const token of [
   "Search merge fields",
   "Example matter",
-  "Format for copy",
+  "Formats for copy",
   "toggleSort",
   "CopyIcon",
   "navigator.clipboard.writeText",
