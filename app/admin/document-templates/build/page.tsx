@@ -53,7 +53,7 @@ function formatLabel(value: string) {
 export default function BuildTemplatePage() {
   const [query, setQuery] = useState("");
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
-  const [exampleMatter, setExampleMatter] = useState("BRL_202600003");
+  const [exampleMatter, setExampleMatter] = useState("2026.06.00011");
   const [exampleOutputMap, setExampleOutputMap] = useState<Record<string, string>>({});
   const [examplePreviewStatus, setExamplePreviewStatus] = useState("Loading live preview…");
   const [sortKey, setSortKey] = useState<SortKey>("category");
@@ -233,11 +233,9 @@ export default function BuildTemplatePage() {
         <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
           Example matter
           <select value={exampleMatter} onChange={(event) => setExampleMatter(event.target.value)} style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "10px", background: "#ffffff" }}>
-            <option>BRL_202600003</option>
-            <option>BRL30236</option>
-            <option>2026.06.00002</option>
-            <option>2026.06.00011</option>
-          </select>
+              <option value="2026.06.00011">2026.06.00011</option>
+              <option value="2026.06.00012">2026.06.00012</option>
+            </select>
         </label>
       </section>
 
