@@ -22,6 +22,17 @@ export const TEMPLATE_SIGNER_REQUIREMENTS_REGISTRY_PHASE1: TemplateSignerRequire
       signature: "Barshay, Rizzo & Lopez, PLLC",
     },
   },
+  {
+    templateId: "vr-response",
+    requiredSignerFields: [],
+    staticOverrideBypass: {
+      approvedPhase: "19D",
+      tel: "(631) 210-7272",
+      fax: "(516) 706-5055",
+      email: "info@brlfirm.com",
+      signature: "Angelo F. Rizzo, Esquire",
+    },
+  },
 ];
 
 export function getTemplateSignerRequirementPhase1(templateId: string): TemplateSignerRequirementPhase1 | undefined {
