@@ -1,7 +1,5 @@
-export type TemplateBuilderMergeFieldKind = "canonical" | "signatureHeader" | "customManual";
-
-export type TemplateBuilderFieldType = "Text" | "Date" | "Amount" | "Number";
-
+export type TemplateBuilderMergeFieldKind = "canonical" | "custom";
+export type TemplateBuilderFieldType = "text" | "date" | "currency";
 export type TemplateBuilderFormatModifier =
   | "upper"
   | "lower"
@@ -13,615 +11,349 @@ export type TemplateBuilderFormatModifier =
   | "italic"
   | "underline";
 
+export type TemplateBuilderMergeFieldCategory =
+  | "Matter"
+  | "Provider"
+  | "Insurer"
+  | "Claim"
+  | "Lawsuit"
+  | "Costs"
+  | "General";
+
 export type TemplateBuilderCategory = {
   id: string;
-  label: string;
-  fixed?: boolean;
-  deletable: boolean;
-  renamable: boolean;
-  appearsLast?: boolean;
-  subcategories?: TemplateBuilderCategory[];
+  label: TemplateBuilderMergeFieldCategory;
 };
 
-export type TemplateBuilderMergeFieldDefinition = {
-  kind: TemplateBuilderMergeFieldKind;
-  category: string;
+export type TemplateBuilderCanonicalMergeField = {
+  kind: "canonical";
+  category: TemplateBuilderMergeFieldCategory;
   subcategory?: string;
   fieldLabel: string;
   mergeField: string;
-  exampleOutput: string;
-  aliases: string[];
+  aliases?: string[];
   fieldType: TemplateBuilderFieldType;
   compatibleModifiers: TemplateBuilderFormatModifier[];
-  uiLabelEditable: boolean;
-  uiCategoryEditable: boolean;
-  tokenEditable: boolean;
+  exampleOutput: string;
 };
 
-export type TemplateBuilderCustomPlaceholderDefinition = {
-  category: string;
+export type TemplateBuilderCustomPlaceholderField = {
+  kind: "custom";
+  category: TemplateBuilderMergeFieldCategory;
+  subcategory?: string;
   fieldLabel: string;
-  mergeFieldToken: string;
-  generationPrompt: string;
-  exampleValue: string;
-  required: boolean;
+  mergeField: string;
+  aliases?: string[];
   fieldType: TemplateBuilderFieldType;
+  compatibleModifiers: TemplateBuilderFormatModifier[];
+  exampleOutput: string;
 };
 
-export const TEMPLATE_BUILDER_GENERAL_CATEGORY_ID = "general" as const;
-
-export const TEMPLATE_BUILDER_STARTING_CATEGORIES: TemplateBuilderCategory[] = [
-  {
-    id: "matter",
-    label: "Matter",
-    deletable: true,
-    renamable: true,
-  },
-  {
-    id: "people",
-    label: "People",
-    deletable: true,
-    renamable: true,
-    subcategories: [
-      {
-        id: "signature-header",
-        label: "Signature/Header",
-        deletable: true,
-        renamable: true,
-      },
-    ],
-  },
-  {
-    id: TEMPLATE_BUILDER_GENERAL_CATEGORY_ID,
-    label: "General",
-    fixed: true,
-    deletable: false,
-    renamable: false,
-    appearsLast: true,
-  },
-];
+const TEXT_MODIFIERS: TemplateBuilderFormatModifier[] = ["upper", "lower", "title", "bold", "italic", "underline"];
+const DATE_MODIFIERS: TemplateBuilderFormatModifier[] = ["date:MM/DD/YYYY", "date:Month D, YYYY", "bold", "italic", "underline"];
+const CURRENCY_MODIFIERS: TemplateBuilderFormatModifier[] = ["currency", "bold", "italic", "underline"];
 
 export const TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS: TemplateBuilderFormatModifier[] = [
+  "bold",
+  "italic",
+  "underline",
   "upper",
   "lower",
   "title",
   "date:MM/DD/YYYY",
   "date:Month D, YYYY",
   "currency",
-  "bold",
-  "italic",
-  "underline",
 ];
 
-export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderMergeFieldDefinition[] = [
+export const TEMPLATE_BUILDER_STARTING_CATEGORIES: TemplateBuilderCategory[] = [
+  { id: "matter", label: "Matter" },
+  { id: "provider", label: "Provider" },
+  { id: "insurer", label: "Insurer" },
+  { id: "claim", label: "Claim" },
+  { id: "lawsuit", label: "Lawsuit" },
+  { id: "costs", label: "Costs" },
+  { id: "general", label: "General" },
+];
+
+export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMergeField[] = [
   {
     kind: "canonical",
     category: "Matter",
     fieldLabel: "Matter File Number",
     mergeField: "{{matter.fileNumber}}",
-    exampleOutput: "BRL_202600003",
-    aliases: ["matter id", "file number", "BM number", "BRL number"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
     category: "Matter",
     fieldLabel: "Provider Name",
     mergeField: "{{matter.providerName}}",
-    exampleOutput: "Atlantic Medical & Diagnostic, P.C.",
-    aliases: ["client", "medical provider", "provider"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
     category: "Matter",
     fieldLabel: "Patient Name",
     mergeField: "{{matter.patientName}}",
-    exampleOutput: "David Barshay",
-    aliases: ["claimant", "assignor", "patient"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Claim Number",
-    mergeField: "{{matter.claimNumber}}",
-    exampleOutput: "123456",
-    aliases: ["claim", "insurer claim", "carrier claim"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
     category: "Matter",
     fieldLabel: "Billed Amount",
     mergeField: "{{matter.billedAmount}}",
-    exampleOutput: "$1,234.56",
-    aliases: ["bill", "amount billed", "charges"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Phone Line",
-    mergeField: "{{signature.phoneLine}}",
-    exampleOutput: "Usage note: DOCX hard-codes Tel:. Token renders firm main number plus selected signer extension when present.",
-    aliases: ["phone", "tel", "telephone", "extension", "header phone"],
-    fieldType: "Text",
-    compatibleModifiers: ["bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Fax Number",
-    mergeField: "{{signature.faxNumber}}",
-    exampleOutput: "Usage note: DOCX hard-codes Fax:. Token renders selected signer fax, or firm default.",
-    aliases: ["fax", "facsimile", "header fax"],
-    fieldType: "Text",
-    compatibleModifiers: ["bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Email",
-    mergeField: "{{signature.email}}",
-    exampleOutput: "Usage note: DOCX hard-codes Email:. Token renders selected signer email, or firm default.",
-    aliases: ["email", "mail", "header email"],
-    fieldType: "Text",
-    compatibleModifiers: ["lower", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Image",
-    mergeField: "{{signature.image}}",
-    exampleOutput: "Usage note: renders the selected signer PNG signature image when available and otherwise removes token text.",
-    aliases: ["signature image", "signature png", "signer image"],
-    fieldType: "Text",
-    compatibleModifiers: [],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Name",
-    mergeField: "{{signature.name}}",
-    exampleOutput: "Usage note: renders selected signer signatureBlockName, or Barshay, Rizzo & Lopez, PLLC for Firm.",
-    aliases: ["signature name", "signer name", "closing name"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "signatureHeader",
-    category: "People",
-    subcategory: "Signature/Header",
-    fieldLabel: "Signature Block",
-    mergeField: "{{signature.block}}",
-    exampleOutput: "Usage note: renders image if available followed by signature name. Spacing is controlled by the Word template. Not marked Recommended.",
-    aliases: ["signature block", "combined signature", "closing block"],
-    fieldType: "Text",
-    compatibleModifiers: [],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Provider",
     fieldLabel: "Provider Tax ID",
     mergeField: "{{provider.taxId}}",
-    exampleOutput: "11-1111111",
-    aliases: ["provider tax id", "tin"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: ["bold", "italic", "underline"],
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Insurer",
+    category: "Insurer",
+    fieldLabel: "Insurer Name",
     mergeField: "{{insurer.name}}",
-    exampleOutput: "Allstate Indemnity Company",
-    aliases: ["insurer", "carrier"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Insurer",
     fieldLabel: "Insurer Street",
-    mergeField: "{{insurer.hidden_street}}",
-    exampleOutput: "445 Broadhollow Road",
-    aliases: ["insurer hidden street"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    mergeField: "{{insurer.street}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Insurer",
     fieldLabel: "Insurer City",
-    mergeField: "{{insurer.hidden_city}}",
-    exampleOutput: "Melville",
-    aliases: ["insurer hidden city"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    mergeField: "{{insurer.city}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Insurer",
     fieldLabel: "Insurer State",
-    mergeField: "{{insurer.hidden_state}}",
-    exampleOutput: "NY",
-    aliases: ["insurer hidden state"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    mergeField: "{{insurer.state}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Insurer Zipcode",
-    mergeField: "{{insurer.hidden_zipcode}}",
-    exampleOutput: "11747",
-    aliases: ["insurer hidden zipcode"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    category: "Insurer",
+    fieldLabel: "Insurer ZIP",
+    mergeField: "{{insurer.zipcode}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Claim",
     fieldLabel: "Claim Number",
     mergeField: "{{claim.number}}",
-    exampleOutput: "1111",
-    aliases: ["claim number"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: ["bold", "italic", "underline"],
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Policy Number",
-    mergeField: "{{claim.policyNumber}}",
-    exampleOutput: "POL-12345",
-    aliases: ["policy number"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Date Of Loss",
+    category: "Claim",
+    fieldLabel: "Date of Loss",
     mergeField: "{{claim.dateOfLoss}}",
-    exampleOutput: "01/01/2021",
-    aliases: ["date of loss", "dol"],
-    fieldType: "Date",
-    compatibleModifiers: ["date:MM/DD/YYYY", "date:Month D, YYYY", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "date",
+    compatibleModifiers: DATE_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Date Of Service",
+    category: "Claim",
+    fieldLabel: "Date of Service",
     mergeField: "{{claim.dateOfService}}",
-    exampleOutput: "01/16/2021",
-    aliases: ["date of service", "dos"],
-    fieldType: "Date",
-    compatibleModifiers: ["date:MM/DD/YYYY", "date:Month D, YYYY", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "date",
+    compatibleModifiers: DATE_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Claim Balance",
-    mergeField: "{{claim.balance}}",
-    exampleOutput: "$562.25",
-    aliases: ["claim balance"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Claim Payments",
-    mergeField: "{{claim.payments}}",
-    exampleOutput: "$0.00",
-    aliases: ["claim payments"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "canonical",
-    category: "Matter",
+    category: "Claim",
     fieldLabel: "Denial Reason",
     mergeField: "{{claim.denialReason}}",
-    exampleOutput: "Medical Necessity",
-    aliases: ["denial reason"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Index / AAA Number",
+    category: "Claim",
+    fieldLabel: "Claim Balance",
+    mergeField: "{{claim.balance}}",
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
+  },
+  {
+    kind: "canonical",
+    category: "Claim",
+    fieldLabel: "Claim Payments",
+    mergeField: "{{claim.payments}}",
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
+  },
+  {
+    kind: "canonical",
+    category: "Lawsuit",
+    fieldLabel: "Index Number",
     mergeField: "{{lawsuit.indexNumber}}",
-    exampleOutput: "123444/2026",
-    aliases: ["index number", "aaa number"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: ["bold", "italic", "underline"],
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Court",
     mergeField: "{{lawsuit.court}}",
-    exampleOutput: "Nassau District-Hempstead (2nd)",
-    aliases: ["court"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Adversary Attorney",
     mergeField: "{{lawsuit.adversaryAttorney}}",
-    exampleOutput: "Martyn, Smith, Murray & Yong, Esqs.",
-    aliases: ["adversary attorney"],
-    fieldType: "Text",
-    compatibleModifiers: ["upper", "lower", "title", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Date Filed",
     mergeField: "{{lawsuit.dateFiled}}",
-    exampleOutput: "06/01/2026",
-    aliases: ["date filed"],
-    fieldType: "Date",
-    compatibleModifiers: ["date:MM/DD/YYYY", "date:Month D, YYYY", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "date",
+    compatibleModifiers: DATE_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Lawsuit Amount",
     mergeField: "{{lawsuit.amount}}",
-    exampleOutput: "$1,261.75",
-    aliases: ["lawsuit amount"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Lawsuit Costs",
     mergeField: "{{lawsuit.costs}}",
-    exampleOutput: "$0.00",
-    aliases: ["lawsuit costs"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
-    fieldLabel: "Lawsuit Payments Posted",
-    mergeField: "{{lawsuit.paymentsPosted}}",
-    exampleOutput: "$0.00",
-    aliases: ["lawsuit payments posted"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
-  },
-  {
-    kind: "canonical",
-    category: "Matter",
+    category: "Lawsuit",
     fieldLabel: "Lawsuit Balance",
     mergeField: "{{lawsuit.balance}}",
-    exampleOutput: "$1,261.75",
-    aliases: ["lawsuit balance"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Costs",
     fieldLabel: "Index Fee",
     mergeField: "{{cost.indexFee}}",
-    exampleOutput: "$0.00",
-    aliases: ["index fee"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Costs",
     fieldLabel: "Service Fee",
     mergeField: "{{cost.serviceFee}}",
-    exampleOutput: "$0.00",
-    aliases: ["service fee"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Costs",
     fieldLabel: "Other Court Costs",
     mergeField: "{{cost.otherCourtCosts}}",
-    exampleOutput: "$0.00",
-    aliases: ["other court costs"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
   {
     kind: "canonical",
-    category: "Matter",
+    category: "Costs",
     fieldLabel: "Total Costs",
     mergeField: "{{cost.total}}",
-    exampleOutput: "$0.00",
-    aliases: ["cost total"],
-    fieldType: "Amount",
-    compatibleModifiers: ["currency", "bold", "italic", "underline"],
-    uiLabelEditable: true,
-    uiCategoryEditable: true,
-    tokenEditable: false,
+    fieldType: "currency",
+    compatibleModifiers: CURRENCY_MODIFIERS,
+    exampleOutput: "—",
   },
 ];
 
-export const TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS = [
-  "Category",
-  "Field Label",
-  "Merge Field Token",
-  "Prompt shown during document generation",
-  "Example value",
-  "Required",
-  "Field Type",
-] as const;
-
-export const TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELD_TYPES: TemplateBuilderFieldType[] = [
-  "Text",
-  "Date",
-  "Amount",
-  "Number",
+export const TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS: TemplateBuilderCustomPlaceholderField[] = [
+  {
+    kind: "custom",
+    category: "General",
+    fieldLabel: "Custom Placeholder",
+    mergeField: "{{custom.placeholder}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
+  },
 ];
 
-export const TEMPLATE_BUILDER_CUSTOM_TOKEN_PREFIX = "{{custom" as const;
-
-export function templateBuilderTokenForCustomLabel(fieldLabel: string) {
-  const words = String(fieldLabel || "")
+export function templateBuilderTokenForCustomLabel(label: string): string {
+  const normalized = label
     .trim()
-    .replace(/[^a-zA-Z0-9]+/g, " ")
-    .split(" ")
-    .filter(Boolean);
-
-  const pascal = words
-    .map((word) => word.slice(0, 1).toUpperCase() + word.slice(1))
-    .join("");
-
-  if (!pascal) return "{{custom.placeholder}}";
-  return "{{custom." + pascal.slice(0, 1).toLowerCase() + pascal.slice(1) + "}}";
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+  return `{{custom.${normalized || "placeholder"}}}`;
 }
 
-export function templateBuilderCanonicalTokenSet() {
-  return new Set(TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.map((field) => field.mergeField));
+export function templateBuilderIsCustomToken(token: string): boolean {
+  return /^\{\{custom\.[a-z0-9.]+\}\}$/.test(token);
 }
 
-export function templateBuilderIsCustomToken(token: string) {
-  return /^\{\{custom\.[a-zA-Z][a-zA-Z0-9]*\}\}$/.test(String(token || "").trim());
+export function templateBuilderCustomTokenConflicts(token: string): boolean {
+  return TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.some((field) => field.mergeField === token);
 }
 
-export function templateBuilderCustomTokenConflicts(token: string, existingCustomTokens: string[] = []) {
-  const cleanToken = String(token || "").trim();
-  return templateBuilderCanonicalTokenSet().has(cleanToken) || existingCustomTokens.includes(cleanToken);
-}
-
-export function templateBuilderSortFieldsByLabel<T extends { fieldLabel: string }>(fields: T[]) {
-  return [...fields].sort((a, b) => a.fieldLabel.localeCompare(b.fieldLabel));
-}
-
-export function templateBuilderMoveDeletedCategoryFieldsToGeneral<T extends { category: string }>(fields: T[], deletedCategory: string) {
-  return fields.map((field) => field.category === deletedCategory ? { ...field, category: "General" } : field);
+export function templateBuilderMoveDeletedCategoryFieldsToGeneral<T extends { category: TemplateBuilderMergeFieldCategory }>(
+  fields: T[],
+  activeCategories: TemplateBuilderCategory[],
+): T[] {
+  const active = new Set(activeCategories.map((category) => category.label));
+  return fields.map((field) => (active.has(field.category) ? field : { ...field, category: "General" }));
 }

@@ -1,101 +1,115 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
 
-const resolverPath = 'src/lib/templates/template-builder-live-example-preview.ts';
-const packagePath = 'package.json';
-const failures = [];
+const resolverPath = "src/lib/templates/template-builder-live-example-preview.ts";
+const routePath = "app/api/admin/document-templates/example-preview/route.ts";
+const resolver = fs.readFileSync(resolverPath, "utf8");
+const route = fs.readFileSync(routePath, "utf8");
+const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-const pass = (message) => console.log('\x1b[32mPASS\x1b[0m:', message);
-const fail = (message) => { console.error('\x1b[31mFAIL\x1b[0m:', message); failures.push(message); };
-const read = (filePath) => fs.readFileSync(filePath, 'utf8');
-
-const walk = (dir) => {
-  if (!fs.existsSync(dir)) return [];
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...walk(full));
-    else if (entry.isFile() && entry.name.endsWith('.ts')) files.push(full);
-  }
-  return files;
+let failed = false;
+const pass = (message) => console.log("\x1b[32mPASS\x1b[0m:", message);
+const fail = (message) => {
+  failed = true;
+  console.error("\x1b[31mFAIL\x1b[0m:", message);
 };
 
-const resolver = read(resolverPath);
-const packageJson = JSON.parse(read(packagePath));
-const routeCandidates = walk('app/api')
-  .map((filePath) => ({ filePath, source: read(filePath) }))
-  .filter(({ source }) => source.includes('resolveTemplateBuilderExamplePreview') || source.includes('example-preview'));
-const routeCandidate = routeCandidates.find(({ source }) => source.includes('resolveTemplateBuilderExamplePreview'));
+const has = (source, token, message) => source.includes(token) ? pass(message) : fail(message);
+const lacks = (source, token, message) => !source.includes(token) ? pass(message) : fail(message);
 
-const has = (source, needle, message) => source.includes(needle) ? pass(message) : fail(message);
-const lacks = (source, needle, message) => !source.includes(needle) ? pass(message) : fail(message);
-const hasRegex = (source, pattern, message) => pattern.test(source) ? pass(message) : fail(message);
+has(route, "resolveTemplateBuilderExamplePreview", "API route calls source-backed resolver");
+has(route, "searchParams.get", "API route reads matter search param");
+has(route, "NextResponse.json", "API route returns JSON");
 
-if (!routeCandidate) fail('API route calling resolveTemplateBuilderExamplePreview exists');
-else pass('API route calling resolver exists at ' + routeCandidate.filePath);
+has(resolver, "export async function resolveTemplateBuilderExamplePreview", "Live resolver exports resolveTemplateBuilderExamplePreview");
+has(resolver, 'from "ClaimIndex"', "Live resolver reads ClaimIndex source rows");
+has(resolver, 'from "Lawsuit"', "Live resolver reads Lawsuit source rows");
+has(resolver, 'from "ProviderClientInfo"', "Live resolver reads ProviderClientInfo source rows");
+has(resolver, 'from "ReferenceEntity"', "Live resolver reads ReferenceEntity source rows");
+has(resolver, "findClaimRowsForLawsuit", "Live resolver has lawsuit claim-row lookup");
+has(resolver, "findClaimRowForDirect", "Live resolver has direct matter lookup");
+has(resolver, "bestProviderRow", "Live resolver resolves provider/client display source");
+has(resolver, "bestReferenceRow", "Live resolver resolves insurer/reference source");
+has(resolver, "taxIdFromRow", "Live resolver keeps provider tax ID source resolution");
+has(resolver, "hiddenFields", "Live resolver can read hidden/import source fields internally");
 
-has(resolver, 'resolveTemplateBuilderExamplePreview', 'Live resolver exports resolveTemplateBuilderExamplePreview');
-has(resolver, 'tableColumns', 'Live resolver uses schema-aware tableColumns helper');
-has(resolver, 'findRows(tableName: string, value: string, candidateColumns: string[]', 'Live resolver uses dynamic table row lookup');
-hasRegex(resolver, /claimTables\s*=\s*tables\.filter\(\(table\)\s*=>\s*\/claimindex\|claim\|matter\/i\.test\(table\)\)/, 'Live resolver searches ClaimIndex/claim/matter tables');
-hasRegex(resolver, /providerTables\s*=\s*tables\.filter\(\(table\)\s*=>\s*\/providerclientinfo\|provider\|client\/i\.test\(table\)\)/, 'Live resolver searches ProviderClientInfo/provider/client tables');
-has(resolver, 'isLawsuitContext ? DASH', 'Live resolver uses dash for child-only tokens in lawsuit context');
+has(resolver, '"{{matter.fileNumber}}"', "Live resolver maps kept token {{matter.fileNumber}}");
+has(resolver, '"{{matter.providerName}}"', "Live resolver maps kept token {{matter.providerName}}");
+has(resolver, '"{{matter.patientName}}"', "Live resolver maps kept token {{matter.patientName}}");
+has(resolver, '"{{matter.billedAmount}}"', "Live resolver maps kept token {{matter.billedAmount}}");
+has(resolver, '"{{provider.taxId}}"', "Live resolver maps kept token {{provider.taxId}}");
+has(resolver, '"{{insurer.name}}"', "Live resolver maps kept token {{insurer.name}}");
+has(resolver, '"{{insurer.street}}"', "Live resolver maps kept token {{insurer.street}}");
+has(resolver, '"{{insurer.city}}"', "Live resolver maps kept token {{insurer.city}}");
+has(resolver, '"{{insurer.state}}"', "Live resolver maps kept token {{insurer.state}}");
+has(resolver, '"{{insurer.zipcode}}"', "Live resolver maps kept token {{insurer.zipcode}}");
+has(resolver, '"{{claim.number}}"', "Live resolver maps kept token {{claim.number}}");
+has(resolver, '"{{claim.dateOfLoss}}"', "Live resolver maps kept token {{claim.dateOfLoss}}");
+has(resolver, '"{{claim.dateOfService}}"', "Live resolver maps kept token {{claim.dateOfService}}");
+has(resolver, '"{{claim.denialReason}}"', "Live resolver maps kept token {{claim.denialReason}}");
+has(resolver, '"{{claim.balance}}"', "Live resolver maps kept token {{claim.balance}}");
+has(resolver, '"{{claim.payments}}"', "Live resolver maps kept token {{claim.payments}}");
+has(resolver, '"{{lawsuit.indexNumber}}"', "Live resolver maps kept token {{lawsuit.indexNumber}}");
+has(resolver, '"{{lawsuit.court}}"', "Live resolver maps kept token {{lawsuit.court}}");
+has(resolver, '"{{lawsuit.adversaryAttorney}}"', "Live resolver maps kept token {{lawsuit.adversaryAttorney}}");
+has(resolver, '"{{lawsuit.dateFiled}}"', "Live resolver maps kept token {{lawsuit.dateFiled}}");
+has(resolver, '"{{lawsuit.amount}}"', "Live resolver maps kept token {{lawsuit.amount}}");
+has(resolver, '"{{lawsuit.costs}}"', "Live resolver maps kept token {{lawsuit.costs}}");
+has(resolver, '"{{lawsuit.balance}}"', "Live resolver maps kept token {{lawsuit.balance}}");
+has(resolver, '"{{cost.indexFee}}"', "Live resolver maps kept token {{cost.indexFee}}");
+has(resolver, '"{{cost.serviceFee}}"', "Live resolver maps kept token {{cost.serviceFee}}");
+has(resolver, '"{{cost.otherCourtCosts}}"', "Live resolver maps kept token {{cost.otherCourtCosts}}");
+has(resolver, '"{{cost.total}}"', "Live resolver maps kept token {{cost.total}}");
 
-for (const removed of [
-  '{{patient.lastName}}',
-  '{{provider.hidden_street}}',
-  '{{provider.hidden_city}}',
-  '{{provider.hidden_state}}',
-  '{{provider.hidden_zipcode}}',
-  '{{matter.dateOfService}}',
-  '{{claim.dosStart}}',
-  '{{claim.dosEnd}}',
-  '{{treatingProvider.name}}',
-  '{{claim.amount}}',
+for (const token of [
+  "{{patient.lastName}}",
+  "{{provider.hidden_street}}",
+  "{{provider.hidden_city}}",
+  "{{provider.hidden_state}}",
+  "{{provider.hidden_zipcode}}",
+  "{{matter.dateOfService}}",
+  "{{claim.dosStart}}",
+  "{{claim.dosEnd}}",
+  "{{treatingProvider.name}}",
+  "{{claim.amount}}",
+  "{{matter.claimNumber}}",
+  "{{insurer.hidden_street}}",
+  "{{insurer.hidden_city}}",
+  "{{insurer.hidden_state}}",
+  "{{insurer.hidden_zipcode}}",
 ]) {
-  lacks(resolver, removed, 'Live resolver excludes removed/deleted token ' + removed);
+  lacks(resolver, token, `Live resolver excludes removed/deleted token ${token}`);
 }
 
-for (const kept of [
-  '{{matter.billedAmount}}',
-  '{{provider.taxId}}',
-  '{{insurer.hidden_street}}',
-  '{{insurer.hidden_city}}',
-  '{{insurer.hidden_state}}',
-  '{{insurer.hidden_zipcode}}',
-  '{{claim.balance}}',
-  '{{claim.payments}}',
-  '{{lawsuit.indexNumber}}',
-  '{{lawsuit.court}}',
-  '{{lawsuit.adversaryAttorney}}',
-  '{{lawsuit.dateFiled}}',
-  '{{lawsuit.costs}}',
-  '{{lawsuit.balance}}',
-  '{{cost.indexFee}}',
-  '{{cost.serviceFee}}',
-  '{{cost.otherCourtCosts}}',
-  '{{cost.total}}',
+has(resolver, "providerTaxIdResolved", "Live resolver reports provider tax ID resolution status");
+has(resolver, "insurerAddressResolved", "Live resolver reports insurer address resolution status");
+has(resolver, "lawsuitResolved", "Live resolver reports lawsuit diagnostics");
+has(resolver, "costResolved", "Live resolver reports cost diagnostics");
+has(resolver, "usedPreviewFallback: false", "Live resolver has no preview-only fallback business path");
+
+for (const forbidden of [
+  "PREVIEW_ONLY_FALLBACK_OUTPUTS",
+  "Preview Provider",
+  "Preview Patient",
+  "Preview Insurer",
+  "BRL_202600003",
+  "Atlantic Medical & Diagnostic",
+  "ATLANTIC MEDICAL & DIAGNOSTIC",
+  "Allstate",
+  "David Barshay",
+  "Angelo Rizzo",
 ]) {
-  has(resolver, kept, 'Live resolver maps kept token ' + kept);
+  lacks(resolver, forbidden, `Live resolver has no hard-coded business value ${forbidden}`);
 }
 
-has(resolver, 'providerTaxIdCandidateColumns', 'Live resolver reports provider tax ID candidate columns');
-has(resolver, 'insurerHiddenResolved', 'Live resolver reports insurer hidden diagnostics');
-has(resolver, 'lawsuitResolved', 'Live resolver reports lawsuit diagnostics');
-has(resolver, 'costResolved', 'Live resolver reports cost diagnostics');
-
-if (routeCandidate) {
-  has(routeCandidate.source, 'resolveTemplateBuilderExamplePreview', 'API route calls resolver');
-  has(routeCandidate.source, 'searchParams', 'API route reads matter search param');
+if (pkg.scripts?.["verify:template-builder-live-example-preview-server"] === "node scripts/verify-template-builder-live-example-preview-server.mjs") {
+  pass("Package has server verifier script");
+} else {
+  fail("Package has server verifier script");
 }
 
-if (!packageJson.scripts?.['verify:template-builder-live-example-preview-server']) fail('Package has server verifier script');
-else pass('Package has server verifier script');
-
-if (failures.length > 0) {
-  console.error('\n' + failures.length + ' live example preview server checks failed.');
+if (failed) {
+  console.error("\nTemplate Builder live example preview server checks failed.");
   process.exit(1);
 }
 
-console.log('\nPASS: Template Builder live example preview server wiring aligned with current child/lawsuit token semantics.');
+console.log("\nPASS: Template Builder live example preview server wiring aligned with source-backed resolver.");

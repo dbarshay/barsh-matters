@@ -115,7 +115,7 @@ export default function BuildTemplatePage() {
         field.fieldLabel,
         field.mergeField,
         field.exampleOutput,
-        field.aliases.join(" "),
+        (field.aliases ?? []).join(" "),
         field.fieldType,
         field.kind,
       ].join(" ").toLowerCase().includes(q);

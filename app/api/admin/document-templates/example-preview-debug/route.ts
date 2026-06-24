@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
   const result = await resolveTemplateBuilderExamplePreview(matter);
   return NextResponse.json({
     matter,
-    resolvedKeys: Object.keys(result.resolved || {}).filter((key) => result.resolved[key]),
+    resolvedKeys: Object.keys(result.exampleOutputMap || {}).filter((key) => result.exampleOutputMap[key]),
     diagnostics: result.diagnostics,
-    resolved: result.resolved
+    resolved: result.exampleOutputMap
   });
 }

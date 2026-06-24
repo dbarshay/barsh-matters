@@ -1,25 +1,91 @@
-import fs from 'node:fs';
+import fs from "node:fs";
 
-const resolver = fs.readFileSync('src/lib/templates/template-builder-live-example-preview.ts', 'utf8');
-const library = fs.readFileSync('src/lib/templates/template-builder-merge-field-library.ts', 'utf8');
-const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const failures = [];
-const pass = (message) => console.log('\x1b[32mPASS\x1b[0m:', message);
-const fail = (message) => { console.error('\x1b[31mFAIL\x1b[0m:', message); failures.push(message); };
-const has = (source, needle, message) => source.includes(needle) ? pass(message) : fail(message);
-const lacks = (source, needle, message) => !source.includes(needle) ? pass(message) : fail(message);
-for (const removed of ['{{treatingProvider.name}}', '{{claim.amount}}']) { lacks(library, removed, 'Library excludes deleted token ' + removed); lacks(resolver, removed, 'Resolver excludes deleted token ' + removed); }
-has(resolver, 'const isLawsuitContext = /^\\d{4}\\.\\d{2}\\.\\d{5}$/.test(matterKey);', 'Resolver detects lawsuit context by lawsuit id');
-has(resolver, '"{{matter.billedAmount}}": isLawsuitContext ? DASH', 'matter.billedAmount renders dash for lawsuit context');
-has(resolver, '"{{claim.balance}}": isLawsuitContext ? DASH', 'claim.balance renders dash for lawsuit context');
-has(resolver, '"{{claim.payments}}": isLawsuitContext ? DASH', 'claim.payments renders dash for lawsuit context');
-has(resolver, 'billedAmount', 'matter.billedAmount can use child billed amount');
-has(resolver, 'claimBalance', 'claim.balance can use child balance amount');
-has(resolver, 'paymentTotal', 'claim.payments can use child payment amount');
-for (const token of ['{{insurer.hidden_street}}', '{{insurer.hidden_city}}', '{{insurer.hidden_state}}', '{{insurer.hidden_zipcode}}']) has(resolver, token, 'Resolver maps insurer hidden source token ' + token);
-for (const token of ['{{lawsuit.indexNumber}}', '{{lawsuit.court}}', '{{lawsuit.adversaryAttorney}}', '{{lawsuit.dateFiled}}', '{{lawsuit.costs}}', '{{lawsuit.balance}}']) has(resolver, token, 'Resolver maps lawsuit token ' + token);
-for (const token of ['{{cost.indexFee}}', '{{cost.serviceFee}}', '{{cost.otherCourtCosts}}', '{{cost.total}}']) has(resolver, token, 'Resolver maps cost token ' + token);
-has(resolver, 'providerTaxIdCandidateColumns', 'Resolver reports provider tax ID candidate columns');
-if (!pkg.scripts?.['verify:template-builder-live-preview-child-lawsuit-token-sources']) fail('Package has child/lawsuit source verifier script'); else pass('Package has child/lawsuit source verifier script');
-if (failures.length > 0) { console.error('\n' + failures.length + ' child/lawsuit token source checks failed.'); process.exit(1); }
-console.log('\nPASS: Template Builder child/lawsuit token source semantics verified.');
+const resolver = fs.readFileSync("src/lib/templates/template-builder-live-example-preview.ts", "utf8");
+const library = fs.readFileSync("src/lib/templates/template-builder-merge-field-library.ts", "utf8");
+const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+let failed = false;
+const pass = (message) => console.log("\x1b[32mPASS\x1b[0m:", message);
+const fail = (message) => {
+  failed = true;
+  console.error("\x1b[31mFAIL\x1b[0m:", message);
+};
+
+const has = (source, token, message) => source.includes(token) ? pass(message) : fail(message);
+const lacks = (source, token, message) => !source.includes(token) ? pass(message) : fail(message);
+
+for (const token of [
+  "{{treatingProvider.name}}",
+  "{{claim.amount}}",
+  "{{matter.claimNumber}}",
+  "{{insurer.hidden_street}}",
+  "{{insurer.hidden_city}}",
+  "{{insurer.hidden_state}}",
+  "{{insurer.hidden_zipcode}}",
+]) {
+  lacks(library, token, `Library excludes deleted/retired token ${token}`);
+  lacks(resolver, token, `Resolver excludes deleted/retired token ${token}`);
+}
+
+has(resolver, "findLawsuit", "Resolver detects lawsuit context by Lawsuit source row");
+has(resolver, '"masterLawsuitId"', "Resolver looks up lawsuit by master lawsuit id");
+has(resolver, "findClaimRowsForLawsuit", "Resolver finds child claim rows for lawsuit context");
+has(resolver, '"master_lawsuit_id"', "Resolver links child ClaimIndex rows by master_lawsuit_id");
+has(resolver, "findClaimRowForDirect", "Resolver finds direct/non-lawsuit ClaimIndex row");
+has(resolver, "directMatterNumber", "Resolver derives direct local matter id from BRL display number");
+
+has(resolver, '"{{matter.billedAmount}}": isLawsuitContext ? DASH : money', "matter.billedAmount renders dash for lawsuit context and money for direct context");
+has(resolver, '"{{claim.balance}}": isLawsuitContext ? DASH : money', "claim.balance renders dash for lawsuit context and money for direct context");
+has(resolver, '"{{claim.payments}}": isLawsuitContext ? DASH : money', "claim.payments renders dash for lawsuit context and money for direct context");
+
+has(resolver, 'rowValue(claimRow, ["claim_amount", "balance_presuit"])', "matter.billedAmount can use child claim amount/balance_presuit");
+has(resolver, 'rowValue(claimRow, ["balance_amount", "balance_presuit"])', "claim.balance can use child balance amount");
+has(resolver, 'rowValue(claimRow, ["payment_amount", "payment_voluntary"])', "claim.payments can use child payment amount");
+
+for (const token of [
+  "{{insurer.street}}",
+  "{{insurer.city}}",
+  "{{insurer.state}}",
+  "{{insurer.zipcode}}",
+]) {
+  has(library, token, `Library keeps clean insurer source token ${token}`);
+  has(resolver, token, `Resolver maps clean insurer source token ${token}`);
+}
+
+has(resolver, "hiddenValue(insurerRow, \"hidden_street\")", "Resolver reads insurer street from hidden source field internally");
+has(resolver, "hiddenValue(insurerRow, \"hidden_city\")", "Resolver reads insurer city from hidden source field internally");
+has(resolver, "hiddenValue(insurerRow, \"hidden_state\")", "Resolver reads insurer state from hidden source field internally");
+has(resolver, "hiddenValue(insurerRow, \"hidden_zipcode\")", "Resolver reads insurer ZIP from hidden source field internally");
+
+for (const token of [
+  "{{lawsuit.indexNumber}}",
+  "{{lawsuit.court}}",
+  "{{lawsuit.adversaryAttorney}}",
+  "{{lawsuit.dateFiled}}",
+  "{{lawsuit.costs}}",
+  "{{lawsuit.balance}}",
+  "{{cost.indexFee}}",
+  "{{cost.serviceFee}}",
+  "{{cost.otherCourtCosts}}",
+  "{{cost.total}}",
+]) {
+  has(resolver, token, `Resolver maps lawsuit/cost token ${token}`);
+}
+
+has(resolver, "taxIdFromRow", "Resolver has provider tax ID resolver");
+has(resolver, "providerTaxIdResolved", "Resolver reports provider tax ID resolution status");
+has(resolver, "insurerAddressResolved", "Resolver reports insurer address resolution status");
+has(resolver, "usedPreviewFallback: false", "Resolver uses no hard-coded preview fallback");
+
+if (pkg.scripts?.["verify:template-builder-live-preview-child-lawsuit-token-sources"] === "node scripts/verify-template-builder-live-preview-child-lawsuit-token-sources.mjs") {
+  pass("Package has child/lawsuit source verifier script");
+} else {
+  fail("Package has child/lawsuit source verifier script");
+}
+
+if (failed) {
+  console.error("\nChild/lawsuit token source checks failed.");
+  process.exit(1);
+}
+
+console.log("\nPASS: Template Builder child/lawsuit token source semantics verified for source-backed resolver.");
