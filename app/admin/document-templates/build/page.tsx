@@ -207,6 +207,7 @@ export default function BuildTemplatePage() {
             <option>BRL_202600003</option>
             <option>BRL30236</option>
             <option>2026.06.00002</option>
+            <option>2026.06.00011</option>
           </select>
         </label>
       </section>
