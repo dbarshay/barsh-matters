@@ -1,0 +1,12 @@
+{
+  "phase": "Templates Phase 19G",
+  "repair": "Use VR Response DOCX as the render base and import letterhead-simple header parts. This preserves Angelo signature relationships and avoids Word recovery.",
+  "runtimeMutation": true,
+  "docxMutation": true,
+  "templateId": "vr-response",
+  "testRenderDocx": "/Users/dbarshay/Desktop/vr-response-phase19g-test-render-BRL_202600003.docx",
+  "testFileNumber": "BRL_202600003",
+  "fixedTypo": "insterted -> inserted",
+  "removedPhoneComma": true,
+  "dateParagraphLowered": true
+}
