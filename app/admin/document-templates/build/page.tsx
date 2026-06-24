@@ -55,6 +55,7 @@ export default function BuildTemplatePage() {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [exampleMatter, setExampleMatter] = useState("2026.06.00011");
   const [exampleOutputMap, setExampleOutputMap] = useState<Record<string, string>>({});
+  const [exampleOutputMatter, setExampleOutputMatter] = useState<string | null>(null);
   const [examplePreviewStatus, setExamplePreviewStatus] = useState("Loading live preview…");
   const [sortKey, setSortKey] = useState<SortKey>("category");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -67,25 +68,40 @@ export default function BuildTemplatePage() {
   }, [deletedTokens]);
 
   useEffect(() => {
-    let cancelled = false;
-    setExamplePreviewStatus("Loading live preview…");
+    let ignore = false;
+    const requestedMatter = exampleMatter;
 
-    fetch("/api/admin/document-templates/example-preview?matter=" + encodeURIComponent(exampleMatter), { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Preview request failed")))
-      .then((payload) => {
-        if (cancelled) return;
-        setExampleOutputMap(payload?.resolved || {});
-        const diagnosticText = Array.isArray(payload?.diagnostics) && payload.diagnostics.length > 0 ? " · " + payload.diagnostics.join(" · ") : "";
-        setExamplePreviewStatus("Live preview loaded for " + exampleMatter + diagnosticText);
+    setExampleOutputMap({});
+    setExampleOutputMatter(null);
+    setExamplePreviewStatus("Loading live preview for " + requestedMatter + "…");
+
+    fetch("/api/admin/document-templates/example-preview?matter=" + encodeURIComponent(requestedMatter), { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Live preview request failed with status " + response.status);
+        }
+        return response.json();
       })
-      .catch(() => {
-        if (cancelled) return;
+      .then((payload: { matter?: string; resolved?: Record<string, string>; exampleOutputMap?: Record<string, string> }) => {
+        if (ignore || requestedMatter !== exampleMatter) return;
+
+        const resolvedMatter = typeof payload.matter === "string" && payload.matter ? payload.matter : requestedMatter;
+        const nextMap = payload.exampleOutputMap ?? payload.resolved ?? {};
+
+        setExampleOutputMap(nextMap);
+        setExampleOutputMatter(resolvedMatter);
+        setExamplePreviewStatus("Live preview loaded for " + resolvedMatter);
+      })
+      .catch((error: unknown) => {
+        if (ignore || requestedMatter !== exampleMatter) return;
+
         setExampleOutputMap({});
-        setExamplePreviewStatus("Live preview unavailable for " + exampleMatter);
+        setExampleOutputMatter(null);
+        setExamplePreviewStatus(error instanceof Error ? error.message : "Live preview request failed");
       });
 
     return () => {
-      cancelled = true;
+      ignore = true;
     };
   }, [exampleMatter]);
 
@@ -155,12 +171,12 @@ export default function BuildTemplatePage() {
     return token.replace("}}", "|" + formats.join("|") + "}}");
   }
 
-  function exampleOutputFor(field: any) {
-    if (Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)) {
+  function exampleOutputFor(field: (typeof TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS)[number]) {
+    if (exampleOutputMatter === exampleMatter && Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)) {
       return exampleOutputMap[field.mergeField] || "—";
     }
 
-    return field.exampleOutput;
+    return field.exampleOutput || "—";
   }
 
   async function copyToken(token: string) {

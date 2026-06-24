@@ -691,7 +691,9 @@
     "verify:template-builder-no-blank-field-keys": "node scripts/verify-template-builder-no-blank-field-keys.mjs",
     "verify:template-builder-live-preview-child-lawsuit-token-sources": "node scripts/verify-template-builder-live-preview-child-lawsuit-token-sources.mjs",
     "inspect:template-builder-live-preview-token-sources": "tsx scripts/inspect-template-builder-live-preview-token-sources.ts",
-    "verify:template-builder-live-preview-raw-sql-safety": "node scripts/verify-template-builder-live-preview-raw-sql-safety.mjs"
+    "verify:template-builder-live-preview-raw-sql-safety": "node scripts/verify-template-builder-live-preview-raw-sql-safety.mjs",
+    "verify:template-builder-preview-matter-output-switch": "node scripts/verify-template-builder-preview-matter-output-switch.mjs",
+    "verify:template-builder-preview-api-diff-diagnostic": "node scripts/verify-template-builder-preview-api-diff-diagnostic.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
