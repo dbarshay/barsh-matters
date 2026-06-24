@@ -304,12 +304,12 @@ export default function BuildTemplatePage() {
             </tr>
           </thead>
           <tbody>
-            {visibleFields.map((field) => {
+            {visibleFields.map((field, fieldIndex) => {
               const token = withFormats(field.mergeField, field);
               const copied = copiedToken === token;
 
               return (
-                <tr key={field.mergeField}>
+                <tr key={field.mergeField || `field-${fieldIndex}`}>
                   <td style={cellStyle}>
                     <button
                       type="button"

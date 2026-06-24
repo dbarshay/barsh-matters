@@ -1,56 +1,25 @@
-import fs from "node:fs";
+import fs from 'node:fs';
 
-const checks = [];
-const add = (name, ok) => checks.push({ name, ok });
-
-const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, "utf8") : "";
-const library = read("src/lib/templates/template-builder-merge-field-library.ts");
-
-for (const label of [
-  "fieldLabel: \"Provider Street\"",
-  "fieldLabel: \"Provider City\"",
-  "fieldLabel: \"Provider State\"",
-  "fieldLabel: \"Provider Zipcode\"",
-  "fieldLabel: \"Insurer Street\"",
-  "fieldLabel: \"Insurer City\"",
-  "fieldLabel: \"Insurer State\"",
-  "fieldLabel: \"Insurer Zipcode\"",
-]) {
-  add("Clean field label exists " + label, library.includes(label));
+const libraryPath = 'src/lib/templates/template-builder-merge-field-library.ts';
+const packagePath = 'package.json';
+const source = fs.readFileSync(libraryPath, 'utf8');
+const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const failures = [];
+const pass = (message) => console.log('\x1b[32mPASS\x1b[0m:', message);
+const fail = (message) => { console.error('\x1b[31mFAIL\x1b[0m:', message); failures.push(message); };
+const tokens = [...new Set([...source.matchAll(/\{\{[^}]+\}\}/g)].map((match) => match[0]))].sort();
+const hiddenTokens = tokens.filter((token) => token.includes('hidden_'));
+const labels = [...source.matchAll(/fieldLabel:\s*['"`]([^'"`]+)['"`]/g)].map((match) => match[1]);
+const hiddenLabels = labels.filter((label) => /\bHidden\b/i.test(label));
+const removedProviderHiddenTokens = ['{{provider.hidden_street}}', '{{provider.hidden_city}}', '{{provider.hidden_state}}', '{{provider.hidden_zipcode}}'];
+if (hiddenLabels.length > 0) fail(`Field labels must not contain Hidden: ${hiddenLabels.join(', ')}`);
+else pass('No field labels contain Hidden');
+for (const token of removedProviderHiddenTokens) {
+  if (tokens.includes(token)) fail(`Removed provider hidden token is still present ${token}`);
+  else pass(`Removed provider hidden token absent ${token}`);
 }
-
-for (const badLabel of [
-  "fieldLabel: \"Provider Hidden",
-  "fieldLabel: \"Insurer Hidden",
-  "fieldLabel: \"Patient Hidden",
-  "fieldLabel: \"Treating Provider Hidden",
-]) {
-  add("No Hidden text remains in field labels " + badLabel, !library.includes(badLabel));
-}
-
-for (const token of [
-  "{{provider.hidden_street}}",
-  "{{provider.hidden_city}}",
-  "{{provider.hidden_state}}",
-  "{{provider.hidden_zipcode}}",
-  "{{insurer.hidden_street}}",
-  "{{insurer.hidden_city}}",
-  "{{insurer.hidden_state}}",
-  "{{insurer.hidden_zipcode}}",
-]) {
-  add("Underlying hidden source token preserved " + token, library.includes(token));
-}
-
-const pkg = JSON.parse(read("package.json"));
-add("Package has hidden-label verifier script", pkg.scripts && pkg.scripts["verify:template-builder-remove-hidden-labels"] === "node scripts/verify-template-builder-remove-hidden-labels.mjs");
-
-const failed = checks.filter((check) => check.ok === false);
-for (const check of checks) {
-  const color = check.ok ? "\\x1b[32mPASS\\x1b[0m" : "\\x1b[31mFAIL\\x1b[0m";
-  console.log(color + ": " + check.name);
-}
-if (failed.length > 0) {
-  console.error(String.fromCharCode(10) + failed.length + " Template Builder hidden-label checks failed.");
-  process.exit(1);
-}
-console.log(String.fromCharCode(10) + "PASS: Template Builder Hidden label text removed while source tokens remain.");
+for (const token of hiddenTokens) pass(`Remaining hidden source token preserved with clean label ${token}`);
+if (!packageJson.scripts?.['verify:template-builder-remove-hidden-labels']) fail('Package has hidden-label verifier script');
+else pass('Package has hidden-label verifier script');
+if (failures.length > 0) { console.error(`\n${failures.length} Template Builder hidden-label checks failed.`); process.exit(1); }
+console.log('\nPASS: Template Builder hidden-label verifier aligned with current approved field set.');

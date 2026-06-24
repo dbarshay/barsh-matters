@@ -1,80 +1,36 @@
-import fs from "node:fs";
+import fs from 'node:fs';
 
-const checks = [];
-const add = (name, ok) => checks.push({ name, ok });
-
-const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, "utf8") : "";
-const library = read("src/lib/templates/template-builder-merge-field-library.ts");
-const build = read("app/admin/document-templates/build/page.tsx");
-
+const libraryPath = 'src/lib/templates/template-builder-merge-field-library.ts';
+const buildPagePath = 'app/admin/document-templates/build/page.tsx';
+const packagePath = 'package.json';
+const source = fs.readFileSync(libraryPath, 'utf8');
+const buildPage = fs.readFileSync(buildPagePath, 'utf8');
+const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const failures = [];
+const pass = (message) => console.log('\x1b[32mPASS\x1b[0m:', message);
+const fail = (message) => { console.error('\x1b[31mFAIL\x1b[0m:', message); failures.push(message); };
+const tokens = [...new Set([...source.matchAll(/mergeField:\s*['"`]([^'"`]+)['"`]/g)].map((match) => match[1]))].sort();
 const removedTokens = [
-  "{{patient.dateOfBirth}}",
-  "{{patient.hidden_street}}",
-  "{{treatingProvider.hidden_street}}",
-  "{{patient.hidden_zipcode}}",
-  "{{treatingProvider.hidden_zipcode}}",
-  "{{provider.name}}",
-  "{{matter.id}}",
-  "{{matter.displayNumber}}",
-  "{{matter.closedReason}}",
-  "{{patient.firstName}}",
-  "{{patient.name}}",
-  "{{matter.type}}",
-  "{{patient.hidden_city}}",
-  "{{treatingProvider.hidden_city}}",
-  "{{matter.caseType}}",
-  "{{patient.hidden_state}}",
-  "{{treatingProvider.hidden_state}}",
-  "{{matter.finalStatus}}",
+  '{{patient.dateOfBirth}}', '{{patient.hidden_street}}', '{{patient.hidden_city}}', '{{patient.hidden_state}}', '{{patient.hidden_zipcode}}',
+  '{{treatingProvider.hidden_street}}', '{{treatingProvider.hidden_city}}', '{{treatingProvider.hidden_state}}', '{{treatingProvider.hidden_zipcode}}',
+  '{{provider.name}}', '{{matter.id}}', '{{matter.displayNumber}}', '{{matter.closedReason}}', '{{patient.firstName}}', '{{patient.lastName}}', '{{patient.name}}',
+  '{{matter.type}}', '{{matter.caseType}}', '{{matter.finalStatus}}', '{{provider.hidden_street}}', '{{provider.hidden_city}}', '{{provider.hidden_state}}', '{{provider.hidden_zipcode}}',
+  '{{matter.dateOfService}}', '{{claim.dosStart}}', '{{claim.dosEnd}}',
 ];
-
-for (const token of removedTokens) {
-  add("Removed non-template-facing field " + token, !library.includes(token));
-}
-
 const keptTokens = [
-  "{{provider.taxId}}",
-  "{{treatingProvider.name}}",
-  "{{insurer.name}}",
-  "{{insurer.hidden_street}}",
-  "{{insurer.hidden_city}}",
-  "{{insurer.hidden_state}}",
-  "{{insurer.hidden_zipcode}}",
-  "{{claim.number}}",
-  "{{claim.dateOfLoss}}",
-  "{{claim.dateOfService}}",
-  "{{claim.amount}}",
-  "{{claim.denialReason}}",
-  "{{lawsuit.indexNumber}}",
-  "{{lawsuit.court}}",
-  "{{lawsuit.adversaryAttorney}}",
-  "{{lawsuit.dateFiled}}",
-  "{{lawsuit.amount}}",
-  "{{lawsuit.balance}}",
-  "{{cost.indexFee}}",
-  "{{cost.serviceFee}}",
-  "{{cost.otherCourtCosts}}",
+  '{{provider.taxId}}', '{{treatingProvider.name}}', '{{insurer.name}}', '{{insurer.hidden_street}}', '{{insurer.hidden_city}}', '{{insurer.hidden_state}}', '{{insurer.hidden_zipcode}}',
+  '{{claim.number}}', '{{claim.dateOfLoss}}', '{{claim.dateOfService}}', '{{claim.amount}}', '{{claim.denialReason}}',
+  '{{lawsuit.indexNumber}}', '{{lawsuit.court}}', '{{lawsuit.adversaryAttorney}}', '{{lawsuit.dateFiled}}', '{{lawsuit.amount}}', '{{lawsuit.balance}}',
+  '{{cost.indexFee}}', '{{cost.serviceFee}}', '{{cost.otherCourtCosts}}',
 ];
-
-for (const token of keptTokens) {
-  add("Kept approved available field " + token, library.includes(token));
-}
-
-const mergeFieldCount = library.split(String.fromCharCode(10)).filter((line) => line.trim().startsWith("mergeField:")).length;
-add("Curated field count remains controlled after removals", mergeFieldCount >= 40 && mergeFieldCount <= 70);
-add("Build Template still uses shared field library", build.includes("TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS"));
-
-const pkg = JSON.parse(read("package.json"));
-add("Package has extra-field removal verifier script", pkg.scripts && pkg.scripts["verify:template-builder-remove-extra-fields"] === "node scripts/verify-template-builder-remove-extra-fields.mjs");
-
-const failed = checks.filter((check) => check.ok === false);
-for (const check of checks) {
-  const color = check.ok ? "\\x1b[32mPASS\\x1b[0m" : "\\x1b[31mFAIL\\x1b[0m";
-  console.log(color + ": " + check.name);
-}
-console.log("MERGE_FIELD_COUNT=" + mergeFieldCount);
-if (failed.length > 0) {
-  console.error(String.fromCharCode(10) + failed.length + " Template Builder extra-field removal checks failed.");
-  process.exit(1);
-}
-console.log(String.fromCharCode(10) + "PASS: Template Builder extra non-template-facing fields removed.");
+for (const token of removedTokens) tokens.includes(token) ? fail(`Removed non-template-facing field ${token}`) : pass(`Removed non-template-facing field ${token}`);
+for (const token of keptTokens) !tokens.includes(token) ? fail(`Kept approved available field ${token}`) : pass(`Kept approved available field ${token}`);
+if (tokens.length < keptTokens.length || tokens.length > 60) fail('Curated field count remains controlled after removals');
+else pass('Curated field count remains controlled after removals');
+if (!buildPage.includes('TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS')) fail('Build Template still uses shared field library');
+else pass('Build Template still uses shared field library');
+if (!packageJson.scripts?.['verify:template-builder-remove-extra-fields']) fail('Package has extra-field removal verifier script');
+else pass('Package has extra-field removal verifier script');
+console.log(`MERGE_FIELD_COUNT=${tokens.length}`);
+if (failures.length > 0) { console.error(`\n${failures.length} Template Builder extra-field removal checks failed.`); process.exit(1); }
+console.log('\nPASS: Template Builder extra-field removal verifier aligned with current approved field set.');

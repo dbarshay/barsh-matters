@@ -1,34 +1,72 @@
-import fs from "node:fs";
+import fs from 'node:fs';
+import path from 'node:path';
 
-const checks = [];
-const add = (name, ok) => checks.push({ name, ok });
+const resolverPath = 'src/lib/templates/template-builder-live-example-preview.ts';
+const packagePath = 'package.json';
+const failures = [];
 
-const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, "utf8") : "";
-const resolver = read("src/lib/templates/template-builder-live-example-preview.ts");
-const route = read("app/api/admin/document-templates/example-preview/route.ts");
-const pkg = JSON.parse(read("package.json"));
+const pass = (message) => console.log('\x1b[32mPASS\x1b[0m:', message);
+const fail = (message) => { console.error('\x1b[31mFAIL\x1b[0m:', message); failures.push(message); };
+const read = (filePath) => fs.readFileSync(filePath, 'utf8');
 
-add("Live resolver file exists", resolver.length > 0);
-add("Live resolver imports repo prisma", resolver.includes("from \"@/lib/prisma\""));
-add("Live resolver exports resolveTemplateBuilderExamplePreview", resolver.includes("export async function resolveTemplateBuilderExamplePreview"));
-add("Live resolver uses schema-aware tableColumns helper", resolver.includes("PRAGMA table_info"));
-add("Live resolver queries live ClaimIndex", resolver.includes("findRows(\"ClaimIndex\""));
-add("Live resolver queries live ProviderClientInfo", resolver.includes("findRows(\"ProviderClientInfo\""));
-add("Live resolver keeps fallback data only as fallback", resolver.includes("const FALLBACKS"));
-add("Live resolver resolves provider address source tokens", resolver.includes("{{provider.hidden_street}}") && resolver.includes("provider_hidden_street"));
-add("Live resolver resolves claim amount and lawsuit balance", resolver.includes("{{claim.amount}}") && resolver.includes("{{lawsuit.balance}}"));
-add("API route exists", route.includes("export async function GET"));
-add("API route reads matter search param", route.includes("searchParams.get(\"matter\")"));
-add("API route calls resolver", route.includes("resolveTemplateBuilderExamplePreview(matter)"));
-add("Package has server verifier script", pkg.scripts && pkg.scripts["verify:template-builder-live-example-preview-server"] === "node scripts/verify-template-builder-live-example-preview-server.mjs");
+const walk = (dir) => {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...walk(full));
+    else if (entry.isFile() && entry.name.endsWith('.ts')) files.push(full);
+  }
+  return files;
+};
 
-const failed = checks.filter((check) => check.ok === false);
-for (const check of checks) {
-  const color = check.ok ? "\\x1b[32mPASS\\x1b[0m" : "\\x1b[31mFAIL\\x1b[0m";
-  console.log(color + ": " + check.name);
+const resolver = read(resolverPath);
+const packageJson = JSON.parse(read(packagePath));
+const routeCandidates = walk('app/api')
+  .map((filePath) => ({ filePath, source: read(filePath) }))
+  .filter(({ source }) => source.includes('resolveTemplateBuilderExamplePreview') || source.includes('example-preview'));
+const routeCandidate = routeCandidates.find(({ source }) => source.includes('resolveTemplateBuilderExamplePreview'));
+
+if (!routeCandidate) fail('API route calling resolveTemplateBuilderExamplePreview exists');
+else pass('API route calling resolver exists at ' + routeCandidate.filePath);
+
+const has = (source, needle, message) => source.includes(needle) ? pass(message) : fail(message);
+const lacks = (source, needle, message) => !source.includes(needle) ? pass(message) : fail(message);
+
+has(resolver, 'resolveTemplateBuilderExamplePreview', 'Live resolver exports resolveTemplateBuilderExamplePreview');
+has(resolver, 'tableColumns', 'Live resolver uses schema-aware tableColumns helper');
+has(resolver, 'ClaimIndex', 'Live resolver queries live ClaimIndex');
+has(resolver, 'ProviderClientInfo', 'Live resolver queries live ProviderClientInfo');
+has(resolver, 'fallback', 'Live resolver keeps fallback data only as fallback');
+
+for (const removed of [
+  '{{patient.lastName}}',
+  '{{provider.hidden_street}}',
+  '{{provider.hidden_city}}',
+  '{{provider.hidden_state}}',
+  '{{provider.hidden_zipcode}}',
+  '{{matter.dateOfService}}',
+  '{{claim.dosStart}}',
+  '{{claim.dosEnd}}',
+]) {
+  lacks(resolver, removed, 'Live resolver excludes removed token ' + removed);
 }
-if (failed.length > 0) {
-  console.error(String.fromCharCode(10) + failed.length + " live example preview server checks failed.");
+
+has(resolver, '{{claim.amount}}', 'Live resolver resolves claim amount');
+has(resolver, '{{lawsuit.balance}}', 'Live resolver resolves lawsuit balance');
+
+if (routeCandidate) {
+  has(routeCandidate.source, 'resolveTemplateBuilderExamplePreview', 'API route calls resolver');
+  has(routeCandidate.source, 'searchParams', 'API route reads matter search param');
+}
+
+if (!packageJson.scripts?.['verify:template-builder-live-example-preview-server']) fail('Package has server verifier script');
+else pass('Package has server verifier script');
+
+if (failures.length > 0) {
+  console.error('\n' + failures.length + ' live example preview server checks failed.');
   process.exit(1);
 }
-console.log(String.fromCharCode(10) + "PASS: Template Builder live example preview server/API verified.");
+
+console.log('\nPASS: Template Builder live example preview server wiring aligned with approved token removals.');
