@@ -7,6 +7,12 @@ export type TemplateBuilderExamplePreviewResult = {
 };
 
 const ALLOWED_TOKENS = [
+  "{{matter.fileNumber}}",
+  "{{matter.providerName}}",
+  "{{matter.patientName}}",
+  "{{matter.claimNumber}}",
+  "{{matter.dateOfService}}",
+  "{{matter.billedAmount}}",
   "{{patient.lastName}}",
   "{{provider.hidden_street}}",
   "{{provider.hidden_city}}",
@@ -204,6 +210,24 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
   const providerName = text(from(source, ["provider_name", "patient_provider", "provider", "client_name"]));
   const provider = await providerInfo(providerName);
 
+  const patientName = text(from(source, ["patient_name", "patient", "patient_full_name"])) || [
+    text(from(source, ["patient_first_name", "first_name"])),
+    text(from(source, ["patient_last_name", "last_name"]))
+  ].filter(Boolean).join(" ");
+  const claimNumber = text(from(source, ["claim_number_raw", "claim_number", "claim_number_normalized", "bill_number"]));
+  const previewDateOfService = rows.length > 1
+    ? (date(from(rows[0], ["dos_start", "date_of_service", "dos"])) || "") + " - " + (date(from(rows[rows.length - 1], ["dos_end", "date_of_service", "dos"])) || "")
+    : date(from(source, ["dos_start", "date_of_service", "dos"]));
+  const previewBilledAmount = rows.length > 1
+    ? money(sum(rows, ["claim_amount", "amount", "billed_amount"]))
+    : money(from(source, ["claim_amount", "amount", "billed_amount"]));
+
+  put(resolved, "{{matter.fileNumber}}", matterKey || text(from(source, ["display_number", "matter_id", "master_lawsuit_id", "index_aaa_number"])));
+  put(resolved, "{{matter.providerName}}", providerName);
+  put(resolved, "{{matter.patientName}}", patientName);
+  put(resolved, "{{matter.claimNumber}}", claimNumber);
+  put(resolved, "{{matter.dateOfService}}", previewDateOfService);
+  put(resolved, "{{matter.billedAmount}}", previewBilledAmount);
   put(resolved, "{{patient.lastName}}", text(from(source, ["patient_last_name", "last_name"])) || text(from(source, ["patient_name"]))?.split(/\s+/).slice(-1)[0]);
 
   put(resolved, "{{provider.hidden_street}}", text(from(source, ["hidden_street", "provider_hidden_street"])) || text(from(provider, ["hidden_street", "street", "address_line_1", "address1"])));
@@ -219,13 +243,13 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
   put(resolved, "{{insurer.hidden_state}}", text(from(source, ["insurer_hidden_state", "insurance_hidden_state"])));
   put(resolved, "{{insurer.hidden_zipcode}}", text(from(source, ["insurer_hidden_zipcode", "insurer_hidden_zip", "insurance_hidden_zipcode"])));
 
-  put(resolved, "{{claim.number}}", text(from(source, ["claim_number_raw", "claim_number", "claim_number_normalized", "bill_number"])));
+  put(resolved, "{{claim.number}}", claimNumber);
   put(resolved, "{{claim.policyNumber}}", text(from(source, ["policy_number", "policy"])));
   put(resolved, "{{claim.dateOfLoss}}", date(from(source, ["date_of_loss", "dol"])));
-  put(resolved, "{{claim.dateOfService}}", rows.length > 1 ? (date(from(rows[0], ["dos_start", "date_of_service", "dos"])) || "") + " - " + (date(from(rows[rows.length - 1], ["dos_end", "date_of_service", "dos"])) || "") : date(from(source, ["dos_start", "date_of_service", "dos"])));
+  put(resolved, "{{claim.dateOfService}}", previewDateOfService);
   put(resolved, "{{claim.dosStart}}", date(from(rows[0] || source, ["dos_start", "date_of_service", "dos"])));
   put(resolved, "{{claim.dosEnd}}", date(from(rows[rows.length - 1] || source, ["dos_end", "date_of_service", "dos"])));
-  put(resolved, "{{claim.amount}}", rows.length > 1 ? money(sum(rows, ["claim_amount", "amount", "billed_amount"])) : money(from(source, ["claim_amount", "amount", "billed_amount"])));
+  put(resolved, "{{claim.amount}}", previewBilledAmount);
   put(resolved, "{{claim.balance}}", rows.length > 1 ? money(sum(rows, ["balance_amount", "balance_presuit", "balance"])) : money(from(source, ["balance_amount", "balance_presuit", "balance"])));
   put(resolved, "{{claim.payments}}", rows.length > 1 ? money(sum(rows, ["payment_amount", "payment_voluntary", "payments"])) : money(from(source, ["payment_amount", "payment_voluntary", "payments"])));
   put(resolved, "{{claim.denialReason}}", text(from(source, ["denial_reason", "denialReason"])));
