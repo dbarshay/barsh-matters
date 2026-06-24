@@ -686,7 +686,9 @@
     "verify:template-builder-live-preview-postgres-resolver": "node scripts/verify-template-builder-live-preview-postgres-resolver.mjs",
     "verify:template-builder-preview-options": "node scripts/verify-template-builder-preview-options.mjs",
     "verify:template-builder-live-preview-empty-values": "node scripts/verify-template-builder-live-preview-empty-values.mjs",
-    "verify:template-builder-live-preview-matter-tokens": "node scripts/verify-template-builder-live-preview-matter-tokens.mjs"
+    "verify:template-builder-live-preview-matter-tokens": "node scripts/verify-template-builder-live-preview-matter-tokens.mjs",
+    "verify:template-builder-remove-additional-fields": "node scripts/verify-template-builder-remove-additional-fields.mjs",
+    "verify:template-builder-no-blank-field-keys": "node scripts/verify-template-builder-no-blank-field-keys.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

@@ -18,11 +18,6 @@ for (const line of library.split(String.fromCharCode(10))) {
 const uniqueMergeFields = Array.from(new Set(mergeFieldMatches));
 
 for (const token of [
-  "{{patient.lastName}}",
-  "{{provider.hidden_street}}",
-  "{{provider.hidden_city}}",
-  "{{provider.hidden_state}}",
-  "{{provider.hidden_zipcode}}",
   "{{treatingProvider.name}}",
   "{{insurer.name}}",
   "{{claim.number}}",

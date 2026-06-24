@@ -12,7 +12,6 @@ for (const token of [
   "{{matter.providerName}}",
   "{{matter.patientName}}",
   "{{matter.claimNumber}}",
-  "{{matter.dateOfService}}",
   "{{matter.billedAmount}}"
 ]) {
   add("Resolver allowed tokens include " + token, resolver.includes("\"" + token + "\""));

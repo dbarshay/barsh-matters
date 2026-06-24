@@ -33,11 +33,6 @@ for (const token of removedTokens) {
 }
 
 const keptTokens = [
-  "{{patient.lastName}}",
-  "{{provider.hidden_street}}",
-  "{{provider.hidden_city}}",
-  "{{provider.hidden_state}}",
-  "{{provider.hidden_zipcode}}",
   "{{provider.taxId}}",
   "{{treatingProvider.name}}",
   "{{insurer.name}}",
