@@ -156,7 +156,11 @@ export default function BuildTemplatePage() {
   }
 
   function exampleOutputFor(field: any) {
-    return exampleOutputMap[field.mergeField] || field.exampleOutput;
+    if (Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)) {
+      return exampleOutputMap[field.mergeField] || "—";
+    }
+
+    return field.exampleOutput;
   }
 
   async function copyToken(token: string) {

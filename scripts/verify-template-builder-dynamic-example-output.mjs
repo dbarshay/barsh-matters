@@ -10,7 +10,7 @@ const pkg = JSON.parse(read("package.json"));
 for (const token of [
   "exampleOutputMap",
   "function exampleOutputFor",
-  "return exampleOutputMap[field.mergeField] || field.exampleOutput;",
+  "Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)",
   "{exampleOutputFor(field)}",
   "2026.06.00011",
 ]) {

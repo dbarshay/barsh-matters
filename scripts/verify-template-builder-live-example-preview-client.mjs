@@ -13,7 +13,7 @@ add("Build Template has live preview status state", build.includes("examplePrevi
 add("Build Template fetches live preview API", build.includes("/api/admin/document-templates/example-preview?matter="));
 add("Build Template fetch uses selected exampleMatter", build.includes("encodeURIComponent(exampleMatter)"));
 add("Build Template stores resolved preview map", build.includes("setExampleOutputMap(payload?.resolved || {})"));
-add("Build Template renders live example output map", build.includes("return exampleOutputMap[field.mergeField] || field.exampleOutput;"));
+add("Build Template renders live example output map", build.includes("Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)"));
 add("Build Template table uses exampleOutputFor", build.includes("{exampleOutputFor(field)}"));
 add("Build Template no longer embeds static example fixture", !build.includes("TEMPLATE_BUILDER_EXAMPLE_MATTER_OUTPUTS"));
 add("Build Template no longer renders static field.exampleOutput directly", !build.includes("<span>{field.exampleOutput}</span>"));

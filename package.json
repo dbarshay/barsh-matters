@@ -684,7 +684,8 @@
     "verify:template-builder-live-example-preview-client": "node scripts/verify-template-builder-live-example-preview-client.mjs",
     "verify:template-builder-live-preview-debug-route": "node scripts/verify-template-builder-live-preview-debug-route.mjs",
     "verify:template-builder-live-preview-postgres-resolver": "node scripts/verify-template-builder-live-preview-postgres-resolver.mjs",
-    "verify:template-builder-preview-options": "node scripts/verify-template-builder-preview-options.mjs"
+    "verify:template-builder-preview-options": "node scripts/verify-template-builder-preview-options.mjs",
+    "verify:template-builder-live-preview-empty-values": "node scripts/verify-template-builder-live-preview-empty-values.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
