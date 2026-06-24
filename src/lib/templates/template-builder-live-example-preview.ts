@@ -64,6 +64,14 @@ async function rawRows(sql: string): Promise<Row[]> {
   return await prisma.$queryRawUnsafe<Row[]>(sql);
 }
 
+async function safeRawRows(sql: string): Promise<Row[]> {
+  try {
+    return await rawRows(sql);
+  } catch {
+    return [];
+  }
+}
+
 async function tableNames(): Promise<string[]> {
   try {
     const rows = await rawRows("select table_name as name from information_schema.tables where table_schema = 'public' order by table_name");
@@ -90,8 +98,8 @@ async function findRows(tableName: string, value: string, candidateColumns: stri
   const normalized = new Map(columns.map((column) => [norm(column), column]));
   const actualColumns = candidateColumns.map((column) => normalized.get(norm(column))).filter((column): column is string => Boolean(column));
   if (actualColumns.length === 0) return [];
-  const where = actualColumns.map((column) => quoteIdent(column) + " = " + quoteLiteral(value)).join(" or ");
-  return await rawRows("select * from " + quoteIdent(tableName) + " where " + where + " limit " + String(limit));
+  const where = actualColumns.map((column) => "CAST(" + quoteIdent(column) + " AS TEXT) = " + quoteLiteral(value)).join(" or ");
+  return await safeRawRows("select * from " + quoteIdent(tableName) + " where " + where + " limit " + String(limit));
 }
 
 function scoreRow(row: Row, preferredColumns: string[]): number {
