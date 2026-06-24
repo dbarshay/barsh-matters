@@ -18,8 +18,11 @@ for (const line of library.split(String.fromCharCode(10))) {
 const uniqueMergeFields = Array.from(new Set(mergeFieldMatches));
 
 for (const token of [
-  "{{patient.name}}",
-  "{{provider.name}}",
+  "{{patient.lastName}}",
+  "{{provider.hidden_street}}",
+  "{{provider.hidden_city}}",
+  "{{provider.hidden_state}}",
+  "{{provider.hidden_zipcode}}",
   "{{treatingProvider.name}}",
   "{{insurer.name}}",
   "{{claim.number}}",
@@ -36,10 +39,6 @@ for (const token of [
   "{{cost.indexFee}}",
   "{{cost.serviceFee}}",
   "{{cost.otherCourtCosts}}",
-  "{{provider.hidden_street}}",
-  "{{provider.hidden_city}}",
-  "{{provider.hidden_state}}",
-  "{{provider.hidden_zipcode}}",
 ]) {
   add("Curated library includes " + token, uniqueMergeFields.includes(token));
 }
@@ -50,11 +49,21 @@ for (const blocked of [
   "{{adminUserPermissionOverride.permissionKey}}",
   "{{documentTemplate.storagePath}}",
   "{{adminRolePermission.permissionKey}}",
+  "{{provider.name}}",
+  "{{patient.name}}",
+  "{{patient.firstName}}",
+  "{{patient.dateOfBirth}}",
+  "{{matter.id}}",
+  "{{matter.displayNumber}}",
+  "{{matter.type}}",
+  "{{matter.caseType}}",
+  "{{matter.finalStatus}}",
+  "{{matter.closedReason}}",
 ]) {
-  add("Curated library excludes internal token " + blocked, !uniqueMergeFields.includes(blocked));
+  add("Curated library excludes blocked token " + blocked, !uniqueMergeFields.includes(blocked));
 }
 
-add("Curated field count is controlled, not schema-wide", uniqueMergeFields.length >= 45 && uniqueMergeFields.length <= 90);
+add("Curated field count is controlled, not schema-wide", uniqueMergeFields.length >= 40 && uniqueMergeFields.length <= 70);
 add("Merge-field library merge fields are unique", uniqueMergeFields.length === mergeFieldMatches.length);
 add("Build Template no longer shows field kind/type descriptions", !build.includes("{field.kind} · {field.fieldType}") && !build.includes("signatureHeader · Text"));
 

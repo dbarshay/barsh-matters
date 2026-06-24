@@ -9,7 +9,7 @@ const count = library.split(String.fromCharCode(10)).filter((line) => line.trim(
 const checks = [
   ["Build Template no longer shows kind/type description after field label", !build.includes("{field.kind} · {field.fieldType}") && !build.includes("signatureHeader · Text")],
   ["Build Template field label remains visible", build.includes("<span style={{ fontWeight: 800 }}>{field.fieldLabel}</span>")],
-  ["Merge-field library remains curated", count >= 45 && count <= 90],
+  ["Merge-field library remains curated", count >= 40 && count <= 70],
   ["Package has field cleanup verifier script", pkg.scripts && pkg.scripts["verify:template-builder-field-cleanup"] === "node scripts/verify-template-builder-field-cleanup.mjs"],
 ];
 
