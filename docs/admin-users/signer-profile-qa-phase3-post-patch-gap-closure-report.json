@@ -1,0 +1,26 @@
+{
+  "phase": "Admin Users / Signer Profile QA Phase 3",
+  "baseline": "admin-users-qa-phase2-runtime-enforcement-gap-patch-20260623",
+  "runtimeMutation": false,
+  "sourceOfTruth": "scripts/verify-admin-users-qa-phase2-runtime-enforcement-gap-patch.mjs",
+  "qa2VerifierStatus": "PASS required before report generation",
+  "closedRuntimeGaps": [
+    "loginRouteForcedPasswordRuntimeEnforcement",
+    "loginPageForcedPasswordRedirect",
+    "loginRouteTwoFactorRuntimeVisibility",
+    "loginPageTwoFactorRuntimeUx",
+    "sessionRouteForcedPasswordVisibility",
+    "sessionRouteTwoFactorVisibility",
+    "adminPageNewSignoutRouteRuntime"
+  ],
+  "unexpectedOpenGapCount": 0,
+  "knownDeferred": [
+    {
+      "key": "externalSmsDeliveryImplemented",
+      "severity": "known-deferred",
+      "recommendation": "Choose/configure SMS provider later. Current 2FA challenge/verify routes store only hashes, enforce expiry/attempt lockout, and do not claim SMS delivery."
+    }
+  ],
+  "readyForNextWorkstream": true,
+  "nextRecommendedWorkstream": "Return to document/template signer-profile integration, or configure external SMS provider when ready."
+}
