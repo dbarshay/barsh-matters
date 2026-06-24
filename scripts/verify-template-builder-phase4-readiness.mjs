@@ -83,8 +83,8 @@ for (const token of [
 }
 
 const build = read("app/admin/document-templates/build/page.tsx");
-add("Build page contains token scan readiness section", build.includes("Token scan readiness"));
-add("Build page says DOCX upload and Generate Documents remain unwired", build.includes("Production DOCX upload and Generate Documents remain unwired"));
+add("Build page keeps functional merge-field table after removing visible readiness panels", build.includes("Search merge fields") && build.includes("Merge Field") && build.includes("CopyIcon"));
+add("Build page does not expose token scan readiness panel", !build.includes("Token scan readiness"));
 
 const view = read("app/admin/document-templates/view/page.tsx");
 add("View page references Phase 4 Make Active token scan readiness", view.includes("Make Active token scan readiness is defined in Phase 4"));

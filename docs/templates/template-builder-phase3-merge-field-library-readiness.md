@@ -18,7 +18,7 @@ Default subcategory:
 
 - People → Signature/Header
 
-General is fixed, appears last, cannot be renamed, and cannot be deleted. If a category or subcategory containing fields is deleted in a later persistence phase, those fields must move automatically to General.
+General is fixed, cannot be renamed, and cannot be deleted. If a category or subcategory containing fields is deleted in a later persistence phase, those fields must move automatically to General.
 
 ## Field display and search
 

@@ -668,7 +668,9 @@
     "verify:template-builder-phase2": "node scripts/verify-template-builder-phase2-readiness.mjs",
     "verify:template-builder-phase3": "node scripts/verify-template-builder-phase3-readiness.mjs",
     "verify:template-builder-phase4": "node scripts/verify-template-builder-phase4-readiness.mjs",
-    "verify:template-builder-phase5": "node scripts/verify-template-builder-phase5-readiness.mjs"
+    "verify:template-builder-phase5": "node scripts/verify-template-builder-phase5-readiness.mjs",
+    "verify:template-builder-ui-polish": "node scripts/verify-template-builder-ui-polish.mjs",
+    "verify:template-builder-remove-readiness-panels": "node scripts/verify-template-builder-remove-readiness-panels.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

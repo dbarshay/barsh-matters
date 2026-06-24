@@ -71,8 +71,8 @@ add("Landing contains template creation readiness gate", landing.includes("Templ
 add("Landing confirms no creation or upload wired", landing.includes("No template creation or upload is wired yet"));
 
 const build = read("app/admin/document-templates/build/page.tsx");
-add("Build page contains ready for Create Template implementation", build.includes("Ready for Create Template implementation"));
-add("Build page references duplicate filename blocking", build.includes("duplicate filename blocking across all template folders"));
+add("Build page keeps functional merge-field table after visible readiness panels were removed", build.includes("Search merge fields") && build.includes("Merge Field") && build.includes("CopyIcon"));
+add("Build page does not expose Create Template readiness panel", !build.includes("Ready for Create Template implementation"));
 
 const view = read("app/admin/document-templates/view/page.tsx");
 add("View page confirms new templates default Inactive", view.includes("New templates default Inactive"));

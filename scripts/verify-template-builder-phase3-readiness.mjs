@@ -68,8 +68,8 @@ for (const token of [
   "Search merge fields",
   "Example matter",
   "Format for copy",
-  "Category readiness",
-  "Custom manual placeholder readiness",
+  "toggleSort",
+  "CopyIcon",
   "Production DOCX upload, token mutation, and matter-side Generate Documents remain intentionally unwired",
 ]) {
   add(`Build page contains ${token}`, build.includes(token));
