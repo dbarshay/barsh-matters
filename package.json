@@ -673,7 +673,8 @@
     "verify:template-builder-remove-readiness-panels": "node scripts/verify-template-builder-remove-readiness-panels.mjs",
     "verify:template-builder-build-ui-pass2": "node scripts/verify-template-builder-build-ui-pass2.mjs",
     "verify:template-builder-build-full-width": "node scripts/verify-template-builder-build-full-width.mjs",
-    "verify:template-builder-field-cleanup": "node scripts/verify-template-builder-field-cleanup.mjs"
+    "verify:template-builder-field-cleanup": "node scripts/verify-template-builder-field-cleanup.mjs",
+    "verify:template-builder-curated-fields": "node scripts/verify-template-builder-curated-fields.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
