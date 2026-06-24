@@ -18,6 +18,7 @@ for (const token of [
   "{{treatingProvider.name}}",
   "{{claim.amount}}",
   "{{matter.claimNumber}}",
+  "{{lawsuit.court}}",
   "{{insurer.hidden_street}}",
   "{{insurer.hidden_city}}",
   "{{insurer.hidden_state}}",
@@ -59,8 +60,7 @@ has(resolver, "hiddenValue(insurerRow, \"hidden_zipcode\")", "Resolver reads ins
 
 for (const token of [
   "{{lawsuit.indexNumber}}",
-  "{{lawsuit.court}}",
-  "{{court.name}}",
+    "{{court.name}}",
   "{{court.longName1}}",
   "{{court.longName2}}",
   "{{court.street}}",

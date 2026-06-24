@@ -232,16 +232,7 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
   {
     kind: "canonical",
     category: "Lawsuit",
-    fieldLabel: "Court",
-    mergeField: "{{lawsuit.court}}",
-    fieldType: "text",
-    compatibleModifiers: TEXT_MODIFIERS,
-    exampleOutput: "—",
-  },
-  {
-    kind: "canonical",
-    category: "Lawsuit",
-    fieldLabel: "Court Name",
+    fieldLabel: "Court Short Name",
     mergeField: "{{court.name}}",
     fieldType: "text",
     compatibleModifiers: TEXT_MODIFIERS,

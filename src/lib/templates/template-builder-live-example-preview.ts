@@ -333,7 +333,6 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{claim.payments}}": isLawsuitContext ? DASH : money(rowValue(claimRow, ["payment_amount", "payment_voluntary"])),
 
     "{{lawsuit.indexNumber}}": isLawsuitContext ? formatValue(rowValue(lawsuitRow, ["indexAaaNumber"]) || optionValue(options, ["indexAaaNumber"])) : DASH,
-    "{{lawsuit.court}}": isLawsuitContext ? formatValue(optionValue(options, ["venueSelection", "venue"])) : DASH,
     "{{court.name}}": isLawsuitContext ? formatValue(rowValue(courtRow, ["displayName"]) || courtSourceName) : DASH,
     "{{court.longName1}}": isLawsuitContext ? detailValue(courtRow, "longName1") : DASH,
     "{{court.longName2}}": isLawsuitContext ? detailValue(courtRow, "longName2") : DASH,

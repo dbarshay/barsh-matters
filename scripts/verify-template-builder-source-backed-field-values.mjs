@@ -42,6 +42,7 @@ for (const token of approvedTokens) {
 }
 
 const retiredUserFacingTokens = [
+  "{{lawsuit.court}}",
   "{{insurer.hidden_street}}",
   "{{insurer.hidden_city}}",
   "{{insurer.hidden_state}}",
