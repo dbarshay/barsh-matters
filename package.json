@@ -696,7 +696,8 @@
     "verify:template-builder-preview-api-diff-diagnostic": "node scripts/verify-template-builder-preview-api-diff-diagnostic.mjs",
     "verify:template-builder-preview-data-differentiation": "node scripts/verify-template-builder-preview-data-differentiation.mjs",
     "verify:template-builder-preview-core-matter-tokens": "node scripts/verify-template-builder-preview-core-matter-tokens.mjs",
-    "verify:template-builder-source-backed-field-values": "node scripts/verify-template-builder-source-backed-field-values.mjs"
+    "verify:template-builder-source-backed-field-values": "node scripts/verify-template-builder-source-backed-field-values.mjs",
+    "verify:template-builder-direct-example-brl-202600001": "node scripts/verify-template-builder-direct-example-brl-202600001.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
