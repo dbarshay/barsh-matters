@@ -4,6 +4,7 @@ export type TemplateSignerRequirementPhase1 = {
   staticOverrideBypass?: {
     approvedPhase: string;
     tel?: string;
+    extension?: string;
     fax?: string;
     email?: string;
     signature?: string;
@@ -28,6 +29,7 @@ export const TEMPLATE_SIGNER_REQUIREMENTS_REGISTRY_PHASE1: TemplateSignerRequire
     staticOverrideBypass: {
       approvedPhase: "19D",
       tel: "(631) 210-7272",
+      extension: "",
       fax: "(516) 706-5055",
       email: "info@brlfirm.com",
       signature: "Angelo F. Rizzo, Esquire",
