@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS,
   TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS,
@@ -50,157 +50,12 @@ function formatLabel(value: string) {
   return value;
 }
 
-const TEMPLATE_BUILDER_EXAMPLE_MATTER_OUTPUTS: Record<string, Record<string, string>> = {
-  "BRL_202600003": {
-    "{{patient.lastName}}": "Barshay",
-    "{{provider.hidden_street}}": "445 Broadhollow Road",
-    "{{provider.hidden_city}}": "Melville",
-    "{{provider.hidden_state}}": "NY",
-    "{{provider.hidden_zipcode}}": "11747",
-    "{{provider.taxId}}": "11-1111111",
-    "{{treatingProvider.name}}": "David J Weiss",
-    "{{insurer.name}}": "Allstate Indemnity Company",
-    "{{insurer.hidden_street}}": "100 Wall Street",
-    "{{insurer.hidden_city}}": "New York",
-    "{{insurer.hidden_state}}": "NY",
-    "{{insurer.hidden_zipcode}}": "10005",
-    "{{claim.number}}": "1111",
-    "{{claim.policyNumber}}": "POL-12345",
-    "{{claim.dateOfLoss}}": "01/01/2021",
-    "{{claim.dateOfService}}": "01/16/2021",
-    "{{claim.dosStart}}": "01/16/2021",
-    "{{claim.dosEnd}}": "01/16/2021",
-    "{{claim.amount}}": "$562.25",
-    "{{claim.balance}}": "$562.25",
-    "{{claim.payments}}": "$0.00",
-    "{{claim.denialReason}}": "Medical Necessity",
-    "{{lawsuit.indexNumber}}": "123444/2026",
-    "{{lawsuit.court}}": "Nassau District-Hempstead (2nd)",
-    "{{lawsuit.adversaryAttorney}}": "Martyn, Smith, Murray & Yong, Esqs.",
-    "{{lawsuit.dateFiled}}": "06/01/2026",
-    "{{lawsuit.amount}}": "$1,261.75",
-    "{{lawsuit.costs}}": "$0.00",
-    "{{lawsuit.paymentsPosted}}": "$0.00",
-    "{{lawsuit.balance}}": "$1,261.75",
-    "{{cost.indexFee}}": "$0.00",
-    "{{cost.serviceFee}}": "$0.00",
-    "{{cost.otherCourtCosts}}": "$0.00",
-    "{{cost.total}}": "$0.00"
-  },
-  "BRL30236": {
-    "{{patient.lastName}}": "Barshay",
-    "{{provider.hidden_street}}": "3100 Sanders Road",
-    "{{provider.hidden_city}}": "Northbrook",
-    "{{provider.hidden_state}}": "IL",
-    "{{provider.hidden_zipcode}}": "60062",
-    "{{provider.taxId}}": "22-2222222",
-    "{{treatingProvider.name}}": "Atlantic Medical & Diagnostic, P.C.",
-    "{{insurer.name}}": "Allstate Indemnity",
-    "{{insurer.hidden_street}}": "3075 Sanders Road",
-    "{{insurer.hidden_city}}": "Northbrook",
-    "{{insurer.hidden_state}}": "IL",
-    "{{insurer.hidden_zipcode}}": "60062",
-    "{{claim.number}}": "123456",
-    "{{claim.policyNumber}}": "POL-BRL30236",
-    "{{claim.dateOfLoss}}": "06/01/2026",
-    "{{claim.dateOfService}}": "06/04/2026",
-    "{{claim.dosStart}}": "06/04/2026",
-    "{{claim.dosEnd}}": "06/04/2026",
-    "{{claim.amount}}": "$500.00",
-    "{{claim.balance}}": "$500.00",
-    "{{claim.payments}}": "$0.00",
-    "{{claim.denialReason}}": "Medical Necessity",
-    "{{lawsuit.indexNumber}}": "Not filed",
-    "{{lawsuit.court}}": "Not assigned",
-    "{{lawsuit.adversaryAttorney}}": "Not assigned",
-    "{{lawsuit.dateFiled}}": "Not filed",
-    "{{lawsuit.amount}}": "$0.00",
-    "{{lawsuit.costs}}": "$0.00",
-    "{{lawsuit.paymentsPosted}}": "$0.00",
-    "{{lawsuit.balance}}": "$500.00",
-    "{{cost.indexFee}}": "$0.00",
-    "{{cost.serviceFee}}": "$0.00",
-    "{{cost.otherCourtCosts}}": "$0.00",
-    "{{cost.total}}": "$0.00"
-  },
-  "2026.06.00002": {
-    "{{patient.lastName}}": "Barshay",
-    "{{provider.hidden_street}}": "3100 Sanders Road",
-    "{{provider.hidden_city}}": "Northbrook",
-    "{{provider.hidden_state}}": "IL",
-    "{{provider.hidden_zipcode}}": "60062",
-    "{{provider.taxId}}": "22-2222222",
-    "{{treatingProvider.name}}": "Atlantic Medical & Diagnostic, P.C.",
-    "{{insurer.name}}": "Allstate Indemnity",
-    "{{insurer.hidden_street}}": "3075 Sanders Road",
-    "{{insurer.hidden_city}}": "Northbrook",
-    "{{insurer.hidden_state}}": "IL",
-    "{{insurer.hidden_zipcode}}": "60062",
-    "{{claim.number}}": "123456",
-    "{{claim.policyNumber}}": "POL-20260600002",
-    "{{claim.dateOfLoss}}": "06/01/2026",
-    "{{claim.dateOfService}}": "06/04/2026 - 06/05/2026",
-    "{{claim.dosStart}}": "06/04/2026",
-    "{{claim.dosEnd}}": "06/05/2026",
-    "{{claim.amount}}": "$1,250.00",
-    "{{claim.balance}}": "$1,250.00",
-    "{{claim.payments}}": "$0.00",
-    "{{claim.denialReason}}": "Medical Necessity",
-    "{{lawsuit.indexNumber}}": "2026.06.00002",
-    "{{lawsuit.court}}": "Nassau District-Hempstead (2nd)",
-    "{{lawsuit.adversaryAttorney}}": "Martyn, Smith, Murray & Yong, Esqs.",
-    "{{lawsuit.dateFiled}}": "06/15/2026",
-    "{{lawsuit.amount}}": "$1,250.00",
-    "{{lawsuit.costs}}": "$0.00",
-    "{{lawsuit.paymentsPosted}}": "$0.00",
-    "{{lawsuit.balance}}": "$1,250.00",
-    "{{cost.indexFee}}": "$0.00",
-    "{{cost.serviceFee}}": "$0.00",
-    "{{cost.otherCourtCosts}}": "$0.00",
-    "{{cost.total}}": "$0.00"
-  },
-  "2026.06.00011": {
-    "{{patient.lastName}}": "Test",
-    "{{provider.hidden_street}}": "225 Broadhollow Road",
-    "{{provider.hidden_city}}": "Melville",
-    "{{provider.hidden_state}}": "NY",
-    "{{provider.hidden_zipcode}}": "11747",
-    "{{provider.taxId}}": "33-3333333",
-    "{{treatingProvider.name}}": "Example Treating Provider",
-    "{{insurer.name}}": "Example Insurance Company",
-    "{{insurer.hidden_street}}": "1 Insurance Plaza",
-    "{{insurer.hidden_city}}": "Garden City",
-    "{{insurer.hidden_state}}": "NY",
-    "{{insurer.hidden_zipcode}}": "11530",
-    "{{claim.number}}": "EX-00011",
-    "{{claim.policyNumber}}": "POL-00011",
-    "{{claim.dateOfLoss}}": "06/11/2026",
-    "{{claim.dateOfService}}": "06/12/2026",
-    "{{claim.dosStart}}": "06/12/2026",
-    "{{claim.dosEnd}}": "06/12/2026",
-    "{{claim.amount}}": "$888.88",
-    "{{claim.balance}}": "$777.77",
-    "{{claim.payments}}": "$111.11",
-    "{{claim.denialReason}}": "Verification Requested",
-    "{{lawsuit.indexNumber}}": "2026.06.00011",
-    "{{lawsuit.court}}": "Suffolk District Court",
-    "{{lawsuit.adversaryAttorney}}": "Example Defense Counsel",
-    "{{lawsuit.dateFiled}}": "06/24/2026",
-    "{{lawsuit.amount}}": "$888.88",
-    "{{lawsuit.costs}}": "$65.00",
-    "{{lawsuit.paymentsPosted}}": "$111.11",
-    "{{lawsuit.balance}}": "$777.77",
-    "{{cost.indexFee}}": "$45.00",
-    "{{cost.serviceFee}}": "$20.00",
-    "{{cost.otherCourtCosts}}": "$0.00",
-    "{{cost.total}}": "$65.00"
-  }
-};
-
 export default function BuildTemplatePage() {
   const [query, setQuery] = useState("");
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [exampleMatter, setExampleMatter] = useState("BRL_202600003");
+  const [exampleOutputMap, setExampleOutputMap] = useState<Record<string, string>>({});
+  const [examplePreviewStatus, setExamplePreviewStatus] = useState("Loading live preview…");
   const [sortKey, setSortKey] = useState<SortKey>("category");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [copiedToken, setCopiedToken] = useState("");
@@ -210,6 +65,29 @@ export default function BuildTemplatePage() {
   const availableFields = useMemo(() => {
     return TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.filter((field) => !deletedTokens.includes(field.mergeField));
   }, [deletedTokens]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setExamplePreviewStatus("Loading live preview…");
+
+    fetch("/api/admin/document-templates/example-preview?matter=" + encodeURIComponent(exampleMatter), { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Preview request failed")))
+      .then((payload) => {
+        if (cancelled) return;
+        setExampleOutputMap(payload?.resolved || {});
+        const diagnosticText = Array.isArray(payload?.diagnostics) && payload.diagnostics.length > 0 ? " · " + payload.diagnostics.join(" · ") : "";
+        setExamplePreviewStatus("Live preview loaded for " + exampleMatter + diagnosticText);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setExampleOutputMap({});
+        setExamplePreviewStatus("Live preview unavailable for " + exampleMatter);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [exampleMatter]);
 
   const visibleFields = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -278,7 +156,7 @@ export default function BuildTemplatePage() {
   }
 
   function exampleOutputFor(field: any) {
-    return TEMPLATE_BUILDER_EXAMPLE_MATTER_OUTPUTS[exampleMatter]?.[field.mergeField] || field.exampleOutput;
+    return exampleOutputMap[field.mergeField] || field.exampleOutput;
   }
 
   async function copyToken(token: string) {
@@ -391,6 +269,10 @@ export default function BuildTemplatePage() {
           })}
         </div>
       </section>
+
+      <div style={{ margin: "-6px 0 12px", color: "#475569", fontSize: "13px", fontWeight: 700 }}>
+        {examplePreviewStatus}
+      </div>
 
       <div style={{ maxHeight: "calc(100vh - 230px)", overflow: "auto", border: "1px solid #cbd5e1", borderRadius: "12px", width: "100%" }}>
         <table style={{ width: "100%", minWidth: "1480px", borderCollapse: "separate", borderSpacing: 0, background: "#ffffff", tableLayout: "auto" }}>

@@ -680,7 +680,8 @@
     "verify:template-builder-remove-hidden-labels": "node scripts/verify-template-builder-remove-hidden-labels.mjs",
     "verify:template-builder-example-matter-20260600011": "node scripts/verify-template-builder-example-matter-20260600011.mjs",
     "verify:template-builder-dynamic-example-output": "node scripts/verify-template-builder-dynamic-example-output.mjs",
-    "verify:template-builder-live-example-preview-server": "node scripts/verify-template-builder-live-example-preview-server.mjs"
+    "verify:template-builder-live-example-preview-server": "node scripts/verify-template-builder-live-example-preview-server.mjs",
+    "verify:template-builder-live-example-preview-client": "node scripts/verify-template-builder-live-example-preview-client.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
