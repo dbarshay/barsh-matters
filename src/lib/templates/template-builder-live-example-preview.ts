@@ -122,10 +122,27 @@ function from(row: Record<string, unknown> | null | undefined, keys: string[]): 
   return undefined;
 }
 
+function identifier(value: string): string {
+  return String.fromCharCode(34) + value.replaceAll(String.fromCharCode(34), String.fromCharCode(34) + String.fromCharCode(34)) + String.fromCharCode(34);
+}
+
+function literal(value: string): string {
+  return String.fromCharCode(39) + value.replaceAll(String.fromCharCode(39), String.fromCharCode(39) + String.fromCharCode(39)) + String.fromCharCode(39);
+}
+
 async function tableColumns(tableName: string): Promise<Set<string>> {
   try {
-    const rows = await prisma.$queryRawUnsafe("PRAGMA table_info(" + JSON.stringify(tableName) + ")") as Array<Record<string, unknown>>;
-    return new Set(rows.map((row) => String(row.name || "")));
+    const rows = await prisma.$queryRawUnsafe(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = " + literal("public") + " AND table_name = " + literal(tableName) + " ORDER BY ordinal_position"
+    ) as Array<Record<string, unknown>>;
+    const names = rows.map((row) => String(row.column_name || "")).filter(Boolean);
+    if (names.length > 0) return new Set(names);
+  } catch {
+  }
+
+  try {
+    const rows = await prisma.$queryRawUnsafe("PRAGMA table_info(" + identifier(tableName) + ")") as Array<Record<string, unknown>>;
+    return new Set(rows.map((row) => String(row.name || "")).filter(Boolean));
   } catch {
     return new Set<string>();
   }
@@ -136,11 +153,11 @@ async function findRows(tableName: string, candidateColumns: string[], value: st
   const usable = candidateColumns.filter((column) => columns.has(column));
   if (usable.length === 0) return [];
 
-  const where = usable.map((column) => "CAST(" + JSON.stringify(column) + " AS TEXT) = ?").join(" OR ");
-  const sql = "SELECT * FROM " + JSON.stringify(tableName) + " WHERE " + where + " LIMIT " + String(limit);
+  const where = usable.map((column) => "CAST(" + identifier(column) + " AS TEXT) = " + literal(value)).join(" OR ");
+  const sql = "SELECT * FROM " + identifier(tableName) + " WHERE " + where + " LIMIT " + String(limit);
 
   try {
-    return await prisma.$queryRawUnsafe(sql, ...usable.map(() => value)) as Array<Record<string, unknown>>;
+    return await prisma.$queryRawUnsafe(sql) as Array<Record<string, unknown>>;
   } catch {
     return [];
   }
