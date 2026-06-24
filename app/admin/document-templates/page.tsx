@@ -31,6 +31,13 @@ export default function DocumentTemplatesPage() {
           Required storage namespaces: templates/active/, templates/inactive/, templates/archived/, and templates/deleted/. Internal filenames and storage paths remain hidden from routine UI views. Phase 2 centralizes this lifecycle contract under templates.manage for later route-level enforcement.
         </p>
       </section>
+    
+      <section style={{ marginTop: "18px", padding: "18px", border: "1px solid #bbf7d0", borderRadius: "12px", background: "#f0fdf4" }}>
+        <h2 style={{ margin: "0 0 8px", fontSize: "18px", color: "#166534" }}>Template creation readiness gate</h2>
+        <p style={{ margin: 0, color: "#14532d", lineHeight: 1.55 }}>
+          Phase 5 confirms the app is ready for the next implementation step: Create Template with BM display name, DOCX picker, default signature mode, DOCX-only validation, duplicate filename check across all template folders, token scan before save, and storage under templates/inactive/. No template creation or upload is wired yet.
+        </p>
+      </section>
     </main>
   );
 }

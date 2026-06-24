@@ -146,6 +146,13 @@ export default function BuildTemplatePage() {
           Phase 4 defines the scanner contract for body paragraphs, tables, detectable text boxes, split Word runs, warning-only unknown tokens, blocking malformed tokens, invalid modifiers, incompatible modifiers, approximate locations, and the standard BM token scan popup. Production DOCX upload and Generate Documents remain unwired.
         </p>
       </section>
+    
+      <section style={{ marginTop: "22px", padding: "18px", border: "1px solid #bbf7d0", borderRadius: "12px", background: "#f0fdf4" }}>
+        <h2 style={{ margin: "0 0 10px", color: "#166534", fontSize: "20px" }}>Ready for Create Template implementation</h2>
+        <p style={{ margin: 0, color: "#14532d", lineHeight: 1.55 }}>
+          The next implementation phase may wire Create Template using BM display name, local DOCX picker, default signature mode Firm or User Selects, initial Inactive status, BM cloud storage under templates/inactive/, duplicate filename blocking across all template folders, and the Phase 4 token scan before save.
+        </p>
+      </section>
     </main>
   );
 }
