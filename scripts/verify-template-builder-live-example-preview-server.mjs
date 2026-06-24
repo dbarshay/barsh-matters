@@ -28,37 +28,47 @@ has(resolver, 'from "ReferenceEntity"', "Live resolver reads ReferenceEntity sou
 has(resolver, "findClaimRowsForLawsuit", "Live resolver has lawsuit claim-row lookup");
 has(resolver, "findClaimRowForDirect", "Live resolver has direct matter lookup");
 has(resolver, "bestProviderRow", "Live resolver resolves provider/client display source");
-has(resolver, "bestReferenceRow", "Live resolver resolves insurer/reference source");
+has(resolver, "bestReferenceRow", "Live resolver resolves reference-source rows");
 has(resolver, "taxIdFromRow", "Live resolver keeps provider tax ID source resolution");
 has(resolver, "hiddenFields", "Live resolver can read hidden/import source fields internally");
 
-has(resolver, '"{{matter.fileNumber}}"', "Live resolver maps kept token {{matter.fileNumber}}");
-has(resolver, '"{{matter.providerName}}"', "Live resolver maps kept token {{matter.providerName}}");
-has(resolver, '"{{matter.patientName}}"', "Live resolver maps kept token {{matter.patientName}}");
-has(resolver, '"{{matter.billedAmount}}"', "Live resolver maps kept token {{matter.billedAmount}}");
-has(resolver, '"{{provider.taxId}}"', "Live resolver maps kept token {{provider.taxId}}");
-has(resolver, '"{{insurer.name}}"', "Live resolver maps kept token {{insurer.name}}");
-has(resolver, '"{{insurer.street}}"', "Live resolver maps kept token {{insurer.street}}");
-has(resolver, '"{{insurer.city}}"', "Live resolver maps kept token {{insurer.city}}");
-has(resolver, '"{{insurer.state}}"', "Live resolver maps kept token {{insurer.state}}");
-has(resolver, '"{{insurer.zipcode}}"', "Live resolver maps kept token {{insurer.zipcode}}");
-has(resolver, '"{{claim.number}}"', "Live resolver maps kept token {{claim.number}}");
-has(resolver, '"{{claim.dateOfLoss}}"', "Live resolver maps kept token {{claim.dateOfLoss}}");
-has(resolver, '"{{claim.dateOfService}}"', "Live resolver maps kept token {{claim.dateOfService}}");
-has(resolver, '"{{claim.denialReason}}"', "Live resolver maps kept token {{claim.denialReason}}");
-has(resolver, '"{{claim.balance}}"', "Live resolver maps kept token {{claim.balance}}");
-has(resolver, '"{{claim.payments}}"', "Live resolver maps kept token {{claim.payments}}");
-has(resolver, '"{{lawsuit.indexNumber}}"', "Live resolver maps kept token {{lawsuit.indexNumber}}");
-has(resolver, '"{{lawsuit.court}}"', "Live resolver maps kept token {{lawsuit.court}}");
-has(resolver, '"{{lawsuit.adversaryAttorney}}"', "Live resolver maps kept token {{lawsuit.adversaryAttorney}}");
-has(resolver, '"{{lawsuit.dateFiled}}"', "Live resolver maps kept token {{lawsuit.dateFiled}}");
-has(resolver, '"{{lawsuit.amount}}"', "Live resolver maps kept token {{lawsuit.amount}}");
-has(resolver, '"{{lawsuit.costs}}"', "Live resolver maps kept token {{lawsuit.costs}}");
-has(resolver, '"{{lawsuit.balance}}"', "Live resolver maps kept token {{lawsuit.balance}}");
-has(resolver, '"{{cost.indexFee}}"', "Live resolver maps kept token {{cost.indexFee}}");
-has(resolver, '"{{cost.serviceFee}}"', "Live resolver maps kept token {{cost.serviceFee}}");
-has(resolver, '"{{cost.otherCourtCosts}}"', "Live resolver maps kept token {{cost.otherCourtCosts}}");
-has(resolver, '"{{cost.total}}"', "Live resolver maps kept token {{cost.total}}");
+const keptTokens = [
+  "{{matter.fileNumber}}",
+  "{{matter.providerName}}",
+  "{{matter.patientName}}",
+  "{{matter.billedAmount}}",
+  "{{provider.taxId}}",
+  "{{insurer.name}}",
+  "{{insurer.street}}",
+  "{{insurer.city}}",
+  "{{insurer.state}}",
+  "{{insurer.zipcode}}",
+  "{{claim.number}}",
+  "{{claim.dateOfLoss}}",
+  "{{claim.dateOfService}}",
+  "{{claim.denialReason}}",
+  "{{claim.balance}}",
+  "{{claim.payments}}",
+  "{{lawsuit.indexNumber}}",
+  "{{lawsuit.court}}",
+  "{{lawsuit.adversaryAttorney}}",
+  "{{adversaryAttorney.street}}",
+  "{{adversaryAttorney.city}}",
+  "{{adversaryAttorney.state}}",
+  "{{adversaryAttorney.zipcode}}",
+  "{{lawsuit.dateFiled}}",
+  "{{lawsuit.amount}}",
+  "{{lawsuit.costs}}",
+  "{{lawsuit.balance}}",
+  "{{cost.indexFee}}",
+  "{{cost.serviceFee}}",
+  "{{cost.otherCourtCosts}}",
+  "{{cost.total}}",
+];
+
+for (const token of keptTokens) {
+  has(resolver, token, `Live resolver maps kept token ${token}`);
+}
 
 for (const token of [
   "{{patient.lastName}}",
@@ -85,6 +95,10 @@ has(resolver, "insurerAddressResolved", "Live resolver reports insurer address r
 has(resolver, "lawsuitResolved", "Live resolver reports lawsuit diagnostics");
 has(resolver, "costResolved", "Live resolver reports cost diagnostics");
 has(resolver, "usedPreviewFallback: false", "Live resolver has no preview-only fallback business path");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_street")', "Live resolver reads adversary street from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_city")', "Live resolver reads adversary city from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_state")', "Live resolver reads adversary state from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_zipcode")', "Live resolver reads adversary ZIP from source hidden field");
 
 for (const forbidden of [
   "PREVIEW_ONLY_FALLBACK_OUTPUTS",
@@ -97,6 +111,10 @@ for (const forbidden of [
   "Allstate",
   "David Barshay",
   "Angelo Rizzo",
+  "1 Main Street",
+  "Suite 1",
+  "Bronx",
+  "10000",
 ]) {
   lacks(resolver, forbidden, `Live resolver has no hard-coded business value ${forbidden}`);
 }

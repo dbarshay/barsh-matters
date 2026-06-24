@@ -280,6 +280,10 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
 
   const referenceRows = await allReferenceRows();
   const insurerRow = bestReferenceRow(insurerSourceName, referenceRows);
+  const adversarySourceName = isLawsuitContext
+    ? clean(optionValue(options, ["adversaryAttorney", "adversaryAttorneyName"]))
+    : "";
+  const adversaryRow = bestReferenceRow(adversarySourceName, referenceRows);
 
   const filingFee = costNumber(options, ["filingFeeEntryAmount", "filingFee", "indexFee", "indexFeeEntryAmount"]);
   const serviceFee = costNumber(options, ["serviceFeeEntryAmount", "serviceFee"]);
@@ -321,6 +325,10 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{lawsuit.indexNumber}}": isLawsuitContext ? formatValue(rowValue(lawsuitRow, ["indexAaaNumber"]) || optionValue(options, ["indexAaaNumber"])) : DASH,
     "{{lawsuit.court}}": isLawsuitContext ? formatValue(optionValue(options, ["venueSelection", "venue"])) : DASH,
     "{{lawsuit.adversaryAttorney}}": isLawsuitContext ? formatValue(optionValue(options, ["adversaryAttorney"])) : DASH,
+    "{{adversaryAttorney.street}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_street") : DASH,
+    "{{adversaryAttorney.city}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_city") : DASH,
+    "{{adversaryAttorney.state}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_state") : DASH,
+    "{{adversaryAttorney.zipcode}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_zipcode") : DASH,
     "{{lawsuit.dateFiled}}": isLawsuitContext ? dateDisplay(optionValue(options, ["dateFiled"])) : DASH,
     "{{lawsuit.amount}}": isLawsuitContext ? money(lawsuitAmount) : DASH,
     "{{lawsuit.costs}}": isLawsuitContext ? money(costTotal) : DASH,

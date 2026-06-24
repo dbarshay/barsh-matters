@@ -22,6 +22,11 @@ const approvedTokens = [
   "{{insurer.zipcode}}",
   "{{provider.taxId}}",
   "{{claim.number}}",
+  "{{lawsuit.adversaryAttorney}}",
+  "{{adversaryAttorney.street}}",
+  "{{adversaryAttorney.city}}",
+  "{{adversaryAttorney.state}}",
+  "{{adversaryAttorney.zipcode}}",
 ];
 
 for (const token of approvedTokens) {
@@ -42,10 +47,11 @@ for (const token of retiredUserFacingTokens) {
   lacks(buildPage, token, `Build Template UI excludes retired token ${token}`);
 }
 
-has(resolver, "hidden_street", "Resolver may read hidden insurer source fields internally");
-has(resolver, "hidden_city", "Resolver may read hidden insurer source fields internally");
-has(resolver, "hidden_state", "Resolver may read hidden insurer source fields internally");
-has(resolver, "hidden_zipcode", "Resolver may read hidden insurer source fields internally");
+has(resolver, "hidden_street", "Resolver may read hidden street source fields internally");
+has(resolver, "hidden_city", "Resolver may read hidden city source fields internally");
+has(resolver, "hidden_state", "Resolver may read hidden state source fields internally");
+has(resolver, "hidden_zipcode", "Resolver may read hidden ZIP source fields internally");
+
 lacks(resolver, "{{insurer.hidden_street}}", "Resolver does not expose retired hidden street token");
 lacks(resolver, "{{insurer.hidden_city}}", "Resolver does not expose retired hidden city token");
 lacks(resolver, "{{insurer.hidden_state}}", "Resolver does not expose retired hidden state token");
@@ -68,6 +74,10 @@ for (const forbidden of [
   "1111/2025",
   "Martyn, Smith",
   "Rothenberg",
+  "1 Main Street",
+  "Suite 1",
+  "Bronx",
+  "10000",
 ]) {
   lacks(resolver, forbidden, `Resolver has no hard-coded runtime business value ${forbidden}`);
 }
@@ -77,6 +87,10 @@ has(resolver, 'from "Lawsuit"', "Resolver reads Lawsuit source rows");
 has(resolver, 'from "ProviderClientInfo"', "Resolver reads ProviderClientInfo source rows");
 has(resolver, 'from "ReferenceEntity"', "Resolver reads ReferenceEntity source rows");
 has(resolver, "usedPreviewFallback: false", "Resolver has no preview-only business fallback path");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_street")', "Resolver reads adversary street from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_city")', "Resolver reads adversary city from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_state")', "Resolver reads adversary state from source hidden field");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_zipcode")', "Resolver reads adversary ZIP from source hidden field");
 
 if (pkg.scripts?.["verify:template-builder-source-backed-field-values"] === "node scripts/verify-template-builder-source-backed-field-values.mjs") {
   pass("Package has source-backed field verifier script");

@@ -61,6 +61,10 @@ for (const token of [
   "{{lawsuit.indexNumber}}",
   "{{lawsuit.court}}",
   "{{lawsuit.adversaryAttorney}}",
+  "{{adversaryAttorney.street}}",
+  "{{adversaryAttorney.city}}",
+  "{{adversaryAttorney.state}}",
+  "{{adversaryAttorney.zipcode}}",
   "{{lawsuit.dateFiled}}",
   "{{lawsuit.costs}}",
   "{{lawsuit.balance}}",
@@ -75,6 +79,10 @@ for (const token of [
 has(resolver, "taxIdFromRow", "Resolver has provider tax ID resolver");
 has(resolver, "providerTaxIdResolved", "Resolver reports provider tax ID resolution status");
 has(resolver, "insurerAddressResolved", "Resolver reports insurer address resolution status");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_street")', "Resolver reads adversary street from hidden source field internally");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_city")', "Resolver reads adversary city from hidden source field internally");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_state")', "Resolver reads adversary state from hidden source field internally");
+has(resolver, 'hiddenValue(adversaryRow, "hidden_zipcode")', "Resolver reads adversary ZIP from hidden source field internally");
 has(resolver, "usedPreviewFallback: false", "Resolver uses no hard-coded preview fallback");
 
 if (pkg.scripts?.["verify:template-builder-live-preview-child-lawsuit-token-sources"] === "node scripts/verify-template-builder-live-preview-child-lawsuit-token-sources.mjs") {
