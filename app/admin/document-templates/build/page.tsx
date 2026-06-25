@@ -391,7 +391,7 @@ export default function BuildTemplatePage() {
                     </span>
                   </td>
                   <td style={cellStyle}>
-                    <span>{exampleOutputFor(field)}</span>
+                    <span style={{ whiteSpace: "pre-line" }}>{exampleOutputFor(field)}</span>
                   </td>
                 </tr>
               );
