@@ -263,6 +263,14 @@ function costNumber(options: Record<string, unknown>, keys: string[]): number | 
   return null;
 }
 
+function addressBlock(street: string, city: string, state: string, zipcode: string): string {
+  const cleanPart = (value: string): string => value === DASH ? "" : clean(value);
+  const streetLine = cleanPart(street);
+  const localityLine = [cleanPart(city), cleanPart(state), cleanPart(zipcode)].filter(Boolean).join(" ");
+  const lines = [streetLine, localityLine].filter(Boolean);
+  return lines.length ? lines.join("\n") : DASH;
+}
+
 export async function resolveTemplateBuilderExamplePreview(matterKey: string): Promise<TemplateBuilderExamplePreviewResult> {
   const requestedMatter = clean(matterKey) || "2026.06.00011";
 
@@ -322,6 +330,12 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{insurer.city}}": hiddenValue(insurerRow, "hidden_city"),
     "{{insurer.state}}": hiddenValue(insurerRow, "hidden_state"),
     "{{insurer.zipcode}}": hiddenValue(insurerRow, "hidden_zipcode"),
+    "{{insurer.fullAddressBlock}}": addressBlock(
+      hiddenValue(insurerRow, "hidden_street"),
+      hiddenValue(insurerRow, "hidden_city"),
+      hiddenValue(insurerRow, "hidden_state"),
+      hiddenValue(insurerRow, "hidden_zipcode"),
+    ),
 
     "{{claim.number}}": isLawsuitContext
       ? formatValue(rowValue(lawsuitRow, ["claimNumber"]) || commonValue(claimRows, ["claim_number_raw", "claim_number_normalized"]))
@@ -345,6 +359,14 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{adversaryAttorney.city}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_city") : DASH,
     "{{adversaryAttorney.state}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_state") : DASH,
     "{{adversaryAttorney.zipcode}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_zipcode") : DASH,
+    "{{adversary.fullAddressBlock}}": isLawsuitContext
+      ? addressBlock(
+          hiddenValue(adversaryRow, "hidden_street"),
+          hiddenValue(adversaryRow, "hidden_city"),
+          hiddenValue(adversaryRow, "hidden_state"),
+          hiddenValue(adversaryRow, "hidden_zipcode"),
+        )
+      : DASH,
     "{{lawsuit.dateFiled}}": isLawsuitContext ? dateDisplay(optionValue(options, ["dateFiled"])) : DASH,
     "{{lawsuit.amount}}": isLawsuitContext ? money(lawsuitAmount) : DASH,
     "{{lawsuit.costs}}": isLawsuitContext ? money(costTotal) : DASH,

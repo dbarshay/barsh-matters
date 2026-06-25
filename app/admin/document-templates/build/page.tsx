@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS,
+  TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS,
   TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS,
 } from "@/src/lib/templates/template-builder-merge-field-library";
 
@@ -62,9 +63,10 @@ export default function BuildTemplatePage() {
   const [copiedToken, setCopiedToken] = useState("");
   const [deletedTokens, setDeletedTokens] = useState<string[]>([]);
   const [deleteCandidate, setDeleteCandidate] = useState<any | null>(null);
+  const [customPlaceholderDialogOpen, setCustomPlaceholderDialogOpen] = useState(false);
 
   const availableFields = useMemo(() => {
-    return TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS.filter((field) => !deletedTokens.includes(field.mergeField));
+    return [...TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS, ...TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS].filter((field) => !deletedTokens.includes(field.mergeField));
   }, [deletedTokens]);
 
   useEffect(() => {
@@ -171,7 +173,7 @@ export default function BuildTemplatePage() {
     return token.replace("}}", "|" + formats.join("|") + "}}");
   }
 
-  function exampleOutputFor(field: (typeof TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS)[number]) {
+  function exampleOutputFor(field: { mergeField: string; exampleOutput: string }) {
     if (exampleOutputMatter === exampleMatter && Object.prototype.hasOwnProperty.call(exampleOutputMap, field.mergeField)) {
       return exampleOutputMap[field.mergeField] || "—";
     }
@@ -244,6 +246,16 @@ export default function BuildTemplatePage() {
     <main style={{ padding: "24px 28px", width: "100%", maxWidth: "none", margin: 0, boxSizing: "border-box" }}>
       <a href="/admin/document-templates" style={{ color: "#1e3a8a", fontWeight: 700 }}>Back to Document Templates</a>
       <h1 style={{ margin: "18px 0 18px", fontSize: "30px", color: "#0f172a" }}>Build Template</h1>
+
+      <div style={{ margin: "-6px 0 16px" }}>
+        <button
+          type="button"
+          onClick={() => setCustomPlaceholderDialogOpen(true)}
+          style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #1e3a8a", background: "#ffffff", color: "#1e3a8a", fontWeight: 800, cursor: "pointer" }}
+        >
+          Add Custom Placeholder
+        </button>
+      </div>
 
       <section style={{ display: "grid", gridTemplateColumns: "minmax(520px, 1fr) 280px", gap: "14px", marginBottom: "16px" }}>
         <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
@@ -387,6 +399,28 @@ export default function BuildTemplatePage() {
           </tbody>
         </table>
       </div>
+
+      {customPlaceholderDialogOpen ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="custom-placeholder-title" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "20px" }}>
+          <section style={{ width: "min(560px, 100%)", borderRadius: "14px", overflow: "hidden", background: "#ffffff", boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)" }}>
+            <header style={{ background: "#1e3a8a", padding: "14px 18px" }}>
+              <h2 id="custom-placeholder-title" style={{ margin: 0, color: "#ffffff", textAlign: "center", fontSize: "20px" }}>Custom Placeholder</h2>
+            </header>
+            <div style={{ padding: "18px", color: "#0f172a", lineHeight: 1.55 }}>
+              <p style={{ margin: "0 0 12px" }}>Use the Custom Placeholder row when a reviewed template contains a placeholder that has not yet been mapped to a canonical Barsh Matters field.</p>
+              <p style={{ margin: 0, color: "#475569" }}>Custom placeholders remain review aids only until they are replaced with canonical tokens during document-by-document template review.</p>
+              <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button type="button" onClick={() => setCustomPlaceholderDialogOpen(false)} style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #1e3a8a", background: "#ffffff", color: "#1e3a8a", fontWeight: 800, cursor: "pointer" }}>
+                  Cancel
+                </button>
+                <button type="button" onClick={() => setCustomPlaceholderDialogOpen(false)} style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #1e3a8a", background: "#1e3a8a", color: "#ffffff", fontWeight: 800, cursor: "pointer" }}>
+                  Done
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {deleteCandidate ? (
         <div role="dialog" aria-modal="true" aria-labelledby="delete-field-title" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "20px" }}>
