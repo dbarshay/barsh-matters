@@ -1,4 +1,5 @@
 "use client";
+import TemplateDocxCompatibilityUpload from "../../../../components/templates/TemplateDocxCompatibilityUpload";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -247,7 +248,9 @@ export default function BuildTemplatePage() {
       <a href="/admin/document-templates" style={{ color: "#1e3a8a", fontWeight: 700 }}>Back to Document Templates</a>
       <h1 style={{ margin: "18px 0 18px", fontSize: "30px", color: "#0f172a" }}>Build Template</h1>
 
-      <div style={{ margin: "-6px 0 16px" }}>
+      
+      <TemplateDocxCompatibilityUpload />
+<div style={{ margin: "-6px 0 16px" }}>
         <button
           type="button"
           onClick={() => setCustomPlaceholderDialogOpen(true)}
@@ -367,7 +370,7 @@ export default function BuildTemplatePage() {
                   </td>
                   <td style={cellStyle}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
-                      <code style={{ fontFamily: "monospace" }}>{token}</code>
+                      <code data-template-merge-field-token={token} style={{ fontFamily: "monospace" }}>{token}</code>
                       <button
                         type="button"
                         aria-label={"Copy " + token}
