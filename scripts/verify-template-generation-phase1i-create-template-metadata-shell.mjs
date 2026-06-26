@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const component = "components/templates/CreateTemplateMetadataShell.tsx";
 const buildPage = "app/admin/document-templates/build/page.tsx";
+const uploadComponent = "components/templates/TemplateDocxCompatibilityUpload.tsx";
 const phase1hContract = "src/lib/templates/template-contact-display-default-phase1h.ts";
 const failures = [];
 
@@ -15,6 +16,7 @@ function read(path) {
 
 const componentText = read(component);
 const buildPageText = read(buildPage);
+const uploadText = read(uploadComponent);
 const contractText = read(phase1hContract);
 
 const componentRequired = [
@@ -31,12 +33,6 @@ const componentRequired = [
   "does not save, import, upload, generate, print, or queue"
 ];
 
-const buildPageRequired = [
-  "CreateTemplateMetadataShell",
-  "<CreateTemplateMetadataShell />",
-  "TemplateDocxCompatibilityUpload"
-];
-
 const contractRequired = [
   "TemplateContactDisplayDefaultPhase1H = \"signer\" | \"firm\"",
   "TEMPLATE_CONTACT_DISPLAY_DEFAULT_OPTIONS_PHASE1H",
@@ -50,6 +46,17 @@ const contractRequired = [
   "noDatabaseImport: true",
   "noPrintQueue: true"
 ];
+
+const directPlacement = buildPageText.includes("CreateTemplateMetadataShell") && buildPageText.includes("<CreateTemplateMetadataShell />");
+const popupPlacement = uploadText.includes("CreateTemplateMetadataShell") && uploadText.includes("<CreateTemplateMetadataShell />") && uploadText.includes("data-template-create-metadata-popup=\"phase1j\"");
+
+if (directPlacement === false && popupPlacement === false) {
+  failures.push("CreateTemplateMetadataShell must be reachable either directly on Build Template or through the Phase 1J successful-scan popup");
+}
+
+if (buildPageText.includes("TemplateDocxCompatibilityUpload") === false) {
+  failures.push("build page missing TemplateDocxCompatibilityUpload");
+}
 
 const forbiddenComponentSnippets = [
   "fetch(",
@@ -68,10 +75,6 @@ const forbiddenComponentSnippets = [
 
 for (const snippet of componentRequired) {
   if (componentText.includes(snippet) === false) failures.push("component missing snippet: " + snippet);
-}
-
-for (const snippet of buildPageRequired) {
-  if (buildPageText.includes(snippet) === false) failures.push("build page missing snippet: " + snippet);
 }
 
 for (const snippet of contractRequired) {

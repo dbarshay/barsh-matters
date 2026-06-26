@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import CreateTemplateMetadataShell from "./CreateTemplateMetadataShell";
 
 type ScanStatus = "checking" | "compatible" | "warning" | "error";
 
@@ -223,6 +224,7 @@ export default function TemplateDocxCompatibilityUpload() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
 
   const borderColor = useMemo(() => {
     if (isDragging) return "#1d4ed8";
@@ -235,6 +237,8 @@ export default function TemplateDocxCompatibilityUpload() {
   async function handleFile(file: File | undefined) {
     if (file === undefined) return;
 
+    setShowCreateTemplateModal(false);
+
     setResult({
       fileName: file.name,
       status: "checking",
@@ -245,7 +249,11 @@ export default function TemplateDocxCompatibilityUpload() {
     });
 
     try {
-      setResult(await scanDocx(file));
+      const scanResult = await scanDocx(file);
+      setResult(scanResult);
+      if (scanResult.status === "compatible") {
+        setShowCreateTemplateModal(true);
+      }
     } catch (error) {
       setResult({
         fileName: file.name,
@@ -336,6 +344,74 @@ export default function TemplateDocxCompatibilityUpload() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showCreateTemplateModal && result?.status === "compatible" && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create Template metadata after compatibility check"
+          data-template-create-metadata-popup="phase1j"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div
+            style={{
+              width: "min(1180px, 96vw)",
+              maxHeight: "88vh",
+              overflow: "auto",
+              borderRadius: "16px",
+              background: "#ffffff",
+              boxShadow: "0 24px 80px rgba(15, 23, 42, 0.35)",
+              border: "1px solid #1e3a8a",
+            }}
+          >
+            <header
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                background: "#1e3a8a",
+                color: "#ffffff",
+                padding: "16px 18px",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 900, fontSize: "18px" }}>Create Template</div>
+                <div style={{ marginTop: "4px", fontSize: "13px", opacity: 0.9 }}>
+                  Compatibility check passed for {result.fileName}. Complete the metadata setup next.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateTemplateModal(false)}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.75)",
+                  background: "#ffffff",
+                  color: "#1e3a8a",
+                  borderRadius: "999px",
+                  padding: "8px 12px",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </header>
+            <div style={{ padding: "18px" }}>
+              <CreateTemplateMetadataShell />
+            </div>
+          </div>
         </div>
       )}
     </section>
