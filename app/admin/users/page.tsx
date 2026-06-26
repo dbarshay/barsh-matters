@@ -333,6 +333,20 @@ export default function AdminUsersPlanningPage() {
     setPasswordResetCopyMessage("");
   }
 
+  const adminUsersAuditHistoryReturnReloadKey = "barshAdminUsersAuditHistoryReturnReload";
+
+  function markAdminUsersAuditHistoryNavigation(): void {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(adminUsersAuditHistoryReturnReloadKey, "1");
+  }
+
+  function consumeAdminUsersAuditHistoryReturnReload(): boolean {
+    if (typeof window === "undefined") return false;
+    const shouldReload = window.sessionStorage.getItem(adminUsersAuditHistoryReturnReloadKey) === "1";
+    if (shouldReload) window.sessionStorage.removeItem(adminUsersAuditHistoryReturnReloadKey);
+    return shouldReload;
+  }
+
   useEffect(() => {
     const handleAdminUsersPopState = () => {
       closeAdminUsersTransientActionState();
@@ -344,6 +358,10 @@ export default function AdminUsersPlanningPage() {
   useEffect(() => {
     const reloadAdminUsersLivePage = () => {
       closeAdminUsersTransientActionState();
+      if (consumeAdminUsersAuditHistoryReturnReload()) {
+        window.location.reload();
+        return;
+      }
       void loadAdminUsersPlanning();
     };
     const handleAdminUsersPageShow = () => {
@@ -812,7 +830,7 @@ export default function AdminUsersPlanningPage() {
 
 
   return (
-    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
+    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
@@ -823,7 +841,7 @@ export default function AdminUsersPlanningPage() {
                         <section data-barsh-admin-users-planning-summary="true" style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div><strong>Users:</strong> {data?.databasePreview?.userCount ?? 0} | <strong>Roles:</strong> {data?.databasePreview?.roleCount ?? 0} | <strong>Enforcement Enabled:</strong> {enforcementLabel}</div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <a href="/admin/audit-history" data-barsh-admin-users-audit-history-top-link="true" style={{ ...primaryButtonStyle, display: "inline-flex", textDecoration: "none", color: "#ffffff" }}>Open Audit History</a>
+            <a href="/admin/audit-history" data-barsh-admin-users-audit-history-top-link="true" onClick={markAdminUsersAuditHistoryNavigation} style={{ ...primaryButtonStyle, display: "inline-flex", textDecoration: "none", color: "#ffffff" }}>Open Audit History</a>
             <button data-barsh-admin-users-create-top-button="true" type="button" onClick={openCreateUserAction} style={primaryButtonStyle}>Create User</button>
           </div>
           {adminUsersRowMessage ? <div data-barsh-admin-users-row-action-message="true" style={{ width: "100%", color: adminUsersRowMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>{adminUsersRowMessage}</div> : null}

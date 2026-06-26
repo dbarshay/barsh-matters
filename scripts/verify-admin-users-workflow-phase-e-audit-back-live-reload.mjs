@@ -38,8 +38,11 @@ for (const staleGate of ["if (!event.persisted) return", "PageTransitionEvent"])
   must(!page.includes(staleGate), "persisted-only stale-back gate must not remain after Phase F: " + staleGate);
 }
 
-for (const forbidden of ["window.location.reload()", "history.back()", "router.back()", "window.location.href = \"/admin/users\""]) {
-  must(!page.includes(forbidden), "Audit History back repair must not force hard navigation: " + forbidden);
+must(page.includes("window.location.reload()"), "Audit History back repair must hard refresh once when returning from the separate audit route.");
+must(page.includes("consumeAdminUsersAuditHistoryReturnReload()"), "Hard refresh must be guarded by the audit-history return flag.");
+must(page.indexOf("consumeAdminUsersAuditHistoryReturnReload()") < page.indexOf("window.location.reload()"), "Hard refresh must be guarded before reload.");
+for (const forbidden of ["history.back()", "router.back()", "window.location.href = \"/admin/users\""]) {
+  must(!page.includes(forbidden), "Audit History back repair must not force unsafe navigation: " + forbidden);
 }
 
 must(pkg.scripts?.["verify:admin-users-workflow-phase-e-audit-back-live-reload"] === "node scripts/verify-admin-users-workflow-phase-e-audit-back-live-reload.mjs", "package script missing");
