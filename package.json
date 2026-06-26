@@ -687,7 +687,8 @@
     "verify:template-generation-phase1g": "node scripts/verify-template-generation-phase1g-local-docx-compatibility-upload.mjs",
     "verify:template-generation-phase1h": "node scripts/verify-template-generation-phase1h-contact-display-default-metadata.mjs",
     "verify:template-generation-phase1i": "node scripts/verify-template-generation-phase1i-create-template-metadata-shell.mjs",
-    "verify:template-generation-phase1j": "node scripts/verify-template-generation-phase1j-create-template-popup-after-scan.mjs"
+    "verify:template-generation-phase1j": "node scripts/verify-template-generation-phase1j-create-template-popup-after-scan.mjs",
+    "verify:admin-users-workflow-phase-a-ui-cleanup": "node scripts/verify-admin-users-workflow-phase-a-ui-cleanup.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

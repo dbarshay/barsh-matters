@@ -193,8 +193,19 @@ async function readAdminUsersJsonResponse(response: Response, label: string) {
 export default function AdminUsersPlanningPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
-  const [createEmail, setCreateEmail] = useState("");
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
   const [createDisplayName, setCreateDisplayName] = useState("");
+  const [createUsername, setCreateUsername] = useState("");
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPhoneExtension, setCreatePhoneExtension] = useState("");
+  const [createFaxNumber, setCreateFaxNumber] = useState("");
+  const [createSignatureBlockName, setCreateSignatureBlockName] = useState("");
+  const [createLocked, setCreateLocked] = useState(false);
+  const [createInactive, setCreateInactive] = useState(false);
+  const [createTwoFactorPhone, setCreateTwoFactorPhone] = useState("");
+  const [createTwoFactorDisabled, setCreateTwoFactorDisabled] = useState(false);
+  const [createTwoFactorPendingSetup, setCreateTwoFactorPendingSetup] = useState(false);
   const [createStatus, setCreateStatus] = useState("active");
   const [createNotes, setCreateNotes] = useState("");
   const [createActorEmail, setCreateActorEmail] = useState("dbarshay15@gmail.com");
@@ -322,9 +333,20 @@ export default function AdminUsersPlanningPage() {
         cache: "no-store",
         body: JSON.stringify({
           apply,
-          email: createEmail,
+          firstName: createFirstName,
+          lastName: createLastName,
           displayName: createDisplayName,
-          status: createStatus,
+          username: createUsername,
+          email: createEmail,
+          phoneExtension: createPhoneExtension,
+          faxNumber: createFaxNumber,
+          signatureBlockName: createSignatureBlockName,
+          locked: createLocked,
+          inactive: createInactive,
+          twoFactorPhone: createTwoFactorPhone,
+          twoFactorDisabled: createTwoFactorDisabled,
+          twoFactorPendingSetup: createTwoFactorPendingSetup,
+          status: createInactive ? "inactive" : createStatus,
           notes: createNotes,
           actorEmail: createActorEmail,
         }),
@@ -337,8 +359,19 @@ export default function AdminUsersPlanningPage() {
       }
       if (apply) {
         setCreateMessage("Admin user created. Roles were not assigned. Permission enforcement setting was not changed.");
-        setCreateEmail("");
+        setCreateFirstName("");
+        setCreateLastName("");
         setCreateDisplayName("");
+        setCreateUsername("");
+        setCreateEmail("");
+        setCreatePhoneExtension("");
+        setCreateFaxNumber("");
+        setCreateSignatureBlockName("");
+        setCreateLocked(false);
+        setCreateInactive(false);
+        setCreateTwoFactorPhone("");
+        setCreateTwoFactorDisabled(false);
+        setCreateTwoFactorPendingSetup(false);
         setCreateNotes("");
         setCreateStatus("active");
         await loadAdminUsersPlanning();
@@ -550,9 +583,9 @@ export default function AdminUsersPlanningPage() {
     <main data-barsh-admin-users-planning-page="phase3-guarded" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
-          <p style={{ margin: "0 0 8px", color: "#64748b", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>Phase 3 Guarded Write Controls</p>
-          <h1 style={{ margin: 0, fontSize: 30 }}>Admin Users / Roles</h1>
-          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Guarded administrator user management surface. Active write controls in this phase are Create Admin User, Assign Role, Remove Role, and Permission Override. All use preview/apply mode, require an authenticated administrator session, require an active owner_admin actor, preserve lockout safety, and do not enable enforcement.</p>
+          <p style={{ margin: "0 0 8px", color: "#64748b", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>Administrator Management</p>
+          <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
+          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Manage administrator users, roles, signer profiles, two-factor setup fields, lockout status, password resets, and effective permissions. Changes remain guarded by preview/apply controls, active owner_admin actor checks, and sole-owner no-lockout protection.</p>
         </section>
 
         {error ? <section data-barsh-admin-users-planning-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
@@ -602,7 +635,7 @@ export default function AdminUsersPlanningPage() {
 
         <section data-barsh-admin-users-lockout-card="true" style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Lock / Unlock Admin User</h2>
-          <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 12J guarded route. Preview is the default. Apply changes only AdminUser.status between active and inactive. It blocks locking the last active bootstrapSafe owner_admin user, does not expose passwords, does not impersonate users, and does not enable permission enforcement.</p>
+          <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Preview first. Apply changes only AdminUser.status between active and inactive. The route blocks locking the last active bootstrapSafe owner_admin user, does not expose passwords, does not impersonate users, and does not enable permission enforcement.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
             <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
               Target User
@@ -657,13 +690,25 @@ export default function AdminUsersPlanningPage() {
         <section data-barsh-admin-users-create-user-control="phase3-guarded" style={{ ...cardStyle, border: "1px solid #bfdbfe", boxShadow: "0 12px 26px rgba(30, 58, 138, 0.08)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
-              <h2 style={{ margin: 0 }}>Create Admin User</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply creates only an AdminUser row; it does not assign roles, create permission overrides, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+              <h2 style={{ margin: 0 }}>Create User</h2>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Create a new administrator user with signer profile and two-factor setup fields. Preview remains required before Apply. Roles are assigned separately, and this action does not change permission enforcement.</p>
             </div>
             <span data-barsh-admin-users-create-user-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              First Name
+              <input data-barsh-admin-users-create-first-name="true" value={createFirstName} onChange={(event) => { setCreateFirstName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Jane" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Last Name
+              <input data-barsh-admin-users-create-last-name="true" value={createLastName} onChange={(event) => { setCreateLastName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Doe" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Username
+              <input data-barsh-admin-users-create-username="true" value={createUsername} onChange={(event) => { setCreateUsername(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="JDoe" />
+            </label>
             <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
               Email
               <input data-barsh-admin-users-create-email="true" value={createEmail} onChange={(event) => { setCreateEmail(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="new-admin@example.com" />
@@ -672,12 +717,44 @@ export default function AdminUsersPlanningPage() {
               Display Name
               <input data-barsh-admin-users-create-display-name="true" value={createDisplayName} onChange={(event) => setCreateDisplayName(event.target.value)} style={inputStyle} placeholder="New Admin User" />
             </label>
-            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Phone Extension
+              <input data-barsh-admin-users-create-phone-extension="true" value={createPhoneExtension} onChange={(event) => { setCreatePhoneExtension(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="101" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Fax Number
+              <input data-barsh-admin-users-create-fax-number="true" value={createFaxNumber} onChange={(event) => { setCreateFaxNumber(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="(516) 706-5055" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              Signature Block Name
+              <input data-barsh-admin-users-create-signature-block-name="true" value={createSignatureBlockName} onChange={(event) => { setCreateSignatureBlockName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Jane Doe" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
               Status
-              <select data-barsh-admin-users-create-status="true" value={createStatus} onChange={(event) => setCreateStatus(event.target.value)} style={inputStyle}>
-                <option value="active">active</option>
-                <option value="inactive">inactive</option>
+              <select data-barsh-admin-users-create-status="true" value={createStatus} onChange={(event) => { setCreateStatus(event.target.value); setCreateInactive(event.target.value !== "active"); setCreateResult(null); }} style={inputStyle}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+              2FA Phone
+              <input data-barsh-admin-users-create-two-factor-phone="true" value={createTwoFactorPhone} onChange={(event) => { setCreateTwoFactorPhone(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Mobile number for 2FA" />
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
+              <input data-barsh-admin-users-create-locked="true" type="checkbox" checked={createLocked} onChange={(event) => { setCreateLocked(event.target.checked); setCreateResult(null); }} />
+              Locked
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
+              <input data-barsh-admin-users-create-inactive="true" type="checkbox" checked={createInactive} onChange={(event) => { setCreateInactive(event.target.checked); setCreateStatus(event.target.checked ? "inactive" : "active"); setCreateResult(null); }} />
+              Inactive
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8 }}>
+              <input data-barsh-admin-users-create-two-factor-disabled="true" type="checkbox" checked={createTwoFactorDisabled} onChange={(event) => { setCreateTwoFactorDisabled(event.target.checked); setCreateResult(null); }} />
+              2FA Disabled
+            </label>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8 }}>
+              <input data-barsh-admin-users-create-two-factor-pending-setup="true" type="checkbox" checked={createTwoFactorPendingSetup} onChange={(event) => { setCreateTwoFactorPendingSetup(event.target.checked); setCreateResult(null); }} />
+              2FA Pending Setup
             </label>
             <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
               Owner Admin Actor Email
@@ -690,11 +767,12 @@ export default function AdminUsersPlanningPage() {
           </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+                      <p data-barsh-admin-users-signer-eligibility-note="true" style={{ margin: "12px 0 0", color: "#7c2d12", lineHeight: 1.45, fontWeight: 800 }}>Signer eligibility is not yet a separate schema/UI setting. It remains a later approved phase before document generation relies on selectable eligible signers.</p>
             <button data-barsh-admin-users-create-preview-button="true" type="button" onClick={() => void submitCreateAdminUser(false)} disabled={createBusy} style={{ ...secondaryButtonStyle, opacity: createBusy ? 0.7 : 1 }}>
-              {createBusy ? "Working..." : "Preview Create Admin User"}
+              {createBusy ? "Working..." : "Preview Create User"}
             </button>
             <button data-barsh-admin-users-create-apply-button="true" type="button" onClick={() => void submitCreateAdminUser(true)} disabled={createBusy || !previewReady} style={{ ...primaryButtonStyle, opacity: createBusy || !previewReady ? 0.55 : 1, cursor: createBusy || !previewReady ? "not-allowed" : "pointer" }}>
-              Apply Create Admin User
+              Apply Create User
             </button>
           </div>
 
@@ -708,7 +786,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Assign Admin Role</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply creates only an AdminUserRole join row; it requires an active target user, an active role, an active owner_admin actor, duplicate-assignment prevention, and active bootstrapSafe owner_admin preservation. It does not create users, create roles, create permission overrides, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Preview first. Apply creates only an AdminUserRole join row. It requires an active target user, active role, active owner_admin actor, duplicate-assignment prevention, and active bootstrapSafe owner_admin preservation. It does not create users, create roles, create permission overrides, or enable enforcement.</p>
             </div>
             <span data-barsh-admin-users-assign-role-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
           </div>
@@ -753,7 +831,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Remove Admin Role</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply deletes only an AdminUserRole join row; it blocks missing assignments and blocks removing owner_admin from the last active bootstrapSafe owner_admin user. It does not delete users, delete roles, create permission overrides, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Preview first. Apply deletes only an AdminUserRole join row. It blocks missing assignments and blocks removing owner_admin from the last active bootstrapSafe owner_admin user. It does not delete users, delete roles, create permission overrides, or enable enforcement.</p>
             </div>
             <span data-barsh-admin-users-remove-role-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
           </div>
@@ -801,7 +879,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Permission Override</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Phase 3 guarded route. Preview is the default. Apply creates or updates only one AdminUserPermissionOverride row; it requires an explicit reason and blocks any block override mapped to administrator lockout safety routes. It does not change roles, enable enforcement, write Clio, send email, generate documents, or change the print queue.</p>
+              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Preview first. Apply creates or updates only one AdminUserPermissionOverride row. It requires an explicit reason and blocks any block override mapped to administrator lockout safety routes. It does not change roles or enable enforcement.</p>
             </div>
             <span data-barsh-admin-users-permission-override-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
           </div>
@@ -862,7 +940,7 @@ export default function AdminUsersPlanningPage() {
           <h3>DB Users</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["Name", "Email", "Status", "Bootstrap Safe", "Roles", "Overrides"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
-            <tbody>{dbUsers.length ? dbUsers.map((user: any) => <tr key={user.id}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.displayName || ""}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{user.email}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.status === "active" ? "Active" : "Locked / Inactive"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.bootstrapSafe ? "Yes" : "No"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{(user.roleKeys || []).join(", ") || "None"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.effectivePermissionCount ?? 0}</td></tr>) : <tr><td colSpan={6} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No persisted admin users yet.</td></tr>}</tbody>
+            <tbody>{dbUsers.length ? dbUsers.map((user: any) => <tr key={user.id}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.displayName || ""}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{user.email}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{user.username || "—"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.status === "active" && !user.locked && !user.inactive ? "Active" : "Locked / Inactive"}</td><td data-barsh-admin-users-signer-profile-status-cell="true" style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.signerProfileStatus || adminUsersPhase12SignerProfileStatusLabel(user)}</td><td data-barsh-admin-users-two-factor-status-cell="true" style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>{user.twoFactorStatus || adminUsersPhase12TwoFactorStatusLabel(user)}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.bootstrapSafe ? "Yes" : "No"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{(user.roleKeys || []).join(", ") || "None"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.effectivePermissionCount ?? 0}</td></tr>) : <tr><td colSpan={9} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No persisted admin users yet.</td></tr>}</tbody>
           </table>
           <h3>DB Roles</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -872,8 +950,8 @@ export default function AdminUsersPlanningPage() {
         </section>
 
         <section data-barsh-admin-users-effective-permissions="read-only" style={{ ...cardStyle, overflowX: "auto" }}>
-          <h2 style={{ marginTop: 0 }}>Effective Permissions Preview</h2>
-          <p style={{ color: "#475569" }}>Read-only effective permission calculation from persisted DB roles and overrides. Enforcement remains disabled.</p>
+          <h2 style={{ marginTop: 0 }}>Effective Permissions</h2>
+          <p style={{ color: "#475569" }}>Effective permission calculation from persisted DB roles and overrides. Enforcement remains unchanged.</p>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["User", "Roles", "Effective Permission Count", "Effective Permissions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
             <tbody>{dbUsers.length ? dbUsers.map((user: any) => <tr key={user.id}><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace", fontWeight: 900 }}>{user.email}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{(user.roleKeys || []).join(", ") || "None"}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.effectivePermissionCount ?? 0}</td><td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>{(user.effectivePermissionKeys || []).join(", ")}</td></tr>) : <tr><td colSpan={4} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No persisted admin users yet.</td></tr>}</tbody>
@@ -882,7 +960,7 @@ export default function AdminUsersPlanningPage() {
 
         <section data-barsh-admin-users-write-controls-preview="phase3-mixed" style={{ ...cardStyle, overflowX: "auto" }}>
           <h2 style={{ marginTop: 0 }}>Write Controls Roadmap</h2>
-          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create Admin User, Assign Role, Remove Role, and Permission Override are active in guarded preview/apply mode. Enforcement remains unavailable and separate.</p>
+          <p style={{ color: "#475569", lineHeight: 1.5 }}>Create User, Assign Role, Remove Role, and Permission Override are active in guarded preview/apply mode. Enforcement remains unavailable and separate.</p>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
@@ -891,7 +969,7 @@ export default function AdminUsersPlanningPage() {
             </thead>
             <tbody>
               {[
-                ["Create Admin User", "Requires active admin session, active owner_admin actor, duplicate-email check, active/inactive status validation, preview/apply, and audit logging on apply.", "Active guarded route"],
+                ["Create User", "Requires active admin session, active owner_admin actor, duplicate-email check, active/inactive status validation, preview/apply, and audit logging on apply.", "Active guarded route"],
                 ["Assign Role", "Requires active admin session, active owner_admin actor, active target user, active role, duplicate-assignment prevention, preview/apply, bootstrap owner preservation, and audit logging on apply.", "Active guarded route"],
                 ["Remove Role", "Requires active admin session, active owner_admin actor, existing assignment, preview/apply, audit logging on apply, and last active bootstrapSafe owner_admin protection.", "Active guarded route"],
                 ["Permission Override", "Requires active admin session, active owner_admin actor, known permission key, allow/block action, explicit reason, preview/apply, audit logging on apply, and never-block safety route protection.", "Active guarded route"],
