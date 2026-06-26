@@ -338,6 +338,9 @@ export default function AdminUsersPlanningPage() {
   function markAdminUsersAuditHistoryNavigation(): void {
     if (typeof window === "undefined") return;
     window.sessionStorage.setItem(adminUsersAuditHistoryReturnReloadKey, "1");
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.set("adminUsersLiveReturn", String(Date.now()));
+    window.history.replaceState({ ...(window.history.state || {}), barshAdminUsersAuditHistoryReturn: true }, "", returnUrl.toString());
   }
 
   function consumeAdminUsersAuditHistoryReturnReload(): boolean {
@@ -353,6 +356,12 @@ export default function AdminUsersPlanningPage() {
     };
     window.addEventListener("popstate", handleAdminUsersPopState);
     return () => window.removeEventListener("popstate", handleAdminUsersPopState);
+  }, []);
+
+  useEffect(() => {
+    const preventAdminUsersBackForwardCache = () => undefined;
+    window.addEventListener("unload", preventAdminUsersBackForwardCache);
+    return () => window.removeEventListener("unload", preventAdminUsersBackForwardCache);
   }, []);
 
   useEffect(() => {
@@ -830,7 +839,7 @@ export default function AdminUsersPlanningPage() {
 
 
   return (
-    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
+    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" data-barsh-admin-users-audit-history-back-cache-bust="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
