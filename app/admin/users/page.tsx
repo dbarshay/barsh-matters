@@ -341,8 +341,12 @@ export default function AdminUsersPlanningPage() {
     });
   }
 
+  function twoFactorSetupPendingForUser(user: any): boolean {
+    return user?.twoFactorDisabled !== true && user?.twoFactorPendingSetup === true && Boolean(user?.twoFactorPhone || user?.twoFactorPhoneMasked);
+  }
+
   function twoFactorEnforcedForUser(user: any): boolean {
-    return user?.twoFactorDisabled !== true && Boolean(user?.twoFactorPhone || user?.twoFactorPhoneMasked || user?.twoFactorRequired);
+    return user?.twoFactorDisabled !== true && user?.twoFactorPendingSetup !== true && Boolean(user?.twoFactorPhone || user?.twoFactorPhoneMasked || user?.twoFactorRequired);
   }
 
   function adminUsersWriteActorEmail(): string {
@@ -1173,6 +1177,7 @@ export default function AdminUsersPlanningPage() {
             <thead><tr>{["Display Name", "User Name", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
             <tbody>{dbUsers.length ? dbUsers.map((user: any) => {
               const active = user.status === "active" && !user.locked && !user.inactive;
+              const twoFactorSetupPending = twoFactorSetupPendingForUser(user);
               const twoFactorEnforced = twoFactorEnforcedForUser(user);
               return (
                 <tr key={user.id} data-barsh-admin-users-table-row="true">
@@ -1187,7 +1192,7 @@ export default function AdminUsersPlanningPage() {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button data-barsh-admin-users-edit-row-button="true" type="button" onClick={() => openEditAdminUserPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Edit</button>
                       <button data-barsh-admin-users-reset-password-row-button="true" type="button" onClick={() => void resetPasswordFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Reset Password</button>
-                      {twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => openTwoFactorSetupPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
+                      {twoFactorSetupPending ? <span data-barsh-admin-users-2fa-pending-label="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Setup Pending</span> : twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => openTwoFactorSetupPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
                       <button data-barsh-admin-users-lock-row-button="true" type="button" onClick={() => void lockUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>{active ? "Lock" : "Unlock"}</button>
                       <button data-barsh-admin-users-signout-row-button="true" type="button" onClick={() => void signOutUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Sign out</button>
                     </div>
