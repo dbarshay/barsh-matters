@@ -1,0 +1,1012 @@
+{
+  "phase": "template-generation-phase1b",
+  "scope": "Initial Billing Letter only; remove stale layout-asset architecture before fresh single-DOCX generation",
+  "destructiveCleanupPerformed": false,
+  "candidateCount": 51,
+  "reviewCount": 61,
+  "keepCurrentTemplateBuilderCount": 0,
+  "rows": [
+    {
+      "path": "app/admin/templates/layout-composition-validation/page.tsx",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "app/api/admin/templates/layout-composition-validation/route.ts",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "src/lib/templates/layout-composition-validation-report.mjs",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "src/lib/templates/template-layout-composition-registry-source.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "Pleading Paper",
+        "barsh-letterhead-standard",
+        "layoutAsset",
+        "layoutComposition",
+        "letterhead-simple",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "src/lib/templates/layout-composition-batch-validator.mjs",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "src/lib/templates/layout-composition-validator.mjs",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LAYOUT_COMPOSITION",
+        "Layout asset",
+        "Layout composition",
+        "LayoutComposition",
+        "layout asset",
+        "layout composition",
+        "layoutAsset",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "src/lib/templates/layout-composition-admin-readiness.mjs",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase18k-initial-billing-letter-template-specific-letterhead-overrides.py",
+      "kind": "review",
+      "hits": [
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase14-template-file-readiness-inventory.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase48d-comprehensive-bm-merge-field-catalog-inspection.cjs",
+      "kind": "review",
+      "hits": [
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase18b-initial-billing-letter-docx-import-gate.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/inspect-phase48f-signer-addressee-court-source-resolution.cjs",
+      "kind": "review",
+      "hits": [
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase48a-invoice-remittance-template-source-inspection.cjs",
+      "kind": "review",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase9-layout-composition-admin-readiness-payload.mjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/inspect-phase48d-comprehensive-bm-merge-field-catalog.cjs",
+      "kind": "review",
+      "hits": [
+        "Pleading Paper",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-signer-docgen-phase1-exact-runtime-target-map.mjs",
+      "kind": "review",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase1-layout-composition-decisions.cjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "Layout asset",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutComposition",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase6-layout-composition-validation-report-builder.mjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase13-template-file-inventory-merge-field-contract.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition",
+        "layoutAsset"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase2-layout-composition-metadata-schema-proposal.cjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "Layout asset",
+        "layout asset",
+        "layout-composition",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-layout-composition-validation-suite.mjs",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout composition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/import-phase47c-letterhead-layout-asset.cjs",
+      "kind": "review",
+      "hits": [
+        "Layout asset",
+        "LayoutAsset",
+        "Letterhead-Simple",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase12-real-registry-source.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19g-vr-response-vr-base-letterhead-header-render.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/import-phase48b-pleading-layout-asset.cjs",
+      "kind": "review",
+      "hits": [
+        "Layout asset",
+        "LayoutAsset",
+        "Pleading Paper",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase18a-initial-billing-letter-merge-code-readiness.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19c-vr-response-header-composition-override-contract.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase17a-letterhead-simple-base-merge-code-readiness.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase15-template-file-readiness-report.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase48c-letterhead-signer-aware-standard-safety.cjs",
+      "kind": "review",
+      "hits": [
+        "layout asset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/run-template-layout-composition-validation-report.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase11-read-only-admin-exposure.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase47d-template-repository-resolution-safety.cjs",
+      "kind": "review",
+      "hits": [
+        "LayoutAsset",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase3-layout-composition-metadata-validator-design.sh",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "layout-composition",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase10-admin-exposure-readiness-plan.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase7-layout-composition-validation-report-runner.mjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase4-layout-composition-validator-pure-function.mjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase16-admin-file-readiness-payload.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-admin-users-signer-profile-phase2-real-wiring-map.mjs",
+      "kind": "review",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase17b-letterhead-simple-base-docx-drop-readiness.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "Shared letterhead",
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "layout asset",
+        "layout-composition",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase5-layout-composition-batch-validator.mjs",
+      "kind": "review",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19f-vr-response-valid-render-typo-fix.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19b-vr-response-source-import-readiness.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase17c-letterhead-simple-base-docx-import-gate.mjs",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "layout asset",
+        "layout-composition",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase48e-pleading-paper-baseline-standard-safety.cjs",
+      "kind": "review",
+      "hits": [
+        "layout asset",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19d-vr-response-composition-override-render.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase18d-hidden-field-merge-source-mapping-contract.mjs",
+      "kind": "review",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase19e-vr-response-letterhead-static-override-token-repair.mjs",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "scripts/phase47d-lock-template-repository-metadata.cjs",
+      "kind": "review",
+      "hits": [
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase48b-pleading-layout-asset-safety.cjs",
+      "kind": "review",
+      "hits": [
+        "Pleading Paper",
+        "layout asset",
+        "letterhead-simple",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "scripts/verify-templates-phase18j-initial-billing-letter-preferred-letter-formatting.py",
+      "kind": "review",
+      "hits": [
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "scripts/verify-phase47c-letterhead-layout-asset-safety.cjs",
+      "kind": "review",
+      "hits": [
+        "layout asset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48b-pleading-layout-asset-and-layout-merge-fields.md",
+      "kind": "review",
+      "hits": [
+        "Layout Asset",
+        "Pleading Paper",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase47c-letterhead-layout-asset.md",
+      "kind": "review",
+      "hits": [
+        "Layout Asset",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48d-comprehensive-bm-merge-field-catalog-inspection.md",
+      "kind": "review",
+      "hits": [
+        "Pleading Paper",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48f-signer-addressee-court-source-resolution-inspection.md",
+      "kind": "review",
+      "hits": [
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48c-letterhead-signer-aware-merge-field-standard.md",
+      "kind": "review",
+      "hits": [
+        "layout asset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase47d-template-repository-resolution-layer.md",
+      "kind": "review",
+      "hits": [
+        "Layout asset",
+        "LayoutAsset",
+        "layout asset",
+        "layoutAsset",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48a-invoice-remittance-template-source-inspection.json",
+      "kind": "review",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48e-pleading-paper-baseline-merge-field-standard.md",
+      "kind": "review",
+      "hits": [
+        "Pleading Paper",
+        "layout asset",
+        "layoutAsset",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "docs/template-generation-refactor/phase48a-invoice-remittance-template-source-inspection.md",
+      "kind": "review",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/template-repository/templates-phase2-layout-composition-metadata-schema-proposal.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "Layout asset",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutComposition",
+        "letterhead-simple",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "docs/template-repository/templates-phase1-layout-composition-decisions.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "Layout asset",
+        "Layout composition",
+        "LayoutAsset",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutComposition",
+        "pleading paper",
+        "pleading-paper"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-docgen-phase1-exact-runtime-target-map.json",
+      "kind": "review",
+      "hits": [
+        "LAYOUT_COMPOSITION",
+        "Layout asset",
+        "Layout composition",
+        "LayoutAsset",
+        "LayoutComposition",
+        "Pleading Paper",
+        "barsh-letterhead-standard",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutAsset",
+        "letterhead-simple",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-profile-phase18-exact-forced-password-change-patch-targets.json",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-profile-phase4-owner-admin-all-permissions-seed-anchors.json",
+      "kind": "review",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-docgen-phase1-exact-runtime-target-map.md",
+      "kind": "review",
+      "hits": [
+        "LayoutComposition",
+        "barsh-letterhead-standard",
+        "layout-composition",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-profile-phase2-real-wiring-map.md",
+      "kind": "review",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "docs/admin-users/signer-profile-phase3-primary-admin-all-permissions-guard.json",
+      "kind": "review",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase6-layout-composition-validation-report-builder.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase5-layout-composition-batch-validator.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout asset",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19f-vr-response-valid-render-typo-fix.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase11-read-only-admin-exposure.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19g-vr-response-vr-base-letterhead-header-render.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19d-vr-response-composition-override-render.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase16-admin-file-readiness-payload.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase7-layout-composition-validation-report-runner.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19e-vr-response-letterhead-static-override-token-repair.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase18j-initial-billing-letter-preferred-letter-formatting.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Shared Letterhead",
+        "Shared letterhead",
+        "layout asset",
+        "letterhead-simple",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase3-layout-composition-metadata-validator-design.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "Layout asset",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutComposition",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase14-template-file-readiness-inventory.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase9-layout-composition-admin-readiness-payload.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase17a-letterhead-simple-base-merge-code-readiness.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase17b-letterhead-simple-base-docx-drop-readiness.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "layout asset"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase12-real-template-registry-source.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "layout-composition",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19g-vr-response-vr-base-letterhead-header-render.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase18a-initial-billing-letter-merge-code-readiness.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "letterhead-simple",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase8-layout-composition-validation-suite.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19c-vr-response-header-composition-override-contract.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LAYOUT_COMPOSITION",
+        "Layout asset",
+        "Layout composition",
+        "LayoutComposition",
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutAsset",
+        "layoutComposition",
+        "letterhead-simple",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase18k-initial-billing-letter-template-specific-letterhead-overrides.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase10-admin-exposure-readiness-plan.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout-composition",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase17c-letterhead-simple-base-docx-import-gate.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead",
+        "layout asset"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19b-vr-response-source-import-readiness.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase15-template-file-readiness-report.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase13-template-file-inventory-merge-field-contract.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout asset",
+        "layout-composition",
+        "pleading paper"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase4-layout-composition-validator-pure-function.md",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "LayoutComposition",
+        "layout asset",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "docs/templates/templates-phase19c-vr-response-header-composition-override-contract.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "LAYOUT_COMPOSITION",
+        "Layout asset",
+        "Layout composition",
+        "LayoutComposition",
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "layout asset",
+        "layout composition",
+        "layout-composition",
+        "layoutAsset",
+        "layoutComposition",
+        "letterhead-simple",
+        "shared letterhead"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase18b-initial-billing-letter-docx-import-gate-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/layout-composition-batch-validator-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layoutAsset",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase18j-initial-billing-letter-preferred-letter-formatting-fixture.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead",
+        "layoutAsset"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase18a-initial-billing-letter-merge-code-readiness-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/layout-composition-validation-report-runner-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition",
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase10-admin-exposure-readiness-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout-composition",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase18k-initial-billing-letter-template-specific-letterhead-overrides-fixture.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "docx/base/letterhead"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase12-real-registry-source-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase17a-letterhead-simple-base-merge-code-readiness.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/layout-composition-validator-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layoutAsset",
+        "layoutComposition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase17b-letterhead-simple-base-docx-drop-readiness.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/layout-composition-validation-report-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "Layout Composition"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase17c-letterhead-simple-base-docx-import-gate.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "barsh-letterhead-standard",
+        "docx/base/letterhead",
+        "letterhead-simple"
+      ]
+    },
+    {
+      "path": "test/fixtures/templates/templates-phase11-read-only-admin-exposure-fixtures.json",
+      "kind": "stale-architecture-candidate",
+      "hits": [
+        "layout-composition"
+      ]
+    },
+    {
+      "path": "package.json",
+      "kind": "review",
+      "hits": [
+        "layout-composition",
+        "pleading-paper"
+      ]
+    }
+  ]
+}
