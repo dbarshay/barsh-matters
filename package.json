@@ -690,7 +690,8 @@
     "verify:template-generation-phase1j": "node scripts/verify-template-generation-phase1j-create-template-popup-after-scan.mjs",
     "verify:admin-users-workflow-phase-a-ui-cleanup": "node scripts/verify-admin-users-workflow-phase-a-ui-cleanup.mjs",
     "verify:admin-users-workflow-phase-b-table-actions": "node scripts/verify-admin-users-workflow-phase-b-table-actions.mjs",
-    "verify:admin-users-workflow-phase-d-browser-back-actions": "node scripts/verify-admin-users-workflow-phase-d-browser-back-actions.mjs"
+    "verify:admin-users-workflow-phase-d-browser-back-actions": "node scripts/verify-admin-users-workflow-phase-d-browser-back-actions.mjs",
+    "verify:admin-users-workflow-phase-e-audit-back-live-reload": "node scripts/verify-admin-users-workflow-phase-e-audit-back-live-reload.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
