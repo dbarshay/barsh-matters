@@ -698,7 +698,9 @@
     "verify:admin-users-workflow-phase-i-edit-role-picklists": "node scripts/verify-admin-users-workflow-phase-i-edit-role-picklists.mjs",
     "verify:admin-users-workflow-phase-j-edit-save-auth": "node scripts/verify-admin-users-workflow-phase-j-edit-save-auth.mjs",
     "verify:admin-users-workflow-phase-k-edit-save-reauth": "node scripts/verify-admin-users-workflow-phase-k-edit-save-reauth.mjs",
-    "verify:admin-users-workflow-phase-l-2fa-owner-safety": "node scripts/verify-admin-users-workflow-phase-l-2fa-owner-safety.mjs"
+    "verify:admin-users-workflow-phase-l-2fa-owner-safety": "node scripts/verify-admin-users-workflow-phase-l-2fa-owner-safety.mjs",
+    "verify:admin-users-workflow-phase-m-2fa-setup-panel": "node scripts/verify-admin-users-workflow-phase-m-2fa-setup-panel.mjs",
+    "verify:admin-users-workflow-phase-n-2fa-phone-format": "node scripts/verify-admin-users-workflow-phase-n-2fa-phone-format.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

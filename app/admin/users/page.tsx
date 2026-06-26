@@ -236,6 +236,11 @@ export default function AdminUsersPlanningPage() {
   const [editMessage, setEditMessage] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [editNeedsReauth, setEditNeedsReauth] = useState(false);
+  const [twoFactorSetupUser, setTwoFactorSetupUser] = useState<any>(null);
+  const [twoFactorSetupPhone, setTwoFactorSetupPhone] = useState("");
+  const [twoFactorSetupMessage, setTwoFactorSetupMessage] = useState("");
+  const [twoFactorSetupBusy, setTwoFactorSetupBusy] = useState(false);
+  const [twoFactorSetupNeedsReauth, setTwoFactorSetupNeedsReauth] = useState(false);
 
 
   async function loadAdminUsersPlanning() {
@@ -367,6 +372,10 @@ export default function AdminUsersPlanningPage() {
     setEditBusy(false);
     setPasswordResetOneTimePassword("");
     setPasswordResetCopyMessage("");
+    setTwoFactorSetupUser(null);
+    setTwoFactorSetupMessage("");
+    setTwoFactorSetupBusy(false);
+    setTwoFactorSetupNeedsReauth(false);
   }
 
   const adminUsersAuditHistoryReturnReloadKey = "barshAdminUsersAuditHistoryReturnReload";
@@ -564,39 +573,68 @@ export default function AdminUsersPlanningPage() {
     }
   }
 
-  async function activateTwoFactorFromRow(user: any): Promise<void> {
-    if (twoFactorEnforcedForUser(user)) return;
-    const phone = window.prompt(`2FA phone for ${user.email}`, String(user?.twoFactorPhone || ""));
-    if (!phone) return;
+  function openTwoFactorSetupPanel(user: any): void {
+    setTwoFactorSetupUser(user);
+    setTwoFactorSetupPhone(String(user?.twoFactorPhone || ""));
+    setTwoFactorSetupMessage("");
+    setTwoFactorSetupNeedsReauth(false);
+    setAdminUsersRowMessage("");
+  }
+
+  function closeTwoFactorSetupPanel(): void {
+    setTwoFactorSetupUser(null);
+    setTwoFactorSetupPhone("");
+    setTwoFactorSetupMessage("");
+    setTwoFactorSetupBusy(false);
+    setTwoFactorSetupNeedsReauth(false);
+  }
+
+  async function startTwoFactorSetupFromPanel(): Promise<void> {
+    if (!twoFactorSetupUser) return;
+    const phone = twoFactorSetupPhone.trim();
+    if (!phone) {
+      setTwoFactorSetupMessage("2FA phone is required to start setup.");
+      return;
+    }
+
     try {
-      setAdminUsersRowBusy(true);
+      setTwoFactorSetupBusy(true);
+      setTwoFactorSetupMessage(`Starting 2FA setup for ${twoFactorSetupUser.email}...`);
       await patchAdminUsersAction("/api/admin/users/signer-profile", {
         apply: true,
         actorEmail: createActorEmail,
-        userId: user.id,
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        displayName: user.displayName || "",
-        username: user.username || "",
-        email: user.email,
-        phoneExtension: user.phoneExtension || "",
-        faxNumber: user.faxNumber || "",
-        signatureBlockName: user.signatureBlockName || "",
-        locked: Boolean(user.locked),
-        inactive: Boolean(user.inactive),
+        userId: twoFactorSetupUser.id,
+        firstName: twoFactorSetupUser.firstName || "",
+        lastName: twoFactorSetupUser.lastName || "",
+        displayName: twoFactorSetupUser.displayName || "",
+        username: twoFactorSetupUser.username || "",
+        email: twoFactorSetupUser.email,
+        phoneExtension: twoFactorSetupUser.phoneExtension || "",
+        faxNumber: twoFactorSetupUser.faxNumber || "",
+        signatureBlockName: twoFactorSetupUser.signatureBlockName || twoFactorSetupUser.displayName || "",
+        locked: Boolean(twoFactorSetupUser.locked),
+        inactive: Boolean(twoFactorSetupUser.inactive),
         twoFactorPhone: phone,
         twoFactorDisabled: false,
         twoFactorPendingSetup: true,
-      }, "Activate 2FA");
-      setAdminUsersRowMessage(`2FA enforced for ${user.email}.`);
-      setAdminUsersRowMessage(`2FA setup started for ${user.email}. Complete and verify setup before treating it as enforced.`);
+      }, "Start 2FA setup");
+      setAdminUsersRowMessage(`2FA setup started for ${twoFactorSetupUser.email}. Complete and verify setup before treating it as enforced.`);
+      closeTwoFactorSetupPanel();
       await loadAdminUsersPlanning();
     } catch (error: any) {
-      setAdminUsersRowMessage(error?.message || "2FA activation failed.");
+      if (isAdminUsersAuthExpiredError(error)) {
+        setTwoFactorSetupNeedsReauth(true);
+        setTwoFactorSetupMessage("Your administrator session expired. Re-authenticate, then return and start 2FA setup again.");
+        setAdminUsersRowMessage("2FA setup blocked: administrator session expired.");
+      } else {
+        setTwoFactorSetupMessage(error?.message || "2FA setup failed.");
+        setAdminUsersRowMessage(error?.message || "2FA setup failed.");
+      }
     } finally {
-      setAdminUsersRowBusy(false);
+      setTwoFactorSetupBusy(false);
     }
   }
+
 
   async function lockUserFromRow(user: any): Promise<void> {
     const lockoutAction = user.status === "active" && !user.locked && !user.inactive ? "lock" : "unlock";
@@ -978,7 +1016,7 @@ export default function AdminUsersPlanningPage() {
             </label>
             <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
               2FA Phone
-              <input data-barsh-admin-users-create-two-factor-phone="true" value={createTwoFactorPhone} onChange={(event) => { setCreateTwoFactorPhone(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Mobile number for 2FA" />
+              <input data-barsh-admin-users-create-two-factor-phone="true" value={createTwoFactorPhone} onChange={(event) => { setCreateTwoFactorPhone(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Expected format: (631) 555-1234" />
             </label>
             <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
               <input data-barsh-admin-users-create-locked="true" type="checkbox" checked={createLocked} onChange={(event) => { setCreateLocked(event.target.checked); setCreateResult(null); }} />
@@ -1086,6 +1124,38 @@ export default function AdminUsersPlanningPage() {
           ) : null}
         </section>) : null}
 
+        {twoFactorSetupUser ? (<section data-barsh-admin-users-2fa-setup-panel="true" style={{ ...cardStyle, border: "1px solid #bfdbfe", boxShadow: "0 12px 26px rgba(30, 58, 138, 0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Start 2FA Setup</h2>
+              <p style={{ margin: "8px 0 0", color: "#475569", fontWeight: 800 }}>This starts pending setup only. It does not directly enforce 2FA for the sole owner account.</p>
+            </div>
+            <button data-barsh-admin-users-2fa-setup-cancel-button="true" type="button" onClick={closeTwoFactorSetupPanel} disabled={twoFactorSetupBusy} style={secondaryButtonStyle}>Cancel</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              2FA Phone
+              <input data-barsh-admin-users-2fa-setup-phone="true" value={twoFactorSetupPhone} onChange={(event) => setTwoFactorSetupPhone(event.target.value)} style={inputStyle} placeholder="Expected format: (631) 555-1234" inputMode="tel" autoComplete="tel" />
+            </label>
+            <div style={{ display: "grid", alignContent: "end" }}>
+              <button data-barsh-admin-users-2fa-setup-start-button="true" type="button" onClick={() => void startTwoFactorSetupFromPanel()} disabled={twoFactorSetupBusy} style={{ ...primaryButtonStyle, color: "#ffffff", opacity: twoFactorSetupBusy ? 0.7 : 1 }}>
+                {twoFactorSetupBusy ? "Starting..." : "Start Setup"}
+              </button>
+            </div>
+          </div>
+
+          {twoFactorSetupMessage ? <p data-barsh-admin-users-2fa-setup-message="true" style={{ margin: "12px 0 0", color: twoFactorSetupMessage.toLowerCase().includes("failed") || twoFactorSetupMessage.toLowerCase().includes("expired") || twoFactorSetupNeedsReauth ? "#991b1b" : "#166534", fontWeight: 900 }}>{twoFactorSetupMessage}</p> : null}
+          {twoFactorSetupNeedsReauth ? (
+            <div data-barsh-admin-users-2fa-setup-reauth-panel="true" style={{ marginTop: 12, padding: 12, border: "1px solid #fecaca", background: "#fef2f2", borderRadius: 12 }}>
+              <p style={{ margin: "0 0 10px", color: "#991b1b", fontWeight: 900 }}>Re-authenticate in the admin gate, then return and start 2FA setup again.</p>
+              <button data-barsh-admin-users-2fa-setup-reauth-button="true" type="button" onClick={goToAdminUsersReauthentication} style={{ ...primaryButtonStyle, color: "#ffffff" }}>
+                Re-authenticate
+              </button>
+            </div>
+          ) : null}
+        </section>) : null}
+
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["Display Name", "User Name", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
@@ -1105,7 +1175,7 @@ export default function AdminUsersPlanningPage() {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button data-barsh-admin-users-edit-row-button="true" type="button" onClick={() => openEditAdminUserPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Edit</button>
                       <button data-barsh-admin-users-reset-password-row-button="true" type="button" onClick={() => void resetPasswordFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Reset Password</button>
-                      {twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => void activateTwoFactorFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
+                      {twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => openTwoFactorSetupPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
                       <button data-barsh-admin-users-lock-row-button="true" type="button" onClick={() => void lockUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>{active ? "Lock" : "Unlock"}</button>
                       <button data-barsh-admin-users-signout-row-button="true" type="button" onClick={() => void signOutUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Sign out</button>
                     </div>

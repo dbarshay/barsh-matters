@@ -8,11 +8,21 @@ const must = (condition, message) => { if (!condition) failures.push(message); }
 
 for (const token of [
   "data-barsh-admin-users-activate-2fa-row-button",
+  "openTwoFactorSetupPanel",
+  "startTwoFactorSetupFromPanel",
+  "data-barsh-admin-users-2fa-setup-panel",
   "twoFactorPendingSetup: true",
   "2FA setup started for",
   "Complete and verify setup before treating it as enforced.",
   "/api/admin/users/signer-profile",
 ]) must(page.includes(token), "missing 2FA UI safety token: " + token);
+
+for (const forbidden of [
+  "async function activateTwoFactorFromRow",
+  "window.prompt(`2FA phone",
+  "window.prompt(\"2FA phone",
+  "2FA enforced for",
+]) must(!page.includes(forbidden), "old prompt/direct-enforcement 2FA flow must not remain: " + forbidden);
 
 for (const token of [
   "activeBootstrapOwnerAdminCount",
@@ -35,10 +45,10 @@ const blockIndex = route.indexOf("Sole bootstrapSafe owner_admin cannot be moved
 const updateIndex = route.indexOf("prisma.adminUser.update", guardIndex);
 must(guardIndex >= 0 && blockIndex > guardIndex && updateIndex > blockIndex, "sole-owner 2FA enforcement guard must run before AdminUser update.");
 
-const activateIndex = page.indexOf("async function activateTwoFactorFromRow");
-const pendingIndex = page.indexOf("twoFactorPendingSetup: true", activateIndex);
-must(activateIndex >= 0 && pendingIndex > activateIndex, "Activate 2FA row action must mark pending setup.");
-must(!page.slice(activateIndex, page.indexOf("async function lockUserFromRow", activateIndex)).includes("twoFactorPendingSetup: false"), "Activate 2FA row action must not directly mark setup complete.");
+const setupIndex = page.indexOf("function startTwoFactorSetupFromPanel");
+const pendingIndex = page.indexOf("twoFactorPendingSetup: true", setupIndex);
+const disabledIndex = page.indexOf("twoFactorDisabled: false", setupIndex);
+must(setupIndex >= 0 && disabledIndex > setupIndex && pendingIndex > disabledIndex, "Start 2FA setup must set disabled false but keep setup pending.");
 
 must(pkg.scripts?.["verify:admin-users-workflow-phase-l-2fa-owner-safety"] === "node scripts/verify-admin-users-workflow-phase-l-2fa-owner-safety.mjs", "package script missing");
 
