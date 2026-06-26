@@ -19,6 +19,16 @@ const tableIndex = page.indexOf("data-barsh-admin-users-table");
 must(summaryIndex >= 0 && auditTopIndex > summaryIndex && createTopIndex > auditTopIndex && createTopIndex < tableIndex, "Audit History and Create User buttons must be in the summary row before the table.");
 
 must(page.includes("data-barsh-admin-users-audit-history-top-link=\"true\" style={{ ...primaryButtonStyle, display: \"inline-flex\", textDecoration: \"none\", color: \"#ffffff\" }}"), "Audit History top action must use primary blue/white styling.");
+
+for (const rowActionStyleToken of ["data-barsh-admin-users-edit-row-button","data-barsh-admin-users-reset-password-row-button","data-barsh-admin-users-activate-2fa-row-button","data-barsh-admin-users-lock-row-button","data-barsh-admin-users-signout-row-button"]) {
+  const idx = page.indexOf(rowActionStyleToken + "=\"true\"");
+  const start = page.lastIndexOf("<button", idx);
+  const end = page.indexOf("</button>", idx);
+  const block = page.slice(start, end);
+  must(block.includes("...primaryButtonStyle") && block.includes('color: "#ffffff"'), "Row action button must use unified primary blue/white style: " + rowActionStyleToken);
+  must(!block.includes("secondaryButtonStyle"), "Row action button must not use secondary style: " + rowActionStyleToken);
+}
+
 for (const removedRoleButton of ["data-barsh-admin-users-role-assign-row-button","data-barsh-admin-users-role-remove-row-button",">Assign</button>",">Remove</button>"]) must(!page.includes(removedRoleButton), "Role column assign/remove button must not remain: " + removedRoleButton);
 for (const editRoleToken of ["Role to assign while editing","Role to remove while editing","Assign role from edit","Remove role from edit"]) must(page.includes(editRoleToken), "Edit flow missing role management token: " + editRoleToken);
 for (const forbidden of ["graphFetchJson","sendMail(","legacyClioOperationalRouteBlocked","DocumentTemplate"]) must(!page.includes(forbidden), "forbidden workflow token present: " + forbidden);
