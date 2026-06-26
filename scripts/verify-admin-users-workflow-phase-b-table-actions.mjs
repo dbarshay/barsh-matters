@@ -9,7 +9,22 @@ for (const removed of ["data-barsh-admin-users-lockout-card","data-barsh-admin-u
 for (const route of ["/api/admin/users/signer-profile","/api/admin/users/password-reset","/api/admin/users/lockout","/api/auth/signout","/api/admin/users/assign-role","/api/admin/users/remove-role"]) must(page.includes(route), "row action missing route: " + route);
 must(api.includes("lastLoginAt: user.lastLoginAt"), "planning API must expose lastLoginAt");
 for (const forbiddenOverride of ["overridePreviewReady","overrideResult","overrideTargetEmail","overridePermissionKey","overrideAction","overrideReason","overrideActorEmail","setOverride","submitPermissionOverride","/api/admin/users/permission-override"]) must(!page.includes(forbiddenOverride), "Permission Override leftover must not remain in Users landing: " + forbiddenOverride);
+
+for (const removedCopy of ["Administrator Management","Manage administrator users, roles, signer profiles, two-factor setup fields, lockout status, password resets, and effective permissions.","Changes remain guarded by preview/apply controls, active owner_admin actor checks, and sole-owner no-lockout protection.","Enforcement Disabled: persisted users, roles, role permissions, and effective permissions are still displayed for review only.","They are not used to block pages or API functions in this phase.","Administrator Users","All users are managed from the table below. Row actions use the existing guarded backend routes."]) must(!page.includes(removedCopy), "removed visible copy still present: " + removedCopy);
+for (const forbiddenOverride of ["overridePreviewReady","overrideResult","overrideTargetEmail","overridePermissionKey","overrideAction","overrideReason","overrideActorEmail","setOverride","submitPermissionOverride","/api/admin/users/permission-override"]) must(!page.includes(forbiddenOverride), "Permission Override leftover must not remain in Users landing: " + forbiddenOverride);
+
 for (const forbidden of ["graphFetchJson","sendMail(","legacyClioOperationalRouteBlocked","DocumentTemplate"]) must(!page.includes(forbidden), "forbidden workflow token present: " + forbidden);
 must(pkg.scripts?.["verify:admin-users-workflow-phase-b-table-actions"] === "node scripts/verify-admin-users-workflow-phase-b-table-actions.mjs", "package script missing");
+
+const summaryIndex = page.indexOf("data-barsh-admin-users-planning-summary");
+const createTopIndex = page.indexOf("data-barsh-admin-users-create-top-button");
+const tableIndex = page.indexOf("data-barsh-admin-users-table");
+const auditIndex = page.indexOf("Admin Users Audit Visibility");
+must(summaryIndex >= 0 && createTopIndex > summaryIndex && createTopIndex < tableIndex, "Create User button must be in the Users/Roles/Enforcement summary row.");
+must(auditIndex > tableIndex, "Admin Users Audit Visibility box must be below the users table.");
+must(!page.includes("data-barsh-admin-users-top-actions"), "Separate top-actions panel must not remain.");
+for (const removedCopy of ["Administrator Management","Manage administrator users, roles, signer profiles, two-factor setup fields, lockout status, password resets, and effective permissions.","Changes remain guarded by preview/apply controls, active owner_admin actor checks, and sole-owner no-lockout protection.","Enforcement Disabled: persisted users, roles, role permissions, and effective permissions are still displayed for review only.","They are not used to block pages or API functions in this phase."]) must(!page.includes(removedCopy), "removed visible copy still present: " + removedCopy);
+for (const forbiddenOverride of ["overridePreviewReady","overrideResult","overrideTargetEmail","overridePermissionKey","overrideAction","overrideReason","overrideActorEmail","setOverride","submitPermissionOverride","/api/admin/users/permission-override"]) must(!page.includes(forbiddenOverride), "Permission Override leftover must not remain in Users landing: " + forbiddenOverride);
+
 if (failures.length) { console.error("FAIL: Admin Users Workflow Phase B verifier failed"); for (const failure of failures) console.error(" - " + failure); process.exit(1); }
 console.log("PASS: Admin Users Workflow Phase B table-first action UI locked.");

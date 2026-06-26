@@ -713,26 +713,21 @@ export default function AdminUsersPlanningPage() {
     <main data-barsh-admin-users-planning-page="phase3-guarded" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
-          <p style={{ margin: "0 0 8px", color: "#64748b", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>Administrator Management</p>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
-          <p style={{ margin: "10px 0 0", color: "#475569", lineHeight: 1.5 }}>Manage administrator users, roles, signer profiles, two-factor setup fields, lockout status, password resets, and effective permissions. Changes remain guarded by preview/apply controls, active owner_admin actor checks, and sole-owner no-lockout protection.</p>
         </section>
 
         {error ? <section data-barsh-admin-users-planning-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
 
-        <section data-barsh-admin-users-planning-summary="true" style={cardStyle}>
-          <strong>Users:</strong> {data?.databasePreview?.userCount ?? 0} | <strong>Roles:</strong> {data?.databasePreview?.roleCount ?? 0} | <strong>Enforcement Enabled:</strong> {enforcementLabel}
-        </section>
-
-        <section data-barsh-admin-users-top-actions="true" style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Administrator Users</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569" }}>All users are managed from the table below. Row actions use the existing guarded backend routes.</p>
-          </div>
+                <section data-barsh-admin-users-planning-summary="true" style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div><strong>Users:</strong> {data?.databasePreview?.userCount ?? 0} | <strong>Roles:</strong> {data?.databasePreview?.roleCount ?? 0} | <strong>Enforcement Enabled:</strong> {enforcementLabel}</div>
           <button data-barsh-admin-users-create-top-button="true" type="button" onClick={openCreateUserAction} style={primaryButtonStyle}>Create User</button>
           {adminUsersRowMessage ? <div data-barsh-admin-users-row-action-message="true" style={{ width: "100%", color: adminUsersRowMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>{adminUsersRowMessage}</div> : null}
         </section>
 
+        
+        
+
+
 
 
 
@@ -740,19 +735,9 @@ export default function AdminUsersPlanningPage() {
 
         
 
-        <section data-barsh-admin-users-enforcement-banner="disabled" style={{ background: "#fefce8", border: "1px solid #fde68a", color: "#713f12", borderRadius: 18, padding: 16, lineHeight: 1.5 }}>
-          <strong>Enforcement Disabled:</strong> persisted users, roles, role permissions, and effective permissions are still displayed for review only. They are not used to block pages or API functions in this phase.
-        </section>
+        
 
-        <section data-barsh-admin-users-audit-visibility="read-only" style={{ ...cardStyle, border: "1px solid #dbeafe", background: "#eff6ff" }}>
-          <h2 style={{ margin: "0 0 8px", fontSize: 20 }}>Admin Users Audit Visibility</h2>
-          <p style={{ margin: "0 0 12px", color: "#1e3a8a", lineHeight: 1.5 }}>
-            Read-only audit review for admin-user create, role assignment, role removal, and permission-override activity. Apply actions are audit logged, and permission enforcement remains disabled.
-          </p>
-          <a href="/admin/audit-history" data-barsh-admin-users-audit-history-link="true" style={{ ...secondaryButtonStyle, display: "inline-flex", textDecoration: "none" }}>
-            Open Audit History
-          </a>
-        </section>
+        
 
         {adminUsersAction === "create" ? (<section data-barsh-admin-users-create-user-control="phase3-guarded" style={{ ...cardStyle, border: "1px solid #bfdbfe", boxShadow: "0 12px 26px rgba(30, 58, 138, 0.08)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
@@ -897,6 +882,17 @@ export default function AdminUsersPlanningPage() {
         
 
         
+
+<section data-barsh-admin-users-audit-visibility="read-only" style={{ ...cardStyle, border: "1px solid #dbeafe", background: "#eff6ff" }}>
+          <h2 style={{ margin: "0 0 8px", fontSize: 20 }}>Admin Users Audit Visibility</h2>
+          <p style={{ margin: "0 0 12px", color: "#1e3a8a", lineHeight: 1.5 }}>
+            Read-only audit review for admin-user create, role assignment, role removal, and permission-override activity. Apply actions are audit logged, and permission enforcement remains disabled.
+          </p>
+          <a href="/admin/audit-history" data-barsh-admin-users-audit-history-link="true" style={{ ...secondaryButtonStyle, display: "inline-flex", textDecoration: "none" }}>
+            Open Audit History
+          </a>
+        </section>
+
       </div>
 
       {passwordResetOneTimePassword ? (
