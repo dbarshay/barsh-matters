@@ -305,6 +305,7 @@ export default function AdminUsersPlanningPage() {
   }
 
   function openCreateUserAction(): void {
+    pushAdminUsersActionHistory("create-user");
     setAdminUsersAction("create");
     setCreateResult(null);
     setCreateMessage("");
@@ -313,6 +314,32 @@ export default function AdminUsersPlanningPage() {
   function closeAdminUsersAction(): void {
     setAdminUsersAction("none");
   }
+
+  function pushAdminUsersActionHistory(action: string): void {
+    if (typeof window === "undefined") return;
+    const currentState = window.history.state && typeof window.history.state === "object" ? window.history.state : {};
+    if (currentState?.barshAdminUsersAction === action) return;
+    window.history.pushState({ ...currentState, barshAdminUsersAction: action }, "", window.location.href);
+  }
+
+  function closeAdminUsersTransientActionState(): void {
+    setAdminUsersAction("none");
+    setEditUser(null);
+    setEditMessage("");
+    setEditRoleToAssign("");
+    setEditRoleToRemove("");
+    setEditBusy(false);
+    setPasswordResetOneTimePassword("");
+    setPasswordResetCopyMessage("");
+  }
+
+  useEffect(() => {
+    const handleAdminUsersPopState = () => {
+      closeAdminUsersTransientActionState();
+    };
+    window.addEventListener("popstate", handleAdminUsersPopState);
+    return () => window.removeEventListener("popstate", handleAdminUsersPopState);
+  }, []);
 
   async function postAdminUsersAction(path: string, body: Record<string, unknown>, label: string) {
     const response = await fetch(path, {
@@ -341,6 +368,7 @@ export default function AdminUsersPlanningPage() {
   }
 
   function openEditAdminUserPanel(user: any): void {
+    pushAdminUsersActionHistory("edit-user");
     setEditUser(user);
     setEditFirstName(String(user?.firstName || ""));
     setEditLastName(String(user?.lastName || ""));
@@ -422,6 +450,7 @@ export default function AdminUsersPlanningPage() {
       setAdminUsersRowBusy(true);
       const json = await postAdminUsersAction("/api/admin/users/password-reset", { apply: true, targetEmail: user.email, reason, actorEmail: createActorEmail }, "Password reset");
       if (json?.temporaryPassword && json?.temporaryPasswordOneTimeDisplay) {
+        pushAdminUsersActionHistory("password-reset-one-time");
         setPasswordResetOneTimePassword(String(json.temporaryPassword));
         setPasswordResetCopyMessage("");
       }
@@ -764,7 +793,7 @@ export default function AdminUsersPlanningPage() {
 
 
   return (
-    <main data-barsh-admin-users-planning-page="phase3-guarded" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
+    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
