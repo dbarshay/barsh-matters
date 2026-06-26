@@ -235,6 +235,7 @@ export default function AdminUsersPlanningPage() {
   const [editRoleToRemove, setEditRoleToRemove] = useState("");
   const [editMessage, setEditMessage] = useState("");
   const [editBusy, setEditBusy] = useState(false);
+  const [editNeedsReauth, setEditNeedsReauth] = useState(false);
 
 
   async function loadAdminUsersPlanning() {
@@ -448,6 +449,17 @@ export default function AdminUsersPlanningPage() {
     return json;
   }
 
+  function isAdminUsersAuthExpiredError(error: any): boolean {
+    const message = String(error?.message || "");
+    return message.includes("status 401") || message.includes("Authenticated administrator session required");
+  }
+
+  function goToAdminUsersReauthentication(): void {
+    if (typeof window === "undefined") return;
+    const next = `${window.location.pathname}${window.location.search || ""}`;
+    window.location.href = `/admin?next=${encodeURIComponent(next)}`;
+  }
+
   function openEditAdminUserPanel(user: any): void {
     pushAdminUsersActionHistory("edit-user");
     setEditUser(user);
@@ -467,12 +479,14 @@ export default function AdminUsersPlanningPage() {
     setEditRoleToAssign("");
     setEditRoleToRemove("");
     setEditMessage("");
+    setEditNeedsReauth(false);
     setAdminUsersRowMessage("");
   }
 
   function closeEditAdminUserPanel(): void {
     setEditUser(null);
     setEditMessage("");
+    setEditNeedsReauth(false);
     setEditRoleToAssign("");
     setEditRoleToRemove("");
   }
@@ -516,8 +530,14 @@ export default function AdminUsersPlanningPage() {
       closeEditAdminUserPanel();
       await loadAdminUsersPlanning();
     } catch (error: any) {
-      setEditMessage(error?.message || "Save user failed.");
-      setAdminUsersRowMessage(error?.message || "Save user failed.");
+      if (isAdminUsersAuthExpiredError(error)) {
+        setEditNeedsReauth(true);
+        setEditMessage("Your administrator session expired. Re-authenticate, then return to this edit screen and save again.");
+        setAdminUsersRowMessage("Save user blocked: administrator session expired.");
+      } else {
+        setEditMessage(error?.message || "Save user failed.");
+        setAdminUsersRowMessage(error?.message || "Save user failed.");
+      }
     } finally {
       setEditBusy(false);
     }
@@ -1054,7 +1074,15 @@ export default function AdminUsersPlanningPage() {
             <button data-barsh-admin-users-edit-save-button="true" type="button" onClick={() => void saveEditAdminUserPanel()} disabled={editBusy} style={{ ...primaryButtonStyle, opacity: editBusy ? 0.7 : 1 }}>{editBusy ? "Saving..." : "Save User"}</button>
           </div>
 
-          {editMessage ? <p data-barsh-admin-users-edit-message="true" style={{ margin: "12px 0 0", color: editMessage.toLowerCase().includes("failed") || editMessage.toLowerCase().includes("unauthorized") ? "#991b1b" : "#166534", fontWeight: 900 }}>{editMessage}</p> : null}
+          {editMessage ? <p data-barsh-admin-users-edit-message="true" style={{ margin: "12px 0 0", color: editMessage.toLowerCase().includes("failed") || editMessage.toLowerCase().includes("unauthorized") || editNeedsReauth ? "#991b1b" : "#166534", fontWeight: 900 }}>{editMessage}</p> : null}
+          {editNeedsReauth ? (
+            <div data-barsh-admin-users-edit-reauth-panel="true" style={{ marginTop: 12, padding: 12, border: "1px solid #fecaca", background: "#fef2f2", borderRadius: 12 }}>
+              <p style={{ margin: "0 0 10px", color: "#991b1b", fontWeight: 900 }}>Your edits are still on this screen. Re-authenticate in the admin gate, then come back and save again.</p>
+              <button data-barsh-admin-users-edit-reauth-button="true" type="button" onClick={goToAdminUsersReauthentication} style={{ ...primaryButtonStyle, color: "#ffffff" }}>
+                Re-authenticate
+              </button>
+            </div>
+          ) : null}
         </section>) : null}
 
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
