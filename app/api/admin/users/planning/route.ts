@@ -6,6 +6,7 @@ import { ADMIN_ROLE_PLANNING_DEFINITIONS, ADMIN_USER_PLANNING_ROWS, adminRolePla
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  try {
   const [dbUsers, dbRoles, dbRolePermissions, dbUserRoles, dbUserPermissionOverrides] = await Promise.all([
     prisma.adminUser.findMany({ orderBy: [{ email: "asc" }], take: 200, include: { roles: { include: { role: { include: { permissions: true } } } }, permissionOverrides: true } }),
     prisma.adminRole.findMany({ orderBy: [{ key: "asc" }], take: 200, include: { permissions: true } }),
@@ -70,4 +71,20 @@ export async function GET() {
     roles: adminRolePlanningSummary(),
     users: effectiveAdminUserPlanningRows(),
   });
+  } catch (error) {
+    console.error("Admin users planning lookup failed", error);
+    return Response.json(
+      {
+        action: "admin-users-roles-planning-read-only",
+        error: error instanceof Error ? error.message : "Admin users planning lookup failed",
+        mode: "error",
+        enforcementEnabled: false,
+        users: [],
+        roles: [],
+        databasePreview: { users: [], roles: [], userCount: 0, roleCount: 0 },
+        effectivePermissionsPreview: [],
+      },
+      { status: 500 }
+    );
+  }
 }

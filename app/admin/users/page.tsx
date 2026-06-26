@@ -169,6 +169,27 @@ function adminUsersPhase12TwoFactorStatusLabel(user: {
   return "Enabled";
 }
 
+async function readAdminUsersJsonResponse(response: Response, label: string) {
+  const text = await response.text();
+  if (!text.trim()) {
+    throw new Error(label + " returned an empty response with status " + response.status + ".");
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    if (!response.ok) {
+      const message = parsed && typeof parsed === "object" && "error" in parsed ? String((parsed as any).error) : text.slice(0, 240);
+      throw new Error(label + " failed with status " + response.status + ": " + message);
+    }
+    return parsed;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(label + " returned non-JSON response with status " + response.status + ": " + text.slice(0, 240));
+    }
+    throw error;
+  }
+}
+
 export default function AdminUsersPlanningPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
@@ -222,7 +243,7 @@ export default function AdminUsersPlanningPage() {
     try {
       setError("");
       const response = await fetch("/api/admin/users/planning", { cache: "no-store" });
-      const json = await response.json();
+      const json = await readAdminUsersJsonResponse(response, "Admin users request");
       setData(json);
     } catch (err: any) {
       setError(err?.message || "Admin users planning lookup failed.");
@@ -308,7 +329,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: createActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Create admin user route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Create admin user route did not return JSON." }));
       setCreateResult({ ...json, httpStatus: response.status });
       if (!response.ok || !json?.ok) {
         setCreateMessage(json?.error || `Create admin user request failed with HTTP ${response.status}.`);
@@ -347,7 +368,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: assignActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Assign role route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Assign role route did not return JSON." }));
       setAssignResult({ ...json, httpStatus: response.status });
       if (!response.ok || !json?.ok) {
         setAssignMessage(json?.error || `Assign role request failed with HTTP ${response.status}.`);
@@ -384,7 +405,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: removeActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Remove role route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Remove role route did not return JSON." }));
       setRemoveResult({ ...json, httpStatus: response.status });
       if (!response.ok || !json?.ok) {
         setRemoveMessage(json?.error || `Remove role request failed with HTTP ${response.status}.`);
@@ -424,7 +445,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: passwordResetActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Password reset route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Password reset route did not return JSON." }));
       setPasswordResetResult({ ...json, httpStatus: response.status });
       if (apply && json?.ok && json?.temporaryPassword && json?.temporaryPasswordOneTimeDisplay) {
         setPasswordResetOneTimePassword(String(json.temporaryPassword));
@@ -466,7 +487,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: lockoutActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Lock/unlock route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Lock/unlock route did not return JSON." }));
       setLockoutResult({ ...json, httpStatus: response.status });
       if (!response.ok || !json?.ok) {
         setLockoutMessage(json?.error || `Lock/unlock request failed with HTTP ${response.status}.`);
@@ -504,7 +525,7 @@ export default function AdminUsersPlanningPage() {
           actorEmail: overrideActorEmail,
         }),
       });
-      const json = await response.json().catch(() => ({ ok: false, error: "Permission override route did not return JSON." }));
+      const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Permission override route did not return JSON." }));
       setOverrideResult({ ...json, httpStatus: response.status });
       if (!response.ok || !json?.ok) {
         setOverrideMessage(json?.error || `Permission override request failed with HTTP ${response.status}.`);
