@@ -1,4 +1,5 @@
 "use client";
+import CreateTemplateMetadataShell from "../../../../components/templates/CreateTemplateMetadataShell";
 import TemplateDocxCompatibilityUpload from "../../../../components/templates/TemplateDocxCompatibilityUpload";
 
 import { useEffect, useMemo, useState } from "react";
@@ -250,6 +251,7 @@ export default function BuildTemplatePage() {
 
       
       <TemplateDocxCompatibilityUpload />
+      <CreateTemplateMetadataShell />
 <div style={{ margin: "-6px 0 16px" }}>
         <button
           type="button"
