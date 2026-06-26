@@ -300,6 +300,41 @@ export default function AdminUsersPlanningPage() {
     return Array.isArray(user?.roleKeys) && user.roleKeys.length ? user.roleKeys.join(", ") : "None";
   }
 
+  function adminRoleOptions(): any[] {
+    const roles = Array.isArray(data?.databasePreview?.roles)
+      ? data.databasePreview.roles
+      : Array.isArray(data?.roles)
+        ? data.roles
+        : [];
+    return roles.filter((role: any) => role && String(role?.status || "active").toLowerCase() === "active");
+  }
+
+  function roleOptionKey(role: any): string {
+    return String(role?.key || role?.roleKey || "").trim();
+  }
+
+  function roleOptionLabel(role: any): string {
+    const key = roleOptionKey(role);
+    const name = String(role?.name || role?.label || "").trim();
+    return name && name !== key ? `${name} (${key})` : key;
+  }
+
+  function editAssignableRoleOptions(): any[] {
+    const currentRoleKeys = new Set(Array.isArray(editUser?.roleKeys) ? editUser.roleKeys.map((roleKey: any) => String(roleKey)) : []);
+    return adminRoleOptions().filter((role: any) => {
+      const key = roleOptionKey(role);
+      return key && !currentRoleKeys.has(key);
+    });
+  }
+
+  function editRemovableRoleOptions(): any[] {
+    const currentRoleKeys = new Set(Array.isArray(editUser?.roleKeys) ? editUser.roleKeys.map((roleKey: any) => String(roleKey)) : []);
+    return adminRoleOptions().filter((role: any) => {
+      const key = roleOptionKey(role);
+      return key && currentRoleKeys.has(key);
+    });
+  }
+
   function twoFactorEnforcedForUser(user: any): boolean {
     return user?.twoFactorDisabled !== true && Boolean(user?.twoFactorPhone || user?.twoFactorPhoneMasked || user?.twoFactorRequired);
   }
@@ -989,8 +1024,26 @@ export default function AdminUsersPlanningPage() {
             <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Fax Number<input data-barsh-admin-users-edit-fax-number="true" value={editFaxNumber} onChange={(event) => setEditFaxNumber(event.target.value)} style={inputStyle} /></label>
             <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Signature Block Name<input data-barsh-admin-users-edit-signature-block-name="true" value={editSignatureBlockName} onChange={(event) => setEditSignatureBlockName(event.target.value)} style={inputStyle} /></label>
             <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>2FA Phone<input data-barsh-admin-users-edit-two-factor-phone="true" value={editTwoFactorPhone} onChange={(event) => setEditTwoFactorPhone(event.target.value)} style={inputStyle} /></label>
-            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Role to Assign<input data-barsh-admin-users-edit-role-assign="true" value={editRoleToAssign} onChange={(event) => setEditRoleToAssign(event.target.value)} style={inputStyle} placeholder="Optional role key" /></label>
-            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Role to Remove<input data-barsh-admin-users-edit-role-remove="true" value={editRoleToRemove} onChange={(event) => setEditRoleToRemove(event.target.value)} style={inputStyle} placeholder={`Current: ${roleLabelForUser(editUser)}`} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Role to Assign
+              <select data-barsh-admin-users-edit-role-assign-picklist="true" value={editRoleToAssign} onChange={(event) => setEditRoleToAssign(event.target.value)} style={inputStyle}>
+                <option value="">No role assignment</option>
+                {editAssignableRoleOptions().map((role: any) => {
+                  const key = roleOptionKey(role);
+                  return <option key={key} value={key}>{roleOptionLabel(role)}</option>;
+                })}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
+              Role to Remove
+              <select data-barsh-admin-users-edit-role-remove-picklist="true" value={editRoleToRemove} onChange={(event) => setEditRoleToRemove(event.target.value)} style={inputStyle}>
+                <option value="">No role removal</option>
+                {editRemovableRoleOptions().map((role: any) => {
+                  const key = roleOptionKey(role);
+                  return <option key={key} value={key}>{roleOptionLabel(role)}</option>;
+                })}
+              </select>
+            </label>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-locked="true" type="checkbox" checked={editLocked} onChange={(event) => setEditLocked(event.target.checked)} />Locked</label>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-inactive="true" type="checkbox" checked={editInactive} onChange={(event) => setEditInactive(event.target.checked)} />Inactive</label>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-two-factor-disabled="true" type="checkbox" checked={editTwoFactorDisabled} onChange={(event) => setEditTwoFactorDisabled(event.target.checked)} />2FA Disabled</label>
