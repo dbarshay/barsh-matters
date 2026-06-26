@@ -682,7 +682,8 @@
     "verify:template-builder-example-matter-20260600011-values": "node scripts/verify-template-builder-example-matter-20260600011-values.mjs",
     "verify:template-generation:phase1c-single-docx-baseline": "node scripts/verify-template-generation-phase1c-single-docx-baseline.mjs",
     "verify:template-generation-phase1d": "node scripts/verify-template-generation-phase1d-fresh-local-docx-reset.mjs",
-    "verify:template-generation-phase1e": "node scripts/verify-template-generation-phase1e-readiness-ui-cleanup.mjs"
+    "verify:template-generation-phase1e": "node scripts/verify-template-generation-phase1e-readiness-ui-cleanup.mjs",
+    "verify:template-generation-phase1f": "node scripts/verify-template-generation-phase1f-document-templates-page-component.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
