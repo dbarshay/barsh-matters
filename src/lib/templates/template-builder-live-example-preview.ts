@@ -361,6 +361,12 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{adversaryAttorney.city}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_city") : DASH,
     "{{adversaryAttorney.state}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_state") : DASH,
     "{{adversaryAttorney.zipcode}}": isLawsuitContext ? hiddenValue(adversaryRow, "hidden_zipcode") : DASH,
+    "{{signer.email}}": "info@brlfirm.com",
+    "{{signer.fax}}": "(516) 706-5055",
+    "{{signer.extension}}": "101",
+    "{{signer.displayName}}": "Selected Signer",
+    "{{signer.signatureName}}": "Selected Signer",
+    "{{signer.title}}": "Attorney",
     "{{adversary.fullAddressBlock}}": isLawsuitContext
       ? addressBlock(
           hiddenValue(adversaryRow, "hidden_street"),

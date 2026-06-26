@@ -63,6 +63,49 @@ export const TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS: TemplateBuilderFormatM
   "date:MM/DD/YYYY",
   "date:Month D, YYYY",
   "currency",
+  {
+    category: "Signer",
+    fieldLabel: "Signer email",
+    mergeField: "{{signer.email}}",
+    exampleOutput: "info@brlfirm.com",
+    aliases: ["selected signer email", "attorney email", "user email"],
+  },
+  {
+    category: "Signer",
+    fieldLabel: "Signer fax",
+    mergeField: "{{signer.fax}}",
+    exampleOutput: "(516) 706-5055",
+    aliases: ["selected signer fax", "attorney fax", "user fax"],
+  },
+  {
+    category: "Signer",
+    fieldLabel: "Signer extension",
+    mergeField: "{{signer.extension}}",
+    exampleOutput: "101",
+    aliases: ["selected signer extension", "attorney extension", "phone extension"],
+  },
+  {
+    category: "Signer",
+    fieldLabel: "Signer display name",
+    mergeField: "{{signer.displayName}}",
+    exampleOutput: "Selected Signer",
+    aliases: ["selected signer display name", "attorney display name", "user display name"],
+  },
+  {
+    category: "Signer",
+    fieldLabel: "Signer signature name",
+    mergeField: "{{signer.signatureName}}",
+    exampleOutput: "Selected Signer",
+    aliases: ["selected signer signature name", "signature block name", "attorney signature name"],
+  },
+  {
+    category: "Signer",
+    fieldLabel: "Signer title",
+    mergeField: "{{signer.title}}",
+    exampleOutput: "Attorney",
+    aliases: ["selected signer title", "attorney title", "user title"],
+  },
+
 ];
 
 export const TEMPLATE_BUILDER_STARTING_CATEGORIES: TemplateBuilderCategory[] = [
