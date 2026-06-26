@@ -217,6 +217,24 @@ export default function AdminUsersPlanningPage() {
   const [adminUsersAction, setAdminUsersAction] = useState<"none" | "create">("none");
   const [adminUsersRowBusy, setAdminUsersRowBusy] = useState(false);
   const [adminUsersRowMessage, setAdminUsersRowMessage] = useState("");
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhoneExtension, setEditPhoneExtension] = useState("");
+  const [editFaxNumber, setEditFaxNumber] = useState("");
+  const [editSignatureBlockName, setEditSignatureBlockName] = useState("");
+  const [editTwoFactorPhone, setEditTwoFactorPhone] = useState("");
+  const [editTwoFactorDisabled, setEditTwoFactorDisabled] = useState(false);
+  const [editTwoFactorPendingSetup, setEditTwoFactorPendingSetup] = useState(false);
+  const [editLocked, setEditLocked] = useState(false);
+  const [editInactive, setEditInactive] = useState(false);
+  const [editRoleToAssign, setEditRoleToAssign] = useState("");
+  const [editRoleToRemove, setEditRoleToRemove] = useState("");
+  const [editMessage, setEditMessage] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
 
 
   async function loadAdminUsersPlanning() {
@@ -300,6 +318,7 @@ export default function AdminUsersPlanningPage() {
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       cache: "no-store",
       body: JSON.stringify(body),
     });
@@ -312,6 +331,7 @@ export default function AdminUsersPlanningPage() {
     const response = await fetch(path, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       cache: "no-store",
       body: JSON.stringify(body),
     });
@@ -320,58 +340,80 @@ export default function AdminUsersPlanningPage() {
     return json;
   }
 
-  async function editAdminUserFromRow(user: any): Promise<void> {
-    const displayName = window.prompt("Display Name", String(user?.displayName || ""));
-    if (displayName === null) return;
-    const username = window.prompt("User Name", String(user?.username || ""));
-    if (username === null) return;
-    const phoneExtension = window.prompt("Phone Extension", String(user?.phoneExtension || ""));
-    if (phoneExtension === null) return;
-    const faxNumber = window.prompt("Fax Number", String(user?.faxNumber || ""));
-    if (faxNumber === null) return;
-    const signatureBlockName = window.prompt("Signature Block Name", String(user?.signatureBlockName || user?.displayName || ""));
-    if (signatureBlockName === null) return;
-    const roleToAssign = window.prompt("Role to assign while editing. Leave blank for no assignment.", "");
-    if (roleToAssign === null) return;
-    const roleToRemove = window.prompt(`Role to remove while editing. Current roles: ${roleLabelForUser(user)}. Leave blank for no removal.`, "");
-    if (roleToRemove === null) return;
+  function openEditAdminUserPanel(user: any): void {
+    setEditUser(user);
+    setEditFirstName(String(user?.firstName || ""));
+    setEditLastName(String(user?.lastName || ""));
+    setEditDisplayName(String(user?.displayName || ""));
+    setEditUsername(String(user?.username || ""));
+    setEditEmail(String(user?.email || ""));
+    setEditPhoneExtension(String(user?.phoneExtension || ""));
+    setEditFaxNumber(String(user?.faxNumber || ""));
+    setEditSignatureBlockName(String(user?.signatureBlockName || user?.displayName || ""));
+    setEditTwoFactorPhone(String(user?.twoFactorPhone || ""));
+    setEditTwoFactorDisabled(Boolean(user?.twoFactorDisabled));
+    setEditTwoFactorPendingSetup(Boolean(user?.twoFactorPendingSetup));
+    setEditLocked(Boolean(user?.locked));
+    setEditInactive(Boolean(user?.inactive));
+    setEditRoleToAssign("");
+    setEditRoleToRemove("");
+    setEditMessage("");
+    setAdminUsersRowMessage("");
+  }
+
+  function closeEditAdminUserPanel(): void {
+    setEditUser(null);
+    setEditMessage("");
+    setEditRoleToAssign("");
+    setEditRoleToRemove("");
+  }
+
+  async function saveEditAdminUserPanel(): Promise<void> {
+    if (!editUser) return;
     try {
-      setAdminUsersRowBusy(true);
-      setAdminUsersRowMessage(`Editing ${user.email}...`);
+      setEditBusy(true);
+      setEditMessage(`Saving ${editEmail}...`);
       await patchAdminUsersAction("/api/admin/users/signer-profile", {
         apply: true,
         actorEmail: createActorEmail,
-        userId: user.id,
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        displayName,
-        username,
-        email: user.email,
-        phoneExtension,
-        faxNumber,
-        signatureBlockName,
-        locked: Boolean(user.locked),
-        inactive: Boolean(user.inactive),
-        twoFactorPhone: user.twoFactorPhone || "",
-        twoFactorDisabled: Boolean(user.twoFactorDisabled),
-        twoFactorPendingSetup: Boolean(user.twoFactorPendingSetup),
+        userId: editUser.id,
+        firstName: editFirstName,
+        lastName: editLastName,
+        displayName: editDisplayName,
+        username: editUsername,
+        email: editEmail,
+        phoneExtension: editPhoneExtension,
+        faxNumber: editFaxNumber,
+        signatureBlockName: editSignatureBlockName,
+        locked: editLocked,
+        inactive: editInactive,
+        twoFactorPhone: editTwoFactorPhone,
+        twoFactorDisabled: editTwoFactorDisabled,
+        twoFactorPendingSetup: editTwoFactorPendingSetup,
       }, "Edit admin user");
-      const assignedRole = roleToAssign.trim();
-      const removedRole = roleToRemove.trim();
+
+      const assignedRole = editRoleToAssign.trim();
+      const removedRole = editRoleToRemove.trim();
+
       if (assignedRole) {
-        await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: user.email, roleKey: assignedRole, actorEmail: createActorEmail }, "Assign role from edit");
+        await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: editEmail, roleKey: assignedRole, actorEmail: createActorEmail }, "Assign role from edit");
       }
+
       if (removedRole) {
-        await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: user.email, roleKey: removedRole, actorEmail: createActorEmail }, "Remove role from edit");
+        await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: editEmail, roleKey: removedRole, actorEmail: createActorEmail }, "Remove role from edit");
       }
-      setAdminUsersRowMessage(`Edited ${user.email}${assignedRole ? `; assigned ${assignedRole}` : ""}${removedRole ? `; removed ${removedRole}` : ""}.`);
+
+      setAdminUsersRowMessage(`Saved ${editEmail}${assignedRole ? `; assigned ${assignedRole}` : ""}${removedRole ? `; removed ${removedRole}` : ""}.`);
+      closeEditAdminUserPanel();
       await loadAdminUsersPlanning();
     } catch (error: any) {
+      setEditMessage(error?.message || "Edit failed.");
       setAdminUsersRowMessage(error?.message || "Edit failed.");
     } finally {
-      setAdminUsersRowBusy(false);
+      setEditBusy(false);
     }
   }
+
 
   async function resetPasswordFromRow(user: any): Promise<void> {
     const reason = window.prompt(`Reason for resetting password for ${user.email}`, "Administrator password reset");
@@ -856,6 +898,37 @@ export default function AdminUsersPlanningPage() {
         
 
         
+        {editUser ? (<section data-barsh-admin-users-edit-panel="true" style={{ ...cardStyle, border: "1px solid #bfdbfe", boxShadow: "0 12px 26px rgba(30, 58, 138, 0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0 }}>Edit User</h2>
+            <button data-barsh-admin-users-edit-cancel-button="true" type="button" onClick={closeEditAdminUserPanel} disabled={editBusy} style={secondaryButtonStyle}>Cancel</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>First Name<input data-barsh-admin-users-edit-first-name="true" value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Last Name<input data-barsh-admin-users-edit-last-name="true" value={editLastName} onChange={(event) => setEditLastName(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Display Name<input data-barsh-admin-users-edit-display-name="true" value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>User Name<input data-barsh-admin-users-edit-username="true" value={editUsername} onChange={(event) => setEditUsername(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Email<input data-barsh-admin-users-edit-email="true" value={editEmail} onChange={(event) => setEditEmail(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Phone Extension<input data-barsh-admin-users-edit-phone-extension="true" value={editPhoneExtension} onChange={(event) => setEditPhoneExtension(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Fax Number<input data-barsh-admin-users-edit-fax-number="true" value={editFaxNumber} onChange={(event) => setEditFaxNumber(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Signature Block Name<input data-barsh-admin-users-edit-signature-block-name="true" value={editSignatureBlockName} onChange={(event) => setEditSignatureBlockName(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>2FA Phone<input data-barsh-admin-users-edit-two-factor-phone="true" value={editTwoFactorPhone} onChange={(event) => setEditTwoFactorPhone(event.target.value)} style={inputStyle} /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Role to Assign<input data-barsh-admin-users-edit-role-assign="true" value={editRoleToAssign} onChange={(event) => setEditRoleToAssign(event.target.value)} style={inputStyle} placeholder="Optional role key" /></label>
+            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>Role to Remove<input data-barsh-admin-users-edit-role-remove="true" value={editRoleToRemove} onChange={(event) => setEditRoleToRemove(event.target.value)} style={inputStyle} placeholder={`Current: ${roleLabelForUser(editUser)}`} /></label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-locked="true" type="checkbox" checked={editLocked} onChange={(event) => setEditLocked(event.target.checked)} />Locked</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-inactive="true" type="checkbox" checked={editInactive} onChange={(event) => setEditInactive(event.target.checked)} />Inactive</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-two-factor-disabled="true" type="checkbox" checked={editTwoFactorDisabled} onChange={(event) => setEditTwoFactorDisabled(event.target.checked)} />2FA Disabled</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 850 }}><input data-barsh-admin-users-edit-two-factor-pending-setup="true" type="checkbox" checked={editTwoFactorPendingSetup} onChange={(event) => setEditTwoFactorPendingSetup(event.target.checked)} />2FA Pending Setup</label>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
+            <button data-barsh-admin-users-edit-save-button="true" type="button" onClick={() => void saveEditAdminUserPanel()} disabled={editBusy} style={{ ...primaryButtonStyle, opacity: editBusy ? 0.7 : 1 }}>{editBusy ? "Saving..." : "Save User"}</button>
+          </div>
+
+          {editMessage ? <p data-barsh-admin-users-edit-message="true" style={{ margin: "12px 0 0", color: editMessage.toLowerCase().includes("failed") || editMessage.toLowerCase().includes("unauthorized") ? "#991b1b" : "#166534", fontWeight: 900 }}>{editMessage}</p> : null}
+        </section>) : null}
+
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["Display Name", "User Name", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
@@ -873,7 +946,7 @@ export default function AdminUsersPlanningPage() {
                   <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{formatAdminUserDate(user.lastLoginAt)}</td>
                   <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <button data-barsh-admin-users-edit-row-button="true" type="button" onClick={() => void editAdminUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Edit</button>
+                      <button data-barsh-admin-users-edit-row-button="true" type="button" onClick={() => openEditAdminUserPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Edit</button>
                       <button data-barsh-admin-users-reset-password-row-button="true" type="button" onClick={() => void resetPasswordFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Reset Password</button>
                       {twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => void activateTwoFactorFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
                       <button data-barsh-admin-users-lock-row-button="true" type="button" onClick={() => void lockUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>{active ? "Lock" : "Unlock"}</button>
