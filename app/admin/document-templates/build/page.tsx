@@ -278,16 +278,13 @@ export default function BuildTemplatePage() {
       <section style={{ marginBottom: "18px", padding: "14px", border: "1px solid #cbd5e1", borderRadius: "12px", background: "#ffffff" }}>
         <div style={{ marginBottom: "10px", fontWeight: 800, color: "#0f172a" }}>Formats for copy</div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format, formatIndex) => {
-            const rawFormatValue = typeof format === "string" ? format : String((format as any)?.value || (format as any)?.modifier || (format as any)?.format || (format as any)?.id || (format as any)?.key || (format as any)?.label || "");
-            const rawFormatLabel = typeof format === "string" ? formatLabel(format) : String((format as any)?.label || (format as any)?.modifier || (format as any)?.format || (format as any)?.value || (format as any)?.id || (format as any)?.key || "");
-            const formatValue = rawFormatValue.trim() || "format-" + formatIndex;
-            const formatLabelText = rawFormatLabel.trim() || formatValue;
-            const formatReactKey = formatValue + "-" + formatIndex;
+          {TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format) => {
+            const formatValue = String(format).trim();
+            const formatLabelText = formatLabel(formatValue);
             const checked = selectedFormats.includes(formatValue);
             return (
               <button
-                key={formatReactKey}
+                key={"format-modifier-" + formatValue}
                 type="button"
                 onClick={() => toggleFormat(formatValue)}
                 aria-pressed={checked}

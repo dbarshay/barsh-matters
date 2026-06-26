@@ -8,28 +8,28 @@ const failures = [];
 for (const forbidden of [
   "key={format}",
   "key={formatValue || formatLabelText}",
+  "key={formatReactKey}",
   "selectedFormats.includes(format)",
   "toggleFormat(format)",
-  "TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format) =>",
-]) {
-  if (page.includes(forbidden)) failures.push(`forbidden fragile format render snippet remains: ${forbidden}`);
-}
-
-for (const required of [
   "TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format, formatIndex) =>",
   "rawFormatValue",
   "rawFormatLabel",
-  "?.modifier",
-  "?.id",
-  "?.key",
-  "const formatValue = rawFormatValue.trim() || \"format-\" + formatIndex;",
-  "const formatLabelText = rawFormatLabel.trim() || formatValue;",
-  "const formatReactKey = formatValue + \"-\" + formatIndex;",
-  "key={formatReactKey}",
+  "formatReactKey",
+  "format-\" + formatIndex",
+]) {
+  if (page.includes(forbidden)) failures.push(`fragile/synthetic format render snippet remains: ${forbidden}`);
+}
+
+for (const required of [
+  "TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format) =>",
+  "const formatValue = String(format).trim();",
+  "const formatLabelText = formatLabel(formatValue);",
+  "key={\"format-modifier-\" + formatValue}",
   "selectedFormats.includes(formatValue)",
   "onClick={() => toggleFormat(formatValue)}",
+  "{checked ? \"✓ \" : \"\"}{formatLabelText}",
 ]) {
-  if (!page.includes(required)) failures.push(`missing hardened format render snippet: ${required}`);
+  if (!page.includes(required)) failures.push(`missing final nonempty format key snippet: ${required}`);
 }
 
 if (page.includes("<option key={category} value={category}>{category}</option>")) failures.push("raw category option key regression detected");
@@ -41,4 +41,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS: Phase 1N format modifier buttons use index-backed non-empty keys and normalized values.");
+console.log("PASS: Phase 1N verifier accepts final Phase 1O non-empty string format keys.");
