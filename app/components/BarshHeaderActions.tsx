@@ -57,20 +57,15 @@ export default function BarshHeaderActions({ onAdministratorClick }: BarshHeader
         <span>Court Calendar</span>
       </a>
 
-      {onAdministratorClick ? (
-        <button
-          type="button"
-          onClick={onAdministratorClick}
-          title="Administrator functions require password access."
-          style={baseActionStyle}
-        >
-          {administratorContent}
-        </button>
-      ) : (
-        <a href="/admin" title="Open Administrator Home." style={baseActionStyle}>
-          {administratorContent}
-        </a>
-      )}
+      <a
+        href="/admin"
+        onClick={onAdministratorClick}
+        title="Open Administrator Home."
+        style={baseActionStyle}
+        data-barsh-header-administrator-link="true"
+      >
+        {administratorContent}
+      </a>
     </nav>
   );
 }

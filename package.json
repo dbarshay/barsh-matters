@@ -702,7 +702,8 @@
     "verify:admin-users-workflow-phase-m-2fa-setup-panel": "node scripts/verify-admin-users-workflow-phase-m-2fa-setup-panel.mjs",
     "verify:admin-users-workflow-phase-n-2fa-phone-format": "node scripts/verify-admin-users-workflow-phase-n-2fa-phone-format.mjs",
     "verify:admin-users-workflow-phase-o-write-actor-resolution": "node scripts/verify-admin-users-workflow-phase-o-write-actor-resolution.mjs",
-    "verify:admin-users-workflow-phase-p-2fa-status-labels": "node scripts/verify-admin-users-workflow-phase-p-2fa-status-labels.mjs"
+    "verify:admin-users-workflow-phase-p-2fa-status-labels": "node scripts/verify-admin-users-workflow-phase-p-2fa-status-labels.mjs",
+    "verify:admin-users-workflow-phase-q-administrator-header-link": "node scripts/verify-admin-users-workflow-phase-q-administrator-header-link.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
