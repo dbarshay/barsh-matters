@@ -345,6 +345,18 @@ export default function AdminUsersPlanningPage() {
     return user?.twoFactorDisabled !== true && Boolean(user?.twoFactorPhone || user?.twoFactorPhoneMasked || user?.twoFactorRequired);
   }
 
+  function adminUsersWriteActorEmail(): string {
+    const activeOwner = dbUsers.find((user: any) =>
+      user?.status === "active" &&
+      user?.locked !== true &&
+      user?.inactive !== true &&
+      Array.isArray(user?.roleKeys) &&
+      user.roleKeys.includes("owner_admin") &&
+      String(user?.email || "").trim()
+    );
+    return String(activeOwner?.email || createActorEmail || "").trim().toLowerCase();
+  }
+
   function openCreateUserAction(): void {
     pushAdminUsersActionHistory("create-user");
     setAdminUsersAction("create");
@@ -507,7 +519,7 @@ export default function AdminUsersPlanningPage() {
       setEditMessage(`Saving ${editEmail}...`);
       await patchAdminUsersAction("/api/admin/users/signer-profile", {
         apply: true,
-        actorEmail: createActorEmail,
+        actorEmail: adminUsersWriteActorEmail(),
         userId: editUser.id,
         firstName: editFirstName,
         lastName: editLastName,
@@ -528,11 +540,11 @@ export default function AdminUsersPlanningPage() {
       const removedRole = editRoleToRemove.trim();
 
       if (assignedRole) {
-        await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: editEmail, roleKey: assignedRole, actorEmail: createActorEmail }, "Assign role from edit");
+        await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: editEmail, roleKey: assignedRole, actorEmail: adminUsersWriteActorEmail() }, "Assign role from edit");
       }
 
       if (removedRole) {
-        await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: editEmail, roleKey: removedRole, actorEmail: createActorEmail }, "Remove role from edit");
+        await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: editEmail, roleKey: removedRole, actorEmail: adminUsersWriteActorEmail() }, "Remove role from edit");
       }
 
       setAdminUsersRowMessage(`Saved ${editEmail}${assignedRole ? `; assigned ${assignedRole}` : ""}${removedRole ? `; removed ${removedRole}` : ""}.`);
@@ -558,7 +570,7 @@ export default function AdminUsersPlanningPage() {
     if (!reason) return;
     try {
       setAdminUsersRowBusy(true);
-      const json = await postAdminUsersAction("/api/admin/users/password-reset", { apply: true, targetEmail: user.email, reason, actorEmail: createActorEmail }, "Password reset");
+      const json = await postAdminUsersAction("/api/admin/users/password-reset", { apply: true, targetEmail: user.email, reason, actorEmail: adminUsersWriteActorEmail() }, "Password reset");
       if (json?.temporaryPassword && json?.temporaryPasswordOneTimeDisplay) {
         pushAdminUsersActionHistory("password-reset-one-time");
         setPasswordResetOneTimePassword(String(json.temporaryPassword));
@@ -602,7 +614,7 @@ export default function AdminUsersPlanningPage() {
       setTwoFactorSetupMessage(`Starting 2FA setup for ${twoFactorSetupUser.email}...`);
       await patchAdminUsersAction("/api/admin/users/signer-profile", {
         apply: true,
-        actorEmail: createActorEmail,
+        actorEmail: adminUsersWriteActorEmail(),
         userId: twoFactorSetupUser.id,
         firstName: twoFactorSetupUser.firstName || "",
         lastName: twoFactorSetupUser.lastName || "",
@@ -642,7 +654,7 @@ export default function AdminUsersPlanningPage() {
     if (!reason) return;
     try {
       setAdminUsersRowBusy(true);
-      await postAdminUsersAction("/api/admin/users/lockout", { apply: true, targetEmail: user.email, lockoutAction, reason, actorEmail: createActorEmail }, "Lock user");
+      await postAdminUsersAction("/api/admin/users/lockout", { apply: true, targetEmail: user.email, lockoutAction, reason, actorEmail: adminUsersWriteActorEmail() }, "Lock user");
       setAdminUsersRowMessage(`${lockoutAction === "lock" ? "Locked" : "Unlocked"} ${user.email}.`);
       await loadAdminUsersPlanning();
     } catch (error: any) {
@@ -671,7 +683,7 @@ export default function AdminUsersPlanningPage() {
     if (!roleKey) return;
     try {
       setAdminUsersRowBusy(true);
-      await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: user.email, roleKey, actorEmail: createActorEmail }, "Assign role");
+      await postAdminUsersAction("/api/admin/users/assign-role", { apply: true, targetEmail: user.email, roleKey, actorEmail: adminUsersWriteActorEmail() }, "Assign role");
       setAdminUsersRowMessage(`Assigned ${roleKey} to ${user.email}.`);
       await loadAdminUsersPlanning();
     } catch (error: any) {
@@ -687,7 +699,7 @@ export default function AdminUsersPlanningPage() {
     if (!roleKey) return;
     try {
       setAdminUsersRowBusy(true);
-      await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: user.email, roleKey, actorEmail: createActorEmail }, "Remove role");
+      await postAdminUsersAction("/api/admin/users/remove-role", { apply: true, targetEmail: user.email, roleKey, actorEmail: adminUsersWriteActorEmail() }, "Remove role");
       setAdminUsersRowMessage(`Removed ${roleKey} from ${user.email}.`);
       await loadAdminUsersPlanning();
     } catch (error: any) {
@@ -737,7 +749,7 @@ export default function AdminUsersPlanningPage() {
           twoFactorPendingSetup: createTwoFactorPendingSetup,
           status: createInactive ? "inactive" : createStatus,
           notes: createNotes,
-          actorEmail: createActorEmail,
+          actorEmail: adminUsersWriteActorEmail(),
         }),
       });
       const json = await readAdminUsersJsonResponse(response, "Admin users request").catch(() => ({ ok: false, error: "Create admin user route did not return JSON." }));
