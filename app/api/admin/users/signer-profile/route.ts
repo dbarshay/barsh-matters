@@ -70,6 +70,25 @@ async function requireOwnerAdminActor(actorEmail: string) {
   });
 }
 
+async function activeBootstrapOwnerAdminCount(): Promise<number> {
+  return prisma.adminUser.count({
+    where: {
+      status: "active",
+      bootstrapSafe: true,
+      locked: false,
+      inactive: false,
+      roles: {
+        some: {
+          role: {
+            key: "owner_admin",
+            status: "active",
+          },
+        },
+      },
+    },
+  });
+}
+
 function profileSnapshot(user: {
   firstName: string | null;
   lastName: string | null;
@@ -148,6 +167,7 @@ export async function PATCH(req: NextRequest) {
         id: true,
         email: true,
         status: true,
+        bootstrapSafe: true,
         firstName: true,
         lastName: true,
         displayName: true,
@@ -209,6 +229,30 @@ export async function PATCH(req: NextRequest) {
       if (duplicateUsername) {
         return NextResponse.json({ ok: false, error: "Another admin user already has that username." }, { status: 409 });
       }
+    }
+
+    const targetIsSoleBootstrapOwner =
+      existing.bootstrapSafe === true &&
+      existing.status === "active" &&
+      existing.locked === false &&
+      existing.inactive === false &&
+      (await activeBootstrapOwnerAdminCount()) <= 1;
+
+    if (
+      targetIsSoleBootstrapOwner &&
+      payload.twoFactorDisabled === false &&
+      payload.twoFactorPendingSetup === false &&
+      Boolean(payload.twoFactorPhone)
+    ) {
+      return NextResponse.json({
+        ok: false,
+        action: "admin-user-signer-profile-update",
+        mode: apply ? "apply-blocked" : "preview-blocked",
+        error: "Sole bootstrapSafe owner_admin cannot be moved directly into enforced 2FA. Start with pending setup and verify recovery before enforcement.",
+        lockoutProtection: true,
+        soleBootstrapOwnerProtection: true,
+        targetEmail: existing.email,
+      }, { status: 409 });
     }
 
     const before = profileSnapshot(existing);

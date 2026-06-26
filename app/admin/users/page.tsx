@@ -586,9 +586,10 @@ export default function AdminUsersPlanningPage() {
         inactive: Boolean(user.inactive),
         twoFactorPhone: phone,
         twoFactorDisabled: false,
-        twoFactorPendingSetup: false,
+        twoFactorPendingSetup: true,
       }, "Activate 2FA");
       setAdminUsersRowMessage(`2FA enforced for ${user.email}.`);
+      setAdminUsersRowMessage(`2FA setup started for ${user.email}. Complete and verify setup before treating it as enforced.`);
       await loadAdminUsersPlanning();
     } catch (error: any) {
       setAdminUsersRowMessage(error?.message || "2FA activation failed.");
