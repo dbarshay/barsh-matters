@@ -14,9 +14,9 @@ type SignedAdminGateCookie = {
   identity?: AdminIdentityCookieInput | null;
 };
 
-export type AdminIdentityCookieInput = { id: string; email: string; username: string | null; };
+export type AdminIdentityCookieInput = { id: string; email: string; username: string | null; roleKeys?: string[]; };
 export type BoundAdminIdentityCookie = AdminIdentityCookieInput & { issuedAt: number; source: "owner-username-password"; };
-export type AdminSessionIdentityDiagnostics = { authenticated: boolean; identityBound: boolean; id: string | null; email: string | null; username: string | null; source: "none" | "signed-cookie"; legacyGenericAdminSession: boolean; plannedIdentityCookieName: typeof ADMIN_IDENTITY_COOKIE_NAME; note: string; };
+export type AdminSessionIdentityDiagnostics = { authenticated: boolean; identityBound: boolean; id: string | null; email: string | null; username: string | null; roleKeys: string[]; source: "none" | "signed-cookie"; legacyGenericAdminSession: boolean; plannedIdentityCookieName: typeof ADMIN_IDENTITY_COOKIE_NAME; note: string; };
 
 export function cleanAdminAuthValue(value: unknown): string { return String(value ?? "").trim(); }
 
@@ -52,6 +52,7 @@ function createSignedAdminGateCookieValue(identity?: AdminIdentityCookieInput | 
         id: cleanAdminAuthValue(identity.id),
         email: cleanAdminEmailValue(identity.email),
         username: cleanAdminAuthValue(identity.username) || null,
+        roleKeys: Array.isArray(identity.roleKeys) ? identity.roleKeys.map(cleanAdminAuthValue).filter(Boolean).sort() : [],
       }
     : null;
 
@@ -102,6 +103,7 @@ function readSignedAdminGateCookie(value: unknown): SignedAdminGateCookie | null
             id: cleanAdminAuthValue(parsed.identity.id),
             email: cleanAdminEmailValue(parsed.identity.email),
             username: cleanAdminAuthValue(parsed.identity.username) || null,
+            roleKeys: Array.isArray(parsed.identity.roleKeys) ? parsed.identity.roleKeys.map(cleanAdminAuthValue).filter(Boolean).sort() : [],
           }
         : null,
     };
@@ -111,7 +113,7 @@ function readSignedAdminGateCookie(value: unknown): SignedAdminGateCookie | null
 }
 
 export function createAdminIdentityCookieValue(identity: AdminIdentityCookieInput): string {
-  const payload: BoundAdminIdentityCookie = { id: cleanAdminAuthValue(identity.id), email: cleanAdminEmailValue(identity.email), username: cleanAdminAuthValue(identity.username) || null, issuedAt: Date.now(), source: "owner-username-password" };
+  const payload: BoundAdminIdentityCookie = { id: cleanAdminAuthValue(identity.id), email: cleanAdminEmailValue(identity.email), username: cleanAdminAuthValue(identity.username) || null, roleKeys: Array.isArray(identity.roleKeys) ? identity.roleKeys.map(cleanAdminAuthValue).filter(Boolean).sort() : [], issuedAt: Date.now(), source: "owner-username-password" };
   if (!payload.id || !isLikelyAdminEmail(payload.email)) return "";
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = signAdminIdentityPayload(encodedPayload);
@@ -130,7 +132,7 @@ export function readSignedAdminIdentityCookie(value: unknown): BoundAdminIdentit
     if (!parsed || parsed.source !== "owner-username-password") return null;
     if (!cleanAdminAuthValue(parsed.id)) return null;
     if (!isLikelyAdminEmail(parsed.email)) return null;
-    return { id: cleanAdminAuthValue(parsed.id), email: cleanAdminEmailValue(parsed.email), username: cleanAdminAuthValue(parsed.username) || null, issuedAt: Number(parsed.issuedAt) || 0, source: "owner-username-password" };
+    return { id: cleanAdminAuthValue(parsed.id), email: cleanAdminEmailValue(parsed.email), username: cleanAdminAuthValue(parsed.username) || null, roleKeys: Array.isArray(parsed.roleKeys) ? parsed.roleKeys.map(cleanAdminAuthValue).filter(Boolean).sort() : [], issuedAt: Number(parsed.issuedAt) || 0, source: "owner-username-password" };
   } catch { return null; }
 }
 

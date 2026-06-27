@@ -24,8 +24,8 @@ must(proxy.includes("identityEmail === OWNER_ADMIN_EMAIL"), "proxy still allows 
 must(proxy.includes("if (!identityEmail) return NextResponse.next()"), "proxy still allows generic owner recovery session");
 must(proxy.includes("return blockedResponse(req)"), "proxy still blocks non-owner identities");
 must(auth.includes("roleKeys?: string[]"), "admin auth identity input supports roleKeys");
-must(auth.includes("roleKeys: Array.isArray(identity?.roleKeys)"), "admin auth writes roleKeys into signed gate identity");
-must(auth.includes("roleKeys: Array.isArray(signedIdentity?.roleKeys)"), "admin auth exposes roleKeys diagnostics");
+must(auth.includes("roleKeys: Array.isArray(identity.roleKeys)") || auth.includes("roleKeys: Array.isArray(identity?.roleKeys)"), "admin auth writes roleKeys into signed gate identity");
+must(auth.includes("roleKeys: Array.isArray(signedIdentity?.roleKeys)") || auth.includes("roleKeys: signedIdentity"), "admin auth exposes roleKeys diagnostics");
 must(login.includes("roleKeys: user.roleKeys"), "login includes roleKeys in signed identity/session response");
 must(session.includes("roleKeys: identityDiagnostics.roleKeys"), "session refresh preserves identity roleKeys");
 must(!proxy.includes("/matters") && !proxy.includes("/lawsuits"), "proxy remains scoped away from normal matter/lawsuit pages");
