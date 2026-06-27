@@ -1,0 +1,17 @@
+{
+  "phase": "admin-users-phase-w4-read-only-simulator-visibility",
+  "basedOnPhaseW3": "admin-users-phase-w3-dry-run-permission-simulator",
+  "runtimeEnforcementChanged": false,
+  "uiHidingActive": false,
+  "backendRouteBlockingActive": false,
+  "databaseMutated": false,
+  "visibleInAdminUsers": true,
+  "dryRunOnly": true,
+  "summaries": [
+    { "role": "Owner", "allowed": 201, "blocked": 0, "adminBlocks": 0, "paymentBlocks": 0, "mutationBlocks": 0 },
+    { "role": "Administrator", "allowed": 169, "blocked": 32, "adminBlocks": 32, "paymentBlocks": 0, "mutationBlocks": 32 },
+    { "role": "Full User", "allowed": 134, "blocked": 67, "adminBlocks": 67, "paymentBlocks": 12, "mutationBlocks": 67 },
+    { "role": "Basic User", "allowed": 112, "blocked": 89, "adminBlocks": 67, "paymentBlocks": 16, "mutationBlocks": 89 },
+    { "role": "View Only", "allowed": 20, "blocked": 181, "adminBlocks": 67, "paymentBlocks": 16, "mutationBlocks": 181 }
+  ]
+}

@@ -1563,6 +1563,58 @@ export default function AdminUsersPlanningPage() {
             </div>
           </div>
         </section>
+
+        <section data-barsh-admin-users-phase-w4-simulator-visibility="true" style={{ ...cardStyle, display: "grid", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18 }}>Permission Simulator Preview</h2>
+              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                Read-only dry-run summary from the current role coverage and route classification. Permission enforcement is not active yet.
+              </p>
+            </div>
+            <span data-barsh-admin-users-phase-w4-dry-run-badge="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>
+              Dry run only
+            </span>
+          </div>
+
+          <div data-barsh-admin-users-phase-w4-simulator-summary="true" style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "#475569" }}>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Role</th>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Allowed</th>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Blocked</th>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Admin Blocks</th>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Payment Blocks</th>
+                  <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Mutation Blocks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { role: "Owner", allowed: 201, blocked: 0, admin: 0, payment: 0, mutation: 0 },
+                  { role: "Administrator", allowed: 169, blocked: 32, admin: 32, payment: 0, mutation: 32 },
+                  { role: "Full User", allowed: 134, blocked: 67, admin: 67, payment: 12, mutation: 67 },
+                  { role: "Basic User", allowed: 112, blocked: 89, admin: 67, payment: 16, mutation: 89 },
+                  { role: "View Only", allowed: 20, blocked: 181, admin: 67, payment: 16, mutation: 181 },
+                ].map((row) => (
+                  <tr key={row.role} data-barsh-admin-users-phase-w4-simulator-row="true">
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", fontWeight: 900 }}>{row.role}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", color: "#166534", fontWeight: 900 }}>{row.allowed}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", color: row.blocked ? "#991b1b" : "#166534", fontWeight: 900 }}>{row.blocked}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.admin}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.payment}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.mutation}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p data-barsh-admin-users-phase-w4-no-enforcement-note="true" style={{ margin: 0, color: "#64748b", lineHeight: 1.45, fontSize: 13 }}>
+            These numbers are planning output only. They do not hide buttons, block routes, change sessions, or modify database permissions.
+          </p>
+        </section>
+
 </main>
   );
 }
