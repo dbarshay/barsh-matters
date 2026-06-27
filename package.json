@@ -712,7 +712,8 @@
     "verify:admin-users-workflow-phase-v1-final-role-model": "node scripts/verify-admin-users-workflow-phase-v1-final-role-model.mjs",
     "verify:admin-users-workflow-phase-v2-final-role-ui-card-planning": "node scripts/verify-admin-users-workflow-phase-v2-final-role-ui-card-planning.mjs",
     "apply:admin-users-phase-v3-final-role-db-seed": "node scripts/apply-admin-users-phase-v3-final-role-db-seed.mjs",
-    "verify:admin-users-workflow-phase-v3-final-role-db-seed": "node scripts/verify-admin-users-workflow-phase-v3-final-role-db-seed.mjs"
+    "verify:admin-users-workflow-phase-v3-final-role-db-seed": "node scripts/verify-admin-users-workflow-phase-v3-final-role-db-seed.mjs",
+    "verify:admin-users-workflow-phase-v4a-card-grant-schema-inspection": "node scripts/verify-admin-users-workflow-phase-v4a-card-grant-schema-inspection.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

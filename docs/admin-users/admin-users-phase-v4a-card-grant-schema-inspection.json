@@ -1,0 +1,28 @@
+{
+  "phase": "admin-users-phase-v4a-card-grant-schema-inspection",
+  "runtimeEnforcementChanged": false,
+  "databaseMutated": false,
+  "sessionBehaviorChanged": false,
+  "inspectedModels": {
+    "AdminUser": true,
+    "AdminRole": true,
+    "AdminRolePermission": true,
+    "AdminUserRole": true,
+    "AdminUserPermissionOverride": true
+  },
+  "adminCardGrantKeys": [
+    "admin.card.usersRoles",
+    "admin.card.permissionsReview",
+    "admin.card.auditHistory",
+    "admin.card.documentTemplates",
+    "admin.card.referenceData",
+    "admin.card.claimIndex",
+    "admin.card.ticklers",
+    "admin.card.clientsBilling",
+    "admin.card.backupRestore",
+    "admin.card.readinessDashboard",
+    "admin.card.documentReadiness",
+    "admin.card.lawsuitCleanup"
+  ],
+  "next": "Use AdminUserPermissionOverride to add Administrator admin-card grant persistence in Phase V4B without enabling runtime enforcement."
+}
