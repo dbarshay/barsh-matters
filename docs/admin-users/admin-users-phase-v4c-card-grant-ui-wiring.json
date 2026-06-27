@@ -1,0 +1,10 @@
+{
+  "phase": "admin-users-phase-v4c-card-grant-ui-wiring",
+  "runtimeEnforcementChanged": false,
+  "sessionBehaviorChanged": false,
+  "uiWiresCardGrantRoute": true,
+  "route": "/api/admin/users/card-grants",
+  "previewBeforeApplyAvailable": true,
+  "ownerUsersRemainAllCards": true,
+  "next": "Smoke-test Administrator role assignment and selected card-grant persistence."
+}

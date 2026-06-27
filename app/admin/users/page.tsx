@@ -143,6 +143,20 @@ function adminUsersPhase12TwoFactorStatusLabel(user: {
   return "Enabled";
 }
 
+function adminUsersPhaseV4CNormalizeGrantKeys(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.map((entry) => String(entry || "").trim()).filter(Boolean))).sort();
+}
+
+function adminUsersPhaseV4CToggleGrantKey(keys: string[], key: string) {
+  const cleanKey = String(key || "").trim();
+  if (!cleanKey) return keys;
+  const set = new Set(keys);
+  if (set.has(cleanKey)) set.delete(cleanKey);
+  else set.add(cleanKey);
+  return Array.from(set).sort();
+}
+
 async function readAdminUsersJsonResponse(response: Response, label: string) {
   const text = await response.text();
   if (!text.trim()) {
@@ -233,6 +247,10 @@ export default function AdminUsersPlanningPage() {
   const [editInactive, setEditInactive] = useState(false);
   const [editRoleToAssign, setEditRoleToAssign] = useState("");
   const [editRoleToRemove, setEditRoleToRemove] = useState("");
+  const [editAdminCardGrantKeys, setEditAdminCardGrantKeys] = useState<string[]>([]);
+  const [editAdminCardGrantBusy, setEditAdminCardGrantBusy] = useState(false);
+  const [editAdminCardGrantMessage, setEditAdminCardGrantMessage] = useState("");
+  const [editAdminCardGrantResult, setEditAdminCardGrantResult] = useState<any>(null);
   const [editMessage, setEditMessage] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [editNeedsReauth, setEditNeedsReauth] = useState(false);
@@ -247,6 +265,12 @@ export default function AdminUsersPlanningPage() {
   const [twoFactorVerifyBusy, setTwoFactorVerifyBusy] = useState(false);
   const [twoFactorSetupChallengeCode, setTwoFactorSetupChallengeCode] = useState("");
 
+
+  useEffect(() => {
+    setEditAdminCardGrantKeys(adminUsersPhaseV4CNormalizeGrantKeys(editUser?.adminCardGrantKeys));
+    setEditAdminCardGrantMessage("");
+    setEditAdminCardGrantResult(null);
+  }, [editUser?.id]);
 
   async function loadAdminUsersPlanning() {
     try {
@@ -1028,6 +1052,38 @@ export default function AdminUsersPlanningPage() {
 
 
 
+  async function saveEditAdminCardGrants(apply: boolean) {
+    if (!editUser) return;
+    setEditAdminCardGrantBusy(true);
+    setEditAdminCardGrantMessage("");
+    setEditAdminCardGrantResult(null);
+
+    try {
+      const response = await fetch("/api/admin/users/card-grants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apply,
+          actorEmail: createActorEmail,
+          targetEmail: editEmail || editUser.email,
+          grantPermissionKeys: editAdminCardGrantKeys,
+          reason: "Administrator Admin-card grants updated from Admin Users edit panel.",
+        }),
+      });
+      const json = await readAdminUsersJsonResponse(response, apply ? "Save Administrator Admin-card grants" : "Preview Administrator Admin-card grants");
+      setEditAdminCardGrantResult(json);
+      setEditAdminCardGrantMessage(apply ? "Administrator Admin-card grants saved." : "Administrator Admin-card grant preview ready.");
+      if (apply) {
+        await loadAdminUsersPlanning();
+      }
+    } catch (err: any) {
+      setEditAdminCardGrantMessage(err?.message || "Administrator Admin-card grant request failed.");
+    } finally {
+      setEditAdminCardGrantBusy(false);
+    }
+  }
+
+
   return (
     <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" data-barsh-admin-users-audit-history-back-cache-bust="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
@@ -1044,7 +1100,7 @@ export default function AdminUsersPlanningPage() {
             <button data-barsh-admin-users-create-top-button="true" type="button" onClick={openCreateUserAction} style={primaryButtonStyle}>Create User</button>
           </div>
           <div data-barsh-admin-users-phase-v2-final-role-model-note="true" style={{ width: "100%", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 12, padding: 10, fontWeight: 850 }}>
-            Phase V2: final five-role model is visible for planning. Administrator Admin-card checkboxes are read-only planning controls; they do not save grants or enable enforcement yet.
+            Phase V4C: final five-role model is visible. Administrator Admin-card grants can now be previewed and saved, but runtime enforcement is still disabled.
           </div>
           {adminUsersRowMessage ? <div data-barsh-admin-users-row-action-message="true" style={{ width: "100%", color: adminUsersRowMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>{adminUsersRowMessage}</div> : null}
         </section>
@@ -1215,7 +1271,7 @@ export default function AdminUsersPlanningPage() {
                   <div>
                     <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Administrator Admin Cards</h3>
                     <p style={{ margin: 0, color: "#1e3a8a", lineHeight: 1.45, fontWeight: 800 }}>
-                      Phase V2 planning only. These checkboxes show the future card-by-card Administrator model. They do not save card grants, change roles, or enable runtime enforcement yet.
+                      Phase V4C: these checkboxes save Administrator Admin-card grants through the guarded card-grants route. Runtime enforcement remains disabled until a later activation phase.
                     </p>
                   </div>
                   <span data-barsh-admin-users-phase-v2-admin-card-mode="true" style={{ border: "1px solid #93c5fd", background: "#ffffff", color: "#1e3a8a", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>
@@ -1224,11 +1280,19 @@ export default function AdminUsersPlanningPage() {
                 </div>
                 <div data-barsh-admin-users-phase-v2-admin-card-checkboxes="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10, marginTop: 12 }}>
                   {finalAdminCardOptions.map((card: any) => {
-                    const checked = editUserIsOwnerPlanning;
+                    const checked = editUserIsOwnerPlanning || editAdminCardGrantKeys.includes(card.grantPermissionKey);
+                    const disabled = editUserIsOwnerPlanning || editAdminCardGrantBusy;
                     return (
-                      <label key={card.key} data-barsh-admin-users-phase-v2-admin-card-option={card.key} style={{ display: "grid", gap: 4, border: "1px solid #bfdbfe", background: "#ffffff", borderRadius: 12, padding: 10 }}>
+                      <label key={card.key} data-barsh-admin-users-phase-v2-admin-card-option={card.key} data-barsh-admin-users-phase-v4c-admin-card-option={card.key} style={{ display: "grid", gap: 4, border: "1px solid #bfdbfe", background: "#ffffff", borderRadius: 12, padding: 10 }}>
                         <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 900 }}>
-                          <input type="checkbox" checked={checked} readOnly disabled data-barsh-admin-users-phase-v2-admin-card-checkbox="true" />
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={() => setEditAdminCardGrantKeys((keys) => adminUsersPhaseV4CToggleGrantKey(keys, card.grantPermissionKey))}
+                            data-barsh-admin-users-phase-v2-admin-card-checkbox="true"
+                            data-barsh-admin-users-phase-v4c-admin-card-checkbox="true"
+                          />
                           {card.label}
                         </span>
                         <span style={{ fontFamily: "monospace", color: "#475569", fontSize: 12 }}>{card.grantPermissionKey}</span>
@@ -1238,6 +1302,32 @@ export default function AdminUsersPlanningPage() {
                     );
                   })}
                 </div>
+                {editUserIsAdministratorPlanning && !editUserIsOwnerPlanning ? (
+                  <div data-barsh-admin-users-phase-v4c-admin-card-actions="true" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+                    <div data-barsh-admin-users-phase-v4c-admin-card-message="true" style={{ color: editAdminCardGrantMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>
+                      {editAdminCardGrantMessage || "Select Admin cards, preview the change, then save grants."}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button data-barsh-admin-users-phase-v4c-preview-card-grants-button="true" type="button" onClick={() => void saveEditAdminCardGrants(false)} disabled={editAdminCardGrantBusy} style={{ ...secondaryButtonStyle, opacity: editAdminCardGrantBusy ? 0.7 : 1 }}>
+                        Preview Card Grants
+                      </button>
+                      <button data-barsh-admin-users-phase-v4c-save-card-grants-button="true" type="button" onClick={() => void saveEditAdminCardGrants(true)} disabled={editAdminCardGrantBusy} style={{ ...primaryButtonStyle, opacity: editAdminCardGrantBusy ? 0.7 : 1 }}>
+                        {editAdminCardGrantBusy ? "Saving Cards..." : "Save Card Grants"}
+                      </button>
+                    </div>
+                    {editAdminCardGrantResult ? (
+                      <pre data-barsh-admin-users-phase-v4c-card-grant-result="true" style={{ width: "100%", whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #dbeafe", borderRadius: 12, padding: 10, margin: 0, color: "#0f172a", fontSize: 12 }}>
+                        {JSON.stringify({
+                          mode: editAdminCardGrantResult.mode,
+                          requestedGrantKeys: editAdminCardGrantResult.requestedGrantKeys,
+                          savedGrantKeys: editAdminCardGrantResult.savedGrantKeys,
+                          databaseChanged: editAdminCardGrantResult.databaseChanged,
+                          enforcementChanged: editAdminCardGrantResult.enforcementChanged,
+                        }, null, 2)}
+                      </pre>
+                    ) : null}
+                  </div>
+                ) : null}
               </section>
             ) : null}
             <button data-barsh-admin-users-edit-save-button="true" type="button" onClick={() => void saveEditAdminUserPanel()} disabled={editBusy} style={{ ...primaryButtonStyle, opacity: editBusy ? 0.7 : 1 }}>{editBusy ? "Saving..." : "Save User"}</button>

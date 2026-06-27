@@ -45,7 +45,8 @@ must(has(page, 'data-barsh-admin-users-phase-v2-final-role-model-note="true"'), 
 must(has(page, 'data-barsh-admin-users-phase-v2-admin-card-planning="true"'), "Administrator card planning panel present");
 must(has(page, 'data-barsh-admin-users-phase-v2-admin-card-checkboxes="true"'), "Administrator card checkbox group present");
 must(has(page, 'data-barsh-admin-users-phase-v2-admin-card-checkbox="true"'), "Administrator card checkbox marker present");
-must(has(page, "readOnly disabled"), "Administrator card checkboxes are read-only and disabled");
+const phaseV4CCardGrantUiPresent = has(page, 'data-barsh-admin-users-phase-v4c-admin-card-checkbox="true"') && has(page, 'fetch("/api/admin/users/card-grants"');
+must(has(page, "readOnly disabled") || phaseV4CCardGrantUiPresent, "Administrator card checkboxes are read-only in V2 or editable through later V4C guarded route");
 must(has(page, "editUserIsAdministratorPlanning"), "Administrator planning visibility is role-aware");
 must(has(page, "editUserIsOwnerPlanning"), "Owner planning visibility is role-aware");
 must(has(page, "owner_all_cards") && has(page, "administrator_selected_cards"), "Owner and Administrator card planning modes present");
@@ -64,7 +65,7 @@ must(proof.rolePicklistsPreferFinalRoleModel === true, "proof JSON says role pic
 must(proof.administratorCardPlanningSavesGrants === false, "proof JSON says card planning does not save grants");
 
 must(has(session, 'permissionsMode: "default-admin-allow-all"'), "session remains default-admin-allow-all");
-must(!has(page, "/api/admin/users/card-grants"), "no card grant write route introduced");
+must(!has(page, "/api/admin/users/card-grants") || phaseV4CCardGrantUiPresent, "no card grant write route introduced before V4C, or later V4C guarded route is present");
 must(!has(page, "method: \"PUT\"") && !has(page, "method: 'PUT'"), "Users page does not introduce PUT writes");
 must(pkg.scripts?.["verify:admin-users-workflow-phase-v2-final-role-ui-card-planning"] === "node scripts/verify-admin-users-workflow-phase-v2-final-role-ui-card-planning.mjs", "package verifier script registered");
 
