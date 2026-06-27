@@ -710,10 +710,14 @@
     "verify:admin-users-workflow-phase-u1-2fa-setup-verification": "node scripts/verify-admin-users-workflow-phase-u1-2fa-setup-verification.mjs",
     "verify:admin-users-workflow-phase-u1s-2fa-setup-auth-boundary": "node scripts/verify-admin-users-workflow-phase-u1s-2fa-setup-auth-boundary.mjs",
     "verify:admin-users-workflow-phase-v1-final-role-model": "node scripts/verify-admin-users-workflow-phase-v1-final-role-model.mjs",
-    "verify:admin-users-workflow-phase-v2-final-role-ui-card-planning": "node scripts/verify-admin-users-workflow-phase-v2-final-role-ui-card-planning.mjs"
+    "verify:admin-users-workflow-phase-v2-final-role-ui-card-planning": "node scripts/verify-admin-users-workflow-phase-v2-final-role-ui-card-planning.mjs",
+    "apply:admin-users-phase-v3-final-role-db-seed": "node scripts/apply-admin-users-phase-v3-final-role-db-seed.mjs",
+    "verify:admin-users-workflow-phase-v3-final-role-db-seed": "node scripts/verify-admin-users-workflow-phase-v3-final-role-db-seed.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "bcryptjs": "3.0.3",
@@ -736,6 +740,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

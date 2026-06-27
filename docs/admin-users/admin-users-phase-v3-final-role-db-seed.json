@@ -1,0 +1,16 @@
+{
+  "phase": "admin-users-phase-v3-final-role-db-seed",
+  "runtimeEnforcementChanged": false,
+  "sessionBehaviorChanged": false,
+  "seedCreatesOrUpdatesRoles": true,
+  "deletesLegacyRoles": false,
+  "deactivatesLegacyRoles": false,
+  "finalRoleKeys": [
+    "owner_admin",
+    "administrator",
+    "full_user",
+    "basic_user",
+    "view_only"
+  ],
+  "applyFlag": "--apply-admin-users-phase-v3-final-role-db-seed"
+}
