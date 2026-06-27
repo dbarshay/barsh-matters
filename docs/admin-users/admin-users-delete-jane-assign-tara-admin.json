@@ -1,0 +1,8 @@
+{
+  "action": "delete-jane-assign-tara-admin",
+  "deleteAdminUserEmail": "jane.doe.limited@example.com",
+  "assignAdministratorTo": "Tara Luisi",
+  "roleKey": "administrator",
+  "runtimeEnforcementChanged": false,
+  "sessionBehaviorChanged": false
+}
