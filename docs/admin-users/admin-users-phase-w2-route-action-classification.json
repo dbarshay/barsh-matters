@@ -1,6 +1,6 @@
 {
   "phase": "admin-users-phase-w2-route-action-classification",
-  "generatedAt": "2026-06-27T06:37:57.407Z",
+  "generatedAt": "2026-06-27T06:48:24.626Z",
   "runtimeEnforcementChanged": false,
   "uiHidingActive": false,
   "databaseMutated": false,
@@ -11,19 +11,20 @@
     "layout": 1
   },
   "byArea": {
-    "admin_cards": 58,
-    "admin_screen": 9,
-    "home_dashboard": 62,
+    "admin_cards": 56,
+    "client_billing_payments": 7,
+    "admin_screen": 6,
+    "home_dashboard": 59,
     "individual_matters": 25,
     "lawsuits": 6,
     "clio_storage_finalize": 2,
     "documents": 34,
     "document_generation": 1,
     "maildrop_email": 1,
-    "client_billing_payments": 2,
+    "settlement_payment_status": 3,
     "print_queue": 1
   },
-  "paymentSensitiveCount": 16,
+  "paymentSensitiveCount": 23,
   "adminOnlyCount": 67,
   "adminCardGrantKeys": [
     "admin.card.auditHistory",
@@ -39,6 +40,7 @@
     "admin.card.ticklers",
     "admin.card.usersRoles"
   ],
+  "phaseW6OverrideCount": 32,
   "classifications": [
     {
       "path": "app/admin/audit-history/page.tsx",
@@ -56,8 +58,10 @@
       "adminCardGrantKey": "admin.card.auditHistory",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -81,6 +85,7 @@
       "adminCardGrantKey": "admin.card.backupRestore",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -104,6 +109,7 @@
       "adminCardGrantKey": "admin.card.claimIndex",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -126,6 +132,7 @@
       "adminCardGrantKey": "admin.card.claimIndex",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -147,6 +154,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -170,6 +178,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -194,6 +203,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -201,7 +211,7 @@
     {
       "path": "app/admin/clients/[id]/page.tsx",
       "fileKind": "page",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "download",
@@ -209,31 +219,35 @@
         "view",
         "void"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
       "path": "app/admin/clients/page.tsx",
       "fileKind": "page",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "edit",
         "view"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -257,6 +271,7 @@
       "adminCardGrantKey": "admin.card.documentReadiness",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -275,6 +290,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -293,6 +309,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -310,6 +327,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -327,6 +345,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -348,6 +367,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -370,6 +390,7 @@
       "adminCardGrantKey": "admin.card.lawsuitCleanup",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -377,7 +398,7 @@
     {
       "path": "app/admin/lawsuits/audit/page.tsx",
       "fileKind": "page",
-      "areaKey": "admin_screen",
+      "areaKey": "admin_cards",
       "operationFamilies": [
         "admin_manage",
         "download",
@@ -390,11 +411,13 @@
       ],
       "paymentSensitive": false,
       "adminOnly": true,
-      "adminCardGrantKey": null,
+      "adminCardGrantKey": "admin.card.auditHistory",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -414,6 +437,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -435,6 +459,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -459,6 +484,7 @@
       "adminCardGrantKey": "admin.card.readinessDashboard",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -482,6 +508,7 @@
       "adminCardGrantKey": "admin.card.referenceData",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -505,6 +532,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -526,6 +554,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -539,6 +568,7 @@
         "delete",
         "edit",
         "finalize",
+        "run",
         "search",
         "upload",
         "view",
@@ -549,6 +579,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -569,8 +600,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -592,6 +625,7 @@
       "adminCardGrantKey": "admin.card.backupRestore",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -602,10 +636,6 @@
       "areaKey": "admin_cards",
       "operationFamilies": [
         "admin_manage",
-        "create",
-        "edit",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -613,8 +643,10 @@
       "adminCardGrantKey": "admin.card.backupRestore",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -634,6 +666,7 @@
       "adminCardGrantKey": "admin.card.backupRestore",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -655,6 +688,7 @@
       "adminCardGrantKey": "admin.card.backupRestore",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -675,6 +709,7 @@
       "adminCardGrantKey": "admin.card.claimIndex",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -696,6 +731,7 @@
       "adminCardGrantKey": "admin.card.claimIndex",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -718,6 +754,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -739,6 +776,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -762,6 +800,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -785,6 +824,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -792,25 +832,21 @@
     {
       "path": "app/api/admin/clients/[id]/invoice/create-preview/route.ts",
       "fileKind": "api_route",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
-        "edit",
-        "finalize",
-        "generate",
         "payment_manage",
-        "print",
-        "search",
-        "view",
-        "void"
+        "view"
       ],
       "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -833,6 +869,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -854,6 +891,7 @@
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -861,7 +899,7 @@
     {
       "path": "app/api/admin/clients/[id]/route.ts",
       "fileKind": "api_route",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "edit",
@@ -871,19 +909,21 @@
         "view",
         "void"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
       "path": "app/api/admin/clients/route.ts",
       "fileKind": "api_route",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "generate",
@@ -891,13 +931,15 @@
         "search",
         "view"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -918,6 +960,7 @@
       "adminCardGrantKey": "admin.card.documentReadiness",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -936,6 +979,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -954,6 +998,7 @@
       "adminCardGrantKey": "admin.card.documentTemplates",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -961,7 +1006,7 @@
     {
       "path": "app/api/admin/email-automation-status/route.ts",
       "fileKind": "api_route",
-      "areaKey": "admin_screen",
+      "areaKey": "admin_cards",
       "operationFamilies": [
         "admin_manage",
         "email",
@@ -972,11 +1017,13 @@
       ],
       "paymentSensitive": false,
       "adminOnly": true,
-      "adminCardGrantKey": null,
+      "adminCardGrantKey": "admin.card.readinessDashboard",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -997,6 +1044,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1004,7 +1052,7 @@
     {
       "path": "app/api/admin/lawsuits/audit/route.ts",
       "fileKind": "api_route",
-      "areaKey": "admin_screen",
+      "areaKey": "admin_cards",
       "operationFamilies": [
         "admin_manage",
         "generate",
@@ -1015,11 +1063,13 @@
       ],
       "paymentSensitive": false,
       "adminOnly": true,
-      "adminCardGrantKey": null,
+      "adminCardGrantKey": "admin.card.auditHistory",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -1039,6 +1089,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1049,9 +1100,6 @@
       "areaKey": "admin_screen",
       "operationFamilies": [
         "admin_manage",
-        "print",
-        "search",
-        "upload",
         "view"
       ],
       "paymentSensitive": false,
@@ -1059,8 +1107,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -1079,6 +1129,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1097,6 +1148,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1116,6 +1168,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1136,6 +1189,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1154,6 +1208,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1172,6 +1227,7 @@
       "adminCardGrantKey": "admin.card.permissionsReview",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1191,6 +1247,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1210,6 +1267,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1230,6 +1288,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1251,6 +1310,7 @@
       "adminCardGrantKey": "admin.card.ticklers",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1272,6 +1332,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1293,6 +1354,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1314,6 +1376,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1335,6 +1398,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1356,6 +1420,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1377,6 +1442,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1395,6 +1461,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1417,6 +1484,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1436,6 +1504,7 @@
       "adminCardGrantKey": "admin.card.usersRoles",
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1454,6 +1523,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1473,6 +1543,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1491,6 +1562,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1509,6 +1581,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1527,6 +1600,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1545,6 +1619,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1561,6 +1636,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1577,6 +1653,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1596,6 +1673,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1615,6 +1693,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1634,6 +1713,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1653,6 +1733,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1672,6 +1753,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1691,6 +1773,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1711,6 +1794,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1730,6 +1814,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1748,6 +1833,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1768,6 +1854,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1787,6 +1874,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1804,6 +1892,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1821,6 +1910,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1838,6 +1928,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1855,6 +1946,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1873,6 +1965,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1890,6 +1983,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1907,6 +2001,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1924,6 +2019,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1940,6 +2036,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1958,6 +2055,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1976,6 +2074,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -1993,6 +2092,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2010,6 +2110,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2029,6 +2130,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2045,6 +2147,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2066,6 +2169,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2085,6 +2189,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2105,6 +2210,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2123,6 +2229,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2142,6 +2249,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2162,6 +2270,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2171,10 +2280,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "create",
-        "edit",
-        "finalize",
-        "upload",
         "view"
       ],
       "paymentSensitive": false,
@@ -2182,8 +2287,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2202,6 +2309,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2222,6 +2330,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2242,6 +2351,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2262,6 +2372,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2281,6 +2392,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2290,9 +2402,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "create",
-        "edit",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -2300,8 +2409,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2318,6 +2429,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2327,8 +2439,6 @@
       "fileKind": "api_route",
       "areaKey": "individual_matters",
       "operationFamilies": [
-        "create",
-        "edit",
         "view"
       ],
       "paymentSensitive": false,
@@ -2336,8 +2446,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2354,6 +2466,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2373,6 +2486,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2382,11 +2496,7 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "create",
-        "download",
-        "edit",
-        "finalize",
-        "print",
+        "email",
         "view"
       ],
       "paymentSensitive": false,
@@ -2394,8 +2504,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2403,12 +2515,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "edit",
-        "finalize",
-        "print",
-        "run",
-        "search",
-        "upload",
         "view"
       ],
       "paymentSensitive": false,
@@ -2416,8 +2522,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2437,6 +2545,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2446,12 +2555,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "edit",
-        "finalize",
-        "generate",
-        "run",
-        "search",
-        "upload",
         "view"
       ],
       "paymentSensitive": false,
@@ -2459,8 +2562,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2482,6 +2587,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2491,10 +2597,6 @@
       "fileKind": "api_route",
       "areaKey": "document_generation",
       "operationFamilies": [
-        "edit",
-        "generate",
-        "run",
-        "search",
         "view"
       ],
       "paymentSensitive": false,
@@ -2502,8 +2604,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2521,6 +2625,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2539,6 +2644,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2558,6 +2664,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2576,6 +2683,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2585,10 +2693,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "create",
-        "edit",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -2596,8 +2700,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2619,6 +2725,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2643,6 +2750,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2663,6 +2771,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2683,6 +2792,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2705,6 +2815,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2714,10 +2825,6 @@
       "fileKind": "api_route",
       "areaKey": "documents",
       "operationFamilies": [
-        "create",
-        "edit",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -2725,8 +2832,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2746,6 +2855,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2767,6 +2877,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2785,6 +2896,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2803,6 +2915,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2826,6 +2939,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2847,6 +2961,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2863,6 +2978,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2885,6 +3001,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2894,8 +3011,7 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
+        "email",
         "view"
       ],
       "paymentSensitive": false,
@@ -2903,8 +3019,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -2921,6 +3039,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2938,6 +3057,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2960,6 +3080,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2978,6 +3099,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -2999,6 +3121,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3015,6 +3138,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3034,6 +3158,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3055,6 +3180,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3064,8 +3190,6 @@
       "fileKind": "api_route",
       "areaKey": "lawsuits",
       "operationFamilies": [
-        "create",
-        "edit",
         "view"
       ],
       "paymentSensitive": false,
@@ -3073,8 +3197,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3092,6 +3218,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3115,6 +3242,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3134,6 +3262,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3154,6 +3283,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3172,6 +3302,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3191,6 +3322,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3210,6 +3342,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3227,6 +3360,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3247,6 +3381,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3266,6 +3401,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3284,6 +3420,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3303,6 +3440,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3321,6 +3459,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3330,9 +3469,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -3340,8 +3476,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3358,6 +3496,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3365,7 +3504,7 @@
     {
       "path": "app/api/settlements/attorney-fee-breakdown/route.ts",
       "fileKind": "api_route",
-      "areaKey": "home_dashboard",
+      "areaKey": "settlement_payment_status",
       "operationFamilies": [
         "edit",
         "generate",
@@ -3375,13 +3514,15 @@
         "upload",
         "view"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": false,
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3389,8 +3530,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
         "view"
       ],
       "paymentSensitive": false,
@@ -3398,8 +3537,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3416,6 +3557,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3435,6 +3577,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3455,6 +3598,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3480,6 +3624,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3501,6 +3646,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3524,6 +3670,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3548,6 +3695,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3567,6 +3715,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3588,6 +3737,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3597,31 +3747,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
-        "generate",
-        "print",
-        "run",
-        "view",
-        "void"
-      ],
-      "paymentSensitive": false,
-      "adminOnly": false,
-      "adminCardGrantKey": null,
-      "enforcementActive": false,
-      "uiHidingActive": false,
-      "notes": [
-        "Phase W2 classification only. No blocking is enabled."
-      ]
-    },
-    {
-      "path": "app/api/settlements/local-provider-fee-defaults/route.ts",
-      "fileKind": "api_route",
-      "areaKey": "home_dashboard",
-      "operationFamilies": [
-        "print",
-        "run",
-        "search",
         "view"
       ],
       "paymentSensitive": false,
@@ -3629,8 +3754,31 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
+      ]
+    },
+    {
+      "path": "app/api/settlements/local-provider-fee-defaults/route.ts",
+      "fileKind": "api_route",
+      "areaKey": "settlement_payment_status",
+      "operationFamilies": [
+        "print",
+        "run",
+        "search",
+        "view"
+      ],
+      "paymentSensitive": true,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "enforcementActive": false,
+      "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
+      "notes": [
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3638,11 +3786,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
-        "generate",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -3650,8 +3793,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3671,6 +3816,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3693,6 +3839,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3702,11 +3849,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
-        "print",
-        "run",
-        "search",
         "view"
       ],
       "paymentSensitive": false,
@@ -3714,14 +3856,16 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
       "path": "app/api/settlements/provider-fee-defaults/route.ts",
       "fileKind": "api_route",
-      "areaKey": "home_dashboard",
+      "areaKey": "settlement_payment_status",
       "operationFamilies": [
         "create",
         "edit",
@@ -3729,13 +3873,15 @@
         "run",
         "view"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": false,
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3757,6 +3903,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3779,6 +3926,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3788,10 +3936,6 @@
       "fileKind": "api_route",
       "areaKey": "home_dashboard",
       "operationFamilies": [
-        "create",
-        "edit",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -3799,8 +3943,10 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": true,
       "notes": [
-        "Phase W2 classification only. No blocking is enabled."
+        "Phase W2 classification only. No blocking is enabled.",
+        "Phase W6 explicit classification override applied. Still classification only; no enforcement."
       ]
     },
     {
@@ -3819,6 +3965,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3842,6 +3989,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3860,6 +4008,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3881,6 +4030,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3899,6 +4049,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3919,6 +4070,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3936,6 +4088,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3954,6 +4107,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -3979,6 +4133,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -4004,6 +4159,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -4024,6 +4180,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]
@@ -4047,6 +4204,7 @@
       "adminCardGrantKey": null,
       "enforcementActive": false,
       "uiHidingActive": false,
+      "phaseW6OverrideApplied": false,
       "notes": [
         "Phase W2 classification only. No blocking is enabled."
       ]

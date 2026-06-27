@@ -1592,10 +1592,10 @@ export default function AdminUsersPlanningPage() {
               <tbody>
                 {[
                   { role: "Owner", allowed: 201, blocked: 0, admin: 0, payment: 0, mutation: 0 },
-                  { role: "Administrator", allowed: 169, blocked: 32, admin: 32, payment: 0, mutation: 32 },
-                  { role: "Full User", allowed: 134, blocked: 67, admin: 67, payment: 12, mutation: 67 },
-                  { role: "Basic User", allowed: 112, blocked: 89, admin: 67, payment: 16, mutation: 89 },
-                  { role: "View Only", allowed: 20, blocked: 181, admin: 67, payment: 16, mutation: 181 },
+                  { role: "Administrator", allowed: 166, blocked: 35, admin: 35, payment: 0, mutation: 35 },
+                  { role: "Full User", allowed: 134, blocked: 67, admin: 67, payment: 16, mutation: 67 },
+                  { role: "Basic User", allowed: 110, blocked: 91, admin: 67, payment: 23, mutation: 91 },
+                  { role: "View Only", allowed: 35, blocked: 166, admin: 67, payment: 23, mutation: 166 },
                 ].map((row) => (
                   <tr key={row.role} data-barsh-admin-users-phase-w4-simulator-row="true">
                     <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", fontWeight: 900 }}>{row.role}</td>

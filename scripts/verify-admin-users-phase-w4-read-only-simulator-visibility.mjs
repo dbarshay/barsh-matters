@@ -34,19 +34,21 @@ for (const role of ["Owner", "Administrator", "Full User", "Basic User", "View O
   must(proof.summaries.some((row) => row.role === role), `W4 proof includes role ${role}`);
 }
 
-for (const expected of [
-  { role: "Owner", allowed: 201, blocked: 0 },
-  { role: "Administrator", allowed: 169, blocked: 32 },
-  { role: "Full User", allowed: 134, blocked: 67 },
-  { role: "Basic User", allowed: 112, blocked: 89 },
-  { role: "View Only", allowed: 20, blocked: 181 }
-]) {
-  const row = proof.summaries.find((item) => item.role === expected.role);
-  must(row?.allowed === expected.allowed, `W4 proof allowed count matches ${expected.role}`);
-  must(row?.blocked === expected.blocked, `W4 proof blocked count matches ${expected.role}`);
+const roleToActorKey = {
+  "Owner": "owner-baseline",
+  "Administrator": "administrator-selected-cards",
+  "Full User": "full-user-baseline",
+  "Basic User": "basic-user-baseline",
+  "View Only": "view-only-baseline",
+};
 
-  const w3Row = w3.summaries.find((item) => item.displayName.startsWith(expected.role) || (expected.role === "Administrator" && item.actorKey === "administrator-selected-cards"));
-  must(Boolean(w3Row), `W3 row found for ${expected.role}`);
+for (const [role, actorKey] of Object.entries(roleToActorKey)) {
+  const proofRow = proof.summaries.find((item) => item.role === role);
+  const w3Row = w3.summaries.find((item) => item.actorKey === actorKey);
+  must(Boolean(proofRow), `W4 proof row found for ${role}`);
+  must(Boolean(w3Row), `W3 row found for ${role}`);
+  must(proofRow?.allowed === w3Row?.allowCount, `W4 allowed count matches W3 for ${role}`);
+  must(proofRow?.blocked === w3Row?.blockCount, `W4 blocked count matches W3 for ${role}`);
 }
 
 must(proof.phase === "admin-users-phase-w4-read-only-simulator-visibility", "proof phase is W4");
@@ -57,6 +59,7 @@ must(proof.backendRouteBlockingActive === false, "proof says backend route block
 must(proof.databaseMutated === false, "proof says database not mutated");
 must(proof.visibleInAdminUsers === true, "proof says visible in Admin Users");
 must(proof.dryRunOnly === true, "proof says dry-run only");
+must(proof.phaseW6OverridesApplied === true, "proof says W6 overrides are reflected");
 
 must(has(doc, "UI visibility only"), "doc marks visibility only");
 must(has(doc, "No runtime enforcement is enabled"), "doc says runtime enforcement disabled");

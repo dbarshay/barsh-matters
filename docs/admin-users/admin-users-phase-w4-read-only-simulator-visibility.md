@@ -11,9 +11,9 @@ No database changes are made.
 
 The visible summary is a planning aid only:
 - Owner: 201 allowed, 0 blocked
-- Administrator: 169 allowed, 32 blocked
+- Administrator: 166 allowed, 35 blocked
 - Full User: 134 allowed, 67 blocked
-- Basic User: 112 allowed, 89 blocked
-- View Only: 20 allowed, 181 blocked
+- Basic User: 110 allowed, 91 blocked
+- View Only: 35 allowed, 166 blocked
 
 Next phase should decide whether to refine the route/action classification before any UI hiding or enforcement work.

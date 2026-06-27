@@ -17,10 +17,10 @@ Dry-run results: 1005
 | Actor | Roles | Allowed | Blocked | Blocked Admin | Blocked Payment | Blocked Mutation |
 |---|---:|---:|---:|---:|---:|---:|
 | Owner Baseline | owner_admin | 201 | 0 | 0 | 0 | 0 |
-| Administrator Selected Admin Cards | administrator | 169 | 32 | 32 | 0 | 32 |
-| Full User Baseline | full_user | 134 | 67 | 67 | 12 | 67 |
-| Basic User Baseline | basic_user | 112 | 89 | 67 | 16 | 89 |
-| View Only Baseline | view_only | 20 | 181 | 67 | 16 | 181 |
+| Administrator Selected Admin Cards | administrator | 166 | 35 | 35 | 0 | 35 |
+| Full User Baseline | full_user | 134 | 67 | 67 | 16 | 67 |
+| Basic User Baseline | basic_user | 110 | 91 | 67 | 23 | 91 |
+| View Only Baseline | view_only | 35 | 166 | 67 | 23 | 166 |
 
 ## Expected dry-run behavior
 

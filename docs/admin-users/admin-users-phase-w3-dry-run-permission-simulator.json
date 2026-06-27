@@ -1,6 +1,6 @@
 {
   "phase": "admin-users-phase-w3-dry-run-permission-simulator",
-  "generatedAt": "2026-06-27T06:39:35.695Z",
+  "generatedAt": "2026-06-27T06:48:24.937Z",
   "basedOnPhaseW2": "admin-users-phase-w2-route-action-classification",
   "runtimeEnforcementChanged": false,
   "uiHidingActive": false,
@@ -74,11 +74,11 @@
       "roleKeys": [
         "administrator"
       ],
-      "allowCount": 169,
-      "blockCount": 32,
-      "blockedAdminCount": 32,
+      "allowCount": 166,
+      "blockCount": 35,
+      "blockedAdminCount": 35,
       "blockedPaymentCount": 0,
-      "blockedMutationCount": 32
+      "blockedMutationCount": 35
     },
     {
       "actorKey": "full-user-baseline",
@@ -89,7 +89,7 @@
       "allowCount": 134,
       "blockCount": 67,
       "blockedAdminCount": 67,
-      "blockedPaymentCount": 12,
+      "blockedPaymentCount": 16,
       "blockedMutationCount": 67
     },
     {
@@ -98,11 +98,11 @@
       "roleKeys": [
         "basic_user"
       ],
-      "allowCount": 112,
-      "blockCount": 89,
+      "allowCount": 110,
+      "blockCount": 91,
       "blockedAdminCount": 67,
-      "blockedPaymentCount": 16,
-      "blockedMutationCount": 89
+      "blockedPaymentCount": 23,
+      "blockedMutationCount": 91
     },
     {
       "actorKey": "view-only-baseline",
@@ -110,11 +110,11 @@
       "roleKeys": [
         "view_only"
       ],
-      "allowCount": 20,
-      "blockCount": 181,
+      "allowCount": 35,
+      "blockCount": 166,
       "blockedAdminCount": 67,
-      "blockedPaymentCount": 16,
-      "blockedMutationCount": 181
+      "blockedPaymentCount": 23,
+      "blockedMutationCount": 166
     }
   ],
   "sampleBlockedRoutes": [
@@ -297,6 +297,35 @@
       "roleKeys": [
         "administrator"
       ],
+      "path": "app/admin/lawsuits/audit/page.tsx",
+      "areaKey": "admin_cards",
+      "operationFamilies": [
+        "admin_manage",
+        "download",
+        "edit",
+        "generate",
+        "print",
+        "run",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.auditHistory",
+      "decision": "block",
+      "reasons": [
+        "Administrator lacks selected Admin-card grant."
+      ],
+      "dryRunOnly": true,
+      "enforcementActive": false,
+      "uiHidingActive": false
+    },
+    {
+      "actorKey": "administrator-selected-cards",
+      "displayName": "Administrator Selected Admin Cards",
+      "roleKeys": [
+        "administrator"
+      ],
       "path": "app/admin/permissions/page.tsx",
       "areaKey": "admin_cards",
       "operationFamilies": [
@@ -390,6 +419,7 @@
         "delete",
         "edit",
         "finalize",
+        "run",
         "search",
         "upload",
         "view",
@@ -445,10 +475,6 @@
       "areaKey": "admin_cards",
       "operationFamilies": [
         "admin_manage",
-        "create",
-        "edit",
-        "print",
-        "run",
         "view"
       ],
       "paymentSensitive": false,
@@ -589,6 +615,60 @@
       "paymentSensitive": false,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.documentReadiness",
+      "decision": "block",
+      "reasons": [
+        "Administrator lacks selected Admin-card grant."
+      ],
+      "dryRunOnly": true,
+      "enforcementActive": false,
+      "uiHidingActive": false
+    },
+    {
+      "actorKey": "administrator-selected-cards",
+      "displayName": "Administrator Selected Admin Cards",
+      "roleKeys": [
+        "administrator"
+      ],
+      "path": "app/api/admin/email-automation-status/route.ts",
+      "areaKey": "admin_cards",
+      "operationFamilies": [
+        "admin_manage",
+        "email",
+        "generate",
+        "run",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.readinessDashboard",
+      "decision": "block",
+      "reasons": [
+        "Administrator lacks selected Admin-card grant."
+      ],
+      "dryRunOnly": true,
+      "enforcementActive": false,
+      "uiHidingActive": false
+    },
+    {
+      "actorKey": "administrator-selected-cards",
+      "displayName": "Administrator Selected Admin Cards",
+      "roleKeys": [
+        "administrator"
+      ],
+      "path": "app/api/admin/lawsuits/audit/route.ts",
+      "areaKey": "admin_cards",
+      "operationFamilies": [
+        "admin_manage",
+        "generate",
+        "print",
+        "run",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.auditHistory",
       "decision": "block",
       "reasons": [
         "Administrator lacks selected Admin-card grant."
@@ -1192,7 +1272,7 @@
         "full_user"
       ],
       "path": "app/admin/clients/[id]/page.tsx",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "download",
@@ -1200,7 +1280,7 @@
         "view",
         "void"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "decision": "block",
@@ -1218,13 +1298,13 @@
         "full_user"
       ],
       "path": "app/admin/clients/page.tsx",
-      "areaKey": "admin_cards",
+      "areaKey": "client_billing_payments",
       "operationFamilies": [
         "admin_manage",
         "edit",
         "view"
       ],
-      "paymentSensitive": false,
+      "paymentSensitive": true,
       "adminOnly": true,
       "adminCardGrantKey": "admin.card.clientsBilling",
       "decision": "block",
@@ -1377,90 +1457,6 @@
         "void"
       ],
       "paymentSensitive": true,
-      "adminOnly": true,
-      "adminCardGrantKey": null,
-      "decision": "block",
-      "reasons": [
-        "Non-admin role cannot access Admin-only route."
-      ],
-      "dryRunOnly": true,
-      "enforcementActive": false,
-      "uiHidingActive": false
-    },
-    {
-      "actorKey": "full-user-baseline",
-      "displayName": "Full User Baseline",
-      "roleKeys": [
-        "full_user"
-      ],
-      "path": "app/admin/lawsuit-cleanup/page.tsx",
-      "areaKey": "admin_cards",
-      "operationFamilies": [
-        "admin_manage",
-        "edit",
-        "print",
-        "run",
-        "upload",
-        "view",
-        "void"
-      ],
-      "paymentSensitive": false,
-      "adminOnly": true,
-      "adminCardGrantKey": "admin.card.lawsuitCleanup",
-      "decision": "block",
-      "reasons": [
-        "Non-admin role cannot access Admin-only route."
-      ],
-      "dryRunOnly": true,
-      "enforcementActive": false,
-      "uiHidingActive": false
-    },
-    {
-      "actorKey": "full-user-baseline",
-      "displayName": "Full User Baseline",
-      "roleKeys": [
-        "full_user"
-      ],
-      "path": "app/admin/lawsuits/audit/page.tsx",
-      "areaKey": "admin_screen",
-      "operationFamilies": [
-        "admin_manage",
-        "download",
-        "edit",
-        "generate",
-        "print",
-        "run",
-        "view",
-        "void"
-      ],
-      "paymentSensitive": false,
-      "adminOnly": true,
-      "adminCardGrantKey": null,
-      "decision": "block",
-      "reasons": [
-        "Non-admin role cannot access Admin-only route."
-      ],
-      "dryRunOnly": true,
-      "enforcementActive": false,
-      "uiHidingActive": false
-    },
-    {
-      "actorKey": "full-user-baseline",
-      "displayName": "Full User Baseline",
-      "roleKeys": [
-        "full_user"
-      ],
-      "path": "app/admin/page.tsx",
-      "areaKey": "admin_screen",
-      "operationFamilies": [
-        "admin_manage",
-        "edit",
-        "print",
-        "upload",
-        "view",
-        "void"
-      ],
-      "paymentSensitive": false,
       "adminOnly": true,
       "adminCardGrantKey": null,
       "decision": "block",

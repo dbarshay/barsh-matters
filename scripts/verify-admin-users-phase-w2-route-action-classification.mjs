@@ -60,6 +60,10 @@ must(proof.classifications.some((row) => row.adminOnly === true), "classificatio
 must(proof.classifications.some((row) => row.paymentSensitive === true), "classification includes payment-sensitive files");
 must(proof.classifications.every((row) => row.enforcementActive === false), "every row keeps enforcement inactive");
 must(proof.classifications.every((row) => row.uiHidingActive === false), "every row keeps UI hiding inactive");
+must(Number.isInteger(proof.phaseW6OverrideCount) && proof.phaseW6OverrideCount > 0, "proof applies Phase W6 overrides");
+must(proof.classifications.some((row) => row.phaseW6OverrideApplied === true), "classification rows mark applied W6 overrides");
+must(proof.classifications.every((row) => row.enforcementActive === false), "W6-applied rows still keep enforcement inactive");
+must(proof.classifications.every((row) => row.uiHidingActive === false), "W6-applied rows still keep UI hiding inactive");
 
 for (const row of proof.classifications) {
   must(typeof row.path === "string" && row.path.startsWith("app/"), `row path is app-relative: ${row.path}`);

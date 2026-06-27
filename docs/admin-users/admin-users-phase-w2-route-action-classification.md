@@ -17,22 +17,24 @@ Total classified files: 201
 
 ## Summary by area
 
-- admin_cards: 58
-- admin_screen: 9
-- client_billing_payments: 2
+- admin_cards: 56
+- admin_screen: 6
+- client_billing_payments: 7
 - clio_storage_finalize: 2
 - document_generation: 1
 - documents: 34
-- home_dashboard: 62
+- home_dashboard: 59
 - individual_matters: 25
 - lawsuits: 6
 - maildrop_email: 1
 - print_queue: 1
+- settlement_payment_status: 3
 
 ## Sensitive/admin counts
 
-- Payment-sensitive files: 16
+- Payment-sensitive files: 23
 - Admin-only files: 67
+- Phase W6 overrides applied: 32
 
 ## Admin card grant keys observed
 

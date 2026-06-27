@@ -1,0 +1,15 @@
+{
+  "phase": "admin-users-phase-w7-apply-classification-overrides",
+  "basedOnPhaseW6": "admin-users-phase-w6-classification-overrides",
+  "runtimeEnforcementChanged": false,
+  "uiHidingActive": false,
+  "backendRouteBlockingActive": false,
+  "databaseMutated": false,
+  "simulatorRebuildOnly": true,
+  "w6OverridePlanCount": 32,
+  "w2AppliedOverrideCount": 32,
+  "w2TotalClassifiedFiles": 201,
+  "w3ResultCount": 1005,
+  "w4VisibleInAdminUsers": true,
+  "w4DryRunOnly": true
+}

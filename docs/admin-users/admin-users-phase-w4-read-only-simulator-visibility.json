@@ -8,10 +8,46 @@
   "visibleInAdminUsers": true,
   "dryRunOnly": true,
   "summaries": [
-    { "role": "Owner", "allowed": 201, "blocked": 0, "adminBlocks": 0, "paymentBlocks": 0, "mutationBlocks": 0 },
-    { "role": "Administrator", "allowed": 169, "blocked": 32, "adminBlocks": 32, "paymentBlocks": 0, "mutationBlocks": 32 },
-    { "role": "Full User", "allowed": 134, "blocked": 67, "adminBlocks": 67, "paymentBlocks": 12, "mutationBlocks": 67 },
-    { "role": "Basic User", "allowed": 112, "blocked": 89, "adminBlocks": 67, "paymentBlocks": 16, "mutationBlocks": 89 },
-    { "role": "View Only", "allowed": 20, "blocked": 181, "adminBlocks": 67, "paymentBlocks": 16, "mutationBlocks": 181 }
-  ]
+    {
+      "role": "Owner",
+      "allowed": 201,
+      "blocked": 0,
+      "adminBlocks": 0,
+      "paymentBlocks": 0,
+      "mutationBlocks": 0
+    },
+    {
+      "role": "Administrator",
+      "allowed": 166,
+      "blocked": 35,
+      "adminBlocks": 35,
+      "paymentBlocks": 0,
+      "mutationBlocks": 35
+    },
+    {
+      "role": "Full User",
+      "allowed": 134,
+      "blocked": 67,
+      "adminBlocks": 67,
+      "paymentBlocks": 16,
+      "mutationBlocks": 67
+    },
+    {
+      "role": "Basic User",
+      "allowed": 110,
+      "blocked": 91,
+      "adminBlocks": 67,
+      "paymentBlocks": 23,
+      "mutationBlocks": 91
+    },
+    {
+      "role": "View Only",
+      "allowed": 35,
+      "blocked": 166,
+      "adminBlocks": 67,
+      "paymentBlocks": 23,
+      "mutationBlocks": 166
+    }
+  ],
+  "phaseW6OverridesApplied": true
 }

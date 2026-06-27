@@ -6,6 +6,81 @@ const APP_DIR = path.join(ROOT, "app");
 const OUT_JSON = path.join(ROOT, "docs/admin-users/admin-users-phase-w2-route-action-classification.json");
 const OUT_MD = path.join(ROOT, "docs/admin-users/admin-users-phase-w2-route-action-classification.md");
 
+const PHASE_W6_OVERRIDES_SOURCE = path.join(ROOT, "src/lib/admin-users/admin-users-classification-overrides-phase-w6.ts");
+const PHASE_W6_OVERRIDES_PROOF = path.join(ROOT, "docs/admin-users/admin-users-phase-w6-classification-overrides.json");
+
+function parsePhaseW6Overrides() {
+  if (!fs.existsSync(PHASE_W6_OVERRIDES_PROOF)) return new Map();
+
+  const proof = JSON.parse(fs.readFileSync(PHASE_W6_OVERRIDES_PROOF, "utf8"));
+  const overrides = new Map();
+
+  for (const planned of proof.overrides || []) {
+    const routePath = planned.path;
+    const disposition = planned.reviewedDisposition;
+    const override = { path: routePath };
+
+    if (disposition === "admin_card_mapping") {
+      if (routePath.includes("audit")) override.adminCardGrantKey = "admin.card.auditHistory";
+      else if (routePath.includes("email-automation-status")) override.adminCardGrantKey = "admin.card.readinessDashboard";
+      override.adminOnly = true;
+      override.areaKey = "admin_cards";
+    }
+
+    if (disposition === "admin_context_only") {
+      override.adminCardGrantKey = null;
+      override.adminOnly = true;
+      override.areaKey = "admin_screen";
+    }
+
+    if (disposition === "payment_sensitive") {
+      override.paymentSensitive = true;
+      override.areaKey = "client_billing_payments";
+    }
+
+    if (disposition === "financial_settlement_sensitive") {
+      override.paymentSensitive = true;
+      override.areaKey = "settlement_payment_status";
+    }
+
+    if (disposition === "read_only_preview") {
+      override.operationFamilies = ["view"];
+
+      if (routePath.includes("/admin/")) {
+        override.operationFamilies = ["admin_manage", "view"];
+      }
+
+      if (routePath.includes("invoice/create-preview")) {
+        override.operationFamilies = ["admin_manage", "payment_manage", "view"];
+        override.paymentSensitive = true;
+        override.areaKey = "client_billing_payments";
+      }
+
+      if (routePath.includes("delivery-draft-preview") || routePath.includes("draft-payload-preview")) {
+        override.operationFamilies = ["email", "view"];
+      }
+    }
+
+    overrides.set(routePath, override);
+  }
+
+  return overrides;
+}
+
+function applyPhaseW6Override(row, overrides) {
+  const override = overrides.get(row.path);
+  if (!override) return row;
+  const next = { ...row };
+  if (Object.prototype.hasOwnProperty.call(override, "areaKey")) next.areaKey = override.areaKey;
+  if (Object.prototype.hasOwnProperty.call(override, "paymentSensitive")) next.paymentSensitive = override.paymentSensitive;
+  if (Object.prototype.hasOwnProperty.call(override, "adminOnly")) next.adminOnly = override.adminOnly;
+  if (Object.prototype.hasOwnProperty.call(override, "adminCardGrantKey")) next.adminCardGrantKey = override.adminCardGrantKey;
+  if (Object.prototype.hasOwnProperty.call(override, "operationFamilies")) next.operationFamilies = override.operationFamilies;
+  next.phaseW6OverrideApplied = true;
+  next.notes = [...(next.notes || []), "Phase W6 explicit classification override applied. Still classification only; no enforcement."];
+  return next;
+}
+
 const adminCardRules = [
   ["/admin/users", "admin.card.usersRoles"],
   ["/admin/permissions", "admin.card.permissionsReview"],
@@ -133,11 +208,12 @@ function operations(clean, text) {
 }
 
 const files = walk(APP_DIR).map(rel).filter(isTrackedAppFile).sort();
+const phaseW6Overrides = parsePhaseW6Overrides();
 
 const classifications = files.map((file) => {
   const text = fs.readFileSync(path.join(ROOT, file), "utf8");
   const clean = file.replaceAll("\\\\", "/");
-  return {
+  const baseClassification = {
     path: clean,
     fileKind: fileKind(clean),
     areaKey: areaKey(clean),
@@ -147,8 +223,10 @@ const classifications = files.map((file) => {
     adminCardGrantKey: adminCardGrantKey(clean),
     enforcementActive: false,
     uiHidingActive: false,
+    phaseW6OverrideApplied: false,
     notes: ["Phase W2 classification only. No blocking is enabled."],
   };
+  return applyPhaseW6Override(baseClassification, phaseW6Overrides);
 });
 
 const summary = {
@@ -163,6 +241,7 @@ const summary = {
   paymentSensitiveCount: 0,
   adminOnlyCount: 0,
   adminCardGrantKeys: [],
+  phaseW6OverrideCount: 0,
 };
 
 for (const row of classifications) {
@@ -173,6 +252,7 @@ for (const row of classifications) {
   if (row.adminCardGrantKey && !summary.adminCardGrantKeys.includes(row.adminCardGrantKey)) {
     summary.adminCardGrantKeys.push(row.adminCardGrantKey);
   }
+  if (row.phaseW6OverrideApplied) summary.phaseW6OverrideCount += 1;
 }
 summary.adminCardGrantKeys.sort();
 
@@ -203,6 +283,7 @@ const md = [
   "",
   `- Payment-sensitive files: ${summary.paymentSensitiveCount}`,
   `- Admin-only files: ${summary.adminOnlyCount}`,
+  `- Phase W6 overrides applied: ${summary.phaseW6OverrideCount}`,
   "",
   "## Admin card grant keys observed",
   "",
