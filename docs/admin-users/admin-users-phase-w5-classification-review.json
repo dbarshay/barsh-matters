@@ -1,0 +1,725 @@
+{
+  "phase": "admin-users-phase-w5-classification-review",
+  "basedOnPhaseW2": "admin-users-phase-w2-route-action-classification",
+  "basedOnPhaseW3": "admin-users-phase-w3-dry-run-permission-simulator",
+  "runtimeEnforcementChanged": false,
+  "uiHidingActive": false,
+  "backendRouteBlockingActive": false,
+  "databaseMutated": false,
+  "reviewOnly": true,
+  "totalClassifiedFiles": 201,
+  "issueCount": 36,
+  "byIssueKey": {
+    "read_or_preview_route_marked_edit": 21,
+    "clients_billing_admin_route_not_payment_sensitive": 4,
+    "admin_route_without_card_grant": 8,
+    "settlement_financial_route_not_payment_sensitive": 3
+  },
+  "bySeverity": {
+    "medium": 25,
+    "high": 11
+  },
+  "issues": [
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/admin/audit-history/page.tsx",
+      "areaKey": "admin_cards",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "edit",
+        "print",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.auditHistory",
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/admin/clients/[id]/invoice/history/page.tsx",
+      "areaKey": "admin_cards",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "download",
+        "edit",
+        "finalize",
+        "payment_manage",
+        "print",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": true,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "clients_billing_admin_route_not_payment_sensitive",
+      "severity": "medium",
+      "path": "app/admin/clients/[id]/page.tsx",
+      "areaKey": "admin_cards",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "download",
+        "edit",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Clients/Billing Admin-card route is not marked payment-sensitive.",
+      "recommendation": "Confirm whether this is only Admin-card sensitive or also payment-sensitive for Basic User planning."
+    },
+    {
+      "issueKey": "clients_billing_admin_route_not_payment_sensitive",
+      "severity": "medium",
+      "path": "app/admin/clients/page.tsx",
+      "areaKey": "admin_cards",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "edit",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Clients/Billing Admin-card route is not marked payment-sensitive.",
+      "recommendation": "Confirm whether this is only Admin-card sensitive or also payment-sensitive for Basic User planning."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/admin/invoices/page.tsx",
+      "areaKey": "admin_screen",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "edit",
+        "finalize",
+        "payment_manage",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": true,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/admin/lawsuits/audit/page.tsx",
+      "areaKey": "admin_screen",
+      "fileKind": "page",
+      "operationFamilies": [
+        "admin_manage",
+        "download",
+        "edit",
+        "generate",
+        "print",
+        "run",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/authorize/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "create",
+        "edit",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/admin/backups/restore-preview/route.ts",
+      "areaKey": "admin_cards",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "create",
+        "edit",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.backupRestore",
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/admin/clients/[id]/invoice/create-preview/route.ts",
+      "areaKey": "admin_cards",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "edit",
+        "finalize",
+        "generate",
+        "payment_manage",
+        "print",
+        "search",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": true,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "clients_billing_admin_route_not_payment_sensitive",
+      "severity": "medium",
+      "path": "app/api/admin/clients/[id]/route.ts",
+      "areaKey": "admin_cards",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "edit",
+        "generate",
+        "print",
+        "search",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Clients/Billing Admin-card route is not marked payment-sensitive.",
+      "recommendation": "Confirm whether this is only Admin-card sensitive or also payment-sensitive for Basic User planning."
+    },
+    {
+      "issueKey": "clients_billing_admin_route_not_payment_sensitive",
+      "severity": "medium",
+      "path": "app/api/admin/clients/route.ts",
+      "areaKey": "admin_cards",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "generate",
+        "print",
+        "search",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": "admin.card.clientsBilling",
+      "reason": "Clients/Billing Admin-card route is not marked payment-sensitive.",
+      "recommendation": "Confirm whether this is only Admin-card sensitive or also payment-sensitive for Basic User planning."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/email-automation-status/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "email",
+        "generate",
+        "run",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/invoices/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "finalize",
+        "payment_manage",
+        "print",
+        "search",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": true,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/lawsuits/audit/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "generate",
+        "print",
+        "run",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/lawsuits/cleanup-confirm/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "create",
+        "delete",
+        "edit",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "admin_route_without_card_grant",
+      "severity": "high",
+      "path": "app/api/admin/lawsuits/cleanup-preview/route.ts",
+      "areaKey": "admin_screen",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "admin_manage",
+        "print",
+        "search",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": true,
+      "adminCardGrantKey": null,
+      "reason": "Admin-only route is not mapped to a specific Admin-card grant.",
+      "recommendation": "Review whether this should map to one of the canonical admin.card.* grants or remain Admin landing/context only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/clio-finalization-target-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "finalize",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/clio-master-crossref-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/clio-master-matter-preview/route.ts",
+      "areaKey": "individual_matters",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/delivery-draft-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "download",
+        "edit",
+        "finalize",
+        "print",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/direct-finalize-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "edit",
+        "finalize",
+        "print",
+        "run",
+        "search",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/finalize-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "edit",
+        "finalize",
+        "generate",
+        "run",
+        "search",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/generate-preview/route.ts",
+      "areaKey": "document_generation",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "edit",
+        "generate",
+        "run",
+        "search",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/preview-pdf/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/documents/templates/import-preview/route.ts",
+      "areaKey": "documents",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/graph/draft-payload-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/lawsuits/local-generation-preview/route.ts",
+      "areaKey": "lawsuits",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/reference-data/import-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "settlement_financial_route_not_payment_sensitive",
+      "severity": "high",
+      "path": "app/api/settlements/attorney-fee-breakdown/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "edit",
+        "generate",
+        "print",
+        "run",
+        "search",
+        "upload",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Settlement financial route is not marked payment-sensitive.",
+      "recommendation": "Review whether Basic User should be blocked from this route."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/settlements/close-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/settlements/local-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "generate",
+        "print",
+        "run",
+        "view",
+        "void"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "settlement_financial_route_not_payment_sensitive",
+      "severity": "high",
+      "path": "app/api/settlements/local-provider-fee-defaults/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "print",
+        "run",
+        "search",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Settlement financial route is not marked payment-sensitive.",
+      "recommendation": "Review whether Basic User should be blocked from this route."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/settlements/local-record-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "generate",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/settlements/preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "print",
+        "run",
+        "search",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    },
+    {
+      "issueKey": "settlement_financial_route_not_payment_sensitive",
+      "severity": "high",
+      "path": "app/api/settlements/provider-fee-defaults/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Settlement financial route is not marked payment-sensitive.",
+      "recommendation": "Review whether Basic User should be blocked from this route."
+    },
+    {
+      "issueKey": "read_or_preview_route_marked_edit",
+      "severity": "medium",
+      "path": "app/api/settlements/writeback-preview/route.ts",
+      "areaKey": "home_dashboard",
+      "fileKind": "api_route",
+      "operationFamilies": [
+        "create",
+        "edit",
+        "print",
+        "run",
+        "view"
+      ],
+      "paymentSensitive": false,
+      "adminOnly": false,
+      "adminCardGrantKey": null,
+      "reason": "Preview/status/history style route is marked edit, usually because POST/fetch heuristics are broad.",
+      "recommendation": "Review whether this route should remain mutation-classified or be classified as view/search only."
+    }
+  ]
+}

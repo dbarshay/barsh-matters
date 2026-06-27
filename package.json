@@ -729,7 +729,9 @@
     "verify:admin-users-phase-w2-route-action-classification": "node scripts/verify-admin-users-phase-w2-route-action-classification.mjs",
     "build:admin-users-phase-w3-dry-run-permission-simulator": "node scripts/build-admin-users-phase-w3-dry-run-permission-simulator.mjs",
     "verify:admin-users-phase-w3-dry-run-permission-simulator": "node scripts/verify-admin-users-phase-w3-dry-run-permission-simulator.mjs",
-    "verify:admin-users-phase-w4-read-only-simulator-visibility": "node scripts/verify-admin-users-phase-w4-read-only-simulator-visibility.mjs"
+    "verify:admin-users-phase-w4-read-only-simulator-visibility": "node scripts/verify-admin-users-phase-w4-read-only-simulator-visibility.mjs",
+    "build:admin-users-phase-w5-classification-review": "node scripts/build-admin-users-phase-w5-classification-review.mjs",
+    "verify:admin-users-phase-w5-classification-review": "node scripts/verify-admin-users-phase-w5-classification-review.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
