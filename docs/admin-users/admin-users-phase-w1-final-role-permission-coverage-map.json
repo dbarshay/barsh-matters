@@ -1,0 +1,22 @@
+{
+  "phase": "admin-users-phase-w1-final-role-permission-coverage-map",
+  "runtimeEnforcementChanged": false,
+  "uiHidingActive": false,
+  "databaseMutated": false,
+  "roles": [
+    "owner_admin",
+    "administrator",
+    "full_user",
+    "basic_user",
+    "view_only"
+  ],
+  "paymentSensitiveAreas": [
+    "client_billing_payments",
+    "settlement_payment_status"
+  ],
+  "adminOnlyAreas": [
+    "admin_screen",
+    "admin_cards"
+  ],
+  "next": "Classify actual pages, API routes, and server actions in W2 without enabling enforcement."
+}
