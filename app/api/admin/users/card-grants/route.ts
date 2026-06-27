@@ -320,7 +320,7 @@ export async function POST(req: NextRequest) {
         include: { permissionOverrides: true, roles: { include: { role: true } } },
       });
 
-      await createMatterAuditLogEntry(tx, {
+      await createMatterAuditLogEntry({
         action: "admin-user-card-grants",
         summary: `Updated Administrator Admin-card grants for ${targetUser.email}.`,
         entityType: "admin_user_permission_override",
@@ -340,7 +340,7 @@ export async function POST(req: NextRequest) {
           enforcementChanged: false,
           runtimeEnforcementChanged: false,
         },
-      });
+      }, tx);
 
       return refreshed;
     });
