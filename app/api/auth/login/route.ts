@@ -290,6 +290,7 @@ export async function POST(req: NextRequest) {
         id: user.id,
         email: user.email,
         username: user.username,
+        roleKeys: user.roleKeys,
       };
       setAdminGateCookie(response, identityCookieInput);
       setAdminIdentityCookie(response, identityCookieInput);

@@ -143,6 +143,7 @@ export function adminSessionIdentityDiagnostics(req: NextRequest): AdminSessionI
     id: signedIdentity?.id || null,
     email: signedIdentity?.email || null,
     username: signedIdentity?.username || null,
+    roleKeys: Array.isArray(signedIdentity?.roleKeys) ? signedIdentity.roleKeys : [],
     source: signedIdentity ? "signed-cookie" : "none",
     legacyGenericAdminSession: Boolean(authenticated && !signedIdentity),
     plannedIdentityCookieName: ADMIN_IDENTITY_COOKIE_NAME,

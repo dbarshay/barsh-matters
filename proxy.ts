@@ -11,6 +11,7 @@ type SignedGatePayload = {
     id?: string;
     email?: string;
     username?: string | null;
+    roleKeys?: string[];
   } | null;
 };
 
@@ -118,7 +119,8 @@ export async function proxy(req: NextRequest) {
   const identityEmail = clean(gate.identity?.email).toLowerCase();
   if (!identityEmail) return NextResponse.next();
 
-  if (identityEmail === OWNER_ADMIN_EMAIL) return NextResponse.next();
+  const identityRoleKeys = Array.isArray(gate.identity?.roleKeys) ? gate.identity.roleKeys.map(clean) : [];
+  if (identityEmail === OWNER_ADMIN_EMAIL || identityRoleKeys.includes("owner_admin")) return NextResponse.next();
 
   return blockedResponse(req);
 }
