@@ -38,7 +38,12 @@ must(has(page, "apply,"), "Users page supports preview/apply body flag");
 must(has(page, "createActorEmail"), "Users page passes owner actor email field");
 must(has(page, "editUserIsAdministratorPlanning && !editUserIsOwnerPlanning"), "Users page only shows save actions for non-owner administrator planning");
 must(has(page, "editUserIsOwnerPlanning || editAdminCardGrantKeys.includes"), "Owner still shows all-card checked state");
-must(has(page, "Runtime enforcement remains disabled") || has(page, "runtime enforcement is still disabled"), "Users page discloses enforcement remains disabled");
+must(
+  has(page, "Runtime enforcement remains disabled") ||
+    has(page, "runtime enforcement is still disabled") ||
+    has(page, "Permission enforcement is not active yet"),
+  "Users page discloses enforcement is not active"
+);
 must(has(route, 'action: "admin-user-card-grants"'), "V4B card-grants route remains present");
 must(has(route, "activeOwnerAdminActor"), "V4B card-grants route still owner-gated");
 must(has(route, 'targetRoleKeys.includes("administrator")'), "V4B card-grants route still requires administrator target");

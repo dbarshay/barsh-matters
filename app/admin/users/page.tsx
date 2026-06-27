@@ -357,6 +357,23 @@ export default function AdminUsersPlanningPage() {
     return phaseV2RoleOptions;
   }
 
+  function adminUsersPhaseV4FRoleLabel(roleKey: string): string {
+    const cleanKey = String(roleKey || "").trim();
+    const matched = finalRoleOptions.find((role: any) => String(role?.key || "") === cleanKey);
+    if (matched?.label) return String(matched.label);
+    if (cleanKey === "owner_admin") return "Owner";
+    if (cleanKey === "administrator") return "Administrator";
+    if (cleanKey === "full_user") return "Full User";
+    if (cleanKey === "basic_user") return "Basic User";
+    if (cleanKey === "view_only") return "View Only";
+    return cleanKey || "—";
+  }
+
+  function adminUsersPhaseV4FRoleLabels(user: any): string[] {
+    const roleKeys = Array.isArray(user?.roleKeys) ? user.roleKeys : [];
+    return roleKeys.map((key: string) => adminUsersPhaseV4FRoleLabel(key)).filter(Boolean);
+  }
+
   function adminUsersPhaseV4EGrantedAdminCardLabels(user: any): string[] {
     const keys = adminUsersPhaseV4CNormalizeGrantKeys(user?.adminCardGrantKeys);
     if (!Array.isArray(user?.roleKeys) || !user.roleKeys.includes("administrator") || keys.length === 0) return [];
@@ -367,11 +384,11 @@ export default function AdminUsersPlanningPage() {
   }
 
   function adminUsersPhaseV4ERoleDisplay(user: any) {
-    const roleKeys = Array.isArray(user?.roleKeys) ? user.roleKeys : [];
+    const roleLabels = adminUsersPhaseV4FRoleLabels(user);
     const grantedCards = adminUsersPhaseV4EGrantedAdminCardLabels(user);
     return (
       <div data-barsh-admin-users-phase-v4e-role-display="true" style={{ display: "grid", gap: 5 }}>
-        <strong>{roleKeys.join(", ") || "—"}</strong>
+        <strong>{roleLabels.join(", ") || "—"}</strong>
         {grantedCards.length > 0 ? (
           <div data-barsh-admin-users-phase-v4e-admin-card-labels="true" style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
             {grantedCards.map((label) => (
@@ -1136,7 +1153,7 @@ export default function AdminUsersPlanningPage() {
             <button data-barsh-admin-users-create-top-button="true" type="button" onClick={openCreateUserAction} style={primaryButtonStyle}>Create User</button>
           </div>
           <div data-barsh-admin-users-phase-v2-final-role-model-note="true" style={{ width: "100%", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 12, padding: 10, fontWeight: 850 }}>
-            Phase V4C: final five-role model is visible. Administrator Admin-card grants can now be previewed and saved, but runtime enforcement is still disabled.
+            Administrator Admin-card access can be previewed and saved. Permission enforcement is not active yet.
           </div>
           {adminUsersRowMessage ? <div data-barsh-admin-users-row-action-message="true" style={{ width: "100%", color: adminUsersRowMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>{adminUsersRowMessage}</div> : null}
         </section>
@@ -1307,7 +1324,7 @@ export default function AdminUsersPlanningPage() {
                   <div>
                     <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Administrator Admin Cards</h3>
                     <p style={{ margin: 0, color: "#1e3a8a", lineHeight: 1.45, fontWeight: 800 }}>
-                      Phase V4C: these checkboxes save Administrator Admin-card grants through the guarded card-grants route. Runtime enforcement remains disabled until a later activation phase.
+                      Select which Admin cards this Administrator can access. Permission enforcement is not active yet.
                     </p>
                   </div>
                   <span data-barsh-admin-users-phase-v2-admin-card-mode="true" style={{ border: "1px solid #93c5fd", background: "#ffffff", color: "#1e3a8a", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>
