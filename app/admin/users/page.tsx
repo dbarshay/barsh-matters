@@ -270,6 +270,8 @@ export default function AdminUsersPlanningPage() {
     setEditAdminCardGrantKeys(adminUsersPhaseV4CNormalizeGrantKeys(editUser?.adminCardGrantKeys));
     setEditAdminCardGrantMessage("");
     setEditAdminCardGrantResult(null);
+    setEditRoleToAssign("");
+    setEditRoleToRemove("");
   }, [editUser?.id]);
 
   async function loadAdminUsersPlanning() {
@@ -304,6 +306,12 @@ export default function AdminUsersPlanningPage() {
   const editUserIsOwnerPlanning = editUserRoleKeys.includes("owner_admin") || editRoleToAssign === "owner_admin";
   const phaseV2AdministratorCardPlanningVisible = Boolean(editUser && (editUserIsAdministratorPlanning || editUserIsOwnerPlanning));
   const phaseV2AdministratorCardPlanningMode = editUserIsOwnerPlanning ? "owner_all_cards" : editUserIsAdministratorPlanning ? "administrator_selected_cards" : "none";
+  const ownerAdminActorEmail = String(
+    activeDbUsers.find((user: any) => Array.isArray(user?.roleKeys) && user.roleKeys.includes("owner_admin") && user.status === "active")?.email ||
+    activeDbUsers.find((user: any) => user?.bootstrapSafe === true && user.status === "active")?.email ||
+    createActorEmail ||
+    ""
+  ).trim().toLowerCase();
   const previewReady = Boolean(createResult?.ok && createResult?.mode === "preview" && createResult?.wouldCreate?.email === cleanEmail(createEmail));
   const assignPreviewReady = Boolean(
     assignResult?.ok &&
@@ -1064,7 +1072,7 @@ export default function AdminUsersPlanningPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apply,
-          actorEmail: createActorEmail,
+          actorEmail: ownerAdminActorEmail,
           targetEmail: editEmail || editUser.email,
           grantPermissionKeys: editAdminCardGrantKeys,
           reason: "Administrator Admin-card grants updated from Admin Users edit panel.",

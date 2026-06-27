@@ -718,7 +718,8 @@
     "verify:admin-users-workflow-phase-v4c-card-grant-ui-wiring": "node scripts/verify-admin-users-workflow-phase-v4c-card-grant-ui-wiring.mjs",
     "smoke:admin-users-phase-v4d-card-grants": "node scripts/smoke-admin-users-phase-v4d-card-grants.mjs",
     "verify:admin-users-workflow-phase-v4d-card-grant-smoke": "node scripts/verify-admin-users-workflow-phase-v4d-card-grant-smoke.mjs",
-    "apply:admin-users-delete-jane-assign-tara-admin": "node scripts/apply-admin-users-delete-jane-assign-tara-admin.mjs"
+    "apply:admin-users-delete-jane-assign-tara-admin": "node scripts/apply-admin-users-delete-jane-assign-tara-admin.mjs",
+    "verify:admin-users-owner-actor-card-grants-and-role-default": "node scripts/verify-admin-users-owner-actor-card-grants-and-role-default.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
