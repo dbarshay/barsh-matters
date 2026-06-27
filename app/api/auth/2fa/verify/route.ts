@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMatterAuditLogEntry } from "@/lib/auditLog";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import {
   ADMIN_USER_TWO_FACTOR_RUNTIME_PHASE21,
@@ -33,6 +34,9 @@ export async function POST(req: NextRequest) {
     const email = cleanEmail(body.email);
     const code = cleanString(body.code);
     const setupVerification = body.setupVerification === true;
+    if (setupVerification && !isAdminRequestAuthorized(req)) {
+      return NextResponse.json({ ok: false, action: "admin-user-2fa-verify", error: "Administrator session required for setup verification." }, { status: 403 });
+    }
     if (!email || !code) {
       return NextResponse.json({ ok: false, action: "admin-user-2fa-verify", error: "Email and code are required." }, { status: 400 });
     }

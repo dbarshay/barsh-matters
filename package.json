@@ -707,7 +707,8 @@
     "verify:admin-users-json-response-handling": "node scripts/verify-admin-users-json-response-handling.mjs",
     "verify:admin-users-workflow-phase-r-owner-role-proxy-allow": "node scripts/verify-admin-users-workflow-phase-r-owner-role-proxy-allow.mjs",
     "verify:admin-users-workflow-phase-t-header-signout-nowrap": "node scripts/verify-admin-users-workflow-phase-t-header-signout-nowrap.mjs",
-    "verify:admin-users-workflow-phase-u1-2fa-setup-verification": "node scripts/verify-admin-users-workflow-phase-u1-2fa-setup-verification.mjs"
+    "verify:admin-users-workflow-phase-u1-2fa-setup-verification": "node scripts/verify-admin-users-workflow-phase-u1-2fa-setup-verification.mjs",
+    "verify:admin-users-workflow-phase-u1s-2fa-setup-auth-boundary": "node scripts/verify-admin-users-workflow-phase-u1s-2fa-setup-auth-boundary.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
