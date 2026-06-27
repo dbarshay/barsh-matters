@@ -838,7 +838,7 @@ export default function AdminUsersPlanningPage() {
   }
 
   async function removeRoleFromRow(user: any): Promise<void> {
-    const currentRoles = adminUsersPhaseV4ERoleDisplay(user);
+    const currentRoles = roleLabelForUser(user);
     const roleKey = window.prompt(`Role to remove from ${user.email}`, currentRoles === "None" ? "" : currentRoles.split(",")[0].trim());
     if (!roleKey) return;
     try {

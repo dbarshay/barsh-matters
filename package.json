@@ -721,7 +721,8 @@
     "apply:admin-users-delete-jane-assign-tara-admin": "node scripts/apply-admin-users-delete-jane-assign-tara-admin.mjs",
     "verify:admin-users-owner-actor-card-grants-and-role-default": "node scripts/verify-admin-users-owner-actor-card-grants-and-role-default.mjs",
     "verify:admin-users-card-grants-audit-call": "node scripts/verify-admin-users-card-grants-audit-call.mjs",
-    "verify:admin-users-phase-v4e-role-card-labels": "node scripts/verify-admin-users-phase-v4e-role-card-labels.mjs"
+    "verify:admin-users-phase-v4e-role-card-labels": "node scripts/verify-admin-users-phase-v4e-role-card-labels.mjs",
+    "verify:admin-users-remove-role-string-helper": "node scripts/verify-admin-users-remove-role-string-helper.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
