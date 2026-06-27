@@ -1,0 +1,13 @@
+{
+  "phase": "admin-users-phase-w8-enforcement-kill-switch-scaffold",
+  "basedOnPhaseW7": "admin-users-phase-w7-apply-classification-overrides",
+  "runtimeEnforcementChanged": false,
+  "routeBlockingActive": false,
+  "uiHidingActive": false,
+  "databaseMutated": false,
+  "sessionModeChanged": false,
+  "helperWiredIntoRoutes": false,
+  "dryRunOnly": true,
+  "killSwitchEnvKey": "BARSH_ADMIN_USERS_PERMISSION_ENFORCEMENT",
+  "next": "Add read-only proof and controlled route-guard package before any enforcement activation."
+}

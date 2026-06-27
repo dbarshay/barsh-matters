@@ -734,7 +734,8 @@
     "verify:admin-users-phase-w5-classification-review": "node scripts/verify-admin-users-phase-w5-classification-review.mjs",
     "build:admin-users-phase-w6-classification-overrides": "node scripts/build-admin-users-phase-w6-classification-overrides.mjs",
     "verify:admin-users-phase-w6-classification-overrides": "node scripts/verify-admin-users-phase-w6-classification-overrides.mjs",
-    "verify:admin-users-phase-w7-apply-classification-overrides": "node scripts/verify-admin-users-phase-w7-apply-classification-overrides.mjs"
+    "verify:admin-users-phase-w7-apply-classification-overrides": "node scripts/verify-admin-users-phase-w7-apply-classification-overrides.mjs",
+    "verify:admin-users-phase-w8-enforcement-kill-switch-scaffold": "node scripts/verify-admin-users-phase-w8-enforcement-kill-switch-scaffold.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
