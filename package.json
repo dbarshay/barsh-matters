@@ -726,7 +726,9 @@
     "verify:admin-users-final-role-label-cleanup": "node scripts/verify-admin-users-final-role-label-cleanup.mjs",
     "verify:admin-users-phase-w1-final-role-permission-coverage-map": "node scripts/verify-admin-users-phase-w1-final-role-permission-coverage-map.mjs",
     "build:admin-users-phase-w2-route-action-classification": "node scripts/build-admin-users-phase-w2-route-action-classification.mjs",
-    "verify:admin-users-phase-w2-route-action-classification": "node scripts/verify-admin-users-phase-w2-route-action-classification.mjs"
+    "verify:admin-users-phase-w2-route-action-classification": "node scripts/verify-admin-users-phase-w2-route-action-classification.mjs",
+    "build:admin-users-phase-w3-dry-run-permission-simulator": "node scripts/build-admin-users-phase-w3-dry-run-permission-simulator.mjs",
+    "verify:admin-users-phase-w3-dry-run-permission-simulator": "node scripts/verify-admin-users-phase-w3-dry-run-permission-simulator.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
