@@ -45,7 +45,8 @@ export async function GET(req: NextRequest) {
           id: identityDiagnostics.id,
           email: identityDiagnostics.email,
           username: identityDiagnostics.username,
-          identityBound: identityDiagnostics.identityBound,
+          
+      roleKeys: identityDiagnostics.roleKeys,identityBound: identityDiagnostics.identityBound,
         }
       : null,
     permissions,
