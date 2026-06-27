@@ -1,0 +1,46 @@
+{
+  "phase": "admin-users-phase-v1-final-five-role-model",
+  "runtimeEnforcementChanged": false,
+  "databaseMutated": false,
+  "sessionBehaviorChanged": false,
+  "roles": [
+    {
+      "key": "owner_admin",
+      "label": "Owner",
+      "adminAccessMode": "all_admin_cards",
+      "nonAdminAccessMode": "all_non_admin",
+      "paymentAccessMode": "all_payment_functions"
+    },
+    {
+      "key": "administrator",
+      "label": "Administrator",
+      "adminAccessMode": "selected_admin_cards",
+      "nonAdminAccessMode": "all_non_admin",
+      "paymentAccessMode": "all_payment_functions"
+    },
+    {
+      "key": "full_user",
+      "label": "Full User",
+      "adminAccessMode": "no_admin_screen",
+      "nonAdminAccessMode": "all_non_admin",
+      "paymentAccessMode": "all_payment_functions"
+    },
+    {
+      "key": "basic_user",
+      "label": "Basic User",
+      "adminAccessMode": "no_admin_screen",
+      "nonAdminAccessMode": "all_non_admin_except_payment_functions",
+      "paymentAccessMode": "no_payment_functions"
+    },
+    {
+      "key": "view_only",
+      "label": "View Only",
+      "adminAccessMode": "no_admin_screen",
+      "nonAdminAccessMode": "non_admin_view_only",
+      "paymentAccessMode": "payment_view_only"
+    }
+  ],
+  "administratorAdminCardGrantMode": "selectable_per_card",
+  "ownerCompatibilityKey": "owner_admin",
+  "next": "Expose Administrator Admin-card grants in Users UI without enabling runtime enforcement."
+}
