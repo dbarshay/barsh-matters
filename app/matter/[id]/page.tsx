@@ -5962,28 +5962,15 @@ function openClaimAmountEditDialog() {
 
   function renderMatterDocumentGenerationPopup() {
     if (!matterDocumentGenerationPopupOpen) return null;
-    const documentData = matterDocumentDataPreview?.packet?.metadata?.documentData;
-    const templateFields = documentData?.templateFields || {};
-    const referenceData = documentData?.referenceData || {};
-    const query = matterDocumentTemplateQuery.trim().toLowerCase();
-
-    const templateOptions = [
-      {
-        key: "blank-letterhead",
-        label: "Blank Letterhead",
-        description: "Current stored DOCX template from the local Barsh Matters template repository.",
-      },
-    ];
-
-    const sortedTemplateOptions = [...templateOptions].sort((a, b) => a.label.localeCompare(b.label));
-
-    const filteredTemplateOptions = sortedTemplateOptions.filter((option) => {
-      const haystack = `${option.label} ${option.description}`.toLowerCase();
-      return !query || haystack.includes(query);
-    });
 
     const selectedTemplate =
-      sortedTemplateOptions.find((option) => option.key === matterSelectedDocumentTemplateKey) || null;
+      matterSelectedDocumentTemplateKey === "blank-letterhead"
+        ? {
+            key: "blank-letterhead",
+            label: "Blank Letterhead",
+            description: "Current stored DOCX template from the local Barsh Matters template repository.",
+          }
+        : null;
 
     const matterDocumentSignerOptions = [
       {
@@ -5991,12 +5978,6 @@ function openClaimAmountEditDialog() {
         displayName: "David M. Barshay",
       },
     ];
-
-    const canFinalize =
-      Boolean(selectedTemplate) &&
-      (matterDocumentWorkflowStage === "preview" ||
-        matterDocumentWorkflowStage === "edit" ||
-        matterDocumentWorkflowStage === "finalize");
 
     const showSelectStep = matterDocumentWorkflowStage === "select";
     const showSignerStep = matterDocumentWorkflowStage === "signer";
@@ -6015,8 +5996,8 @@ function openClaimAmountEditDialog() {
           padding: "8px 10px",
           borderRadius: 999,
           border: complete ? "1px solid #16a34a" : "1px solid #bbf7d0",
-          background: complete ? "#16a34a" : "#dcfce7",
-          color: complete ? "#ffffff" : "#166534",
+          background: active ? "#16a34a" : complete ? "#dcfce7" : "#dcfce7",
+          color: active ? "#ffffff" : "#166534",
           fontSize: 12,
           fontWeight: 900,
           whiteSpace: "nowrap",
@@ -6030,13 +6011,28 @@ function openClaimAmountEditDialog() {
             width: 22,
             height: 22,
             borderRadius: 999,
-            background: complete ? "#15803d" : "#bbf7d0",
-            color: complete ? "#ffffff" : "#166534",
+            background: active ? "#15803d" : "#bbf7d0",
+            color: active ? "#ffffff" : "#166534",
           }}
         >
           {step}
         </span>
         {label}
+      </div>
+    );
+
+    const stepArrow = (complete = false) => (
+      <div
+        aria-hidden="true"
+        style={{
+          color: complete ? "#16a34a" : "#94a3b8",
+          fontSize: 28,
+          lineHeight: 1,
+          fontWeight: 950,
+          padding: "0 2px",
+        }}
+      >
+        →
       </div>
     );
 
@@ -6059,56 +6055,49 @@ function openClaimAmountEditDialog() {
           padding: "10px 14px",
           fontWeight: 900,
           cursor: disabled ? "not-allowed" : "pointer",
-          boxShadow: disabled ? "none" : "0 10px 20px rgba(30, 58, 138, 0.18)",
+          boxShadow: disabled ? "none" : "0 10px 18px rgba(30, 58, 138, 0.18)",
         }}
       >
         {label}
       </button>
     );
 
-    const stepArrow = (completed: boolean) => (
-      <div
-        aria-hidden="true"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: completed ? "#16a34a" : "#94a3b8",
-          fontSize: 22,
-          fontWeight: 900,
-          lineHeight: 1,
-          padding: "0 2px",
-        }}
-      >
-        →
-      </div>
-    );
-
-    const step1Complete = matterDocumentWorkflowStage !== "select";
-    const step2Complete =
-      matterDocumentWorkflowStage === "finalize" || matterDocumentWorkflowStage === "delivery";
-    const step3Complete = matterDocumentWorkflowStage === "delivery";
-
-    const canGoBackMatterDocumentGeneration = matterDocumentWorkflowStage !== "select";
     const goBackMatterDocumentGeneration = () => {
-      if (matterDocumentWorkflowStage === "delivery") {
+      if (showDeliveryStep) {
         setMatterDocumentWorkflowStage("finalize");
         return;
       }
-
-      if (matterDocumentWorkflowStage === "finalize") {
+      if (showPreviewStep || showEditStep || showFinalizeStep) {
         setMatterDocumentWorkflowStage("chooseAction");
         return;
       }
-
-      if (matterDocumentWorkflowStage === "preview" || matterDocumentWorkflowStage === "edit" || matterDocumentWorkflowStage === "chooseAction" || matterDocumentWorkflowStage === "signer") {
-        setMatterSelectedDocumentTemplateKey("");
-        setMatterDocumentTemplateQuery("");
-        setDocumentPreview(null);
-        setMatterDocumentFinalizationResult(null);
-        setFinalizeUploadResult(null);
-        setMatterDocumentWorkflowStage("select");
+      if (showActionStep) {
+        setMatterDocumentWorkflowStage("signer");
+        return;
       }
+      if (showSignerStep) {
+        setMatterDocumentWorkflowStage("select");
+        return;
+      }
+      setMatterSelectedDocumentTemplateKey("");
+      setMatterDocumentTemplateQuery("");
+      setDocumentPreview(null);
+      setMatterDocumentFinalizationResult(null);
+      setFinalizeUploadResult(null);
+      setMatterDocumentWorkflowStage("select");
+    };
+
+    const closeMatterDocumentGeneration = () => setMatterDocumentGenerationPopupOpen(false);
+
+    const selectBlankLetterhead = () => {
+      setMatterSelectedDocumentTemplateKey("blank-letterhead");
+      setMatterDocumentTemplateQuery("Blank Letterhead");
+      setMatterDocumentWorkflowStage("signer");
+    };
+
+    const confirmSignerAndContinue = () => {
+      setMatterDocumentSignerEmail(matterDocumentSignerEmail.trim() || "dbarshay@brlfirm.com");
+      setMatterDocumentWorkflowStage("chooseAction");
     };
 
     return (
@@ -6117,8 +6106,13 @@ function openClaimAmountEditDialog() {
         aria-modal="true"
         aria-label="Direct Matter Document Generation"
         tabIndex={-1}
-        onClick={() => setMatterDocumentGenerationPopupOpen(false)}
-        onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMatterDocumentGenerationPopupOpen(false); } }}
+        onClick={closeMatterDocumentGeneration}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            closeMatterDocumentGeneration();
+          }
+        }}
         style={{
           position: "fixed",
           inset: 0,
@@ -6157,289 +6151,67 @@ function openClaimAmountEditDialog() {
             }}
           >
             <div aria-hidden="true" />
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 20,
-                fontWeight: 950,
-                color: "#ffffff",
-                textAlign: "center",
-              }}
-            >
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff", textAlign: "center" }}>
               Document Generation
             </h2>
             <div aria-hidden="true" />
           </div>
 
           <div style={{ padding: 24, display: "grid", gap: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              {stepBadge(1, "Select Document", matterDocumentWorkflowStage === "select", step1Complete)}
-              {stepArrow(step1Complete)}
-              {stepBadge(
-                2,
-                "Select Signer / Generate",
-                matterDocumentWorkflowStage === "signer" ||
-                  matterDocumentWorkflowStage === "chooseAction" ||
-                  matterDocumentWorkflowStage === "preview" ||
-                  matterDocumentWorkflowStage === "edit",
-                step2Complete
-              )}
-              {stepArrow(step2Complete)}
-              {stepBadge(3, "Document Delivery", matterDocumentWorkflowStage === "delivery", false)}
-              {stepArrow(step3Complete)}
-              {/* Step 4 removed: delivery is now Step 3. */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {stepBadge(1, "Select Document", showSelectStep, !showSelectStep)}
+              {stepArrow(!showSelectStep)}
+              {stepBadge(2, "Select Signer", showSignerStep, showActionStep || showPreviewStep || showEditStep || showFinalizeStep || showDeliveryStep)}
+              {stepArrow(showActionStep || showPreviewStep || showEditStep || showFinalizeStep || showDeliveryStep)}
+              {stepBadge(3, "Generate", showActionStep || showPreviewStep || showEditStep || showFinalizeStep, showDeliveryStep)}
+              {stepArrow(showDeliveryStep)}
+              {stepBadge(4, "Document Delivery", showDeliveryStep, false)}
             </div>
 
-            <section
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 18,
-                padding: 18,
-                background: "#f8fafc",
-                display: showSelectStep ? "grid" : "none",
-                gap: 14,
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
-                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Select the document template for this matter.
-                </p>
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                <input
-                  value={matterDocumentTemplateQuery}
-                  list="matter-document-template-options"
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setMatterDocumentTemplateQuery(value);
-                    const match = sortedTemplateOptions.find(
-                      (option) => option.label.toLowerCase() === value.trim().toLowerCase()
-                    );
-                    if (match) {
-                      setMatterSelectedDocumentTemplateKey(match.key);
-                      setMatterDocumentWorkflowStage("signer");
-                    } else {
-                      setMatterSelectedDocumentTemplateKey("");
-                      setMatterDocumentWorkflowStage("select");
-                    }
-                  }}
-                  placeholder="Select document template"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 12,
-                    padding: "11px 12px",
-                    fontSize: 15,
-                    background: "#fff",
-                  }}
-                />
-                <datalist id="matter-document-template-options">
-                  {sortedTemplateOptions.map((option) => (
-                    <option key={option.key} value={option.label} />
-                  ))}
-                </datalist>
-
-                {matterSelectedDocumentTemplateKey && selectedTemplate && (
-                  <div
-                    style={{
-                      border: "1px solid #c7d2fe",
-                      background: "#eef2ff",
-                      borderRadius: 14,
-                      padding: 14,
-                      color: "#3730a3",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    <strong>Selected:</strong> {selectedTemplate.label}
-                    <div style={{ marginTop: 4, color: "#475569" }}>{selectedTemplate.description}</div>
-                    <button
-                      type="button"
-                      data-barsh-direct-document-generation-continue-to-signer="true"
-                      onClick={() => setMatterDocumentWorkflowStage("signer")}
-                      style={{
-                        marginTop: 12,
-                        border: "1px solid #1e3a8a",
-                        background: "#1e3a8a",
-                        color: "#ffffff",
-                        borderRadius: 12,
-                        padding: "9px 13px",
-                        fontWeight: 950,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Continue to Signer
-                    </button>
-                  </div>
-                )}
-
-                {matterDocumentTemplateQuery.trim() && filteredTemplateOptions.length === 0 && (
-                  <div style={{ color: "#64748b", fontWeight: 800 }}>
-                    No matching document templates.
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 18,
-                padding: 18,
-                background: "#fff",
-                display: showActionStep ? "grid" : "none",
-                gap: 14,
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Preview PDF / Edit / Finalize</h3>
-                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  {selectedTemplate
-                    ? `Selected: ${selectedTemplate?.label || "Selected document"}`
-                    : "Select a document before previewing, editing, or finalizing."}
-                </p>
-              </div>
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {actionButton(
-                  "Preview PDF",
-                  () => launchMatterStep2PdfPreview(selectedTemplate),
-                  !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : "Confirm signer, then open a temporary PDF preview without uploading to Clio."
-                )}
-                {actionButton(
-                  "Edit Document",
-                  () => launchMatterStep2GeneratedDocumentEdit(selectedTemplate),
-                  !selectedTemplate,
-                  !selectedTemplate ? "Select a document first." : "Confirm signer, then create a working DOCX and edit it in Word Web."
-                )}
-                {actionButton(
-                  documentPreviewLoading || finalizeUploadLoading ? "Finalizing..." : "Finalize Document",
-                  () => finalizeMatterDocumentFromStep2(selectedTemplate),
-                  !selectedTemplate || documentPreviewLoading || finalizeUploadLoading,
-                  !selectedTemplate ? "Select a document first." : "Confirm signer, then finalize the selected document."
-                )}
-              </div>
-
-            </section>
-
-            {(showPreviewStep || showEditStep || showFinalizeStep) && selectedTemplate && (
+            {showSelectStep && (
               <section
+                data-barsh-direct-document-generation-select-section="true"
                 style={{
                   border: "1px solid #e5e7eb",
                   borderRadius: 18,
                   padding: 18,
-                  background: "#fff",
+                  background: "#f8fafc",
                   display: "grid",
                   gap: 14,
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>
-                    {showPreviewStep ? "Preview PDF" : showEditStep ? "Edit Document" : "Finalize Document"}
-                  </h3>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
+                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                    Select the document template for this matter.
+                  </p>
                 </div>
 
-                {showEditStep && matterDocumentFinalizationResult?.workingDocument && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl || "";
-                        if (!url) {
-                          alert("No desktop Word link is available for this working document.");
-                          return;
-                        }
-                        const link = document.createElement("a");
-                        link.href = url;
-                        link.style.display = "none";
-                        link.rel = "noopener noreferrer";
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      disabled={!matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl}
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        background: "#fff",
-                        color: "#334155",
-                        borderRadius: 12,
-                        padding: "10px 14px",
-                        fontWeight: 900,
-                        cursor: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "pointer" : "not-allowed",
-                        opacity: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? 1 : 0.55,
-                      }}
-                    >
-                      Try Desktop Word
-                    </button>
+                <button
+                  type="button"
+                  data-barsh-direct-document-generation-template-card="blank-letterhead"
+                  onClick={selectBlankLetterhead}
+                  style={{
+                    textAlign: "left",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 16,
+                    padding: 16,
+                    background: "#ffffff",
+                    color: "#0f172a",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
+                  <strong style={{ fontSize: 15 }}>Blank Letterhead</strong>
+                  <span style={{ color: "#475569", lineHeight: 1.4 }}>
+                    Current stored DOCX template from the local Barsh Matters template repository.
+                  </span>
+                </button>
+              </section>
+            )}
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
-                        if (!url) {
-                          alert("No Word web link is available for this working document.");
-                          return;
-                        }
-                        window.open(url, "_blank", "noopener,noreferrer");
-                      }}
-                      disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
-                      style={{
-                        border: "1px solid #1e3a8a",
-                        background: "#1e3a8a",
-                        color: "#fff",
-                        borderRadius: 12,
-                        padding: "10px 14px",
-                        fontWeight: 900,
-                        cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
-                        opacity: matterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
-                      }}
-                    >
-                      Open in Word Web
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
-                        if (!url) {
-                          alert("No Word web link is available to copy.");
-                          return;
-                        }
-                        try {
-                          await navigator.clipboard.writeText(url);
-                          alert("Word web link copied.");
-                        } catch {
-                          alert("Could not copy the Word web link automatically.");
-                        }
-                      }}
-                      disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        background: "#fff",
-                        color: "#334155",
-                        borderRadius: 12,
-                        padding: "10px 14px",
-                        fontWeight: 900,
-                        cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
-                        opacity: matterDocumentFinalizationResult?.workingDocument?.webUrl ? 1 : 0.55,
-                      }}
-                    >
-                      Copy Word Web Link
-                    </button>
-                  </div>
-                )}
-
-              {showSignerStep && selectedTemplate && (
+            {showSignerStep && selectedTemplate && (
               <section
                 data-barsh-direct-document-generation-signer-only-section="true"
                 style={{
@@ -6451,59 +6223,58 @@ function openClaimAmountEditDialog() {
                   gap: 14,
                 }}
               >
-<div data-barsh-direct-document-generation-signer-heading="true">
-                <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Select Signer</h3>
-                <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
-                  Choose the signer for this document before previewing, editing, or finalizing.
-                </p>
-              </div>
-
-              <div
-                data-barsh-direct-document-generation-signer-default="true"
-                data-barsh-direct-document-generation-signer-step="true"
-                style={{
-                  display: "grid",
-                  gap: 8,
-                  border: "1px solid #bfdbfe",
-                  borderRadius: 14,
-                  padding: 12,
-                  background: "#eff6ff",
-                }}
-              >
-                <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 950, color: "#1e3a8a" }}>
-                  Signer
-                  <select
-                    value={matterDocumentSignerEmail}
-                    onChange={(event) => setMatterDocumentSignerEmail(event.target.value)}
-                    style={{
-                      width: "100%",
-                      boxSizing: "border-box",
-                      border: "1px solid #93c5fd",
-                      borderRadius: 10,
-                      padding: "9px 11px",
-                      fontSize: 13,
-                      fontWeight: 900,
-                      color: "#0f172a",
-                      background: "#ffffff",
-                    }}
-                  >
-                    {matterDocumentSignerOptions.map((signer) => (
-                      <option key={signer.email} value={signer.email}>
-                        {signer.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.35 }}>
-                  Default signer is David M. Barshay. The selected display name controls signer.* document fields; the stored signer email is sent only for backend signer-profile resolution.
+                <div data-barsh-direct-document-generation-signer-heading="true">
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Select Signer</h3>
+                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                    Choose the signer for <strong>{selectedTemplate.label}</strong> before generating the document.
+                  </p>
                 </div>
-              </div>
+
+                <div
+                  data-barsh-direct-document-generation-signer-step="true"
+                  style={{
+                    display: "grid",
+                    gap: 8,
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 14,
+                    padding: 12,
+                    background: "#eff6ff",
+                  }}
+                >
+                  <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 950, color: "#1e3a8a" }}>
+                    Signer
+                    <select
+                      value={matterDocumentSignerEmail}
+                      onChange={(event) => setMatterDocumentSignerEmail(event.target.value)}
+                      style={{
+                        width: "100%",
+                        boxSizing: "border-box",
+                        border: "1px solid #93c5fd",
+                        borderRadius: 10,
+                        padding: "9px 11px",
+                        fontSize: 13,
+                        fontWeight: 900,
+                        color: "#0f172a",
+                        background: "#ffffff",
+                      }}
+                    >
+                      {matterDocumentSignerOptions.map((signer) => (
+                        <option key={signer.email} value={signer.email}>
+                          {signer.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.35 }}>
+                    The selected display name controls signer.* document fields; the stored signer email is sent only for backend signer-profile resolution.
+                  </div>
+                </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   <button
                     type="button"
                     data-barsh-direct-document-generation-continue-to-actions="true"
-                    onClick={() => setMatterDocumentWorkflowStage("chooseAction")}
+                    onClick={confirmSignerAndContinue}
                     style={{
                       border: "1px solid #1e3a8a",
                       background: "#1e3a8a",
@@ -6535,143 +6306,45 @@ function openClaimAmountEditDialog() {
                 <div data-barsh-direct-document-generation-actions-heading="true">
                   <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Generate Document</h3>
                   <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
-                    Signer confirmed. Choose whether to preview, edit, or finalize the selected document.
+                    Signer confirmed. Choose whether to preview, edit, or finalize <strong>{selectedTemplate.label}</strong>.
                   </p>
                 </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  
+                  {actionButton(
+                    "Preview PDF",
+                    () => launchMatterStep2PdfPreview(selectedTemplate),
+                    !selectedTemplate,
+                    "Open a temporary PDF preview without uploading to Clio."
+                  )}
+                  {actionButton(
+                    "Edit Document",
+                    () => launchMatterStep2GeneratedDocumentEdit(selectedTemplate),
+                    !selectedTemplate,
+                    "Create a working DOCX and edit it in Word Web."
+                  )}
                   {actionButton(
                     documentPreviewLoading || finalizeUploadLoading ? "Finalizing..." : "Finalize Document",
                     () => finalizeMatterDocumentFromStep2(selectedTemplate),
-                    documentPreviewLoading || finalizeUploadLoading,
-                    "Finalize and upload the selected document to Clio."
+                    !selectedTemplate || documentPreviewLoading || finalizeUploadLoading,
+                    "Finalize the selected document."
                   )}
                 </div>
               </section>
             )}
 
-              </section>
-            )}
-
-            {matterDocumentWorkflowStage === "finalize" && selectedTemplate && (
+            {(showPreviewStep || showEditStep || showFinalizeStep) && selectedTemplate && (
               <section
                 style={{
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #dbeafe",
                   borderRadius: 18,
                   padding: 18,
-                  background: "#f9fafb",
-                  display: "none",
-                  gap: 14,
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
-                </div>
-                <div style={{ display: "grid", gap: 10 }}>
-                  <label style={{ display: "grid", gap: 6, maxWidth: 420 }}>
-                    <span style={{ fontWeight: 850, color: "#334155" }}>To Email for Document Delivery</span>
-                    <input
-                      value={matterDocumentDeliveryToOverride}
-                      onChange={(event) => setMatterDocumentDeliveryToOverride(event.target.value)}
-                      placeholder="Recipient email"
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 10,
-                        padding: "9px 10px",
-                        fontWeight: 750,
-                      }}
-                    />
-                    {matterDocumentDeliveryToOverride.trim() && !isValidMatterDocumentDeliveryEmail(matterDocumentDeliveryToOverride) && (
-                      <span style={{ color: "#b91c1c", fontSize: 12, fontWeight: 800 }}>Enter a valid email address.</span>
-                    )}
-                  </label>
-
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {actionButton(
-                      "Email Document",
-                      () => launchMatterDocumentEmail(selectedTemplate),
-                      Boolean(matterDocumentDeliveryToOverride.trim()) && !isValidMatterDocumentDeliveryEmail(matterDocumentDeliveryToOverride),
-                      "Create an Outlook draft with the finalized PDF attached."
-                    )}
-                    {actionButton("Print Document", () => launchMatterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                    {actionButton("Send to Print Queue", () => sendMatterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {matterDocumentWorkflowStage === "delivery" && (
-              <section
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 18,
-                  padding: 18,
-                  background: "#f9fafb",
+                  background: "#eff6ff",
                   display: "grid",
-                  gap: 14,
+                  gap: 12,
                 }}
               >
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
-                  <span style={{ display: "none" }}>Document Delivery — Standalone</span>
-                </div>
-                <div style={{ display: "grid", gap: 10 }}>
-                  <label style={{ display: "grid", gap: 6, maxWidth: 420 }}>
-                    <span style={{ fontWeight: 850, color: "#334155" }}>To Email for Document Delivery</span>
-                    <input
-                      value={matterDocumentDeliveryToOverride}
-                      onChange={(event) => setMatterDocumentDeliveryToOverride(event.target.value)}
-                      placeholder="Recipient email"
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 10,
-                        padding: "9px 10px",
-                        fontWeight: 750,
-                      }}
-                    />
-                    {matterDocumentDeliveryToOverride.trim() && !isValidMatterDocumentDeliveryEmail(matterDocumentDeliveryToOverride) && (
-                      <span style={{ color: "#b91c1c", fontSize: 12, fontWeight: 800 }}>Enter a valid email address.</span>
-                    )}
-                  </label>
-
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {actionButton(
-                      "Email Document",
-                      () => launchMatterDocumentEmail(selectedTemplate),
-                      Boolean(matterDocumentDeliveryToOverride.trim()) && !isValidMatterDocumentDeliveryEmail(matterDocumentDeliveryToOverride),
-                      "Create an Outlook draft with the finalized PDF attached."
-                    )}
-                    {actionButton("Print Document", () => launchMatterDocumentPrint(selectedTemplate), false, "Open the finalized PDF/printable document and show the print dialog when available.")}
-                    {actionButton("Send to Print Queue", () => sendMatterDocumentToPrintQueue(selectedTemplate), false, "Send this finalized document to the shared Barsh Matters print queue when backend support is available.")}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {matterDocumentDataPreview?.error && (
-              <div style={{ color: "#991b1b", fontWeight: 900 }}>
-                Error: {textValue(matterDocumentDataPreview.error)}
-              </div>
-            )}
-
-            <details
-              style={{
-                display: "none",
-                border: "1px solid #e5e7eb",
-                borderRadius: 14,
-                padding: 14,
-                background: "#fff",
-              }}
-            >
-              <summary style={{ cursor: "pointer", fontWeight: 950 }}>
-                Advanced / Data Preview
-              </summary>
-              <div style={{ marginTop: 14 }}>
-                <h3 style={{ margin: 0, fontSize: 16 }}>Template Data Review</h3>
-                <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
-                  Read-only local data available for future direct matter templates.  It does not generate documents, upload documents, write to Clio, or change the print queue.
-                </p>
+                <h3 style={{ margin: 0, fontSize: 18 }}>{selectedTemplate.label}</h3>
                 <pre
                   style={{
                     margin: 0,
@@ -6685,11 +6358,16 @@ function openClaimAmountEditDialog() {
                     lineHeight: 1.45,
                   }}
                 >
-                  {JSON.stringify({ templateFields, referenceData, documentData }, null, 2)}
+                  {JSON.stringify(matterDocumentFinalizationResult || documentPreview || finalizeUploadResult || {}, null, 2)}
                 </pre>
-                <div style={{ display: "none" }}>{renderMatterDocumentDataPreviewPanel()}</div>
+              </section>
+            )}
+
+            {matterDocumentDataPreview?.error && (
+              <div style={{ color: "#991b1b", fontWeight: 900 }}>
+                Error: {textValue(matterDocumentDataPreview.error)}
               </div>
-            </details>
+            )}
           </div>
 
           <div
@@ -6707,16 +6385,16 @@ function openClaimAmountEditDialog() {
             <button
               type="button"
               onClick={goBackMatterDocumentGeneration}
-              disabled={!canGoBackMatterDocumentGeneration || documentPreviewLoading || finalizeUploadLoading}
+              disabled={documentPreviewLoading || finalizeUploadLoading}
               style={{
                 minWidth: 118,
                 height: 38,
                 border: "1px solid #cbd5e1",
                 borderRadius: 10,
-                background: !canGoBackMatterDocumentGeneration || documentPreviewLoading || finalizeUploadLoading ? "#f3f4f6" : "#ffffff",
-                color: !canGoBackMatterDocumentGeneration || documentPreviewLoading || finalizeUploadLoading ? "#94a3b8" : "#334155",
+                background: documentPreviewLoading || finalizeUploadLoading ? "#f3f4f6" : "#ffffff",
+                color: documentPreviewLoading || finalizeUploadLoading ? "#94a3b8" : "#334155",
                 fontWeight: 900,
-                cursor: !canGoBackMatterDocumentGeneration || documentPreviewLoading || finalizeUploadLoading ? "not-allowed" : "pointer",
+                cursor: documentPreviewLoading || finalizeUploadLoading ? "not-allowed" : "pointer",
               }}
             >
               Back
@@ -6724,7 +6402,7 @@ function openClaimAmountEditDialog() {
 
             <button
               type="button"
-              onClick={() => setMatterDocumentGenerationPopupOpen(false)}
+              onClick={closeMatterDocumentGeneration}
               disabled={documentPreviewLoading || finalizeUploadLoading}
               style={{
                 minWidth: 118,
@@ -6744,6 +6422,7 @@ function openClaimAmountEditDialog() {
       </div>
     );
   }
+
 
   function renderMatterViewEmailsPopup() {
     if (!matterViewEmailsPopupOpen) return null;
