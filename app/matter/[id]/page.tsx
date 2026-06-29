@@ -7763,7 +7763,7 @@ function openClaimAmountEditDialog() {
     >
       <div style={bmGlobalTopBarStyle}>
         <div style={bmGlobalLeftLogoWrapStyle}>
-          <img style={{ maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} data-barsh-header-logo-containment="true" src="/brl-logo.png" alt="BRL Logo" style={bmGlobalBrlLogoStyle} />
+          <img data-barsh-header-logo-containment="true" src="/brl-logo.png" alt="BRL Logo" style={{ ...bmGlobalBrlLogoStyle, maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} />
           <div style={{ paddingTop: 8 }}>
             <BarshHeaderQuickNav />
           </div>
@@ -7872,7 +7872,7 @@ function openClaimAmountEditDialog() {
           </div>
 
           <a href="/" title="Return to Barsh Matters entry screen" style={bmGlobalLogoLinkStyle}>
-            <img style={{ maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} data-barsh-header-logo-containment="true" src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={bmGlobalLogoStyle} />
+            <img data-barsh-header-logo-containment="true" src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={{ ...bmGlobalLogoStyle, maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} />
           </a>
         </div>
       </div>
