@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Barsh Matters",
   description: "Lawsuit aggregation, document finalization, and print queue workflow.",
+  other: { google: "notranslate" },
 };
 
 export default function RootLayout({
@@ -25,8 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      translate="no"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} notranslate h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
