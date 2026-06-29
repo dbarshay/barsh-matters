@@ -623,6 +623,7 @@ const activeGroupKey =
   const [matterDocumentDataPreviewLoading, setMatterDocumentDataPreviewLoading] = useState(false);
   const [matterDocumentTemplateQuery, setMatterDocumentTemplateQuery] = useState("");
   const [matterSelectedDocumentTemplateKey, setMatterSelectedDocumentTemplateKey] = useState("");
+  const [matterDocumentSignerEmail, setMatterDocumentSignerEmail] = useState("dbarshay@brlfirm.com");
   const [matterDocumentWorkflowStage, setMatterDocumentWorkflowStage] = useState<"select" | "chooseAction" | "preview" | "edit" | "finalize" | "delivery">("select");
 
   const [matterDocumentDataPreview, setMatterDocumentDataPreview] = useState<any>(null);
@@ -4000,7 +4001,7 @@ function openClaimAmountEditDialog() {
         body: JSON.stringify({
           masterLawsuitId,
           uploadTargetMode: "direct-matter",
-          directMatterId: directMatterNumericIdForDocuments(),
+          directMatterId: /^BRL_/i.test(directMatterDisplayNumber) ? null : directMatterNumericIdForDocuments(),
           directMatterDisplayNumber:
             textValue(matter?.displayNumber || matter?.display_number) ||
             (directMatterNumericIdForDocuments() ? `BRL${directMatterNumericIdForDocuments()}` : ""),
@@ -4052,6 +4053,8 @@ function openClaimAmountEditDialog() {
       return;
     }
 
+    const directMatterIdForRequest = /^BRL_/i.test(directMatterDisplayNumber) ? null : directMatterId;
+
     setDocumentPreviewLoading(true);
 
     try {
@@ -4063,8 +4066,9 @@ function openClaimAmountEditDialog() {
         body: JSON.stringify({
           confirmCreate: true,
           uploadTargetMode: "direct-matter",
-          directMatterId,
+          directMatterId: directMatterIdForRequest,
           directMatterDisplayNumber,
+          signerEmail: matterDocumentSignerEmail.trim() || "dbarshay@brlfirm.com",
           documentKeys: [selectedTemplate.key],
         }),
       });
@@ -4117,6 +4121,8 @@ function openClaimAmountEditDialog() {
       return;
     }
 
+    const directMatterIdForRequest = /^BRL_/i.test(directMatterDisplayNumber) ? null : directMatterId;
+
     const previewWindow = window.open("", "_blank");
 
     if (previewWindow) {
@@ -4136,8 +4142,9 @@ function openClaimAmountEditDialog() {
         body: JSON.stringify({
           confirmCreate: true,
           uploadTargetMode: "direct-matter",
-          directMatterId,
+          directMatterId: directMatterIdForRequest,
           directMatterDisplayNumber,
+          signerEmail: matterDocumentSignerEmail.trim() || "dbarshay@brlfirm.com",
           documentKeys: [selectedTemplate.key],
         }),
       });
@@ -4805,6 +4812,7 @@ function openClaimAmountEditDialog() {
     setActiveWorkspaceTab("documents");
     setMatterDocumentTemplateQuery("");
     setMatterSelectedDocumentTemplateKey("");
+    setMatterDocumentSignerEmail("dbarshay@brlfirm.com");
     setMatterDocumentWorkflowStage("select");
     setMatterDocumentGenerationPopupOpen(true);
     await loadMatterDocumentDataPreview();
@@ -5944,21 +5952,6 @@ function openClaimAmountEditDialog() {
         label: "Blank Letterhead",
         description: "Current stored DOCX template from the local Barsh Matters template repository.",
       },
-      {
-        key: "bill-schedule",
-        label: "Bill Schedule",
-        description: "Schedule of lawsuit bills and balances for this direct matter.",
-      },
-      {
-        key: "packet-summary",
-        label: "Packet Summary",
-        description: "Internal filing and packet summary for this direct matter.",
-      },
-      {
-        key: "summons-complaint",
-        label: "Summons and Complaint",
-        description: "Summons and complaint packet for this direct matter.",
-      },
     ];
 
     const sortedTemplateOptions = [...templateOptions].sort((a, b) => a.label.localeCompare(b.label));
@@ -6189,6 +6182,41 @@ function openClaimAmountEditDialog() {
                 <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
                   Select the document template for this matter.
                 </p>
+              </div>
+
+              <div
+                data-barsh-direct-document-generation-signer-default="true"
+                style={{
+                  display: "grid",
+                  gap: 8,
+                  border: "1px solid #bfdbfe",
+                  borderRadius: 14,
+                  padding: 12,
+                  background: "#eff6ff",
+                }}
+              >
+                <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 950, color: "#1e3a8a" }}>
+                  Signer
+                  <input
+                    value={matterDocumentSignerEmail}
+                    onChange={(event) => setMatterDocumentSignerEmail(event.target.value)}
+                    placeholder="dbarshay@brlfirm.com"
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      border: "1px solid #93c5fd",
+                      borderRadius: 10,
+                      padding: "9px 11px",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: "#0f172a",
+                      background: "#ffffff",
+                    }}
+                  />
+                </label>
+                <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.35 }}>
+                  Default signer is the generating user. Use this signer for signer.* fields unless another eligible signer is selected.
+                </div>
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
@@ -7735,7 +7763,7 @@ function openClaimAmountEditDialog() {
     >
       <div style={bmGlobalTopBarStyle}>
         <div style={bmGlobalLeftLogoWrapStyle}>
-          <img src="/brl-logo.png" alt="BRL Logo" style={bmGlobalBrlLogoStyle} />
+          <img style={{ maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} data-barsh-header-logo-containment="true" src="/brl-logo.png" alt="BRL Logo" style={bmGlobalBrlLogoStyle} />
           <div style={{ paddingTop: 8 }}>
             <BarshHeaderQuickNav />
           </div>
@@ -7844,7 +7872,7 @@ function openClaimAmountEditDialog() {
           </div>
 
           <a href="/" title="Return to Barsh Matters entry screen" style={bmGlobalLogoLinkStyle}>
-            <img src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={bmGlobalLogoStyle} />
+            <img style={{ maxWidth: 126, maxHeight: 86, width: "auto", height: "auto", objectFit: "contain" }} data-barsh-header-logo-containment="true" src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={bmGlobalLogoStyle} />
           </a>
         </div>
       </div>
