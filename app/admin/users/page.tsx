@@ -1484,7 +1484,7 @@ export default function AdminUsersPlanningPage() {
         </section>
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr>{["Display Name", "User Name", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
+            <thead><tr>{["Display Name", "User Name", "Signer Profile", "Signature Name", "Signer Contact", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
             <tbody>{dbUsers.length ? dbUsers.map((user: any) => {
               const active = user.status === "active" && !user.locked && !user.inactive;
               const twoFactorSetupPending = twoFactorSetupPendingForUser(user);
