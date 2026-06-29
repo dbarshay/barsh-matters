@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
 const api = fs.readFileSync("app/api/admin/users/planning/route.ts", "utf8");
-const page = fs.readFileSync("app/admin/users/page.tsx", "utf8");
+const permissionsPage = fs.readFileSync("app/admin/permissions/page.tsx", "utf8");
 const failures = [];
 
 for (const required of [
@@ -17,17 +17,39 @@ for (const required of [
 }
 
 for (const required of [
-  'data-barsh-admin-users-enforcement-banner="disabled"',
-  "Enforcement Disabled:",
-  'data-barsh-admin-users-effective-permissions="read-only"',
-  "Effective Permissions Preview",
-  "Enforcement remains disabled.",
+  "fetch(\"/api/admin/users/planning\"",
+  "selectedUserEffectiveKeys",
+  "selectedUserMatrixAllowedKeys",
+  "selectedUserEffectiveOnlyKeys",
+  "selectedUserMatrixOnlyKeys",
+  "selectedUserMismatchCount",
+  "runtime-still-read-only",
+  "Runtime enforcement remains unchanged",
+  "runtimeEnforcementChanged: false",
+  "Do not enable runtime enforcement",
 ]) {
-  if (!page.includes(required)) failures.push("page missing effective permissions read-only fragment: " + required);
+  if (!permissionsPage.includes(required)) failures.push("permissions page missing effective permissions read-only fragment: " + required);
 }
 
-for (const forbidden of [".create(", ".update(", ".delete(", ".upsert(", ".createMany(", ".updateMany(", ".deleteMany(", "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT=1", "process.env.BARSH_ADMIN_PERMISSIONS_ENFORCEMENT ="]) {
-  if (api.includes(forbidden) || page.includes(forbidden)) failures.push("effective permissions preview must remain read-only/no-enforcement; found forbidden fragment: " + forbidden);
+for (const forbidden of [
+  ".create(",
+  ".update(",
+  ".delete(",
+  ".upsert(",
+  ".createMany(",
+  ".updateMany(",
+  ".deleteMany(",
+  "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT=1",
+  "process.env.BARSH_ADMIN_PERMISSIONS_ENFORCEMENT =",
+]) {
+  if (api.includes(forbidden)) failures.push("effective permissions planning API must remain read-only/no-enforcement; found forbidden fragment: " + forbidden);
+}
+
+for (const forbidden of [
+  "BARSH_ADMIN_PERMISSIONS_ENFORCEMENT=1",
+  "process.env.BARSH_ADMIN_PERMISSIONS_ENFORCEMENT =",
+]) {
+  if (permissionsPage.includes(forbidden)) failures.push("permissions page must not enable runtime enforcement; found forbidden fragment: " + forbidden);
 }
 
 console.log("RESULT: admin users effective permissions read-only safety verifier");
@@ -37,4 +59,4 @@ if (failures.length) {
   process.exit(1);
 }
 console.log("FAILURES=0");
-console.log("PASS: admin users page/API show DB-backed effective permissions read-only while enforcement remains disabled.");
+console.log("PASS: admin users planning API and permissions page show DB-backed effective permissions preview while runtime enforcement remains read-only/unchanged.");
