@@ -4247,13 +4247,8 @@ function openClaimAmountEditDialog() {
       return;
     }
 
-    const workingDocument = matterDocumentFinalizationResult?.workingDocument || null;
-    const workingDocumentDriveItemId = textValue(workingDocument?.driveItemId);
-
-    if (!workingDocumentDriveItemId) {
-      alert("Use Edit Document first, save in Word Web, then click Finalize Document.");
-      return;
-    }
+    let workingDocument = matterDocumentFinalizationResult?.workingDocument || null;
+    let workingDocumentDriveItemId = textValue(workingDocument?.driveItemId);
 
     const effectiveSelectedDocumentKey =
       textValue(matterDocumentFinalizationResult?.selectedDocument?.key) ||
@@ -4261,6 +4256,34 @@ function openClaimAmountEditDialog() {
     const effectiveSelectedDocumentLabel =
       textValue(matterDocumentFinalizationResult?.selectedDocument?.label) ||
       textValue(selectedTemplate.label);
+
+    if (!workingDocumentDriveItemId) {
+      const workingResponse = await fetch("/api/documents/working-docx", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          confirmCreate: true,
+          uploadTargetMode: "direct-matter",
+          directMatterId: directMatterIdForRequest,
+          directMatterDisplayNumber,
+          signerEmail: matterDocumentSignerEmail.trim() || "dbarshay@brlfirm.com",
+          documentKeys: [effectiveSelectedDocumentKey].filter(Boolean),
+        }),
+      });
+
+      const workingJson = await workingResponse.json().catch(() => null);
+
+      if (!workingResponse.ok || !workingJson?.ok || !workingJson?.workingDocument?.driveItemId) {
+        alert(workingJson?.error || "Could not prepare the document for finalization.");
+        return;
+      }
+
+      workingDocument = workingJson.workingDocument;
+      workingDocumentDriveItemId = textValue(workingDocument?.driveItemId);
+      setMatterDocumentFinalizationResult(workingJson);
+    }
 
     setDocumentPreviewLoading(true);
     setFinalizeUploadLoading(true);
