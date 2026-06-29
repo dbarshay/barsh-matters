@@ -7,9 +7,18 @@ function pass(message) { console.log("PASS:", message); }
 function fail(message) { failed = true; console.error("FAIL:", message); }
 function has(label, token) { page.includes(token) ? pass(label) : fail(`${label} missing ${token}`); }
 
-has("delivery step badge remains", 'Document Delivery');
+has("delivery step badge remains", "Document Delivery");
 has("delivery section exists", 'data-barsh-direct-document-generation-delivery-section="true"');
+has("delivery options section exists", 'data-barsh-direct-document-generation-delivery-options="true"');
 has("delivery completion copy exists", "Finalization completed for");
+has("Send to Print Queue option exists", "Send to Print Queue");
+has("Save Locally option exists", "Save Locally");
+has("Print Finalized Document option exists", "Print Finalized Document");
+has("Email Finalized Document option exists", "Email Finalized Document");
+has("send to print queue handler exists", "sendFinalizedDocumentToPrintQueueForDelivery");
+has("save locally handler exists", "saveFinalizedDocumentLocallyForDelivery");
+has("print finalized handler exists", "printFinalizedDocumentForDelivery");
+has("email finalized handler exists", "emailFinalizedDocumentForDelivery");
 has("generate another document button exists", "Generate Another Document");
 has("generate another document resets workflow", 'setMatterDocumentWorkflowStage("select");');
 has("close button exists in delivery section", "Close");

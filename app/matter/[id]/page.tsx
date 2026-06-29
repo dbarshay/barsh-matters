@@ -6136,6 +6136,99 @@ function openClaimAmountEditDialog() {
 
     const closeMatterDocumentGeneration = () => setMatterDocumentGenerationPopupOpen(false);
 
+    const firstDocumentDeliveryUrl = (value: any): string => {
+      if (!value) return "";
+      if (typeof value === "string") return /^https?:\/\//i.test(value) ? value : "";
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = firstDocumentDeliveryUrl(item);
+          if (found) return found;
+        }
+        return "";
+      }
+      if (typeof value === "object") {
+        const preferredKeys = [
+          "webUrl",
+          "web_url",
+          "url",
+          "downloadUrl",
+          "download_url",
+          "clioDocumentUrl",
+          "clioUrl",
+          "documentUrl",
+          "finalizedPdfUrl",
+          "pdfUrl",
+          "openUrl",
+        ];
+        for (const key of preferredKeys) {
+          const found = firstDocumentDeliveryUrl(value[key]);
+          if (found) return found;
+        }
+        for (const nested of Object.values(value)) {
+          const found = firstDocumentDeliveryUrl(nested);
+          if (found) return found;
+        }
+      }
+      return "";
+    };
+
+    const finalizedDocumentDeliveryUrl = firstDocumentDeliveryUrl(finalizeUploadResult);
+
+    const openFinalizedDocumentForDelivery = () => {
+      if (!finalizedDocumentDeliveryUrl) {
+        alert("No finalized document link is available yet.");
+        return;
+      }
+      window.open(finalizedDocumentDeliveryUrl, "_blank", "noopener,noreferrer");
+    };
+
+    const saveFinalizedDocumentLocallyForDelivery = () => {
+      if (!finalizedDocumentDeliveryUrl) {
+        alert("No finalized document link is available yet.");
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = finalizedDocumentDeliveryUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.download = `${selectedTemplate?.label || "Finalized Document"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    };
+
+    const printFinalizedDocumentForDelivery = () => {
+      if (!finalizedDocumentDeliveryUrl) {
+        alert("No finalized document link is available yet.");
+        return;
+      }
+      const printWindow = window.open(finalizedDocumentDeliveryUrl, "_blank", "noopener,noreferrer");
+      if (printWindow) {
+        setTimeout(() => {
+          try {
+            printWindow.focus();
+            printWindow.print();
+          } catch {
+            // Browser may block cross-origin print. Opening the finalized document is still useful.
+          }
+        }, 600);
+      }
+    };
+
+    const emailFinalizedDocumentForDelivery = () => {
+      const subject = encodeURIComponent(`${selectedTemplate?.label || "Finalized Document"} - ${directMatterDisplayNumberForDocumentActivity() || ""}`.trim());
+      const body = encodeURIComponent(
+        finalizedDocumentDeliveryUrl
+          ? `Finalized document: ${finalizedDocumentDeliveryUrl}`
+          : "The finalized document has been prepared in Barsh Matters."
+      );
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    };
+
+    const sendFinalizedDocumentToPrintQueueForDelivery = () => {
+      alert("Send to Print Queue is not wired for this finalized document yet.");
+    };
+
     const selectBlankLetterhead = () => {
       setMatterSelectedDocumentTemplateKey("blank-letterhead");
       setMatterDocumentTemplateQuery("Blank Letterhead");
@@ -6536,7 +6629,7 @@ function openClaimAmountEditDialog() {
                   padding: 18,
                   background: "#f0fdf4",
                   display: "grid",
-                  gap: 12,
+                  gap: 14,
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
@@ -6544,9 +6637,83 @@ function openClaimAmountEditDialog() {
                   Finalization completed for <strong>{selectedTemplate?.label || "the selected document"}</strong>.
                 </p>
                 <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
-                  The finalized document has been prepared through the direct matter storage workflow.
+                  Choose a delivery action for the finalized document.
                 </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+
+                <div
+                  data-barsh-direct-document-generation-delivery-options="true"
+                  style={{
+                    display: "grid",
+                    gap: 10,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={sendFinalizedDocumentToPrintQueueForDelivery}
+                    style={{
+                      border: "1px solid #1e3a8a",
+                      background: "#1e3a8a",
+                      color: "#ffffff",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Send to Print Queue
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={saveFinalizedDocumentLocallyForDelivery}
+                    style={{
+                      border: "1px solid #16a34a",
+                      background: "#16a34a",
+                      color: "#ffffff",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Save Locally
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={printFinalizedDocumentForDelivery}
+                    style={{
+                      border: "1px solid #15803d",
+                      background: "#ffffff",
+                      color: "#166534",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Print Finalized Document
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={emailFinalizedDocumentForDelivery}
+                    style={{
+                      border: "1px solid #15803d",
+                      background: "#ffffff",
+                      color: "#166534",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Email Finalized Document
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, borderTop: "1px solid #bbf7d0", paddingTop: 12 }}>
                   <button
                     type="button"
                     onClick={() => {
