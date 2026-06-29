@@ -6384,6 +6384,35 @@ function openClaimAmountEditDialog() {
                       : "Finalize step prepared."}
                 </p>
 
+                <div
+                  data-barsh-direct-document-generation-result-finalize-action="true"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    justifyContent: "flex-end",
+                    borderTop: "1px solid #bfdbfe",
+                    paddingTop: 12,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => finalizeMatterDocumentFromStep2(selectedTemplate)}
+                    disabled={documentPreviewLoading || finalizeUploadLoading}
+                    style={{
+                      border: "1px solid #16a34a",
+                      background: documentPreviewLoading || finalizeUploadLoading ? "#bbf7d0" : "#16a34a",
+                      color: "#ffffff",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: documentPreviewLoading || finalizeUploadLoading ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {finalizeUploadLoading ? "Finalizing..." : "Finalize Document"}
+                  </button>
+                </div>
+
                 {showEditStep && matterDocumentFinalizationResult?.workingDocument && (
                   <div
                     data-barsh-direct-document-generation-word-actions="true"
