@@ -728,13 +728,45 @@ const activeGroupKey =
     return 0;
   }
 
-  async function loadMatterClioDocuments() {
-    const numericMatterId = directMatterNumericIdForDocuments();
+  function normalizeDirectMatterDisplayNumberForDocuments(value: unknown): string {
+    const raw = String(value || "").trim().toUpperCase();
+    if (!raw) return "";
 
-    if (!Number.isFinite(numericMatterId) || numericMatterId <= 0) {
+    const brlMatch = raw.match(/^BRL[_-]?(\d{4})(\d{5})$/);
+    if (brlMatch) return `BRL_${brlMatch[1]}${brlMatch[2]}`;
+
+    const numericMatch = raw.match(/^(\d{4})(\d{5})$/);
+    if (numericMatch) return `BRL_${numericMatch[1]}${numericMatch[2]}`;
+
+    return raw;
+  }
+
+  function directMatterDisplayNumberForDocuments(): string {
+    const candidates = [
+      (matter as any)?.displayNumber,
+      (matter as any)?.directMatterDisplayNumber,
+      (matter as any)?.fileNumber,
+      (matter as any)?.matterDisplayNumber,
+      (matter as any)?.matterNumber,
+      (matter as any)?.number,
+      (matter as any)?.id,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = normalizeDirectMatterDisplayNumberForDocuments(candidate);
+      if (/^BRL_\d{9}$/.test(normalized)) return normalized;
+    }
+
+    return "";
+  }
+
+  async function loadMatterClioDocuments() {
+    const directMatterDisplayNumber = directMatterDisplayNumberForDocuments();
+
+    if (!/^BRL_\d{9}$/.test(directMatterDisplayNumber)) {
       setMatterClioDocumentsResult({
         ok: false,
-        error: "No valid direct matter ID is available for Clio document lookup.",
+        error: "No valid direct matter display number is available for Clio document lookup.",
         documents: [],
       });
       return;
@@ -743,8 +775,14 @@ const activeGroupKey =
     try {
       setMatterClioDocumentsLoading(true);
 
+      const params = new URLSearchParams();
+      params.set("uploadTargetMode", "direct-matter");
+      params.set("singleMasterDirectStorage", "1");
+      params.set("useSingleMasterClioStorage", "1");
+      params.set("directMatterDisplayNumber", directMatterDisplayNumber);
+
       const response = await fetch(
-        `/api/documents/clio-matter-documents?matterId=${encodeURIComponent(String(numericMatterId))}`,
+        `/api/documents/clio-matter-documents?${params.toString()}`,
         { cache: "no-store" }
       );
       const json = await response.json().catch(() => null);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clioFetch } from "@/lib/clio";
-import { listClioMatterDocuments } from "@/lib/clioDocumentUpload";
+import { listClioFolderDocuments, listClioMatterDocuments } from "@/lib/clioDocumentUpload";
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -18,6 +18,19 @@ function normalizeBrl(value: unknown): string {
   if (!raw) return "";
   if (/^BRL\d+$/.test(raw)) return raw;
   if (/^\d+$/.test(raw)) return `BRL${raw}`;
+  return raw;
+}
+
+function normalizeDirectMatterDisplayNumberForDocuments(value: unknown): string {
+  const raw = clean(value).toUpperCase();
+  if (!raw) return "";
+
+  const brlMatch = raw.match(/^BRL[_-]?(\d{4})(\d{5})$/);
+  if (brlMatch) return `BRL_${brlMatch[1]}${brlMatch[2]}`;
+
+  const numericMatch = raw.match(/^(\d{4})(\d{5})$/);
+  if (numericMatch) return `BRL_${numericMatch[1]}${numericMatch[2]}`;
+
   return raw;
 }
 
@@ -134,14 +147,204 @@ function sourceLabel(displayNumber: string, role: "lawsuit" | "bill") {
   return `${normalizeBrl(displayNumber)}- ${role === "lawsuit" ? "Lawsuit" : "Bill"}`;
 }
 
+function findPositiveNumberByKey(value: any, keys: string[]): number | null {
+  if (!value || typeof value !== "object") return null;
+
+  for (const key of keys) {
+    const found = numberOrNull(value?.[key]);
+    if (found) return found;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findPositiveNumberByKey(item, keys);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  for (const item of Object.values(value)) {
+    const found = findPositiveNumberByKey(item, keys);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const rawMatterId = url.searchParams.get("matterId");
     const rawMasterLawsuitId = url.searchParams.get("masterLawsuitId");
+    const uploadTargetMode = clean(url.searchParams.get("uploadTargetMode") || url.searchParams.get("uploadTarget"));
+    const singleMasterDirectStorage =
+      url.searchParams.get("singleMasterDirectStorage") === "1" ||
+      url.searchParams.get("useSingleMasterClioStorage") === "1";
+    const directMatterDisplayNumber = normalizeDirectMatterDisplayNumberForDocuments(
+      url.searchParams.get("directMatterDisplayNumber")
+    );
 
     const matterId = numberOrNull(rawMatterId);
     const masterLawsuitId = clean(rawMasterLawsuitId);
+
+    if (uploadTargetMode === "direct-matter" && singleMasterDirectStorage) {
+      const targetType: "direct-matter" = "direct-matter";
+
+      if (!/^BRL_\d{9}$/.test(directMatterDisplayNumber)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "clio-matter-documents-list",
+            readOnly: true,
+            failClosed: true,
+            clioRecordsChanged: false,
+            databaseRecordsChanged: false,
+            documentsUploaded: false,
+            documentsDownloaded: false,
+            documentsGenerated: false,
+            emailSent: false,
+            printQueued: false,
+            targetType,
+            matterId: null,
+            localMatterId: null,
+            directMatterDisplayNumber,
+            error: "Missing or invalid directMatterDisplayNumber for single-master direct matter document lookup.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const resolverUrl = new URL("/api/documents/clio-folder-resolver-dry-run", url.origin);
+      resolverUrl.searchParams.set("uploadTargetMode", "direct-matter");
+      resolverUrl.searchParams.set("singleMasterDirectStorage", "1");
+      resolverUrl.searchParams.set("useSingleMasterClioStorage", "1");
+      resolverUrl.searchParams.set("directMatterDisplayNumber", directMatterDisplayNumber);
+      resolverUrl.searchParams.set("displayNumber", directMatterDisplayNumber);
+
+      const resolverResponse = await fetch(resolverUrl.toString(), { cache: "no-store" });
+      const resolverJson = await resolverResponse.json().catch(() => null);
+      const folderId = findPositiveNumberByKey(resolverJson, [
+        "folderId",
+        "clioFolderId",
+        "targetFolderId",
+        "uploadFolderId",
+        "singleMasterUploadFolderId",
+      ]);
+
+      if (!resolverResponse.ok || !folderId) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "clio-matter-documents-list",
+            readOnly: true,
+            failClosed: true,
+            clioRecordsChanged: false,
+            databaseRecordsChanged: false,
+            documentsUploaded: false,
+            documentsDownloaded: false,
+            documentsGenerated: false,
+            emailSent: false,
+            printQueued: false,
+            targetType,
+            matterId: null,
+            localMatterId: null,
+            clioMatterId: null,
+            clioFolderId: folderId,
+            directMatterDisplayNumber,
+            error:
+              resolverJson?.error ||
+              resolverJson?.message ||
+              `Could not resolve Barsh Matters Master Repository direct folder for ${directMatterDisplayNumber}.`,
+            localSource: {
+              source: "single-master-direct-folder-resolver",
+              mappingRequired: false,
+              directMatterDisplayNumber,
+              resolver: resolverJson,
+            },
+          },
+          { status: resolverResponse.ok ? 409 : resolverResponse.status || 409 }
+        );
+      }
+
+      const folderDocuments = await listClioFolderDocuments(folderId);
+      const normalizedDocuments = normalizeClioDocumentRows(folderDocuments, {
+        clioMatterId: null,
+        clioDisplayNumber: directMatterDisplayNumber,
+        sourceRole: "bill",
+        sourceLabel: sourceLabel(directMatterDisplayNumber, "bill"),
+      }).map((doc: any) => ({
+        ...doc,
+        sourceClioFolderId: folderId,
+        sourceStorageMode: "single-master-direct-folder",
+      }));
+
+      const sourceSummaries = [
+        {
+          clioMatterId: null,
+          clioFolderId: folderId,
+          clioDisplayNumber: directMatterDisplayNumber,
+          sourceRole: "bill" as const,
+          sourceLabel: sourceLabel(directMatterDisplayNumber, "bill"),
+          sourceStorageMode: "single-master-direct-folder",
+          documentCount: folderDocuments.length,
+        },
+      ];
+
+      return NextResponse.json({
+        ok: true,
+        action: "clio-matter-documents-list",
+        readOnly: true,
+        failClosed: false,
+        clioRecordsChanged: false,
+        databaseRecordsChanged: false,
+        documentsUploaded: false,
+        documentsDownloaded: false,
+        documentsGenerated: false,
+        emailSent: false,
+        printQueued: false,
+        targetType,
+        uploadTargetMode,
+        singleMasterDirectStorage: true,
+        useSingleMasterClioStorage: true,
+        matterId: null,
+        localMatterId: null,
+        masterLawsuitId: null,
+        clioMatterId: null,
+        clioFolderId: folderId,
+        directMatterDisplayNumber,
+        clioDisplayNumber: directMatterDisplayNumber,
+        localSource: {
+          source: "single-master-direct-folder-resolver",
+          mappingRequired: false,
+          directMatterDisplayNumber,
+          resolver: resolverJson,
+        },
+        documents: normalizedDocuments,
+        sourceSummaries,
+        summary: {
+          documentCount: normalizedDocuments.length,
+          sourceCount: sourceSummaries.length,
+          fullyUploadedCount: normalizedDocuments.filter(
+            (doc) => doc.latestDocumentVersion?.fullyUploaded
+          ).length,
+          missingLatestVersionCount: normalizedDocuments.filter(
+            (doc) => !doc.latestDocumentVersion
+          ).length,
+        },
+        safety: {
+          routeIsReadOnly: true,
+          usesExistingListHelper: true,
+          usesFolderDocumentListing: true,
+          noClioWrites: true,
+          noDatabaseWrites: true,
+          noUploads: true,
+          noDownloads: true,
+          noDocumentGeneration: true,
+          noEmail: true,
+          noPrint: true,
+        },
+      });
+    }
 
     if (matterId && masterLawsuitId) {
       return NextResponse.json(
