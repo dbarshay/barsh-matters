@@ -7798,9 +7798,9 @@ function openClaimAmountEditDialog() {
         minHeight: "100vh",
        }}
     >
-      <div data-barsh-matter-header-grid="true" style={{ ...bmGlobalTopBarStyle, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 132px", alignItems: "start", gap: 12, minHeight: 92, maxHeight: 112, overflow: "hidden" }}>
-        <div data-barsh-matter-header-left="true" style={{ ...bmGlobalLeftLogoWrapStyle, minWidth: 0, maxWidth: "100%", overflow: "hidden", display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-          <img data-barsh-header-logo-containment="true" data-barsh-matter-left-logo="true" src="/brl-logo.png" alt="BRL Logo" style={{ ...bmGlobalBrlLogoStyle, width: 82, maxWidth: 82, height: "auto", maxHeight: 56, objectFit: "contain", flexShrink: 0 }} />
+      <div data-barsh-matter-header-two-row="true" style={{ ...bmGlobalTopBarStyle, display: "grid", gridTemplateRows: "auto auto", gridTemplateColumns: "1fr", alignItems: "start", gap: 10, minHeight: 122, overflow: "visible", paddingBottom: 10 }}>
+        <div data-barsh-matter-header-utility-row="true" style={{ ...bmGlobalLeftLogoWrapStyle, minWidth: 0, maxWidth: "100%", overflow: "hidden", display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap", gridRow: 1 }}>
+          <img data-barsh-header-logo-containment="true" data-barsh-matter-left-logo="true" src="/brl-logo.png" alt="BRL Logo" style={{ ...bmGlobalBrlLogoStyle, width: 74, maxWidth: 74, height: "auto", maxHeight: 52, objectFit: "contain", flexShrink: 0 }} />
           <div data-barsh-matter-header-nav-wrap="true" style={{ paddingTop: 4, minWidth: 0, overflow: "hidden" }}>
             <BarshHeaderQuickNav />
           </div>
@@ -7908,9 +7908,7 @@ function openClaimAmountEditDialog() {
             <BarshHeaderActions onAdministratorClick={openAdministratorMenu} />
           </div>
 
-          <a data-barsh-matter-header-right-logo-link="true" href="/" title="Return to Barsh Matters entry screen" style={{ ...bmGlobalLogoLinkStyle, width: 120, maxWidth: 120, height: 76, maxHeight: 76, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center", flexShrink: 0 }}>
-            <img data-barsh-header-logo-containment="true" data-barsh-matter-right-logo="true" src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={{ ...bmGlobalLogoStyle, width: 108, maxWidth: 108, height: "auto", maxHeight: 70, objectFit: "contain", display: "block" }} />
-          </a>
+          <a data-barsh-matter-header-right-logo-hidden="true" href="/" title="Return to Barsh Matters entry screen" style={{ display: "none" }} aria-hidden="true" tabIndex={-1}></a>
         </div>
       </div>
 
