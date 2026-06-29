@@ -40,6 +40,9 @@ type AdminCredentialUser = {
   passwordChangeRequired: boolean;
   twoFactorRequired: boolean;
   roleKeys: string[];
+  failedLoginCount: number | null;
+  failedLoginLockedAt: string | Date | null;
+  lastFailedLoginAt: string | Date | null;
 };
 
 let credentialPool: any = null;
@@ -65,7 +68,9 @@ function getCredentialPool(): any | null {
   if (!credentialPool) {
     credentialPool = new Pool({
       connectionString,
-      ssl: connectionString.includes("sslmode=require") ? undefined : { rejectUnauthorized: false },
+      // Enforce TLS with certificate verification (was rejectUnauthorized:false, which
+      // disabled verification and allowed MITM on the DB link).
+      ssl: connectionString.includes("sslmode=require") ? undefined : { rejectUnauthorized: true },
     });
   }
 
@@ -89,6 +94,9 @@ async function findAdminCredentialUser(normalizedUsername: string): Promise<Admi
         u."bootstrapSafe",
         u."passwordChangeRequired",
         u."twoFactorRequired",
+        u."failedLoginCount",
+        u."failedLoginLockedAt",
+        u."lastFailedLoginAt",
         COALESCE(
           array_agg(r.key ORDER BY r.key) FILTER (WHERE r.key IS NOT NULL AND r.status = 'active'),
           '{}'
@@ -116,6 +124,7 @@ async function recordFailedCredentialLogin(userId: string): Promise<void> {
       SET
         "failedLoginCount" = COALESCE("failedLoginCount", 0) + 1,
         "lastFailedLoginAt" = CURRENT_TIMESTAMP,
+        "failedLoginLockedAt" = CASE WHEN COALESCE("failedLoginCount", 0) + 1 >= 5 THEN CURRENT_TIMESTAMP ELSE "failedLoginLockedAt" END,
         "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $1
     `,
@@ -132,6 +141,7 @@ async function recordSuccessfulCredentialLogin(userId: string): Promise<void> {
       UPDATE "AdminUser"
       SET
         "failedLoginCount" = 0,
+        "failedLoginLockedAt" = NULL,
         "lastLoginAt" = CURRENT_TIMESTAMP,
         "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $1
@@ -163,6 +173,22 @@ async function tryUsernamePasswordLogin(username: string, password: string) {
       ok: false,
       status: 401,
       error: "Invalid administrator username or password.",
+    };
+  }
+
+  // Brute-force lockout: after 5 failures within the window, reject until it elapses.
+  const LOGIN_LOCK_THRESHOLD = 5;
+  const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
+  const failedCount = Number(user.failedLoginCount ?? 0);
+  const lockReference = user.failedLoginLockedAt || user.lastFailedLoginAt;
+  const lockedWithinWindow = lockReference
+    ? Date.now() - new Date(lockReference).getTime() < LOGIN_LOCK_WINDOW_MS
+    : false;
+  if (failedCount >= LOGIN_LOCK_THRESHOLD && lockedWithinWindow) {
+    return {
+      ok: false,
+      status: 429,
+      error: "Too many failed login attempts. Please wait a few minutes and try again.",
     };
   }
 
