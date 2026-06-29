@@ -4298,6 +4298,9 @@ function openClaimAmountEditDialog() {
         body: JSON.stringify({
           confirmUpload: true,
           uploadTargetMode: "direct-matter",
+          useSingleMasterClioStorage: true,
+          singleMasterDryRun: false,
+          singleMasterResolveFolders: true,
           directMatterId: directMatterIdForRequest,
           directMatterDisplayNumber,
           documentKeys: [effectiveSelectedDocumentKey].filter(Boolean),
