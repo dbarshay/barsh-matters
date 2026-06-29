@@ -346,10 +346,12 @@ export default function AdminDocumentTemplateDetailPage() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
-                <button type="button" onClick={saveMetadata} disabled={saving} style={buttonStyle(saving)}>
-                  {saving ? "Saving…" : "Save Template Settings"}
-                </button>
-                <div data-barsh-admin-document-template-edit-template-workflow="true" style={{ gridColumn: "1 / -1", marginTop: 10, border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 14, padding: 14, display: "grid", gap: 10 }}>
+                <div data-barsh-admin-document-template-settings-actions="true" style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
+                  <button data-barsh-admin-document-template-save-settings-button="true" type="button" onClick={saveMetadata} disabled={saving} style={{ ...buttonStyle(saving), minHeight: 40, alignSelf: "center" }}>
+                    {saving ? "Saving…" : "Save Template Settings"}
+                  </button>
+                </div>
+                <div data-barsh-admin-document-template-edit-template-workflow="true" style={{ gridColumn: "1 / -1", width: "100%", marginTop: 10, border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 14, padding: 14, display: "grid", gap: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                     <div>
                       <h3 style={{ margin: 0, fontSize: 16 }}>Edit Template</h3>
@@ -357,8 +359,7 @@ export default function AdminDocumentTemplateDetailPage() {
                         Open the current repository DOCX in Word, make edits, save in Word, then save the edited DOCX back as the new active template version. Prior versions are preserved.
                       </p>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button data-barsh-admin-document-template-edit-template-button="true" type="button" onClick={() => void launchEditTemplate()} disabled={editTemplateBusy || !currentVersion?.hasStoredDocx} style={buttonStyle(editTemplateBusy || !currentVersion?.hasStoredDocx)}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><button data-barsh-admin-document-template-edit-template-button="true" type="button" onClick={() => void launchEditTemplate()} disabled={editTemplateBusy || !currentVersion?.hasStoredDocx} style={buttonStyle(editTemplateBusy || !currentVersion?.hasStoredDocx)}>
                         {editTemplateBusy ? "Working…" : "Edit Template"}
                       </button>
                       <button data-barsh-admin-document-template-save-edited-template-button="true" type="button" onClick={() => void saveEditedTemplate()} disabled={editTemplateBusy || !editTemplateWorkingDoc?.driveItemId} style={buttonStyle(editTemplateBusy || !editTemplateWorkingDoc?.driveItemId)}>
