@@ -145,7 +145,7 @@ function docxTextPartName(name: string) {
 }
 
 function replaceTokenInsideTextScope(xml: string, token: string, value: string) {
-  const textNodeRegex = new RegExp("<w:t([^>]*)>([\\\\s\\\\S]*?)</w:t>", "g");
+  const textNodeRegex = new RegExp("<w:t([^>]*)>([\\s\\S]*?)</w:t>", "g");
   const nodes: Array<{ start: number; end: number; attrs: string; textStart: number; textEnd: number; text: string }> = [];
   let match: RegExpExecArray | null;
 
@@ -238,7 +238,7 @@ function replaceTokenAcrossTextNodes(xml: string, token: string, value: string) 
   // Critical: operate inside each Word paragraph/run scope only.
   // Do not build one full text stream for the whole document part, because blank paragraphs
   // and paragraph boundaries have no text nodes and can be collapsed by cross-paragraph replacement.
-  const paragraphRegex = new RegExp("<w:p[\\\\s\\\\S]*?</w:p>", "g");
+  const paragraphRegex = new RegExp("<w:p[\\s\\S]*?</w:p>", "g");
   let count = 0;
   let changed = false;
 

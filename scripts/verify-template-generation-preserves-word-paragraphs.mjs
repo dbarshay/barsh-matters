@@ -6,8 +6,9 @@ const must = (condition, message) => { if (!condition) failures.push(message); }
 
 must(route.includes("function replaceTokenInsideTextScope"), "missing scoped text replacement helper");
 must(route.includes("function replaceTokenAcrossTextNodes"), "missing replacement entrypoint");
-must(route.includes('new RegExp("<w:t([^>]*)>([\\\\\\\\s\\\\\\\\S]*?)</w:t>", "g")'), "text node regex must use safe RegExp constructor");
-must(route.includes('new RegExp("<w:p[\\\\\\\\s\\\\\\\\S]*?</w:p>", "g")'), "paragraph regex must use safe RegExp constructor");
+must(route.includes('new RegExp("<w:t([^>]*)>([\\\\s\\\\S]*?)</w:t>", "g")'), "text node regex must use correct RegExp constructor escaping");
+must(route.includes('new RegExp("<w:p[\\\\s\\\\S]*?</w:p>", "g")'), "paragraph regex must use correct RegExp constructor escaping");
+must(!route.includes('[\\\\\\\\s\\\\\\\\S]'), "route must not over-escape RegExp constructor character classes");
 must(!route.includes("/<w:t([^>]*)>"), "route must not use fragile text-node regex literal");
 must(!route.includes("/<w:p[\\\\s\\\\S]"), "route must not use fragile paragraph regex literal");
 must(route.includes("xml.replace(paragraphRegex"), "replacement must replace paragraph-by-paragraph");
