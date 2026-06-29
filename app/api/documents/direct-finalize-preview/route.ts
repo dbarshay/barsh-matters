@@ -275,24 +275,6 @@ export async function GET(req: NextRequest) {
       note: "Direct matter finalization preview mirrors the lawsuit document workflow using Barsh Matters Master Repository storage.",
     });
   } catch (err: any) {
-    const requestedDocumentKeys = String(req.nextUrl.searchParams.get("documentKey") || req.nextUrl.searchParams.get("documentKeys") || "")
-      .split(",")
-      .map((key) => clean(key).toLowerCase())
-      .filter(Boolean);
-    if (requestedDocumentKeys.includes("blank-letterhead") && Array.isArray((validation as any).documents) && !(validation as any).documents.some((doc: any) => clean(doc?.key).toLowerCase() === "blank-letterhead")) {
-      (validation as any).documents.push({
-        key: "blank-letterhead",
-        label: "Blank Letterhead",
-        description: "Current stored DOCX template from the local Barsh Matters template repository.",
-        filename: "Blank Letterhead.docx",
-        templateSource: "barsh-matters-db-template-repository",
-        repositorySource: "barsh-matters-db",
-        storageKind: "db-docx-base64",
-        currentVersionId: "",
-        generatedFromStoredDbDocx: true,
-        fallbackReason: "blank-letterhead-db-docx-fallback",
-      });
-    }
 
     return NextResponse.json(
       {

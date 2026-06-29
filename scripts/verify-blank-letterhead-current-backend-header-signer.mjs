@@ -35,9 +35,13 @@ for (const tag of containedImgTags) {
 
 has("working-docx accepts signerEmail", workingDocx, "const signerEmail = clean(body?.signerEmail");
 has("working-docx has blank-letterhead fallback", workingDocx, "blank-letterhead-db-docx-fallback");
+has("working-docx declares requestedBlankLetterheadFallback", workingDocx, "const requestedBlankLetterheadFallback =");
+has("working-docx unavailable-key guard allows fallback", workingDocx, "if (requestedKeys.length > 0 && !requestedDocument && !requestedBlankLetterheadFallback)");
+has("working-docx selectedDocument uses fallback", workingDocx, "requestedBlankLetterheadFallback ||");
 has("working-docx fallback marks DB source", workingDocx, 'repositorySource: "barsh-matters-db"');
 has("working-docx fallback marks DB DOCX", workingDocx, 'storageKind: "db-docx-base64"');
-has("direct-finalize-preview has blank-letterhead fallback", directPreview, "blank-letterhead-db-docx-fallback");
+if (!directPreview.includes("blank-letterhead-db-docx-fallback")) pass("direct-finalize-preview no longer contains risky catch fallback");
+else fail("direct-finalize-preview still contains risky blank-letterhead fallback");
 
 console.log("RESULT: current Blank Letterhead backend/header/signer verifier");
 if (failed) process.exit(1);

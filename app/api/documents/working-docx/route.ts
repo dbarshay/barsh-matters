@@ -178,23 +178,23 @@ export async function POST(req: NextRequest) {
     const requestedDocument =
       plannedDocuments.find((document: any) => requestedKeys.includes(clean(document?.key))) || null;
 
-    if (requestedKeys.length > 0 && !requestedDocument) {
-    if (!selectedDocument && requestedKeys.some((key) => clean(key).toLowerCase() === "blank-letterhead")) {
-      selectedDocument = {
-        key: "blank-letterhead",
-        label: "Blank Letterhead",
-        description: "Current stored DOCX template from the local Barsh Matters template repository.",
-        filename: "Blank Letterhead.docx",
-        templateSource: "barsh-matters-db-template-repository",
-        repositorySource: "barsh-matters-db",
-        storageKind: "db-docx-base64",
-        currentVersionId: "",
-        generatedFromStoredDbDocx: true,
-        fallbackReason: "blank-letterhead-db-docx-fallback",
-      };
-    }
+    const requestedBlankLetterheadFallback =
+      requestedKeys.some((key) => clean(key).toLowerCase() === "blank-letterhead")
+        ? {
+            key: "blank-letterhead",
+            label: "Blank Letterhead",
+            description: "Current stored DOCX template from the local Barsh Matters template repository.",
+            filename: "Blank Letterhead.docx",
+            templateSource: "barsh-matters-db-template-repository",
+            repositorySource: "barsh-matters-db",
+            storageKind: "db-docx-base64",
+            currentVersionId: "",
+            generatedFromStoredDbDocx: true,
+            fallbackReason: "blank-letterhead-db-docx-fallback",
+          }
+        : null;
 
-
+    if (requestedKeys.length > 0 && !requestedDocument && !requestedBlankLetterheadFallback) {
       return NextResponse.json(
         {
           ok: false,
@@ -215,6 +215,7 @@ export async function POST(req: NextRequest) {
 
     let selectedDocument =
       requestedDocument ||
+      requestedBlankLetterheadFallback ||
       plannedDocuments.find((document: any) => document?.wouldGenerate && document?.availableNow);
 
     if (!selectedDocument?.sourceEndpoint) {
