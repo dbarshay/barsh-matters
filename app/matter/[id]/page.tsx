@@ -6365,6 +6365,7 @@ function openClaimAmountEditDialog() {
 
             {(showPreviewStep || showEditStep || showFinalizeStep) && selectedTemplate && (
               <section
+                data-barsh-direct-document-generation-result-panel="true"
                 style={{
                   border: "1px solid #dbeafe",
                   borderRadius: 18,
@@ -6375,21 +6376,97 @@ function openClaimAmountEditDialog() {
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 18 }}>{selectedTemplate.label}</h3>
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    overflowX: "auto",
-                    background: "#0f172a",
-                    color: "#e5e7eb",
-                    borderRadius: 12,
-                    padding: 14,
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {JSON.stringify(matterDocumentFinalizationResult || documentPreview || finalizeUploadResult || {}, null, 2)}
-                </pre>
+                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, fontWeight: 800 }}>
+                  {showPreviewStep
+                    ? "Preview prepared."
+                    : showEditStep
+                      ? "Working DOCX created."
+                      : "Finalize step prepared."}
+                </p>
+
+                {showEditStep && matterDocumentFinalizationResult?.workingDocument && (
+                  <div
+                    data-barsh-direct-document-generation-word-actions="true"
+                    style={{ display: "flex", flexWrap: "wrap", gap: 10 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                        if (!url) {
+                          alert("No Word web link is available.");
+                          return;
+                        }
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                      disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
+                      style={{
+                        border: "1px solid #1e3a8a",
+                        background: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#1e3a8a" : "#f3f4f6",
+                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#ffffff" : "#6b7280",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      Open in Word Web
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl || "";
+                        if (!url) {
+                          alert("No desktop Word link is available.");
+                          return;
+                        }
+                        window.location.href = url;
+                      }}
+                      disabled={!matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl}
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        color: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "#334155" : "#94a3b8",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      Try Desktop Word
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const url = matterDocumentFinalizationResult?.workingDocument?.webUrl || "";
+                        if (!url) {
+                          alert("No Word web link is available to copy.");
+                          return;
+                        }
+                        try {
+                          await navigator.clipboard.writeText(url);
+                          alert("Word web link copied.");
+                        } catch {
+                          alert("Could not copy the Word web link automatically.");
+                        }
+                      }}
+                      disabled={!matterDocumentFinalizationResult?.workingDocument?.webUrl}
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#334155" : "#94a3b8",
+                        borderRadius: 12,
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        cursor: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      Copy Word Web Link
+                    </button>
+                  </div>
+                )}
               </section>
             )}
 
