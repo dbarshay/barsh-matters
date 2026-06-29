@@ -1333,7 +1333,7 @@ export default function AdminUsersPlanningPage() {
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
             {phaseV2AdministratorCardPlanningVisible ? (
-              <section data-barsh-admin-users-phase-v2-admin-card-planning="true" style={{ gridColumn: "1 / -1", border: "1px solid #dbeafe", background: "#eff6ff", borderRadius: 14, padding: 14 }}>
+              <section data-barsh-admin-users-admin-cards-full-width="true" data-barsh-admin-users-phase-v2-admin-card-planning="true" style={{ width: "100%", maxWidth: "none", gridColumn: "1 / -1",  gridColumn: "1 / -1", border: "1px solid #dbeafe", background: "#eff6ff", borderRadius: 14, padding: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
                   <div>
                     <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Administrator Admin Cards</h3>
@@ -1345,7 +1345,7 @@ export default function AdminUsersPlanningPage() {
                     {phaseV2AdministratorCardPlanningMode}
                   </span>
                 </div>
-                <div data-barsh-admin-users-phase-v2-admin-card-checkboxes="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10, marginTop: 12 }}>
+                <div data-barsh-admin-users-phase-v2-admin-card-checkboxes="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10, marginTop: 12 }}>
                   {finalAdminCardOptions.map((card: any) => {
                     const checked = editUserIsOwnerPlanning || editAdminCardGrantKeys.includes(card.grantPermissionKey);
                     const disabled = editUserIsOwnerPlanning || editAdminCardGrantBusy;
@@ -1584,7 +1584,7 @@ export default function AdminUsersPlanningPage() {
 
             <section data-barsh-admin-users-phase-v4e-role-explanation="true" style={{ ...cardStyle, display: "grid", gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Role Guide</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>Owner</strong>
               <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Everything. Full system access, all Admin cards, user/security controls, and no-lockout protection.</p>
