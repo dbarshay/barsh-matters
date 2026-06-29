@@ -18,6 +18,9 @@ if (!databaseUrl) {
 
 const pool = new Pool({
   connectionString: databaseUrl,
+  // Enforce TLS with certificate verification (matches the login pool). If the URL already
+  // carries sslmode=require, let pg honor it; otherwise require verified TLS explicitly.
+  ssl: databaseUrl.includes("sslmode=require") ? undefined : { rejectUnauthorized: true },
 });
 
 const adapter = new PrismaPg(pool);
