@@ -66,7 +66,11 @@ function signerMissingFields(user: {
     .map((entry) => entry[0]);
 }
 
-async function resolveSigner(req: NextRequest): Promise<{
+async function resolveSigner(req: NextRequest): Promise<{ signer: ResolvedSigner | null; error?: string; status?: number }> {
+  const query = req.nextUrl.searchParams;
+  const signerUserId = clean(query.get("signerUserId") || query.get("signer.id"));
+  const signerEmail = clean(query.get("signerEmail") || query.get("signer.email") || query.get("email")).toLowerCase();
+
   const isFirmSignerContactRequest = ["firm", "firm-contact", "barsh-firm", "brl-firm"].includes(
     clean(signerEmail).toLowerCase()
   );
@@ -90,10 +94,6 @@ async function resolveSigner(req: NextRequest): Promise<{
     return { signer, status: 200, error: "" };
   }
 
- signer: ResolvedSigner | null; error?: string; status?: number }> {
-  const query = req.nextUrl.searchParams;
-  const signerUserId = clean(query.get("signerUserId") || query.get("signer.id"));
-  const signerEmail = clean(query.get("signerEmail") || query.get("signer.email") || query.get("email")).toLowerCase();
 
   if (!signerUserId && !signerEmail) {
     return {
