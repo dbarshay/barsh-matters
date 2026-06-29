@@ -6527,6 +6527,67 @@ function openClaimAmountEditDialog() {
               </section>
             )}
 
+            {showDeliveryStep && (
+              <section
+                data-barsh-direct-document-generation-delivery-section="true"
+                style={{
+                  border: "1px solid #bbf7d0",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: "#f0fdf4",
+                  display: "grid",
+                  gap: 12,
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 18 }}>Document Delivery</h3>
+                <p style={{ margin: 0, color: "#166534", lineHeight: 1.45, fontWeight: 850 }}>
+                  Finalization completed for <strong>{selectedTemplate?.label || "the selected document"}</strong>.
+                </p>
+                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                  The finalized document has been prepared through the direct matter storage workflow.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMatterDocumentWorkflowStage("select");
+                      setMatterSelectedDocumentTemplateKey("");
+                      setMatterDocumentTemplateQuery("");
+                      setMatterDocumentDataPreview(null);
+                      setMatterDocumentFinalizationResult(null);
+                      setFinalizeUploadResult(null);
+                    }}
+                    style={{
+                      border: "1px solid #16a34a",
+                      background: "#16a34a",
+                      color: "#ffffff",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 950,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Generate Another Document
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeMatterDocumentGeneration}
+                    style={{
+                      border: "1px solid #cbd5e1",
+                      background: "#ffffff",
+                      color: "#334155",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </section>
+            )}
+
             {matterDocumentDataPreview?.error && (
               <div style={{ color: "#991b1b", fontWeight: 900 }}>
                 Error: {textValue(matterDocumentDataPreview.error)}
