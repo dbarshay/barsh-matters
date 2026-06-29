@@ -4038,6 +4038,13 @@ function openClaimAmountEditDialog() {
   }
 
   async function launchMatterStep2GeneratedDocumentEdit(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (matterDocumentWorkflowStage !== "chooseAction" && matterDocumentWorkflowStage !== "preview" && matterDocumentWorkflowStage !== "edit" && matterDocumentWorkflowStage !== "finalize") {
+      alert("Select a signer before generating this document.");
+      setMatterDocumentWorkflowStage("signer");
+      return;
+    }
+
+
     if (!selectedTemplate?.key) {
       alert("Select a document before editing.");
       return;
@@ -4106,6 +4113,13 @@ function openClaimAmountEditDialog() {
 
 
   async function launchMatterStep2PdfPreview(selectedTemplate: { key: string; label: string; description: string } | null) {
+    if (matterDocumentWorkflowStage !== "chooseAction" && matterDocumentWorkflowStage !== "preview" && matterDocumentWorkflowStage !== "edit" && matterDocumentWorkflowStage !== "finalize") {
+      alert("Select a signer before generating this document.");
+      setMatterDocumentWorkflowStage("signer");
+      return;
+    }
+
+
     if (!selectedTemplate?.key) {
       alert("Select a document before previewing.");
       return;
@@ -4201,6 +4215,13 @@ function openClaimAmountEditDialog() {
 
   async function finalizeMatterDocumentFromStep2(selectedTemplate: { key: string; label: string; description: string } | null) {
     if (documentPreviewLoading || finalizeUploadLoading) return;
+
+    if (matterDocumentWorkflowStage !== "chooseAction" && matterDocumentWorkflowStage !== "preview" && matterDocumentWorkflowStage !== "edit" && matterDocumentWorkflowStage !== "finalize") {
+      alert("Select a signer before generating this document.");
+      setMatterDocumentWorkflowStage("signer");
+      return;
+    }
+
 
     if (!selectedTemplate?.key) {
       alert("Select a document before finalizing.");
@@ -6205,7 +6226,7 @@ function openClaimAmountEditDialog() {
                     );
                     if (match) {
                       setMatterSelectedDocumentTemplateKey(match.key);
-                      setMatterDocumentWorkflowStage("chooseAction");
+                      setMatterDocumentWorkflowStage("signer");
                     } else {
                       setMatterSelectedDocumentTemplateKey("");
                       setMatterDocumentWorkflowStage("select");
@@ -6499,6 +6520,18 @@ function openClaimAmountEditDialog() {
               </section>
             )}
 
+            {showActionStep && selectedTemplate && (
+              <section
+                data-barsh-direct-document-generation-actions-section="true"
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 18,
+                  padding: 18,
+                  background: "#ffffff",
+                  display: "grid",
+                  gap: 14,
+                }}
+              >
                 <div data-barsh-direct-document-generation-actions-heading="true">
                   <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Generate Document</h3>
                   <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
@@ -6515,6 +6548,9 @@ function openClaimAmountEditDialog() {
                     "Finalize and upload the selected document to Clio."
                   )}
                 </div>
+              </section>
+            )}
+
               </section>
             )}
 
