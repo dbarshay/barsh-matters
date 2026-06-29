@@ -19,7 +19,21 @@ for (const ref of ["firstName", "lastName", "displayName", "username", "phoneExt
 }
 assert("signer completeness is derived", signer.includes("deriveSignerMissingFields") && signer.includes("deriveSignerProfileStatus"));
 assert("eligible signer excludes inactive and requires complete", signer.includes("isEligibleSigner") && signer.includes("inactive"));
-assert("Initial Billing Letter static bypass documented in registry", registry.includes("initial-billing-letter") && registry.includes("(631) 210-7272") && registry.includes("info@brlfirm.com") && registry.includes("Barshay, Rizzo & Lopez, PLLC"));
+const firmContact = read("lib/firmContact.ts");
+assert(
+  "Initial Billing Letter static bypass sources firm contact from BARSH_FIRM_CONTACT (single source)",
+  registry.includes("initial-billing-letter") &&
+    registry.includes("BARSH_FIRM_CONTACT") &&
+    registry.includes("BARSH_FIRM_CONTACT.telephone") &&
+    registry.includes("BARSH_FIRM_CONTACT.email") &&
+    registry.includes("BARSH_FIRM_CONTACT.signatureBlockName"),
+);
+assert(
+  "Firm contact literals live in the single firm-contact source",
+  firmContact.includes("(631) 210-7272") &&
+    firmContact.includes("info@brlfirm.com") &&
+    firmContact.includes("Barshay, Rizzo & Lopez, PLLC"),
+);
 assert("Initial Billing Letter static bypass documented in docs", docs.includes("Initial Billing Letter") && docs.includes("18K/18L"));
 assert("no production document-generation signer validation wiring marker", generationFiles.includes("template-signer-requirements-registry-phase1"));
 

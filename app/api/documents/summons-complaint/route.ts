@@ -14,6 +14,7 @@ import {
   VerticalAlign,
   WidthType,
 } from "docx";
+import { BARSH_FIRM_CONTACT } from "@/lib/firmContact";
 
 export const runtime = "nodejs";
 
@@ -465,7 +466,7 @@ export async function GET(req: NextRequest) {
             makeBillReferenceTable(childMatters),
 
             paragraph("Attorney for Plaintiff", { before: 260 }),
-            paragraph("Barshay, Rizzo & Lopez, PLLC"),
+            paragraph(BARSH_FIRM_CONTACT.signatureBlockName),
           ],
         },
       ],
