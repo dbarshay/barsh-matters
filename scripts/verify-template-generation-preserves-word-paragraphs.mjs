@@ -6,7 +6,10 @@ const must = (condition, message) => { if (!condition) failures.push(message); }
 
 must(route.includes("function replaceTokenInsideTextScope"), "missing scoped text replacement helper");
 must(route.includes("function replaceTokenAcrossTextNodes"), "missing replacement entrypoint");
-must(route.includes("const paragraphRegex = /<w:p"), "replacement must scope replacements to Word paragraphs");
+must(route.includes('new RegExp("<w:t([^>]*)>([\\\\\\\\s\\\\\\\\S]*?)</w:t>", "g")'), "text node regex must use safe RegExp constructor");
+must(route.includes('new RegExp("<w:p[\\\\\\\\s\\\\\\\\S]*?</w:p>", "g")'), "paragraph regex must use safe RegExp constructor");
+must(!route.includes("/<w:t([^>]*)>"), "route must not use fragile text-node regex literal");
+must(!route.includes("/<w:p[\\\\s\\\\S]"), "route must not use fragile paragraph regex literal");
 must(route.includes("xml.replace(paragraphRegex"), "replacement must replace paragraph-by-paragraph");
 must(route.includes("Do not build one full text stream for the whole document part"), "route must document paragraph-boundary safety");
 must(route.includes("return { xml: xmlWithParagraphReplacements, count }"), "paragraph replacements must return before whole-part fallback");
