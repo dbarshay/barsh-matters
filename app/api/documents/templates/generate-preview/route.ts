@@ -301,7 +301,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const template = await prisma.documentTemplate.findUnique({
+    let template = await prisma.documentTemplate.findUnique({
       where: { key },
       include: {
         versions: {
@@ -310,7 +310,44 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!template) {
+    
+    let selectedVersionForGeneration: any = null;
+
+    if (versionId) {
+      selectedVersionForGeneration = await prisma.documentTemplateVersion.findUnique({
+        where: { id: versionId },
+      });
+
+      if (!selectedVersionForGeneration || selectedVersionForGeneration.templateId !== template.id) {
+        return NextResponse.json(
+          { ok: false, error: "Requested template version was not found for this template." },
+          { status: 404 },
+        );
+      }
+    } else {
+      selectedVersionForGeneration =
+        Array.isArray(template.versions) && template.versions.length > 0
+          ? template.versions[0]
+          : template.currentVersion;
+    }
+
+    if (!selectedVersionForGeneration) {
+      return NextResponse.json(
+        { ok: false, error: "Template has no stored DOCX version available for generation." },
+        { status: 404 },
+      );
+    }
+
+    if (selectedVersionForGeneration.storageKind !== "db-docx-base64" || !selectedVersionForGeneration.contentText) {
+      return NextResponse.json(
+        { ok: false, error: "Selected template version does not have stored DOCX content." },
+        { status: 400 },
+      );
+    }
+
+    template.currentVersion = selectedVersionForGeneration;
+
+if (!template) {
       return NextResponse.json(
         { ok: false, action: "document-template-generate-preview", error: "Template not found." },
         { status: 404 }
