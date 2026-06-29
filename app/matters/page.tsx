@@ -8122,7 +8122,7 @@ function masterDocumentPreviewText(value: unknown): string {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong>Finalize step:</strong> This is the final review step.  Use the delivery buttons below after reviewing the selected document data.  PDF finalization, Clio document-vault upload, and persistent Barsh Matters document records will be wired in the backend finalization phase.
+                  <strong>Delivery step:</strong> This is the final review and delivery step.  Review the selected document data, then use the delivery buttons below to send the finalized PDF to the shared print queue, print it, or email it.  Delivery uses the finalized document stored in the Barsh Matters Master Repository, so finalize the document first if you have not already.
                 </div>
               )}
             </section>
