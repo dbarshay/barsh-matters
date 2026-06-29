@@ -263,7 +263,6 @@ export async function GET(req: NextRequest) {
     const template = await prisma.documentTemplate.findUnique({
       where: { key },
       include: {
-        currentVersion: true,
         versions: {
           where: { storageKind: "db-docx-base64" },
           orderBy: [{ versionNumber: "desc" }, { createdAt: "desc" }],
@@ -299,7 +298,7 @@ export async function GET(req: NextRequest) {
       selectedVersionForGeneration =
         Array.isArray(template.versions) && template.versions.length > 0
           ? template.versions[0]
-          : template.currentVersion;
+          : null;
     }
 
     if (!selectedVersionForGeneration) {
