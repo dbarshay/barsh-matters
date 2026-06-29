@@ -344,6 +344,12 @@ export async function POST(req: NextRequest) {
     const requestedKeys = asStringArray(body?.documentKeys);
     const workingDocumentDriveItemId = clean(body?.workingDocumentDriveItemId || body?.workingDriveItemId);
     const workingDocumentKey = clean(body?.workingDocumentKey);
+    const isBlankLetterheadWorkingDocumentFinalize =
+      uploadTargetMode === "direct-matter" &&
+      Boolean(workingDocumentDriveItemId) &&
+      requestedKeys.some((key) => clean(key).toLowerCase() === "blank-letterhead") &&
+      (!workingDocumentKey || clean(workingDocumentKey).toLowerCase() === "blank-letterhead");
+
 
     if (!masterLawsuitId && uploadTargetMode !== "direct-matter") {
       return NextResponse.json(
@@ -532,7 +538,7 @@ export async function POST(req: NextRequest) {
       uploadRewiredToSingleMasterFolder = true;
     }
 
-    if (!validation.canGenerate) {
+    if (!validation.canGenerate && !isBlankLetterheadWorkingDocumentFinalize) {
       return NextResponse.json(
         {
           ok: false,
@@ -583,7 +589,24 @@ export async function POST(req: NextRequest) {
       clean(body?.documentGenerationTimestamp || body?.generationTimestamp) ||
       new Date().toISOString();
 
-    const selectedDocuments = plannedDocuments.filter((document) => {
+    const blankLetterheadFinalizeFallbackDocument =
+      isBlankLetterheadWorkingDocumentFinalize
+        ? {
+            key: "blank-letterhead",
+            label: clean(body?.selectedDocumentLabel) || "Blank Letterhead",
+            filename: "Blank Letterhead.docx",
+            wouldGenerate: true,
+            wouldUploadToClio: true,
+            availableNow: true,
+            repositorySource: "barsh-matters-db",
+            storageKind: "db-docx-base64",
+            generatedFromStoredDbDocx: true,
+            finalizedFromEditedWorkingDocument: true,
+          }
+        : null;
+
+    const finalizableDocuments = blankLetterheadFinalizeFallbackDocument ? [blankLetterheadFinalizeFallbackDocument, ...plannedDocuments] : plannedDocuments;
+    const selectedDocuments = finalizableDocuments.filter((document) => {
       if (!document?.wouldGenerate || !document?.wouldUploadToClio) return false;
       if (!requestedKeys.length) return true;
       return requestedKeys.includes(document.key);
