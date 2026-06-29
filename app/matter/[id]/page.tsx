@@ -6187,27 +6187,57 @@ function openClaimAmountEditDialog() {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  data-barsh-direct-document-generation-template-card="blank-letterhead"
-                  onClick={selectBlankLetterhead}
-                  style={{
-                    textAlign: "left",
-                    border: "1px solid #bfdbfe",
-                    borderRadius: 16,
-                    padding: 16,
-                    background: "#ffffff",
-                    color: "#0f172a",
-                    cursor: "pointer",
-                    display: "grid",
-                    gap: 6,
-                  }}
+                <label
+                  data-barsh-direct-document-generation-template-dropdown="true"
+                  style={{ display: "grid", gap: 8, fontSize: 12, fontWeight: 950, color: "#1e3a8a" }}
                 >
-                  <strong style={{ fontSize: 15 }}>Blank Letterhead</strong>
-                  <span style={{ color: "#475569", lineHeight: 1.4 }}>
-                    Current stored DOCX template from the local Barsh Matters template repository.
-                  </span>
-                </button>
+                  Document
+                  <select
+                    value={matterSelectedDocumentTemplateKey}
+                    onChange={(event) => {
+                      if (event.target.value === "blank-letterhead") {
+                        selectBlankLetterhead();
+                      } else {
+                        setMatterSelectedDocumentTemplateKey("");
+                        setMatterDocumentTemplateQuery("");
+                        setMatterDocumentWorkflowStage("select");
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 12,
+                      padding: "11px 12px",
+                      fontSize: 15,
+                      fontWeight: 850,
+                      color: "#0f172a",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <option value="">Select document template</option>
+                    <option value="blank-letterhead">Blank Letterhead</option>
+                  </select>
+                </label>
+
+                {matterSelectedDocumentTemplateKey === "blank-letterhead" && (
+                  <div
+                    data-barsh-direct-document-generation-selected-document-summary="true"
+                    style={{
+                      border: "1px solid #c7d2fe",
+                      background: "#eef2ff",
+                      borderRadius: 14,
+                      padding: 14,
+                      color: "#3730a3",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <strong>Selected:</strong> Blank Letterhead
+                    <div style={{ marginTop: 4, color: "#475569" }}>
+                      Current stored DOCX template from the local Barsh Matters template repository.
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 

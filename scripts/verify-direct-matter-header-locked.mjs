@@ -42,7 +42,8 @@ for (const forbidden of [
   lacks(`forbidden header mutation absent: ${forbidden}`, forbidden);
 }
 
-has("stable document selection card remains present", 'data-barsh-direct-document-generation-template-card="blank-letterhead"');
+has("stable document selection dropdown remains present", 'data-barsh-direct-document-generation-template-dropdown="true"');
+has("Blank Letterhead dropdown option remains present", '<option value="blank-letterhead">Blank Letterhead</option>');
 has("signer-only step flow remains present", 'data-barsh-direct-document-generation-signer-only-section="true"');
 has("continue-to-generate signer confirmation remains present", 'data-barsh-direct-document-generation-continue-to-actions="true"');
 has("Blank Letterhead remains the direct matter template", 'key: "blank-letterhead"');

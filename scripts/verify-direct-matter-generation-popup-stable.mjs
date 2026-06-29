@@ -9,7 +9,8 @@ function has(label, token) { page.includes(token) ? pass(label) : fail(`${label}
 function lacks(label, token) { !page.includes(token) ? pass(label) : fail(`${label} should not contain ${token}`); }
 
 has("stable select section exists", 'data-barsh-direct-document-generation-select-section="true"');
-has("Blank Letterhead template card exists", 'data-barsh-direct-document-generation-template-card="blank-letterhead"');
+has("Blank Letterhead template dropdown exists", 'data-barsh-direct-document-generation-template-dropdown="true"');
+has("Blank Letterhead dropdown option exists", '<option value="blank-letterhead">Blank Letterhead</option>');
 has("selectBlankLetterhead helper exists", "const selectBlankLetterhead = () =>");
 has("selectBlankLetterhead advances to signer", 'setMatterDocumentWorkflowStage("signer")');
 has("signer-only section exists", 'data-barsh-direct-document-generation-signer-only-section="true"');
