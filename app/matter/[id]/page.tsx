@@ -6305,7 +6305,7 @@ function openClaimAmountEditDialog() {
                       cursor: "pointer",
                     }}
                   >
-                    Continue to Generate
+                    Continue
                   </button>
                 </div>
               </section>
