@@ -251,16 +251,8 @@ export default function ViewTemplatesPage() {
                   <td style={{ padding: "12px" }}>{Array.isArray(template.mergeFields) ? template.mergeFields.length : 0}</td>
                   <td style={{ padding: "12px", minWidth: "360px" }}>
                     <a href={"/admin/document-templates/" + encodeURIComponent(template.key)} style={liveActionStyle}>
-                      View
+                      Edit Template
                     </a>
-                    {template.currentVersion?.hasStoredDocx && (template.currentVersion?.storedDocxUrl || template.currentVersion?.id) ? (
-                      <a
-                        href={template.currentVersion.storedDocxUrl || ("/api/documents/templates/stored-docx?versionId=" + encodeURIComponent(String(template.currentVersion.id)))}
-                        style={liveActionStyle}
-                      >
-                        Download DOCX
-                      </a>
-                    ) : null}
                     {lifecycleActionsFor(status).map((action) => {
                       const actionKey = template.key + ":" + ({
                         "Make Production Ready": "make-active",
