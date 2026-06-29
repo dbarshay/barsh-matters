@@ -25,6 +25,13 @@ function xmlUnescape(value: string) {
     .replace(/&amp;/g, "&");
 }
 
+function xmlTextWithBreaks(value: string) {
+  return String(value ?? "")
+    .split(/\r?\n/)
+    .map((part) => xmlEscape(part))
+    .join("</w:t><w:br/><w:t>");
+}
+
 function safeFilename(value: string) {
   return clean(value)
     .replace(/\.docx$/i, "")
@@ -210,7 +217,7 @@ function replaceTokenAcrossTextNodes(xml: string, token: string, value: string) 
 
     nodes.forEach((node, index) => {
       rebuilt += nextXml.slice(priorEnd, node.start);
-      rebuilt += node.open + xmlEscape(changed[index]) + node.close;
+      rebuilt += node.open + xmlTextWithBreaks(changed[index]) + node.close;
       priorEnd = node.end;
     });
 
@@ -220,6 +227,26 @@ function replaceTokenAcrossTextNodes(xml: string, token: string, value: string) 
   }
 
   return { xml: nextXml, count };
+}
+
+function normalizeSignatureBreaksBeforeGeneration(xml: string) {
+  const signatureToken = "{{signer.signatureName}}";
+  if (!xml.includes(signatureToken) || !xml.includes("Very truly yours,")) return xml;
+
+  const closings = [
+    "Very truly yours,",
+    "Very truly yours:"
+  ];
+
+  let nextXml = xml;
+  for (const closing of closings) {
+    const plainPattern = closing + signatureToken;
+    if (nextXml.includes(plainPattern)) {
+      nextXml = nextXml.replaceAll(plainPattern, closing + "\n" + signatureToken);
+    }
+  }
+
+  return nextXml;
 }
 
 async function replaceTokensInDocx(buffer: Buffer, tokenValues: Record<string, string>) {
@@ -232,7 +259,7 @@ async function replaceTokensInDocx(buffer: Buffer, tokenValues: Record<string, s
     const file = zip.file(partName);
     if (!file) continue;
 
-    let xml = await file.async("string");
+    let xml = normalizeSignatureBreaksBeforeGeneration(await file.async("string"));
 
     for (const replacement of replacements) {
       const result = replaceTokenAcrossTextNodes(xml, replacement.token, replacement.value);
