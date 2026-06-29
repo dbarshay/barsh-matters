@@ -15,6 +15,8 @@ must(page.includes('fetch("/api/documents/templates/edit-working-docx"'), "page 
 must(page.includes('mode: "launch"'), "page missing launch mode");
 must(page.includes('mode: "save"'), "page missing save mode");
 must(page.includes("window.open(openUrl"), "Edit Template should open Word/Graph URL");
+must(page.includes("json?.workingDocument?.webUrl || json?.workingDocument?.desktopWordFileUrl || json?.workingDocument?.msWordEditUrl"), "Edit Template should prefer Graph webUrl over desktop Word deep link");
+must(page.includes("Editable DOCX launched in Word Online"), "Edit Template message should explain Word Online launch");
 must(page.includes("window.confirm("), "Save Edited Template should confirm before repository write");
 must(page.includes("Prior versions are preserved"), "page must explain prior version preservation");
 

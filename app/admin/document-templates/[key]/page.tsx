@@ -180,9 +180,9 @@ export default function AdminDocumentTemplateDetailPage() {
       }
 
       setEditTemplateWorkingDoc(json.workingDocument || null);
-      setEditTemplateMessage("Editable DOCX launched. Make edits in Word, save/close there, then click Save Edited Template here.");
+      setEditTemplateMessage("Editable DOCX launched in Word Online. Make edits, save there, then click Save Edited Template here. If needed, use Word Online’s Open in Desktop App option.");
 
-      const openUrl = json?.workingDocument?.msWordEditUrl || json?.workingDocument?.webUrl || "";
+      const openUrl = json?.workingDocument?.webUrl || json?.workingDocument?.desktopWordFileUrl || json?.workingDocument?.msWordEditUrl || "";
       if (openUrl) {
         window.open(openUrl, "_blank", "noopener,noreferrer");
       }
@@ -368,7 +368,7 @@ export default function AdminDocumentTemplateDetailPage() {
                   </div>
                   {editTemplateWorkingDoc?.webUrl ? (
                     <div data-barsh-admin-document-template-edit-template-working-doc="true" style={{ border: "1px solid #bfdbfe", background: "#ffffff", color: "#1e3a8a", borderRadius: 12, padding: 10, fontWeight: 850 }}>
-                      Working DOCX: <a href={editTemplateWorkingDoc.webUrl} target="_blank" rel="noreferrer" style={{ color: "#1e3a8a", fontWeight: 950 }}>{editTemplateWorkingDoc.name || "Open in Word"}</a>
+                      Working DOCX: <a href={editTemplateWorkingDoc.webUrl} target="_blank" rel="noreferrer" style={{ color: "#1e3a8a", fontWeight: 950 }}>{editTemplateWorkingDoc.name || "Open in Word Online"}</a>
                     </div>
                   ) : null}
                   {editTemplateMessage ? (
