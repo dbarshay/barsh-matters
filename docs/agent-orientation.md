@@ -14,6 +14,26 @@ from Word/Excel templates, and tracks admin users/permissions.
 Dev server: `npm run dev` (runs with `NEXT_DISABLE_TURBOPACK=1`). App runs at
 `http://localhost:3000`. The non-standard Next build is intentional — see `AGENTS.md`.
 
+## Target platform: Windows-first (built on Mac)
+
+Development happens on macOS, but the app is **used primarily on Windows** machines.
+It's a Vercel-hosted web app, so end users just open it in a browser — but keep Windows
+in mind for anything platform-touching:
+
+- **Browser:** target **Microsoft Edge** as well as Chrome (Edge is the Windows default;
+  both are Chromium). Favor standard browser behavior over Chrome-only APIs; sanity-check
+  print / document-open / email flows in Edge on Windows.
+- **Native integrations are Microsoft-first (good on Windows):** "Edit Document" opens via
+  the `ms-word:` protocol (opens Word desktop), "Email Finalized Document" creates an
+  Outlook draft via Microsoft Graph and opens it via an Outlook web/desktop link, and
+  printing uses the browser print dialog. Prefer these over Mac-only or shell-based
+  approaches.
+- **Local tooling needs Windows variants:** the dev server and especially the local-index
+  **backup** automation run on a user's machine, not the browser. Use the Windows
+  scheduler path (`scripts/windows-register-index-backup-task.ps1`) on a Windows host, not
+  the Mac LaunchAgent. Avoid hardcoding POSIX-only paths/commands in anything that may run
+  on a Windows machine.
+
 ## Clio is storage-only (critical architecture rule)
 
 - **Clio is used ONLY as a finalized-document repository.** Barsh Matters owns the
