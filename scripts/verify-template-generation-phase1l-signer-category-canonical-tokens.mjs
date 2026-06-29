@@ -37,12 +37,17 @@ const failures = [];
 
 for (const token of firstDocTokens) {
   if (!library.includes(token)) failures.push(`canonical library lost first-doc token ${token}`);
-  if (!preview.includes(token)) failures.push(`live preview lost first-doc token ${token}`);
 }
 
 for (const token of signerTokens) {
   if (!library.includes(token)) failures.push(`canonical library missing Signer token ${token}`);
-  if (!preview.includes(token)) failures.push(`live preview missing Signer token ${token}`);
+}
+
+// The live preview now builds its example output by iterating the canonical merge-field
+// library through the single generation resolver, so every canonical token above (signer
+// and first-doc) is emitted by construction — no per-token source-text snapshot needed.
+if (!preview.includes("for (const field of TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS)")) {
+  failures.push("live preview no longer iterates the canonical merge fields (signer/first-doc tokens not guaranteed)");
 }
 
 for (const token of signerTokens) {
