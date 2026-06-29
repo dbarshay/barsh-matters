@@ -6210,7 +6210,37 @@ function openClaimAmountEditDialog() {
       return "";
     };
 
-    const finalizedDocumentDeliveryUrl = firstDocumentDeliveryUrl(finalizeUploadResult);
+    const firstFinalizedClioDocument = (value: any): { id: string; name: string } | null => {
+      const uploaded = Array.isArray(value?.uploaded) ? value.uploaded : [];
+      for (const item of uploaded) {
+        const id = textValue(item?.clioDocumentId);
+        if (id) return { id, name: textValue(item?.clioDocumentName) || textValue(item?.filename) };
+      }
+      // Duplicate-skip path: the finalized PDF already exists in Clio.
+      const skipped = Array.isArray(value?.skipped) ? value.skipped : [];
+      for (const skip of skipped) {
+        const existing = Array.isArray(skip?.existingClioDocuments) ? skip.existingClioDocuments : [];
+        for (const doc of existing) {
+          const id = textValue(doc?.id);
+          if (id) return { id, name: textValue(doc?.name) || textValue(doc?.filename) };
+        }
+      }
+      return null;
+    };
+
+    const buildFinalizedClioDocumentOpenUrl = (doc: { id: string; name: string } | null): string => {
+      if (!doc?.id) return "";
+      const params = new URLSearchParams();
+      params.set("documentId", doc.id);
+      if (doc.name) params.set("filename", doc.name);
+      params.set("mode", "inline");
+      return "/api/documents/clio-document-open?" + params.toString();
+    };
+
+    const finalizedClioDocument = firstFinalizedClioDocument(finalizeUploadResult);
+    const finalizedDocumentDeliveryUrl =
+      firstDocumentDeliveryUrl(finalizeUploadResult) ||
+      buildFinalizedClioDocumentOpenUrl(finalizedClioDocument);
 
     const openFinalizedDocumentForDelivery = () => {
       if (!finalizedDocumentDeliveryUrl) {
