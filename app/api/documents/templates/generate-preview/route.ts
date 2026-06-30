@@ -217,7 +217,13 @@ function replaceTokenInsideTextScope(xml: string, token: string, value: string) 
       const nodeStart = cursor;
       const nodeEnd = cursor + nodes[index].text.length;
 
-      if (firstNodeIndex < 0 && tokenStart >= nodeStart && tokenStart <= nodeEnd) {
+      // Bind the token start to the run that actually holds its first character.
+      // Use an exclusive upper bound (< nodeEnd) so a token beginning exactly at a
+      // run boundary skips the preceding run (and any zero-length runs, e.g. a run
+      // that only carries a <w:tab/>). An inclusive bound absorbed the value into
+      // the prior run — inheriting its formatting (bold label) and landing before
+      // the tab, which collapsed tabbed label/value alignment.
+      if (firstNodeIndex < 0 && tokenStart >= nodeStart && tokenStart < nodeEnd) {
         firstNodeIndex = index;
         firstOffset = tokenStart - nodeStart;
       }
