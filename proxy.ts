@@ -14,6 +14,7 @@ type SignedGatePayload = {
     email?: string;
     username?: string | null;
     roleKeys?: string[];
+    grantedAdminPermissionKeys?: string[];
   } | null;
 };
 
@@ -127,11 +128,23 @@ function gateIsOwner(gate: SignedGatePayload | null): boolean {
   return email === OWNER_ADMIN_EMAIL || roleKeys.includes("owner_admin") || roleKeys.includes("owner");
 }
 
-// v1 is all-or-nothing for admin functions: an Administrator role carries every admin-tier grant.
-// Per-card grants (carried in the signed identity) are the planned fast-follow.
 function decideByRole(gate: SignedGatePayload | null, req: NextRequest) {
   const roleKeys = gateRoleKeys(gate);
-  const grantedAdminPermissionKeys = roleKeys.includes("administrator") ? adminPermissionKeysForTier("admin") : [];
+
+  // Per-card admin grants now ride in the signed identity. When present (any new cookie, even an
+  // empty list), use them verbatim for true per-card enforcement. When ABSENT (a pre-deploy cookie
+  // that predates this field), fall back to the previous all-or-nothing rule so an existing
+  // Administrator session is not abruptly locked out — they regain per-card precision on next login.
+  const cookieGrants = Array.isArray(gate?.identity?.grantedAdminPermissionKeys)
+    ? gate.identity.grantedAdminPermissionKeys.map(clean)
+    : null;
+  const grantedAdminPermissionKeys =
+    cookieGrants !== null
+      ? cookieGrants
+      : roleKeys.includes("administrator")
+        ? adminPermissionKeysForTier("admin")
+        : [];
+
   return resolveAccess({
     isOwner: false,
     roleKeys,

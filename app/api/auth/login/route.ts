@@ -40,6 +40,7 @@ type AdminCredentialUser = {
   passwordChangeRequired: boolean;
   twoFactorRequired: boolean;
   roleKeys: string[];
+  grantedAdminPermissionKeys: string[];
   failedLoginCount: number | null;
   failedLoginLockedAt: string | Date | null;
   lastFailedLoginAt: string | Date | null;
@@ -100,7 +101,12 @@ async function findAdminCredentialUser(normalizedUsername: string): Promise<Admi
         COALESCE(
           array_agg(r.key ORDER BY r.key) FILTER (WHERE r.key IS NOT NULL AND r.status = 'active'),
           '{}'
-        ) AS "roleKeys"
+        ) AS "roleKeys",
+        COALESCE((
+          SELECT array_agg(po."permissionKey" ORDER BY po."permissionKey")
+          FROM "AdminUserPermissionOverride" po
+          WHERE po."userId" = u.id AND po.action = 'grant'
+        ), '{}') AS "grantedAdminPermissionKeys"
       FROM "AdminUser" u
       LEFT JOIN "AdminUserRole" ur ON ur."userId" = u.id
       LEFT JOIN "AdminRole" r ON r.id = ur."roleId"
@@ -317,6 +323,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         username: user.username,
         roleKeys: user.roleKeys,
+        grantedAdminPermissionKeys: user.grantedAdminPermissionKeys,
       };
       setAdminGateCookie(response, identityCookieInput);
       setAdminIdentityCookie(response, identityCookieInput);

@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
           email: identityDiagnostics.email,
           username: identityDiagnostics.username,
         roleKeys: identityDiagnostics.roleKeys,
+        grantedAdminPermissionKeys: identityDiagnostics.grantedAdminPermissionKeys,
     }
       : null;
     setAdminGateCookie(response, identityCookieInput);

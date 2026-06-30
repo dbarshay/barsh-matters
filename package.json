@@ -347,6 +347,7 @@
     "verify:barsh-modal-standard-safety": "node scripts/verify-barsh-modal-standard-safety.mjs",
     "verify:permission-model-rework": "node scripts/verify-permission-model-rework.mjs",
     "verify:resolve-access-safety": "node scripts/verify-resolve-access-safety.mjs",
+    "verify:admin-per-card-grants-enforcement": "node scripts/verify-admin-per-card-grants-enforcement.mjs",
     "verify:direct-claim-amount-popup-standard-modal-safety": "node scripts/verify-direct-claim-amount-popup-standard-modal-safety.mjs",
     "verify:direct-dos-popup-standard-modal-safety": "node scripts/verify-direct-dos-popup-standard-modal-safety.mjs",
     "verify:direct-picklist-popup-standard-modal-safety": "node scripts/verify-direct-picklist-popup-standard-modal-safety.mjs",
