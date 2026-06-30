@@ -3010,7 +3010,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     const reason = options.skipReasonPrompt
       ? "Temporary no-password development void"
       : window.prompt(
-          "VOID SETTLEMENT\n\nThis will void the active local settlement record and restore the Record Settlement workflow.  It will not delete Clio documents, print queue records, email records, or local settlement rows.\n\nEnter a reason for voiding this settlement:"
+          "VOID SETTLEMENT\n\nThis will void the active local settlement record and restore the Record Settlement workflow.\n\nEnter a reason for voiding this settlement:"
         );
 
     if (reason === null) return;
@@ -3232,7 +3232,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
                 Lawsuit {clean(value) || "—"}
               </div>
               <div style={{ marginTop: 6, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
-                Read-only local history for finalized documents, drafted emails, print queue records, and delivery status.  This popup does not email, print, upload, queue, or write records.
+                Document history.
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -6189,7 +6189,7 @@ function masterDocumentPreviewText(value: unknown): string {
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
         `This will upload the following final document copy/copies to the Barsh Matters Master Repository document storage:\n\n` +
         `${documentList}\n\n` +
-        `This is an explicit finalization action. Preview actions remain non-persistent.\n\n` +
+        `This is an explicit finalization action.\n\n` +
         `WARNING: Running this again may create duplicate uploaded documents in Clio.\n\n` +
         `Continue?`
     );
@@ -6939,7 +6939,7 @@ function masterDocumentPreviewText(value: unknown): string {
     }
 
     const confirmed = window.confirm(
-      "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata only.  It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation."
+      "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata."
     );
 
     if (!confirmed) return;
@@ -6988,10 +6988,9 @@ function masterDocumentPreviewText(value: unknown): string {
             <div style={masterWorkspacePanelEyebrowStyle}>Active Workspace</div>
             <h2 style={masterWorkspacePanelTitleStyle}>Emails</h2>
             <p style={{ margin: "6px 0 0", color: colors.muted, lineHeight: 1.5 }}>
-              Unified Master Lawsuit email area.  Graph-synced messages and MailDrop-linked thread records appear here together from local Barsh Matters email metadata.  Opening this panel reads local records only; it does not create drafts, send email, write Clio, or change database records.
+              Unified Master Lawsuit email area.  Graph-synced messages and MailDrop-linked thread records appear here together.
             </p>
           </div>
-          <div style={masterWorkspacePanelPillStyle}>Automatic local email view</div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
@@ -7050,7 +7049,7 @@ function masterDocumentPreviewText(value: unknown): string {
               masterGraphThreadSyncPreviewLoading ||
               masterGraphThreadSyncLoading
             }
-            title="Run only after Preview Graph Updates.  Persists local EmailThread / EmailMessage metadata only."
+            title="Run only after Preview Graph Updates."
             style={{
               padding: "8px 11px",
               border: "1px solid #7c3aed",
@@ -7153,7 +7152,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 <div style={{ marginTop: 10, color: colors.ink, fontSize: 13, fontWeight: 800 }}>
                   Graph messages found: {Number(syncPreviewCounts.graphMessages || 0)} · Drafts: {Number(syncPreviewCounts.drafts || 0)} · Sent/received: {Number(syncPreviewCounts.sentOrReceived || 0)} · With attachments: {Number(syncPreviewCounts.withAttachments || 0)}
                 </div>
-                <div style={{ marginTop: 6, color: colors.muted, fontSize: 12 }}>Preview only.  No Barsh Matters records were updated.</div>
               </>
             )}
           </section>
@@ -7184,9 +7182,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 <div style={{ marginTop: 10, color: colors.ink, fontSize: 13, fontWeight: 800 }}>
                   Graph messages: {Number(syncCounts.graphMessages || 0)} · Messages upserted: {Number(masterGraphThreadSyncResult.persisted?.messagesUpserted || 0)} · Matter links created: {Number(masterGraphThreadSyncResult.persisted?.matterLinksCreated || 0)}
                 </div>
-                <div style={{ marginTop: 6, color: colors.muted, fontSize: 12 }}>
-                  Confirmed sync persists local Barsh Matters email metadata only.  It does not send email, create drafts, write Clio, upload documents, or use local Outlook automation.
-                </div>
               </>
             )}
           </section>
@@ -7198,11 +7193,6 @@ function masterDocumentPreviewText(value: unknown): string {
           </div>
         )}
 
-        {!masterEmailThreadPreviewResult && !masterEmailThreadPreviewLoading && (
-          <div style={{ marginTop: 12, color: colors.muted }}>
-            Email records load automatically when this panel opens.  Background Graph/MailDrop sync will populate this area without user action.
-          </div>
-        )}
 
         {masterEmailThreadPreviewLoading && (
           <div style={{ marginTop: 12, color: colors.muted }}>Loading local master email/thread records...</div>
@@ -7283,7 +7273,7 @@ function masterDocumentPreviewText(value: unknown): string {
                           masterGraphThreadSyncPreviewLoading ||
                           masterGraphThreadSyncLoading
                         }
-                        title="Run only after Preview This Thread.  Persists local EmailThread / EmailMessage metadata only."
+                        title="Run only after Preview This Thread."
                         style={{
                           fontSize: 12,
                           padding: "5px 9px",
@@ -7370,7 +7360,6 @@ function masterDocumentPreviewText(value: unknown): string {
                                   color: "#16a34a",
                                 }}
                               >
-                                <span>Outlook web link is stored locally.</span>
                                 {clean(message.webLink) && (
                                   <a
                                     href={clean(message.webLink)}
@@ -8144,9 +8133,6 @@ function masterDocumentPreviewText(value: unknown): string {
                   {masterFinalizePreview.ok ? "Master Finalization Preview Ready" : "Master Finalization Preview Blocked"}
                 </h3>
 
-                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
-                  Preview only.  No files were persisted, no documents were uploaded to Clio, no Clio records were changed, and no database records were changed.
-                </p>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
                   <div>
@@ -8431,7 +8417,7 @@ function masterDocumentPreviewText(value: unknown): string {
               <div style={{ marginTop: 14 }}>
                 <h3 style={{ margin: 0, fontSize: 16 }}>Template Data Review</h3>
                 <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
-                  Read-only local data available for future Master Lawsuit templates.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+                  Template data.
                 </p>
                 <pre
                   style={{
@@ -8523,7 +8509,7 @@ function masterDocumentPreviewText(value: unknown): string {
           >
             <h2 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>Email Draft Preview</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", fontWeight: 650 }}>
-              Settlement finalized PDF delivery.  This prepares an Outlook draft through Microsoft Graph; it does not send email.
+              Settlement finalized PDF delivery.  This prepares an Outlook draft through Microsoft Graph.
             </p>
           </div>
 
@@ -9030,7 +9016,7 @@ function masterDocumentPreviewText(value: unknown): string {
                           }}
                         />
                         <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.4 }}>
-                          Use this only when local contact/reference data has not supplied a recipient.  Enter a valid email address such as name@example.com.  It affects the draft creation request only; it does not write Clio or update reference data.
+                          Use this only when local contact/reference data has not supplied a recipient.  Enter a valid email address such as name@example.com.
                         </div>
                         {masterDocumentDeliveryToOverride.trim() && !isValidDocumentDeliveryEmail(masterDocumentDeliveryToOverride) && (
                           <div style={{ color: "#991b1b", fontSize: 12, fontWeight: 900 }}>
@@ -9154,7 +9140,7 @@ function masterDocumentPreviewText(value: unknown): string {
           <div>
             <h3 style={{ margin: 0, fontSize: 18 }}>Template Data Review</h3>
             <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13, maxWidth: 860 }}>
-              This is a read-only review of the data available for future Master Lawsuit templates.  It reads local Lawsuit metadata, ClaimIndex, and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
+              Template data review.
             </p>
           </div>
 
@@ -9973,9 +9959,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 </button>
               </div>
 
-              <div style={masterSettlementTermFootnoteStyle}>
-                This is a visual/local draft only.  It does not run external settlement posting, document generation, or Close Paid Settlements.
-              </div>
 
             </div>
           </section>
@@ -9995,7 +9978,6 @@ function masterDocumentPreviewText(value: unknown): string {
                       "Close Paid Settlements"
                     </h2>
                   </div>
-                  <div style={masterWorkspacePanelPillStyle}>Read-only preview shell</div>
                 </div>
 
                 <div style={masterWorkspaceCardsStyle}>
@@ -10752,14 +10734,14 @@ function masterDocumentPreviewText(value: unknown): string {
                     <div data-barsh-master-action-panel="true" style={{ minHeight: masterActionGroup ? 52 : 0 }}>
                       {masterActionGroup === "payments" && (
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="payment-actions">
-                          <button type="button" onClick={() => setMasterPaymentFormOpen(true)} title="Open lawsuit-level payment preview popup. Local payment workflow only." style={{ minHeight: 36, border: "1px solid #16a34a", borderRadius: 999, background: "#f0fdf4", color: "#166534", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>Post Payment</button>
+                          <button type="button" onClick={() => setMasterPaymentFormOpen(true)} title="Open lawsuit-level payment preview popup." style={{ minHeight: 36, border: "1px solid #16a34a", borderRadius: 999, background: "#f0fdf4", color: "#166534", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>Post Payment</button>
                           <button type="button" onClick={() => setMasterPaymentsPanelOpen((open) => open ? false : true)} title="Show recent lawsuit payment receipts." style={{ minHeight: 36, border: "1px solid #16a34a", borderRadius: 999, background: "#f0fdf4", color: "#166534", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-payments-button="true">View Payments</button>
                         </div>
                       )}
 
                       {masterActionGroup === "settlement" && (
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="record-settlement">
-                          <button type="button" onClick={() => { if (masterHasActiveRecordedSettlement) { openVoidActiveSettlementAdminFlow(); return; } resetMasterSettlementPreviewForm(); setMasterSettlementFormOpen(true); }} title={masterHasActiveRecordedSettlement ? "Administrator only: void the active local settlement record." : "Open settlement preview popup. Local settlement workflow only."} style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>{masterHasActiveRecordedSettlement ? "Settlement Recorded" : "Record Settlement"}</button>
+                          <button type="button" onClick={() => { if (masterHasActiveRecordedSettlement) { openVoidActiveSettlementAdminFlow(); return; } resetMasterSettlementPreviewForm(); setMasterSettlementFormOpen(true); }} title={masterHasActiveRecordedSettlement ? "Administrator only: void the active local settlement record." : "Open settlement preview popup."} style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>{masterHasActiveRecordedSettlement ? "Settlement Recorded" : "Record Settlement"}</button>
                           <button type="button" onClick={() => setActiveMasterWorkspaceTab("settlement")} title="View settlement workspace for this lawsuit." style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-settlements-button="true">View Settlements</button>
                           {masterHasActiveRecordedSettlement && (<button type="button" onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()} disabled={masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id} title="Temporary local-development shortcut: void the active local settlement without the administrator password gate." style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#f8fafc" : "#fff7ed", color: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#94a3b8" : "#9a3412", fontSize: 12, fontWeight: 950, cursor: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "not-allowed" : "pointer", padding: "0 14px" }}>{masterSettlementVoidLoading ? "Voiding..." : "Temporary Void Settlement"}</button>)}
                         </div>
@@ -12668,9 +12650,6 @@ function masterDocumentPreviewText(value: unknown): string {
                       <div style={{ fontWeight: 950, color: masterSettlementLocalPreview.ok ? "#166534" : "#991b1b" }}>
                         Local-First Settlement Calculation Preview
                       </div>
-                      <div style={{ color: "#475569", lineHeight: 1.45 }}>
-                        Preview only.  This reads Barsh Matters ClaimIndex data and does not write Clio, write the database, generate documents, print, queue, or close matters.
-                      </div>
 
                       {masterSettlementLocalPreview.error && (
                         <div style={{ color: "#991b1b", fontWeight: 900 }}>
@@ -12732,9 +12711,6 @@ function masterDocumentPreviewText(value: unknown): string {
                         >
                           <div style={{ fontWeight: 950, color: masterSettlementRecordSave.ok ? "#1d4ed8" : "#991b1b" }}>
                             Local Settlement Save Result
-                          </div>
-                          <div style={{ color: "#475569", lineHeight: 1.45 }}>
-                            Local save result.  This saves to Barsh Matters local settlement tables only and does not write Clio, generate documents, print, queue, or close matters.
                           </div>
                           {masterSettlementRecordSave.error && (
                             <div style={{ color: "#991b1b", fontWeight: 900 }}>
@@ -12831,7 +12807,7 @@ function masterDocumentPreviewText(value: unknown): string {
                       disabled={!masterSettlementCanCommit()}
                       title={
                         masterSettlementRequiredFieldMessage() ||
-                        "Calculate and record the settlement in Barsh Matters, then open the settlement document workflow.  This does not write Clio, print, queue, or close matters."
+                        "Calculate and record the settlement in Barsh Matters, then open the settlement document workflow."
                       }
                       style={{
                         minWidth: 230,

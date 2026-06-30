@@ -985,19 +985,6 @@ export default function AdminBackupRestorePage() {
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 960 }}>
             Run a manual local Barsh Matters database/index backup, review recent backups, and run a restore preview.  Restore execution is intentionally disabled in this UI and requires a separate approved guarded workflow.
           </p>
-          <div
-            style={{
-              border: "1px solid #fecaca",
-              background: "#fff1f2",
-              color: "#9f1239",
-              borderRadius: 16,
-              padding: 13,
-              fontWeight: 900,
-              lineHeight: 1.45,
-            }}
-          >
-            Preview-only restore safety: this page does not execute restores, write Clio data, send email, generate documents, or change the print queue.
-          </div>
         </header>
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
@@ -1042,7 +1029,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Log Archive Preview</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Read-only preview for cleaning up old scheduled-backup log noise.  This section shows log health, old-error presence, file size, line count, and proposed archive names only.  It does not archive, truncate, move, delete, restore data, send alerts, call Clio, generate documents, or change the print queue.
+              Preview for cleaning up old scheduled-backup log noise.  This section shows log health, old-error presence, file size, line count, and proposed archive names.
             </p>
           </div>
 
@@ -1057,7 +1044,7 @@ export default function AdminBackupRestorePage() {
               fontWeight: 850,
             }}
           >
-            Preview only.  Old stderr errors may remain visible even after the monitored scheduled backups are healthy.
+            Old stderr errors may remain visible even after the monitored scheduled backups are healthy.
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 12 }}>
@@ -1108,7 +1095,7 @@ export default function AdminBackupRestorePage() {
             data-backup-deletion-enabled="false"
           >
             <div>
-              Guarded action: archive <strong>launchd.err.log only</strong>. This moves the current stderr log to a timestamped archive and creates a fresh empty stderr log. It does not touch stdout, backups, manifests, database dumps, restore workflows, alert state, Clio, email, documents, or the print queue.
+              Guarded action: archive <strong>launchd.err.log only</strong>. This moves the current stderr log to a timestamped archive and creates a fresh empty stderr log.
             </div>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 950 }}>
@@ -1157,7 +1144,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Alert State</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Read-only alert state from the monitored backup wrapper.  This panel shows the last alert and duplicate-suppression state only.  It does not send email, edit alert state, restore data, delete backups, run retention cleanup, call Clio, generate documents, or change the print queue.
+              Alert state from the monitored backup wrapper.  This panel shows the last alert and duplicate-suppression state.
             </p>
           </div>
 
@@ -1229,7 +1216,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Scheduled Backup Health</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Read-only visibility for the scheduled local database/index backup system.  This section reads backup status, retention policy, and recent backup logs only.  It does not delete backups, execute restores, call Clio, send email, generate documents, or change the print queue.
+              Visibility for the scheduled local database/index backup system.  This section reads backup status, retention policy, and recent backup logs.
             </p>
           </div>
 
@@ -1356,7 +1343,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Health</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Display-only warnings based on the latest local backup manifest and backup files.  These warnings do not run restores or modify data.
+              Warnings based on the latest local backup manifest and backup files.
             </p>
           </div>
           {healthWarnings.length === 0 ? (
@@ -1417,7 +1404,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Restore Preview Only</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Select a backup and run the existing restore preview script.  This displays what would be reviewed before a guarded restore.  It does not write to the database.
+              Select a backup and run the existing restore preview script.  This displays what would be reviewed before a guarded restore.
             </p>
           </div>
 
@@ -1467,7 +1454,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Guarded Restore Plan Preview</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Planning view only.  This section summarizes the selected backup and the required future restore checklist.  It does not execute restores and does not call any guarded restore script.
+              This section summarizes the selected backup and the required future restore checklist.
             </p>
           </div>
 
@@ -1556,7 +1543,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Compare Backups</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Read-only comparison preview for two backup manifests.  This comparison does not restore data, delete backups, run retention cleanup, call Clio, send email, generate documents, or change the print queue.
+              Comparison preview for two backup manifests.
             </p>
           </div>
 
@@ -1668,7 +1655,7 @@ export default function AdminBackupRestorePage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Audit Report</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-              Read-only audit report generated from the backup metadata already loaded on this page.  Copy and CSV export are client-side only.  This section does not create server-side export files, restore data, delete backups, run retention cleanup, call Clio, send email, generate documents, or change the print queue.
+              Audit report generated from the backup metadata already loaded on this page.
             </p>
           </div>
 
@@ -1874,27 +1861,13 @@ export default function AdminBackupRestorePage() {
             >
               <header style={{ display: "grid", gap: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Read-Only Backup Manifest Detail
+                  Backup Manifest Detail
                 </div>
                 <h2 style={{ margin: 0, fontSize: 26 }}>Backup Manifest Inspector</h2>
                 <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
-                  Read-only manifest inspection.  This popup does not restore data, delete backups, call Clio, send email, generate documents, or change the print queue.  Passwords and database URLs are not displayed; the manifest only reports whether a password was stored.
+                  Passwords and database URLs are not displayed; the manifest only reports whether a password was stored.
                 </p>
               </header>
-
-              <section
-                style={{
-                  border: "1px solid #fecaca",
-                  background: "#fff1f2",
-                  color: "#9f1239",
-                  borderRadius: 16,
-                  padding: 13,
-                  fontWeight: 900,
-                  lineHeight: 1.45,
-                }}
-              >
-                Restore execution and backup deletion are disabled in this inspector.
-              </section>
 
               <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden" }}>

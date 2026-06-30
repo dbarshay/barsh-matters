@@ -1224,7 +1224,7 @@ export default function AdminReferenceDataPage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 22, color: "#1e3a8a" }}>Email Automation Status</h2>
             <p style={{ margin: "6px 0 0", color: "#1e40af", fontSize: 14 }}>
-              Read-only local observability for Graph background sync, MailDrop discovery, and the MailDrop registry.
+              Observability for Graph background sync, MailDrop discovery, and the MailDrop registry.
             </p>
           </div>
           <button
@@ -1399,8 +1399,7 @@ return (
               Reference Data
             </h1>
             <p style={{ margin: 0, maxWidth: 820, color: "#475569", fontSize: 15, lineHeight: 1.5 }}>
-              Manage targeted local Barsh Matters reference lists.  These records are stored in the
-              local PostgreSQL database, not in Clio.  Clio should remain the document vault and external shell.
+              Manage targeted local Barsh Matters reference lists.
             </p>
           </div>
 
@@ -1480,24 +1479,9 @@ return (
               <h2 style={{ margin: "0 0 6px", fontSize: 22 }}>CSV Import Preview</h2>
               <p style={{ margin: 0, color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
                 Preview CSV rows for the selected list before writing anything, then confirm only after review.
-                Preview itself does not change reference records, Clio records, documents, or print-queue records.
               </p>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <div
-                style={{
-                  border: "1px solid #bbf7d0",
-                  background: "#f0fdf4",
-                  color: "#166534",
-                  borderRadius: 999,
-                  padding: "8px 12px",
-                  fontSize: 12,
-                  fontWeight: 900,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Preview Only Until Confirmed
-              </div>
               <button
                 onClick={() => setImportPreviewPanelOpen((value) => !value)}
                 aria-expanded={importPreviewPanelOpen}
@@ -1552,7 +1536,7 @@ return (
                     Drop .xlsx, .xls, or .csv file here
                   </div>
                   <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.4 }}>
-                    The first worksheet will be converted to CSV for preview.  Loading a file does not import records.
+                    The first worksheet will be converted to CSV for preview.
                     {importFileName ? (
                       <span style={{ display: "block", marginTop: 4, color: "#166534", fontWeight: 900 }}>
                         Loaded: {importFileName}
@@ -1751,8 +1735,6 @@ return (
               </button>
 
               <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.45 }}>
-                Confirmation writes only to local Barsh Matters reference-data tables and aliases.  It does not
-                write to Clio, generate documents, change the print queue, or hard-delete records.
                 CSV columns beginning with <strong>hidden_</strong> or <strong>internal_</strong> are stored for
                 detail/document use but are not shown as ordinary visible detail fields.
               </div>
@@ -1922,8 +1904,7 @@ return (
             <div>
               <h2 style={{ margin: "0 0 6px", fontSize: 22 }}>Reference Import History</h2>
               <p style={{ margin: 0, color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
-                Read-only history of confirmed CSV imports for the selected list.  This panel reads the audit log
-                and does not modify local records or Clio.
+                History of confirmed CSV imports for the selected list.
               </p>
             </div>
 
@@ -2136,13 +2117,9 @@ return (
               >
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 900, color: "#1d4ed8", letterSpacing: 1.2 }}>
-                    LOCAL REFERENCE DETAIL
+                    REFERENCE DETAIL
                   </div>
                   <h2 style={{ margin: "4px 0 6px", fontSize: 24 }}>{selectedReferenceDetailRow.displayName}</h2>
-                  <p style={{ margin: 0, color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
-                    These details are stored in Barsh Matters local reference data.  Hidden/internal fields are not
-                    shown as ordinary UI fields but remain available for later document-generation code.
-                  </p>
                 </div>
 
                 <button
@@ -2288,12 +2265,9 @@ return (
               >
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 900, color: "#1d4ed8", letterSpacing: 1.2 }}>
-                    READ-ONLY IMPORT DETAIL
+                    IMPORT DETAIL
                   </div>
                   <h2 style={{ margin: "4px 0 6px", fontSize: 24 }}>Reference Import Detail</h2>
-                  <p style={{ margin: 0, color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
-                    This popup reads the audit log only.  It does not modify local records, Clio, documents, or the print queue.
-                  </p>
                 </div>
 
                 <button
@@ -2465,27 +2439,11 @@ return (
             <div>
               <h2 style={{ margin: "0 0 6px", fontSize: 22 }}>Import Cleanup Preview</h2>
               <p style={{ margin: 0, color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
-                Preview imported reference records that could be deactivated later.  This is preview-only,
-                deactivate-only, and does not hard-delete records, touch Clio, generate documents, or change the print queue.
+                Preview imported reference records that could be deactivated later.
               </p>
             </div>
 
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <div
-                style={{
-                  border: "1px solid #fde68a",
-                  background: "#fffbeb",
-                  color: "#92400e",
-                  borderRadius: 999,
-                  padding: "8px 12px",
-                  fontSize: 12,
-                  fontWeight: 900,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Preview Only
-              </div>
-
               <button
                 onClick={() => setCleanupPreviewPanelOpen((value) => !value)}
                 aria-expanded={cleanupPreviewPanelOpen}
@@ -2635,7 +2593,7 @@ return (
                     marginBottom: 12,
                   }}
                 >
-                  Preview found {cleanupPreview.eligibleCount ?? 0} active imported records eligible for future deactivate-only cleanup.  No records were changed.
+                  Preview found {cleanupPreview.eligibleCount ?? 0} active imported records eligible for future deactivate-only cleanup.
                 </div>
               ) : null}
 
@@ -2651,7 +2609,7 @@ return (
                     marginBottom: 12,
                   }}
                 >
-                  Confirmed deactivate cleanup: {cleanupConfirmResult.summary?.deactivated ?? 0} imported records deactivated.  No records were hard-deleted, no aliases were deleted, and no Clio data was changed.
+                  Confirmed deactivate cleanup: {cleanupConfirmResult.summary?.deactivated ?? 0} imported records deactivated.
                 </div>
               ) : null}
 
@@ -2925,7 +2883,7 @@ return (
               <div>
                 <h2 style={{ margin: 0, fontSize: 22 }}>{selectedTypeLabel}</h2>
                 <p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>
-                  Local Barsh Matters data.  Not a Clio contact search.
+                  Local Barsh Matters data.
                 </p>
               </div>
 
