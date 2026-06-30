@@ -1829,7 +1829,7 @@ export default function AdminBackupRestorePage() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Read-only backup manifest detail"
+            aria-label="Backup manifest detail"
             data-backup-manifest-detail-modal="read-only"
             data-restore-execution-enabled="false"
             data-backup-deletion-enabled="false"

@@ -1288,10 +1288,7 @@ const activeGroupKey =
               Clio Documents Tab
             </div>
             <div style={{ marginTop: 4, fontWeight: 900, color: "#0f172a" }}>
-              Read-only document vault listing
-            </div>
-            <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>
-              Lists the current Clio Documents tab contents for this direct matter.  This does not upload, download, generate, email, print, queue, or write anything.
+              Documents
             </div>
           </div>
 
@@ -5992,7 +5989,6 @@ function openClaimAmountEditDialog() {
                                   color: bmColors.green,
                                 }}
                               >
-                                <span>Outlook web link is stored locally.</span>
                                 {textValue(message.webLink) && (
                                   <a
                                     href={textValue(message.webLink)}
@@ -7293,9 +7289,6 @@ function openClaimAmountEditDialog() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 18 }}>Template Data Review</h3>
-            <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13, maxWidth: 820 }}>
-              This is a read-only review of the data available for future Direct Matter templates.  It reads ClaimIndex and local reference data only.  It does not generate documents, upload documents, write to Clio, or change the print queue.
-            </p>
           </div>
 
           <button
@@ -8083,7 +8076,7 @@ function openClaimAmountEditDialog() {
       done: providerFeeDefaultsLoaded,
       detail: providerFeeDefaultsLoaded
         ? "Provider/client Clio defaults were loaded or checked.  Missing defaults remain non-blocking."
-        : "Auto-loads when this tab opens from the read-only Clio provider/client contact defaults.  Open the Settlement tab and confirm provider fee defaults were checked.",
+        : "",
     },
     {
       label: "Writeback preview ready",
@@ -8642,7 +8635,6 @@ function openClaimAmountEditDialog() {
           onSubmit={() => { if (!directFieldEditLoading && String(claimAmountInput || "").trim()) void saveClaimAmountEditDialog(); }}
         >
           <div data-barsh-direct-claim-amount-edit-standard-modal="true" style={{ display: "grid", gap: 12 }}>
-            <p style={{ margin: 0, color: "#64748b", lineHeight: 1.45, fontWeight: 800 }}>Claim Amount is ClaimIndex-backed.</p>
             <div data-barsh-direct-claim-amount-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
               <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
               <strong style={{ fontSize: 16, color: "#0f172a" }}>{formatMoneyInputValue(parseMoneyInputValue(claimAmountInput)) || "—"}</strong>
@@ -10780,10 +10772,6 @@ function openClaimAmountEditDialog() {
           >
             <div>
               <h2 style={{ marginTop: 0, marginBottom: 6 }}>Settlement Intake / Planning</h2>
-              <p style={tabPlaceholderTextStyle}>
-                Read-only settlement workspace draft.  This panel does not change Clio, ClaimIndex, document records,
-                finalization records, or print queue records.
-              </p>
             </div>
 
             {tabMasterLawsuitId ? (
@@ -10900,8 +10888,7 @@ function openClaimAmountEditDialog() {
                   Settlement Workflow Status
                 </div>
                 <div style={{ color: "#475569", fontSize: 12 }}>
-                  Operational checklist for settlement processing.  This panel is read-only and does not write to Clio,
-                  ClaimIndex, documents, finalization records, persistent files, or the print queue.
+                  Settlement processing checklist.
                 </div>
               </div>
 
@@ -11031,7 +11018,7 @@ function openClaimAmountEditDialog() {
                   Current Local Settlement Values
                 </div>
                 <div style={{ color: "#475569", fontSize: 12 }}>
-                  Local settlement value review for child/bill matters.  This does not write to Clio, ClaimIndex, documents, or the print queue.
+                  Settlement value review.
                 </div>
               </div>
 
@@ -11210,9 +11197,6 @@ function openClaimAmountEditDialog() {
                   <div style={{ fontWeight: 800, marginBottom: 4 }}>
                     Settlement Documents Preview
                   </div>
-                  <div style={{ color: "#1e3a8a", fontSize: 12 }}>
-                    Read-only preview of planned settlement documents using local settlement values.  This does not generate documents, upload to Clio, create database records, or change the print queue.
-                  </div>
                 </div>
 
                 <button
@@ -11374,9 +11358,6 @@ function openClaimAmountEditDialog() {
                   </div>
                 )}
 
-              <div style={{ marginTop: 8, color: "#1e3a8a", fontSize: 12 }}>
-                Preview only.  No settlement documents are generated here.  No Clio records, database records, or print queue records are changed.
-              </div>
 
               <details style={{ marginTop: 10 }}>
                 <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
@@ -11896,10 +11877,6 @@ function openClaimAmountEditDialog() {
               {settlementPreviewLoading ? "Previewing..." : "Preview Settlement"}
             </button>
 
-            <div style={{ marginTop: 8, color: "#475569", fontSize: 12 }}>
-              Preview only.  This does not write to Clio, does not write to the database, does not generate documents,
-              and does not change the print queue.
-            </div>
           </div>
 
           {settlementPreviewResult && (
@@ -12038,9 +12015,6 @@ function openClaimAmountEditDialog() {
                 <div style={{ fontWeight: 800, marginBottom: 6 }}>
                   Master Lawsuit Writeback Readiness
                 </div>
-                <p style={{ margin: "0 0 8px", color: "#475569", fontSize: 12 }}>
-                  Dry-run validation only.  This checks whether the child/bill matters have the required existing Clio custom field value records for final settlement writeback.
-                </p>
                 <button
                   type="button"
                   onClick={loadSettlementWritebackPreview}
@@ -12250,10 +12224,6 @@ function openClaimAmountEditDialog() {
                     <div style={{ fontWeight: 800, marginBottom: 6 }}>
                       Final Settlement Save
                     </div>
-                    <p style={{ margin: "0 0 8px", color: "#92400e", fontSize: 12 }}>
-                      This is the explicit final Clio writeback action.  It writes settlement values only to child/bill matters.
-                      It does not write settlement financial values to the master matter, generate documents, or change the print queue.
-                    </p>
                     <button
                       type="button"
                       onClick={saveSettlementToClio}
@@ -12407,9 +12377,6 @@ function openClaimAmountEditDialog() {
                 <div style={{ fontWeight: 800, marginBottom: 4 }}>
                   Paid Settlement Close Preview
                 </div>
-                <div style={{ color: "#92400e", fontSize: 12 }}>
-                  Dry-run only.  This previews which child/bill matters may be eligible to be marked closed as PAID (SETTLEMENT) after payment is confirmed.  Settlement agreement or settlement financial writeback alone is not enough to close a matter.  It does not write to Clio, ClaimIndex, documents, or the print queue.
-                </div>
               </div>
 
               <button
@@ -12526,9 +12493,6 @@ function openClaimAmountEditDialog() {
                 </table>
               )}
 
-            <div style={{ marginTop: 8, color: "#92400e", fontSize: 12 }}>
-              Preview does not close anything. Actual closure should occur only after payment is confirmed and now routes through the guarded Close Lawsuit workflow.
-            </div>
 
             {settlementClosePreviewResult?.ok &&
               settlementClosePreviewResult?.validation?.canCloseIfConfirmed && (
@@ -12686,9 +12650,6 @@ function openClaimAmountEditDialog() {
               <div>
                 <div style={{ fontWeight: 800, marginBottom: 4 }}>
                   Settlement Writeback History
-                </div>
-                <div style={{ color: "#475569", fontSize: 12 }}>
-                  Local audit/history only.  This does not read or change Clio settlement fields.
                 </div>
               </div>
 

@@ -8968,9 +8968,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 >
                   <div>
                     <h3 style={{ margin: 0, fontSize: 18 }}>Email Draft Preview</h3>
-                    <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                      Preview only.  No Outlook draft is created unless Create Outlook Draft is clicked.  This does not send email, write Clio, upload documents, print, or queue anything.
-                    </p>
                   </div>
 
                   {masterDocumentDeliveryPreviewLoading && (
@@ -10741,7 +10738,7 @@ function masterDocumentPreviewText(value: unknown): string {
 
                       {masterActionGroup === "settlement" && (
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="record-settlement">
-                          <button type="button" onClick={() => { if (masterHasActiveRecordedSettlement) { openVoidActiveSettlementAdminFlow(); return; } resetMasterSettlementPreviewForm(); setMasterSettlementFormOpen(true); }} title={masterHasActiveRecordedSettlement ? "Administrator only: void the active local settlement record." : "Open settlement preview popup."} style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>{masterHasActiveRecordedSettlement ? "Settlement Recorded" : "Record Settlement"}</button>
+                          <button type="button" onClick={() => { if (masterHasActiveRecordedSettlement) { openVoidActiveSettlementAdminFlow(); return; } resetMasterSettlementPreviewForm(); setMasterSettlementFormOpen(true); }} title={masterHasActiveRecordedSettlement ? "" : "Open settlement preview popup."} style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }}>{masterHasActiveRecordedSettlement ? "Settlement Recorded" : "Record Settlement"}</button>
                           <button type="button" onClick={() => setActiveMasterWorkspaceTab("settlement")} title="View settlement workspace for this lawsuit." style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: "#eff6ff", color: "#1e3a8a", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-settlements-button="true">View Settlements</button>
                           {masterHasActiveRecordedSettlement && (<button type="button" onClick={() => void openTemporaryNoPasswordVoidSettlementFlow()} disabled={masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id} title="Temporary local-development shortcut: void the active local settlement without the administrator password gate." style={{ minHeight: 36, border: "1px solid #1e3a8a", borderRadius: 999, background: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#f8fafc" : "#fff7ed", color: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "#94a3b8" : "#9a3412", fontSize: 12, fontWeight: 950, cursor: masterSettlementVoidLoading || !activeMasterSettlementRecordForVoid()?.id ? "not-allowed" : "pointer", padding: "0 14px" }}>{masterSettlementVoidLoading ? "Voiding..." : "Temporary Void Settlement"}</button>)}
                         </div>
