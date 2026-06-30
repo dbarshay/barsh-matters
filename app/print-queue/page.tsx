@@ -262,7 +262,6 @@ export default function PrintQueuePage() {
         `Document: ${textValue(row?.documentLabel) || textValue(row?.documentKey) || "—"}\n` +
         `Filename: ${textValue(row?.filename) || "—"}\n\n` +
         `This will ${label}.\n\n` +
-        `This updates only the local print queue record.  It will not change Clio, upload documents, create folders, or modify document contents.\n\n` +
         `Continue?`
     );
 

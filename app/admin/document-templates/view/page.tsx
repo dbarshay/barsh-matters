@@ -140,7 +140,7 @@ export default function ViewTemplatesPage() {
     const action = actionMap[actionLabel];
     if (!action) return;
 
-    const confirmed = window.confirm(actionLabel + " template “" + (template.label || template.key) + "”?\n\nProduction Ready makes this template active in the local template repository. It does not generate documents or alter the stored DOCX.");
+    const confirmed = window.confirm(actionLabel + " template “" + (template.label || template.key) + "”?\n\nProduction Ready makes this template active in the template repository.");
     if (!confirmed) return;
 
     setBusyKey(template.key + ":" + action);

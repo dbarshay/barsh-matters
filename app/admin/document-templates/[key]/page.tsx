@@ -202,7 +202,7 @@ export default function AdminDocumentTemplateDetailPage() {
 
     const confirmed = window.confirm("Save the edited Word document back as the new active template version?\n\nMake sure you saved your edits in Word first. This creates a new DocumentTemplateVersion, preserves prior versions, and makes the edited DOCX current.");
     if (!confirmed) {
-      setEditTemplateMessage("Save cancelled. No database records changed.");
+      setEditTemplateMessage("Save cancelled.");
       return;
     }
 

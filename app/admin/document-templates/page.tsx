@@ -34,7 +34,7 @@ export default function DocumentTemplatesPage() {
               Build Template
             </h2>
             <p style={{ margin: 0, lineHeight: 1.5, color: "#4b5563" }}>
-              Browse and copy canonical merge fields for a fresh local DOCX.
+              Browse and copy canonical merge fields for a fresh DOCX.
             </p>
           </a>
 

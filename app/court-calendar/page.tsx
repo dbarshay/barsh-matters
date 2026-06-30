@@ -857,7 +857,7 @@ export default function CourtCalendarPage() {
             <div>
               <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Import Calendar Numbers from WebCivil Local</h2>
               <p style={{ margin: 0, color: "#64748b", fontWeight: 750, maxWidth: 980 }}>
-                Manual paste/import only. Copy the template from the currently loaded calendar results, look up the calendar numbers in WebCivil Local, paste the completed rows here, preview, then apply. This updates only local Court Calendar events by Event ID.
+                Copy the template from the currently loaded calendar results, look up the calendar numbers in WebCivil Local, paste the completed rows here, preview, then apply.
               </p>
             </div>
             <a href={WEB_CIVIL_LOCAL_CALENDAR_URL} target="_blank" rel="noreferrer" style={secondaryButtonStyle} data-barsh-court-calendar-webcivil-local-import-open-link="true">Open WebCivil Local</a>

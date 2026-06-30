@@ -3358,11 +3358,7 @@ function openClaimAmountEditDialog() {
     openStartLawsuitModalFromMatter();
   }
 
-  async function deaggregateCluster() {
-    alert(
-      "Legacy de-aggregation is disabled.  Barsh Matters local schema is now the operational source of truth.  A local-first de-aggregation workflow must be built separately before lawsuit memberships can be removed."
-    );
-  }
+  async function deaggregateCluster() {}
 
   async function expandClaim() {
     if (expanding) return;
@@ -3370,9 +3366,7 @@ function openClaimAmountEditDialog() {
     setExpanding(true);
 
     try {
-      alert(
-        "Legacy claim expansion is disabled.  Claim grouping now reads from ClaimIndex/local Barsh Matters only.  Add missing matters through the local matter creation/import workflow."
-      );
+      // no-op: claim expansion is not available here
     } finally {
       setExpanding(false);
     }
@@ -3896,7 +3890,6 @@ function openClaimAmountEditDialog() {
         `Document: ${textValue(row?.documentLabel) || textValue(row?.documentKey) || "—"}\n` +
         `Filename: ${textValue(row?.filename) || "—"}\n\n` +
         `This will ${label}.\n\n` +
-        `This updates only the local print queue record.  It will not change Clio, upload documents, create folders, or modify document contents.\n\n` +
         `Continue?`
     );
 
@@ -4042,7 +4035,7 @@ function openClaimAmountEditDialog() {
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
         `This will upload the following final document copy/copies to the direct bill matter Clio Documents tab:\n\n` +
         `${documentList}\n\n` +
-        `This is an explicit finalization action. Preview and download actions remain non-persistent.\n\n` +
+        `This is an explicit finalization action.\n\n` +
         `WARNING: Running this again may create duplicate uploaded documents in Clio.\n\n` +
         `Continue?`
     );
@@ -4804,8 +4797,6 @@ function openClaimAmountEditDialog() {
 
     const confirmed = window.confirm(
       "This will write final settlement values to the child/bill matter(s) in Clio.\n\n" +
-        "It will not write settlement financial values to the master matter.\n" +
-        "It will not generate documents or change the print queue.\n\n" +
         "Continue?"
     );
 
@@ -5485,7 +5476,7 @@ function openClaimAmountEditDialog() {
     }
 
     const confirmed = window.confirm(
-      "Sync this Microsoft Graph thread to Barsh Matters local email records?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata only.  It will not create a draft, send email, write Clio, upload documents, or use local Outlook automation."
+      "Sync this Microsoft Graph thread to Barsh Matters local email records?"
     );
 
     if (!confirmed) return;
@@ -5596,7 +5587,7 @@ function openClaimAmountEditDialog() {
               tabIndex={-1}
               onClick={() => previewGraphThreadUpdates()}
               disabled={!hasConversationId || emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
-              title={!hasConversationId ? "Load local Emails first." : "Preview Microsoft Graph messages for this stored conversationId without persisting changes."}
+              title={!hasConversationId ? "Load local Emails first." : "Preview Microsoft Graph messages for this stored conversationId."}
               style={{
                 padding: "7px 10px",
                 border: "1px solid #0f766e",
@@ -5626,7 +5617,7 @@ function openClaimAmountEditDialog() {
                 graphThreadSyncPreviewLoading ||
                 graphThreadSyncLoading
               }
-              title="Run only after Preview Graph Updates.  Persists local EmailThread / EmailMessage metadata only."
+              title="Run only after Preview Graph Updates."
               style={{
                 padding: "7px 10px",
                 border: "1px solid #7c3aed",
@@ -5805,7 +5796,7 @@ function openClaimAmountEditDialog() {
                         type="button"
                         onClick={() => previewGraphThreadUpdates(textValue(thread.conversationId))}
                         disabled={!textValue(thread.conversationId) || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
-                        title="Preview Microsoft Graph updates for this specific thread without persisting changes."
+                        title="Preview Microsoft Graph updates for this specific thread."
                         style={{
                           fontSize: 12,
                           padding: "5px 9px",
@@ -5831,7 +5822,7 @@ function openClaimAmountEditDialog() {
                           graphThreadSyncPreviewLoading ||
                           graphThreadSyncLoading
                         }
-                        title="Run only after Preview This Thread.  Persists local EmailThread / EmailMessage metadata only."
+                        title="Run only after Preview This Thread."
                         style={{
                           fontSize: 12,
                           padding: "5px 9px",
@@ -6829,7 +6820,7 @@ function openClaimAmountEditDialog() {
                     "Preview PDF",
                     () => launchMatterStep2PdfPreview(selectedTemplate),
                     !selectedTemplate,
-                    "Open a temporary PDF preview without uploading to Clio."
+                    "Open a temporary PDF preview."
                   )}
                   {actionButton(
                     "Edit Document",
@@ -7518,7 +7509,7 @@ function openClaimAmountEditDialog() {
     }
 
     const confirmed = window.confirm(
-      "Close Paid Settlements?\\n\\nUse this only after payment is confirmed. This will route through the guarded Close Lawsuit workflow, sync the Clio operational close status, mark the master lawsuit Closed with Close Reason = PAID (SETTLEMENT), and mark child matters Closed with Closed Reason = Closed Lawsuit. No documents or print queue records will be changed."
+      "Close Paid Settlements?\\n\\nUse this only after payment is confirmed. This will route through the guarded Close Lawsuit workflow, sync the Clio operational close status, mark the master lawsuit Closed with Close Reason = PAID (SETTLEMENT), and mark child matters Closed with Closed Reason = Closed Lawsuit."
     );
 
     if (!confirmed) {
@@ -11408,22 +11399,6 @@ function openClaimAmountEditDialog() {
               </ul>
             </div>
 
-            <div
-              style={{
-                padding: 12,
-                border: "1px solid #fef3c7",
-                borderRadius: 10,
-                background: "#fffbeb",
-              }}
-            >
-              <div style={{ fontWeight: 800, marginBottom: 6 }}>Safety Rules</div>
-              <ul style={{ margin: "0 0 0 18px", padding: 0, color: "#92400e", fontSize: 13, lineHeight: 1.5 }}>
-                <li>This direct matter settlement workspace is disabled. Settlements are handled only from the Master Lawsuit page.</li>
-                <li>Settlement writeback must be explicit only.</li>
-                <li>Preview calculations should be non-persistent.</li>
-                <li>Provider-specific fee percentages are handled from the Master Lawsuit settlement workflow.</li>
-              </ul>
-            </div>
           </div>
 
           <div
@@ -12206,9 +12181,6 @@ function openClaimAmountEditDialog() {
                   </table>
                 )}
 
-              <div style={{ marginTop: 8, color: "#475569", fontSize: 12 }}>
-                Dry-run only.  No Clio records, database records, documents, or print queue records were changed.
-              </div>
 
               {settlementWritebackPreviewResult?.ok &&
                 settlementWritebackPreviewResult?.validation?.canWriteIfConfirmed && (
