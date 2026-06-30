@@ -171,7 +171,7 @@ export default function AdminTicklerRunnerPage() {
       }
 
       const ok = window.confirm(
-        "Complete the exact previewed open tickler filter set?  This changes only LocalWorkflowTickler status/completion fields.",
+        "Complete the exact previewed open tickler filter set?",
       );
       if (!ok) return;
     }
@@ -225,9 +225,7 @@ export default function AdminTicklerRunnerPage() {
         <div>
           <h1 style={{ margin: 0 }}>Admin Tickler Bulk Runner</h1>
           <p style={{ marginTop: 8, color: "#475569", maxWidth: 880 }}>
-            Administrator action screen for bulk processing open ticklers.  Preview is read-only.  Complete updates only local
-            LocalWorkflowTickler status/completion fields; it does not post payments, close matters, change settlement records,
-            update Clio, generate documents, email, print, or queue anything.
+            Administrator action screen for bulk processing open ticklers.
           </p>
         </div>
         <Link
@@ -347,7 +345,7 @@ export default function AdminTicklerRunnerPage() {
               <p style={{ marginTop: 0, color: result.writePerformed ? "#7f1d1d" : "#166534", fontWeight: 800 }}>
                 {result.writePerformed
                   ? `Completed ${result.completedCount || 0} open tickler(s).`
-                  : `Preview found ${result.count || 0} open tickler(s). No write performed.`}
+                  : `Preview found ${result.count || 0} open tickler(s).`}
               </p>
 
               {result.writePerformed ? (
@@ -387,9 +385,6 @@ export default function AdminTicklerRunnerPage() {
                       <div>{cell(ticklers[0]?.completedNote)}</div>
                     </div>
                   </div>
-                  <p style={{ margin: "10px 0 0", color: "#7f1d1d", fontWeight: 700 }}>
-                    Audit only: this summary records the LocalWorkflowTickler completion result and does not post payments, close matters, change settlement records, update Clio, generate documents, email, print, or queue anything.
-                  </p>
                 </div>
               ) : null}
 

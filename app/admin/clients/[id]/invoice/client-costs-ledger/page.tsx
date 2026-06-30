@@ -184,7 +184,7 @@ export default function ClientCostsLedgerPage() {
             <h1 style={{ margin: "6px 0 4px" }}>Client Costs Ledger</h1>
             <h2 style={{ margin: 0, fontSize: 18 }}>{clientName}</h2>
             <p style={{ color: "#475569", marginBottom: 0 }}>
-              Read-only cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
+              Cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

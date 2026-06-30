@@ -99,7 +99,7 @@ export default function AdminInvoiceSearchPage() {
         </div>
         <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>Global Invoice Search</h1>
         <p style={{ color: "#475569", margin: 0 }}>
-          Read-only invoice reporting across provider/clients. Search by invoice number, provider, matter, patient, insurer, lawsuit, source row, or description.
+          Invoice reporting across provider/clients. Search by invoice number, provider, matter, patient, insurer, lawsuit, source row, or description.
         </p>
       </section>
 

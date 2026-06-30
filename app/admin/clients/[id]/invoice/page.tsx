@@ -489,7 +489,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         "",
         `This will mark ${receiptLineCount || "the included"} MatterPaymentReceipt row${receiptLineCount === 1 ? "" : "s"} with this invoice ID and exclude them from future ordinary previews.`,
         "Frozen invoice lines will remain the invoice review/output source.",
-        "This will not mutate Clio, ClaimIndex, source costs, documents, email, print, queue, or remittance records.",
       ].join("\n")
     );
     if (!confirmed) return;
@@ -1053,7 +1052,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <div>
             <h2 style={{ margin: 0 }}>Client Cost Ledger</h2>
             <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13 }}>
-              Read-only cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
+              Cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1644,10 +1643,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           </label>
         </div>
 
-        <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
-            Previewing does not create, finalize, email, print, queue, or mark invoice source rows.
-          </span>
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <button
             type="button"
             onClick={() => {
@@ -1888,9 +1884,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                 </>
               )}
             </div>
-            <div style={{ marginTop: 6, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
-              Source costs, remittance records, Clio, ClaimIndex, documents, email, print, and queue are not changed.
-            </div>
           </div>
 
           <button
@@ -1945,9 +1938,6 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               <div><strong>Marked This Invoice</strong><br />{invoiceDetail.verification.receiptRowsMarkedWithThisInvoiceId ?? "—"}</div>
               <div><strong>Marked Elsewhere</strong><br />{invoiceDetail.verification.receiptRowsMarkedWithAnotherInvoiceId ?? "—"}</div>
               <div><strong>Unmarked</strong><br />{invoiceDetail.verification.receiptRowsUnmarked ?? "—"}</div>
-              <div style={{ gridColumn: "1 / -1", color: "#1e3a8a", fontWeight: 800 }}>
-                Lifecycle: detail/review uses frozen ProviderClientInvoiceLine rows. Finalize marks only included MatterPaymentReceipt rows. Clio, ClaimIndex, source costs, remittance records, documents, email, print, and queue are not mutated.
-              </div>
             </div>
           )}
 

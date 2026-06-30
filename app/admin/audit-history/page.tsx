@@ -103,7 +103,7 @@ export default function AdminAuditHistoryPage() {
                 Audit / History
               </h1>
               <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45, maxWidth: 900 }}>
-                Read-only administrator view for recent local Barsh Matters audit/history entries.  This page does not edit records, delete entries, write Clio, send email, print, or queue documents.
+                Administrator view for recent local Barsh Matters audit/history entries.
               </p>
             </div>
 
@@ -242,18 +242,6 @@ export default function AdminAuditHistoryPage() {
           )}
         </section>
 
-        <section
-          style={{
-            border: "1px solid #dbeafe",
-            background: "#eff6ff",
-            color: "#1e3a8a",
-            borderRadius: 18,
-            padding: 16,
-            lineHeight: 1.45,
-          }}
-        >
-          <strong>Safety:</strong> This admin function is read-only and uses the existing local audit-log API.  It does not write Clio or modify Barsh Matters records.
-        </section>
       </div>
     </main>
   );

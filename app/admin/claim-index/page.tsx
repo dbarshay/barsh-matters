@@ -407,7 +407,7 @@ export default function AdminClaimIndexPage() {
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>ClaimIndex Viewer</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
-            Read-only audit view of the local Barsh Matters ClaimIndex table.  This page searches ClaimIndex only and does not edit matters, restore data, call Clio, generate documents, send email, print, queue, or write to the database.
+            Audit view of the local Barsh Matters ClaimIndex table.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", color: "#334155", fontWeight: 900 }}>
             <span>Source: {result?.sourceOfTruth || "ClaimIndex/local Barsh Matters"}</span>
@@ -415,10 +415,6 @@ export default function AdminClaimIndexPage() {
             <span>Limit: {result?.limit ?? 500}</span>
           </div>
         </header>
-
-        <section style={{ border: "1px solid #dbeafe", background: "#eff6ff", color: "#1e3a8a", borderRadius: 18, padding: 16, lineHeight: 1.45 }}>
-          <strong>Safety:</strong> Display and CSV export are client-side/read-only.  No confirm buttons, restore actions, Clio writebacks, matter edits, document generation, print queue writes, or database writes are exposed here.
-        </section>
 
         <form onSubmit={submitSearch} style={{ ...cardStyle, display: "grid", gap: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>

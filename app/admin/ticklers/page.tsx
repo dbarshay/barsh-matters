@@ -771,7 +771,7 @@ export default function AdminTicklersPage() {
           <div>
             <strong>Duplicate Settlement Tickler Diagnostic</strong>
             <div style={{ color: "#475569", fontSize: 13 }}>
-              Read-only preview of duplicate open settlement payment follow-up ticklers grouped by settlement record, master lawsuit, and due date.  No delete, complete, merge, reopen, rerun, payment, closure, Clio, email, print, queue, or write action is available here.
+              Preview of duplicate open settlement payment follow-up ticklers grouped by settlement record, master lawsuit, and due date.
             </div>
           </div>
           <button
@@ -825,7 +825,7 @@ export default function AdminTicklersPage() {
             ) : (
               <>
                 <p style={{ margin: "0 0 8px", color: "#92400e", fontWeight: 800 }}>
-                  Cleanup preview found {duplicateCleanupPreviewResult.cleanupPreviewGroupCount || 0} duplicate group(s) and {duplicateCleanupPreviewResult.wouldRemoveTotal || 0} would-remove candidate(s).  No cleanup performed.  No write performed.
+                  Cleanup preview found {duplicateCleanupPreviewResult.cleanupPreviewGroupCount || 0} duplicate group(s) and {duplicateCleanupPreviewResult.wouldRemoveTotal || 0} would-remove candidate(s).
                 </p>
                 {(duplicateCleanupPreviewResult.cleanupPreviewGroups || []).length === 0 ? (
                   <p style={{ margin: 0, color: "#64748b" }}>No duplicate cleanup candidates found.</p>
@@ -885,7 +885,7 @@ export default function AdminTicklersPage() {
             ) : (
               <>
                 <p style={{ margin: "0 0 8px", color: "#7f1d1d", fontWeight: 800 }}>
-                  Found {duplicateDiagnosticResult.duplicateGroupCount || 0} duplicate group(s) from {duplicateDiagnosticResult.checkedCount || 0} checked open settlement payment follow-up tickler(s).  No write performed.
+                  Found {duplicateDiagnosticResult.duplicateGroupCount || 0} duplicate group(s) from {duplicateDiagnosticResult.checkedCount || 0} checked open settlement payment follow-up tickler(s).
                 </p>
                 {(duplicateDiagnosticResult.duplicateGroups || []).length === 0 ? (
                   <p style={{ margin: 0, color: "#64748b" }}>No duplicate open settlement payment follow-up ticklers found.</p>
@@ -954,7 +954,7 @@ export default function AdminTicklersPage() {
         <div>
           <strong>Tickler Search Mode</strong>
           <div style={{ color: "#475569", fontSize: 13 }}>
-            Open mode searches active ticklers.  Completed History is read-only audit review and does not reopen, rerun, process, complete, pay, close, or modify ticklers.
+            Open mode searches active ticklers.  Completed History is audit review.
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1258,7 +1258,7 @@ export default function AdminTicklersPage() {
                 data-barsh-admin-tickler-results-mode-label="true"
                 style={{ margin: "4px 0 0", color: ticklerStatusMode === "completed" ? "#7f1d1d" : "#475569", fontSize: 13, fontWeight: 700 }}
               >
-                {ticklerStatusMode === "completed" ? "Completed History: read-only audit results." : "Open Ticklers: active follow-up results."}
+                {ticklerStatusMode === "completed" ? "Completed History: audit results." : "Open Ticklers: active follow-up results."}
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -1314,7 +1314,7 @@ export default function AdminTicklersPage() {
                 </thead>
                 <tbody>
                   {result.ticklers.map((tickler) => (
-                    <tr key={tickler.id} style={{ borderBottom: "1px solid #f1f5f9", verticalAlign: "top" }} data-barsh-admin-tickler-detail-row-open="true" role="button" tabIndex={0} title="View read-only tickler detail" onClick={() => setSelectedTicklerDetail(tickler)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedTicklerDetail(tickler); } }}>
+                    <tr key={tickler.id} style={{ borderBottom: "1px solid #f1f5f9", verticalAlign: "top" }} data-barsh-admin-tickler-detail-row-open="true" role="button" tabIndex={0} title="View tickler detail" onClick={() => setSelectedTicklerDetail(tickler)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedTicklerDetail(tickler); } }}>
                       <td style={{ padding: "10px 8px", fontWeight: 900 }}>{formatDate(tickler.dueDate)}</td>
                       <td style={{ padding: "10px 8px" }}>{kindLabel(tickler.kind)}</td>
                       <td style={{ padding: "10px 8px" }}>
@@ -1390,10 +1390,7 @@ export default function AdminTicklersPage() {
                 color: "#ffffff",
               }}
             >
-              <h2 style={{ margin: 0, fontSize: 20 }}>Read-Only Tickler Detail</h2>
-              <p style={{ margin: "6px 0 0", fontSize: 13 }}>
-                Administrator inspection only.  This popup does not process ticklers, complete ticklers, post payments, change statuses, run ticklers, write records, update Clio, or modify Barsh Matters data.
-              </p>
+              <h2 style={{ margin: 0, fontSize: 20 }}>Tickler Detail</h2>
             </div>
 
             <div

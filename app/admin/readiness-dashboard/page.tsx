@@ -275,13 +275,12 @@ export default function AdminReadinessDashboardPage() {
 
         <header style={{ ...cardStyle, display: "grid", gap: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Administrator · Read-only
+            Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Admin Readiness Dashboard</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
-            Read-only consolidated dashboard for ClaimIndex data quality, Lawsuit/master integrity, and document-generation readiness.
-            This page fetches existing read-only audit APIs and summarizes their status. It does not edit, save, restore, call Clio,
-            call Graph, generate documents, finalize documents, upload documents, send email, print, queue, delete records, or write to the database.
+            Consolidated dashboard for ClaimIndex data quality, Lawsuit/master integrity, and document-generation readiness.
+            This page fetches existing read-only audit APIs and summarizes their status.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void loadDashboard()} disabled={loading} style={buttonStyle}>
@@ -405,10 +404,6 @@ export default function AdminReadinessDashboardPage() {
           </div>
         </section>
 
-        <section style={{ ...cardStyle, color: "#475569", lineHeight: 1.45 }}>
-          <strong>Safety:</strong> Read-only dashboard. It calls only existing read-only Admin audit endpoints with GET requests.
-          It does not expose fix, edit, save, delete, restore, Clio, Graph, document-generation, finalization, upload, email, print, queue, or database-write controls.
-        </section>
       </div>
     </main>
   );

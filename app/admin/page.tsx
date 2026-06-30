@@ -20,35 +20,35 @@ const adminCards = [
     label: "Readiness Dashboard",
     href: "/admin/readiness-dashboard",
     description:
-      "Single read-only dashboard for ClaimIndex, Lawsuit/master, and document-generation readiness audit status.",
+      "Single dashboard for ClaimIndex, Lawsuit/master, and document-generation readiness audit status.",
     icon: "📊",
   },
   {
     label: "ClaimIndex Viewer",
     href: "/admin/claim-index",
     description:
-      "Read-only audit/search view of the local ClaimIndex table for backup, restore, and data-confidence review.",
+      "Audit/search view of the local ClaimIndex table for backup, restore, and data-confidence review.",
     icon: "🔎",
   },
   {
     label: "ClaimIndex Audit",
     href: "/admin/claim-index/audit",
     description:
-      "Read-only data-quality and restore-confidence audit for local ClaimIndex identity, status, lawsuit grouping, and financial fields.",
+      "Data-quality and restore-confidence audit for local ClaimIndex identity, status, lawsuit grouping, and financial fields.",
     icon: "🧪",
   },
   {
     label: "Lawsuit / Master Audit",
     href: "/admin/lawsuits/audit",
     description:
-      "Read-only restore-confidence audit for local Lawsuit/master metadata, child links, close status, and document-generation readiness.",
+      "Restore-confidence audit for local Lawsuit/master metadata, child links, close status, and document-generation readiness.",
     icon: "⚖️",
   },
   {
     label: "Document Readiness Audit",
     href: "/admin/document-readiness/audit",
     description:
-      "Read-only audit for document-generation readiness across local master metadata, child matter fields, templates, and final delivery prerequisites.",
+      "Audit for document-generation readiness across local master metadata, child matter fields, templates, and final delivery prerequisites.",
     icon: "🧾",
   },
   {
@@ -94,7 +94,7 @@ const adminCards = [
     label: "Document Templates",
     href: "/admin/document-templates",
     description:
-      "Read-only document-template repository view, including categories, repository source, versions, and merge fields.",
+      "Document-template repository view, including categories, repository source, versions, and merge fields.",
     icon: "📄",
   },
   {
@@ -188,7 +188,7 @@ export default function AdminHomePage() {
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Admin Home</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 900 }}>
-            Admin-only Barsh Matters functions.  This page is protected by the administrator gate and does not perform imports, writes, edits, uploads, document generation, printing, email, queueing, or Clio operations by itself.
+            Admin-only Barsh Matters functions.  This page is protected by the administrator gate.
           </p>
         </header>
 
@@ -221,19 +221,6 @@ export default function AdminHomePage() {
               <div style={{ marginTop: 8, fontWeight: 950, color: "#4f46e5" }}>Open →</div>
             </a>
           ))}
-        </section>
-
-        <section
-          style={{
-            border: "1px solid #dbeafe",
-            background: "#eff6ff",
-            color: "#1e3a8a",
-            borderRadius: 18,
-            padding: 16,
-            lineHeight: 1.45,
-          }}
-        >
-          <strong>Safety:</strong> Admin routes are protected by the Barsh Matters administrator proxy gate.  Print Queue remains a separate header function and is not included in this Administrator page.
         </section>
 
         <div>

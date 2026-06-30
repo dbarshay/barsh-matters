@@ -376,14 +376,13 @@ export default function AdminDocumentReadinessAuditPage() {
 
         <header style={{ ...cardStyle, display: "grid", gap: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Administrator · Read-only
+            Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Document Generation Readiness Audit</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
-            Read-only local audit for document-generation readiness. It checks master lawsuit metadata, court/venue details,
+            Local audit for document-generation readiness. It checks master lawsuit metadata, court/venue details,
             adversary attorney details, linked child matter fields, master Clio shell mapping, and local template/finalization
-            records. It does not call Clio, call Graph, create working documents, generate documents, finalize documents,
-            upload documents, send email, print, queue, restore data, update records, delete records, or write to the database.
+            records.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void loadAudit()} disabled={loading} style={buttonStyle}>
@@ -541,13 +540,6 @@ export default function AdminDocumentReadinessAuditPage() {
                 ))}
               </div>
             </section>
-
-            {checksWithFindings.length ? (
-              <section style={{ ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" }}>
-                <strong>Review note:</strong> This page reports findings only. It intentionally provides no fix, edit,
-                restore, Clio, Graph, document generation, finalization, upload, email, print, queue, delete, or write controls.
-              </section>
-            ) : null}
 
             <section style={{ ...cardStyle, color: "#475569", lineHeight: 1.45 }}>
               API safety message: {result.safety || "Read-only Document Generation Readiness Audit. No write actions are available."}

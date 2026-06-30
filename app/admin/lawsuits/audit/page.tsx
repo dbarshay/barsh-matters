@@ -371,13 +371,12 @@ export default function AdminLawsuitAuditPage() {
 
         <header style={{ ...cardStyle, display: "grid", gap: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 950, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Administrator · Read-only
+            Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Lawsuit / Master Data-Quality Audit</h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
-            Read-only restore-confidence audit of local Lawsuit/master metadata and linked ClaimIndex child rows.
+            Restore-confidence audit of local Lawsuit/master metadata and linked ClaimIndex child rows.
             This page checks master IDs, child membership, amount/venue metadata, master Clio shell mapping, and close-status consistency.
-            It does not edit, restore, deaggregate, delete, call Clio, generate documents, send email, print, queue, or write to the database.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={() => void loadAudit()} disabled={loading} style={buttonStyle}>
@@ -540,13 +539,6 @@ export default function AdminLawsuitAuditPage() {
                 ))}
               </div>
             </section>
-
-            {checksWithFindings.length ? (
-              <section style={{ ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" }}>
-                <strong>Review note:</strong> This page reports findings only. It intentionally provides no fix, restore,
-                edit, delete, deaggregate, Clio, document, email, print, or queue controls.
-              </section>
-            ) : null}
 
             <section style={{ ...cardStyle, color: "#475569", lineHeight: 1.45 }}>
               API safety message: {result.safety || "Read-only Lawsuit/master data-quality audit. No write actions are available."}

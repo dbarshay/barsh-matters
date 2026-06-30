@@ -1228,10 +1228,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
-          <div style={{ marginBottom: 12, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc", color: "#475569", lineHeight: 1.45 }}>
-            Invoice/remittance reporting remains child-matter based. Lawsuit-page payments must appear through allocated child MatterPaymentReceipt rows before they belong in provider reporting.
-          </div>
-
           <div style={{ overflowX: "auto", maxHeight: 420 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1120 }}>
               <thead>
@@ -1332,7 +1328,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           </div>
 
           <div style={{ marginBottom: 12, border: "1px solid #fde68a", borderRadius: 12, padding: 12, background: "#fffbeb", color: "#92400e", lineHeight: 1.45, fontWeight: 800 }}>
-            Attorney Fee is a separate non-remittance payment type. This report reads local child-ledger receipt rows only and does not create invoices, write remittances, update ClaimIndex, or update Clio.
+            Attorney Fee is a separate non-remittance payment type.
           </div>
 
           <div style={{ overflowX: "auto", maxHeight: 420 }}>
@@ -1407,7 +1403,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             <div>
               <h2 style={{ margin: 0 }}>Lawsuit Matters</h2>
               <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
-                Lawsuit matters are summarized from this provider/client's matched individual matters. Payment reporting remains child-matter based.
+                Lawsuit matters are summarized from this provider/client's matched individual matters.
               </p>
             </div>
             <button
@@ -1437,10 +1433,6 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Balance</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(lawsuitPanelTotals.balance)}</div>
             </div>
-          </div>
-
-          <div style={{ marginBottom: 12, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc", color: "#475569", lineHeight: 1.45 }}>
-            This panel is a local summary grouped from matched child matters. It does not create lawsuits, edit lawsuit metadata, write payments, or update Clio.
           </div>
 
           <div style={{ overflowX: "auto", maxHeight: 420 }}>
