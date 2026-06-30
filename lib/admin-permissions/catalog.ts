@@ -1,4 +1,22 @@
-export type AdminPermissionRiskLevel = "view" | "edit" | "financial" | "destructive" | "administrative";
+// Reworked permission model — see docs/permission-model.md.
+//
+// Every permission is tagged with exactly one TIER:
+//   view     — read-only.
+//   edit     — routine create/modify + document drafting.
+//   process  — high-stakes operational actions: payments, settlement amounts, invoices/billing,
+//              finalize documents, close/void matters/lawsuits/settlements (money + irreversible).
+//   admin    — general administrator functions (audits, backups, reference-data admin, templates,
+//              ticklers, cleanup, claim-index rebuild, admin-area access). Grantable per-user.
+//   security — manage admin users, roles, permissions, and security settings. OWNER ONLY.
+//
+// Role tiers (cumulative ladder + security split):
+//   View Only   = view
+//   Partial User= view + edit
+//   Full User   = view + edit + process
+//   Administrator = view + edit + process + admin (only the admin functions granted to that user)
+//   Owner       = view + edit + process + admin (all) + security
+
+export type AdminPermissionTier = "view" | "edit" | "process" | "admin" | "security";
 export type AdminPermissionEnforcementStatus = "enforced-currently" | "planned-not-enforced" | "never-block";
 
 export type AdminPermissionCatalogItem = {
@@ -8,7 +26,7 @@ export type AdminPermissionCatalogItem = {
   description: string;
   routeScopes: string[];
   functionScopes: string[];
-  riskLevel: AdminPermissionRiskLevel;
+  tier: AdminPermissionTier;
   enforcementStatus: AdminPermissionEnforcementStatus;
 };
 
@@ -20,27 +38,27 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Access administrator pages and administrator APIs.",
     routeScopes: ["/admin", "/admin/*", "/api/admin", "/api/admin/*"],
     functionScopes: ["admin-pages", "admin-apis"],
-    riskLevel: "administrative",
+    tier: "admin",
     enforcementStatus: "enforced-currently",
   },
   {
     key: "admin.users.manage",
-    group: "Administrator",
+    group: "Security",
     label: "Manage Admin Users",
     description: "Create, lock, unlock, assign roles, and reset admin user passwords.",
     routeScopes: ["/admin/users", "/api/admin/users/*"],
     functionScopes: ["admin-user-management"],
-    riskLevel: "administrative",
+    tier: "security",
     enforcementStatus: "planned-not-enforced",
   },
   {
     key: "admin.permissions.manage",
-    group: "Administrator",
+    group: "Security",
     label: "Manage Permissions",
     description: "Manage roles, permission catalog visibility, and user permission overrides.",
     routeScopes: ["/admin/permissions", "/api/admin/permissions/*"],
     functionScopes: ["permission-management"],
-    riskLevel: "administrative",
+    tier: "security",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -50,7 +68,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View matter lists, matter details, and matter-linked read-only information.",
     routeScopes: ["/matters", "/matter/[id]", "/api/matters/*"],
     functionScopes: ["matter-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -60,7 +78,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Edit direct matter fields, identity fields, status, and metadata.",
     routeScopes: ["/matter/[id]", "/api/matters/update-direct-field", "/api/matters/identity-field/*"],
     functionScopes: ["matter-write"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -70,7 +88,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Close or reopen direct matters.",
     routeScopes: ["/api/matters/close"],
     functionScopes: ["matter-close"],
-    riskLevel: "destructive",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -80,7 +98,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Post payments against direct matters.",
     routeScopes: ["/api/matters/apply-payment"],
     functionScopes: ["direct-payment-post"],
-    riskLevel: "financial",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -90,7 +108,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Void posted direct matter payment receipts.",
     routeScopes: ["/api/matters/apply-payment"],
     functionScopes: ["direct-payment-void"],
-    riskLevel: "financial",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -100,7 +118,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View lawsuit list, master lawsuit pages, and lawsuit read-only details.",
     routeScopes: ["/lawsuits", "/api/lawsuits/*"],
     functionScopes: ["lawsuit-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -110,7 +128,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Create master lawsuits and aggregate child matters into lawsuits.",
     routeScopes: ["/api/lawsuits/local-generation-create", "/api/aggregation/*"],
     functionScopes: ["lawsuit-create"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -120,7 +138,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Edit lawsuit metadata and options.",
     routeScopes: ["/api/lawsuits/update-metadata"],
     functionScopes: ["lawsuit-write"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -130,7 +148,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Close master lawsuits and cascade local close status to child matters.",
     routeScopes: ["/api/lawsuits/close"],
     functionScopes: ["lawsuit-close"],
-    riskLevel: "destructive",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -140,7 +158,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Post master/lawsuit payments to child matter receipts.",
     routeScopes: ["/api/matters/apply-payment"],
     functionScopes: ["lawsuit-payment-post"],
-    riskLevel: "financial",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -150,7 +168,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Void child receipts created through lawsuit/master payment workflows.",
     routeScopes: ["/api/matters/apply-payment"],
     functionScopes: ["lawsuit-payment-void"],
-    riskLevel: "financial",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -160,7 +178,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View document status, packets, history, previews, and print queue read-only state.",
     routeScopes: ["/print-queue", "/api/documents/*"],
     functionScopes: ["document-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -170,7 +188,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Generate document drafts and previews.",
     routeScopes: ["/api/documents/generate-preview", "/api/documents/working-docx", "/api/documents/preview-pdf"],
     functionScopes: ["document-generate"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -180,7 +198,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Finalize documents and write finalization records.",
     routeScopes: ["/api/documents/finalize", "/api/documents/finalize-preview"],
     functionScopes: ["document-finalize"],
-    riskLevel: "destructive",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -190,7 +208,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Manage print queue actions and document print workflows.",
     routeScopes: ["/print-queue", "/api/documents/print-queue", "/api/documents/print-queue-preview"],
     functionScopes: ["print-queue-manage"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -200,7 +218,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View settlement values, previews, summaries, and settlement history.",
     routeScopes: ["/api/settlements/current-values", "/api/settlements/history", "/api/settlements/settlement-summary"],
     functionScopes: ["settlement-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -210,7 +228,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Create or update settlement records and local settlement workflow state.",
     routeScopes: ["/api/settlements/local-record", "/api/settlements/writeback"],
     functionScopes: ["settlement-write"],
-    riskLevel: "financial",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -220,7 +238,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Run settlement close workflows.",
     routeScopes: ["/api/settlements/close"],
     functionScopes: ["settlement-close"],
-    riskLevel: "destructive",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -230,7 +248,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Void local settlement records.",
     routeScopes: ["/api/settlements/local-void"],
     functionScopes: ["settlement-void"],
-    riskLevel: "destructive",
+    tier: "process",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -240,7 +258,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View court calendar page, event lists, and filter options.",
     routeScopes: ["/court-calendar", "/api/court-calendar/events", "/api/court-calendar/filter-options"],
     functionScopes: ["court-calendar-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -250,7 +268,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Import or update court calendar events.",
     routeScopes: ["/api/court-calendar/import-webcivil-local"],
     functionScopes: ["court-calendar-write"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -260,7 +278,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "View print queue page and queue status.",
     routeScopes: ["/print-queue", "/api/documents/print-queue-preview"],
     functionScopes: ["print-queue-read"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -270,7 +288,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Manage print queue actions.",
     routeScopes: ["/print-queue", "/api/documents/print-queue"],
     functionScopes: ["print-queue-manage"],
-    riskLevel: "edit",
+    tier: "edit",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -280,7 +298,7 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Use matter/lawsuit/search APIs and claim-index lookup routes.",
     routeScopes: ["/api/claim-index/search", "/api/claim-index/search-grouped", "/api/advanced-search/*"],
     functionScopes: ["claim-index-search"],
-    riskLevel: "view",
+    tier: "view",
     enforcementStatus: "planned-not-enforced",
   },
   {
@@ -290,10 +308,12 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     description: "Rebuild or refresh the local claim index.",
     routeScopes: ["/api/claim-index/rebuild", "/api/claim-index/refresh-cluster"],
     functionScopes: ["claim-index-rebuild"],
-    riskLevel: "administrative",
+    tier: "admin",
     enforcementStatus: "planned-not-enforced",
   },
 ];
+
+export const ADMIN_PERMISSION_TIERS: AdminPermissionTier[] = ["view", "edit", "process", "admin", "security"];
 
 export function getAdminPermissionCatalog() {
   return ADMIN_PERMISSION_CATALOG;
@@ -305,4 +325,8 @@ export function getAdminPermissionCatalogGroups() {
 
 export function findAdminPermissionCatalogItem(key: string) {
   return ADMIN_PERMISSION_CATALOG.find((item) => item.key === key) || null;
+}
+
+export function adminPermissionKeysForTier(tier: AdminPermissionTier): string[] {
+  return ADMIN_PERMISSION_CATALOG.filter((item) => item.tier === tier).map((item) => item.key);
 }
