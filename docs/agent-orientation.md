@@ -143,6 +143,23 @@ reads `uploaded[].clioDocumentId` / duplicate `existingClioDocuments[].id`):
 - Locked: document header/letterhead formatting. Don't reintroduce legacy per-direct-matter
   Clio matter lookups into the read-only View Documents path.
 
+## Working across two machines — never lose uncommitted work on pull
+
+This repo is developed on more than one machine (e.g. a home Mac-mini and a work machine),
+so the *other* machine frequently has local uncommitted work. Commits made on one machine
+get pulled forward on the other. Before pulling on ANY machine:
+
+1. `git status` FIRST. If the tree is clean, `git pull --ff-only origin main`.
+2. If the tree is dirty, do NOT pull over it. Preserve the local work first:
+   `git stash push -u -m wip` (the `-u` also stashes new/untracked files), then
+   `git pull --ff-only origin main`, then `git stash pop` and resolve any conflicts.
+   Alternatively commit the WIP to a branch (`git switch -c wip-YYYYMMDD && git add -A &&
+   git commit -m wip`) before pulling main.
+3. NEVER run `git reset --hard`, `git checkout -- .`, `git clean`, or a force-pull against
+   uncommitted work — that silently destroys local changes. When in doubt, stash and stop.
+4. If `git pull` reports divergence (can't fast-forward), surface it to the user and ask
+   before rebasing/merging; don't auto-resolve.
+
 ## Template token data model (domain)
 
 There are two matter levels:
@@ -159,6 +176,13 @@ the signer profile, and (future) the settlement dialog. Token → source mapping
 
 **Signer** (from the selected `AdminUser` signer profile; firm option = Barsh Rizzo & Lopez):
 `signer.email/fax/extension/displayName/signatureName/title`.
+
+**Letter date** (generation-stamped, matter-independent): `letter.date` resolves in the
+resolver to the current date in **US Eastern** (`America/New_York`), rendered as
+`Month D, YYYY` (e.g. June 29, 2026). Use this token instead of a Word `DATE` field: a
+live Word `DATE` field reads the OS clock of whoever opens the doc and drifts to UTC
+(showing tomorrow's date late at night ET), whereas `letter.date` is fixed as plain text
+when the letter is generated. Catalogued under the General category.
 
 **Matter + Claim** (from the **individual** BRL_ matter — claims index, with UI-edited
 fields as fallback):
@@ -205,3 +229,11 @@ syntax `{{namespace.field|modifier|...}}`; modifiers: `upper/lower/title`,
 `date:MM/DD/YYYY`, `date:Month D, YYYY`, `currency` (text-formatting modifiers
 bold/italic/underline are catalogued but require run-property edits — not yet applied).
 Generation must NOT silently blank unresolved tokens — report them.
+
+Run-boundary rule (fixed): when a token begins exactly at a run boundary, the engine binds
+the token start to the run that holds its first character (exclusive upper bound, skipping
+zero-length runs such as a run carrying only a `<w:tab/>`). An earlier inclusive bound
+absorbed the value into the *preceding* run — so a value after a bold label + tab inherited
+the label's bold and landed *before* the tab, collapsing tabbed label/value alignment. Note
+that clean column alignment still needs real tab stops or a borderless table in the
+template; a bare tab with no defined tab stops only jumps to Word's default half-inch grid.
