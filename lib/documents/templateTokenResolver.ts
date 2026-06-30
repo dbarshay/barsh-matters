@@ -148,6 +148,19 @@ export async function resolveTemplateTokenBaseValues(params: {
   text("signer.signatureName", signer.signatureBlockName);
   text("signer.title", "");
 
+  // Letter date — stamped at generation in the firm's timezone (US Eastern),
+  // independent of matter level. Use this instead of a live Word DATE field so the
+  // date is fixed when the letter is generated and never drifts to UTC or to the
+  // clock of whoever later opens the document. Rendered as "Month D, YYYY"
+  // (e.g. June 30, 2026) to match the firm letterhead date format.
+  const easternLetterDate = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date());
+  text("letter.date", easternLetterDate);
+
   const displayNumber = clean(params.directMatterDisplayNumber);
   let masterLawsuitId = clean(params.masterLawsuitId);
 

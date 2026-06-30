@@ -367,6 +367,12 @@ export async function resolveTemplateBuilderExamplePreview(matterKey: string): P
     "{{signer.displayName}}": "Selected Signer",
     "{{signer.signatureName}}": "Selected Signer",
     "{{signer.title}}": "Attorney",
+    "{{letter.date}}": new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date()),
     "{{adversary.fullAddressBlock}}": isLawsuitContext
       ? addressBlock(
           hiddenValue(adversaryRow, "hidden_street"),

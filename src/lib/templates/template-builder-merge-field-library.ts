@@ -490,6 +490,16 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
     compatibleModifiers: CURRENCY_MODIFIERS,
     exampleOutput: "—",
   },
+  {
+    kind: "canonical",
+    category: "General",
+    fieldLabel: "Letter Date (US Eastern)",
+    mergeField: "{{letter.date}}",
+    fieldType: "text",
+    compatibleModifiers: ["bold", "italic", "underline"],
+    exampleOutput: "—",
+    aliases: ["today", "todays date", "current date", "letter date", "generation date", "date"],
+  },
 ];
 
 export const TEMPLATE_BUILDER_CUSTOM_PLACEHOLDER_FIELDS: TemplateBuilderCustomPlaceholderField[] = [
