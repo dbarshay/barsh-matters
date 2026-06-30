@@ -65,7 +65,7 @@ const rightWrapStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "flex-start",
   justifyContent: "flex-end",
-  gap: 10,
+  gap: 8,
   flexShrink: 0,
 };
 
@@ -84,12 +84,15 @@ const bmLogoLinkStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
+// The source image (428x326) is taller than a 292-wide box, so `contain` only fills ~173px
+// of width and pins it right, leaving a big empty transparent gap on the left. Sizing the box
+// to the visible logo width removes that gap so the actions sit right against the visible logo.
 const bmLogoStyle: React.CSSProperties = {
-  width: 292,
+  width: 174,
   height: 132,
-  minWidth: 292,
+  minWidth: 174,
   objectFit: "contain",
-  objectPosition: "right top",
+  objectPosition: "center",
   display: "block",
   flexShrink: 0,
 };

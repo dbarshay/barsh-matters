@@ -9344,7 +9344,6 @@ function masterDocumentPreviewText(value: unknown): string {
                   gap: 8,
                   textAlign: "center",
                   minWidth: 320,
-                  paddingTop: 24,
                 }}
               >
                 <div

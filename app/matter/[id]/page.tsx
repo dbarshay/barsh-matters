@@ -8310,7 +8310,6 @@ function openClaimAmountEditDialog() {
             gap: 9,
             textAlign: "center",
             minWidth: 320,
-            paddingTop: 24,
           }}
         >
           <div
