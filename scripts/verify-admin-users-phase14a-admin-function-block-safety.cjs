@@ -13,7 +13,7 @@ const session = read("app/api/auth/session/route.ts");
 const p13c = read("scripts/verify-admin-users-phase13c-non-owner-login-readiness-safety.cjs");
 
 assert("package script registered for Phase 14A", pkg.scripts && pkg.scripts["verify:admin-users-phase14a-admin-function-block-safety"] === "node scripts/verify-admin-users-phase14a-admin-function-block-safety.cjs");
-assert("proxy exists and targets admin surfaces", middleware.includes('matcher: ["/admin/:path*", "/api/admin/:path*"]'));
+assert("proxy targets admin surfaces (matcher may also cover operational surfaces under central RBAC)", middleware.includes('"/admin/:path*"') && middleware.includes('"/api/admin/:path*"'));
 assert("proxy blocks admin pages and API admin routes", middleware.includes('pathname.startsWith("/admin/")') && middleware.includes('pathname.startsWith("/api/admin/")'));
 assert("middleware preserves owner email access", middleware.includes('OWNER_ADMIN_EMAIL = "dbarshay15@gmail.com"') && middleware.includes("identityEmail === OWNER_ADMIN_EMAIL"));
 assert("middleware preserves legacy/generic owner recovery", middleware.includes("if (!identityEmail) return NextResponse.next()"));
@@ -24,7 +24,7 @@ assert("setAdminGateCookie accepts optional identity", adminAuth.includes("setAd
 assert("login writes identity into signed gate", login.includes("setAdminGateCookie(response, identityCookieInput)") && login.includes("setAdminIdentityCookie(response, identityCookieInput)"));
 assert("session refresh writes identity into signed gate", session.includes("setAdminGateCookie(response, identityCookieInput)"));
 assert("non-owner login remains allowed from Phase 13C", p13c.includes("Phase 13C permits active non-owner AdminUsers with passwordHash to authenticate."));
-assert("permission enforcement is scoped to admin functions only", middleware.includes('permissionEnforcementScope: "admin-functions-only"'));
+assert("operational (non-admin) surfaces are pass-through while role enforcement is off", middleware.includes("if (!adminSurface && !enforcement) return NextResponse.next()"));
 assert("no password viewing or impersonation added", !middleware.includes("passwordHash") && !middleware.includes("impersonat"));
 
 console.log("CONTRACT: Phase 14A blocks signed non-owner identities from /admin and /api/admin.");

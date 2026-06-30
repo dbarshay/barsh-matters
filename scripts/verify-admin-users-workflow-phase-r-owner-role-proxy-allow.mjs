@@ -31,7 +31,12 @@ const identityPayloadStart = session.indexOf("const identityCookieInput = identi
 const identityPayloadEnd = session.indexOf("setAdminGateCookie(response, identityCookieInput)", identityPayloadStart);
 const identityPayloadBlock = identityPayloadStart >= 0 && identityPayloadEnd > identityPayloadStart ? session.slice(identityPayloadStart, identityPayloadEnd) : "";
 must(identityPayloadBlock.includes("roleKeys: identityDiagnostics.roleKeys"), "session refresh identityCookieInput preserves roleKeys");
-must(!proxy.includes("/matters") && !proxy.includes("/lawsuits"), "proxy remains scoped away from normal matter/lawsuit pages");
+// Central RBAC enforcement (approved) widens the matcher to operational surfaces, but they must stay
+// a pure pass-through while role enforcement is OFF — the new, stronger owner-safety invariant.
+must(
+  proxy.includes("if (!adminSurface && !enforcement) return NextResponse.next()"),
+  "proxy leaves operational (non-admin) surfaces untouched when role enforcement is off"
+);
 
 if (failed) {
   console.error("RESULT: Admin Users Workflow Phase R owner-role proxy allow verifier failed");

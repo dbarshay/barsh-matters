@@ -102,10 +102,9 @@ function blockedResponse(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        action: "admin-enforcement-phase14a",
+        action: "role-access-enforcement",
         blocked: true,
-        error: "Administrator functions are restricted to owner_admin.",
-        permissionEnforcementScope: "admin-functions-only",
+        error: "You do not have permission to perform this action.",
       },
       { status: 403 }
     );
@@ -118,47 +117,90 @@ function blockedResponse(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+function gateRoleKeys(gate: SignedGatePayload | null): string[] {
+  return Array.isArray(gate?.identity?.roleKeys) ? gate.identity.roleKeys.map(clean) : [];
+}
+
+function gateIsOwner(gate: SignedGatePayload | null): boolean {
+  const email = clean(gate?.identity?.email).toLowerCase();
+  const roleKeys = gateRoleKeys(gate);
+  return email === OWNER_ADMIN_EMAIL || roleKeys.includes("owner_admin") || roleKeys.includes("owner");
+}
+
+// v1 is all-or-nothing for admin functions: an Administrator role carries every admin-tier grant.
+// Per-card grants (carried in the signed identity) are the planned fast-follow.
+function decideByRole(gate: SignedGatePayload | null, req: NextRequest) {
+  const roleKeys = gateRoleKeys(gate);
+  const grantedAdminPermissionKeys = roleKeys.includes("administrator") ? adminPermissionKeysForTier("admin") : [];
+  return resolveAccess({
+    isOwner: false,
+    roleKeys,
+    grantedAdminPermissionKeys,
+    pathname: req.nextUrl.pathname,
+    method: req.method,
+  });
+}
+
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  if (!isAdminSurface(pathname)) return NextResponse.next();
+  const adminSurface = isAdminSurface(pathname);
+  const enforcement = roleEnforcementEnabled();
+
+  // Operational (non-admin) surfaces are completely untouched unless enforcement is ON. With the
+  // flag off (default), this proxy is a pure pass-through for everything except admin surfaces —
+  // exactly as before.
+  if (!adminSurface && !enforcement) return NextResponse.next();
 
   const gate = await readSignedGatePayload(req.cookies.get(ADMIN_COOKIE_NAME)?.value);
 
-  // No valid signed gate: fail CLOSED on admin surfaces (was previously fail-open).
-  if (!gate) return blockedResponse(req);
+  if (adminSurface) {
+    // No valid signed gate: fail CLOSED on admin surfaces (unchanged behavior).
+    if (!gate) return blockedResponse(req);
 
-  // Legacy/generic owner recovery sessions have no identity in the signed gate and remain allowed.
-  const identityEmail = clean(gate.identity?.email).toLowerCase();
-  if (!identityEmail) return NextResponse.next();
+    // Legacy/generic owner recovery sessions have no identity in the signed gate and remain allowed.
+    const identityEmail = clean(gate.identity?.email).toLowerCase();
+    if (!identityEmail) return NextResponse.next();
 
-  const identityRoleKeys = Array.isArray(gate.identity?.roleKeys) ? gate.identity.roleKeys.map(clean) : [];
-  const isOwner =
-    identityEmail === OWNER_ADMIN_EMAIL ||
-    identityRoleKeys.includes("owner_admin") ||
-    identityRoleKeys.includes("owner");
-  if (isOwner) return NextResponse.next();
+    const identityRoleKeys = Array.isArray(gate.identity?.roleKeys) ? gate.identity.roleKeys.map(clean) : [];
+    if (
+      identityEmail === OWNER_ADMIN_EMAIL ||
+      identityRoleKeys.includes("owner_admin") ||
+      identityRoleKeys.includes("owner")
+    ) {
+      return NextResponse.next();
+    }
 
-  // Role-based access is ONLY consulted when enforcement is explicitly enabled. With the flag off
-  // (default), behavior is unchanged: any non-owner on an admin surface is blocked, exactly as before.
-  if (roleEnforcementEnabled()) {
-    // v1 is all-or-nothing for admin functions: an Administrator role carries every admin-tier
-    // grant. Per-card grants (carried in the signed identity) are the planned fast-follow.
-    const grantedAdminPermissionKeys = identityRoleKeys.includes("administrator")
-      ? adminPermissionKeysForTier("admin")
-      : [];
-    const decision = resolveAccess({
-      isOwner: false,
-      roleKeys: identityRoleKeys,
-      grantedAdminPermissionKeys,
-      pathname,
-      method: req.method,
-    });
-    if (decision.allowed) return NextResponse.next();
+    // Role-based access is consulted only when enforcement is enabled. Flag off => non-owner blocked
+    // on admin surfaces, exactly as before.
+    if (enforcement && decideByRole(gate, req).allowed) return NextResponse.next();
+
+    return blockedResponse(req);
   }
 
+  // Operational surface with enforcement ON (we already returned for the flag-off case).
+  if (gateIsOwner(gate)) return NextResponse.next();
+  if (decideByRole(gate, req).allowed) return NextResponse.next();
   return blockedResponse(req);
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    // Operational surfaces governed by the permission catalog. The proxy only ACTS on these when
+    // BARSH_ROLE_ENFORCEMENT_ENABLED is on; otherwise it returns immediately (see proxy() above).
+    "/matter/:path*",
+    "/matters/:path*",
+    "/lawsuits/:path*",
+    "/court-calendar/:path*",
+    "/print-queue/:path*",
+    "/api/matters/:path*",
+    "/api/lawsuits/:path*",
+    "/api/documents/:path*",
+    "/api/settlements/:path*",
+    "/api/court-calendar/:path*",
+    "/api/claim-index/:path*",
+    "/api/aggregation/:path*",
+    "/api/advanced-search/:path*",
+  ],
 };
