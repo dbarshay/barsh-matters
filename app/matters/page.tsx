@@ -63,7 +63,7 @@ const colors = {
   lineSoft: "#e5e7eb",
   page: "#f8fafc",
   panel: "#ffffff",
-  blue: "#3157d5",
+  blue: "#0a1c35",
   blueDark: "#0a1c35",
   errorBg: "#fef2f2",
   errorBorder: "#fecaca",
@@ -14733,8 +14733,8 @@ const masterSettlementActionRowStyle: React.CSSProperties = {
 };
 
 const masterSettlementGhostButtonStyle: React.CSSProperties = {
-  border: "1px solid #3f7cf8",
-  background: "#3f7cf8",
+  border: "1px solid #0a1c35",
+  background: "#0a1c35",
   color: "#ffffff",
   borderRadius: 4,
   padding: "8px 12px",

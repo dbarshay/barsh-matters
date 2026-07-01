@@ -60,7 +60,7 @@ const colors = {
   lineSoft: "#e5e7eb",
   page: "#eef2f7",
   panel: "#ffffff",
-  blue: "#3157d5",
+  blue: "#0a1c35",
   blueDark: "#0a1c35",
   errorBg: "#fef2f2",
   errorBorder: "#fecaca",
@@ -3223,7 +3223,7 @@ function primaryButtonStyle(disabled: boolean): React.CSSProperties {
     fontWeight: 900,
     fontSize: 18,
     minWidth: 160,
-    boxShadow: disabled ? "none" : "0 10px 18px rgba(49, 87, 213, 0.18)",
+    boxShadow: disabled ? "none" : "0 10px 18px rgba(10, 28, 53, 0.18)",
   };
 }
 

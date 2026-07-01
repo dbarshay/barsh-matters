@@ -1676,7 +1676,7 @@ const lawsuitCreatedNotice: React.CSSProperties = {
   zIndex: 10050,
   background: "#052e63",
   color: "white",
-  border: "1px solid #0f3f80",
+  border: "1px solid #0a1c35",
   borderRadius: 12,
   boxShadow: "0 18px 42px rgba(15, 23, 42, 0.28)",
   padding: "14px 22px",

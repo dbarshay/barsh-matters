@@ -13738,7 +13738,7 @@ function openClaimAmountEditDialog() {
                   <a
                     href={`/matter/${Number(r.id)}`}
                     style={{
-                      color: "#0057b8",
+                      color: "#0a1c35",
                       textDecoration: "underline",
                       fontWeight: Number(r.id) === Number(matter?.id) ? 700 : 500,
                     }}
