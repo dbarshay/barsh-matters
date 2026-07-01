@@ -367,9 +367,9 @@ const matterWorkspaceTabs: Array<{ key: MatterWorkspaceTab; label: string; note:
 ];
 
 const bmColors = {
-  ink: "#0f172a",
-  muted: "#475569",
-  subtle: "#64748b",
+  ink: "#00346e",
+  muted: "#385a83",
+  subtle: "#385a83",
   line: "#e2e8f0",
   softLine: "#e5e7eb",
   panel: "#ffffff",
@@ -419,7 +419,7 @@ const tabPlaceholderTextStyle: React.CSSProperties = {
 const bmPrimaryButtonStyle: React.CSSProperties = {
   textAlign: "center",
   padding: "12px 14px",
-  color: "#fff",
+  color: "#ffffff",
   border: "none",
   borderRadius: 10,
   cursor: "pointer",
@@ -429,7 +429,7 @@ const bmPrimaryButtonStyle: React.CSSProperties = {
 
 const bmDisabledButtonStyle: React.CSSProperties = {
   background: "#cbd5e1",
-  color: "#475569",
+  color: "#385a83",
   cursor: "not-allowed",
   boxShadow: "none",
 };
@@ -526,7 +526,7 @@ const bmGlobalPrintQueueButtonStyle: React.CSSProperties = {
   padding: "7px 11px",
   border: "1px solid #cbd5e1",
   borderRadius: 999,
-  background: "#f8fafc",
+  background: "#ffffff",
   color: bmColors.muted,
   fontSize: 12,
   fontWeight: 750,
@@ -917,7 +917,7 @@ const activeGroupKey =
           </div>
 
           <div style={{ padding: 20, display: "grid", gap: 14, maxHeight: "calc(88vh - 154px)", overflowY: "auto" }}>
-            <div style={{ color: "#334155", fontSize: 13, fontWeight: 900 }}>Documents: {docs.length}</div>
+            <div style={{ color: "#385a83", fontSize: 13, fontWeight: 900 }}>Documents: {docs.length}</div>
             {matterClioDocumentsResult?.ok === false && (
               <div style={{ padding: 12, border: "1px solid #fecaca", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontWeight: 850 }}>
                 {textValue(matterClioDocumentsResult.error) || "Could not load Clio documents."}
@@ -925,11 +925,11 @@ const activeGroupKey =
             )}
 
             {matterClioDocumentsLoading && (
-              <div style={{ padding: 12, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#475569", fontWeight: 800 }}>Loading documents from Clio...</div>
+              <div style={{ padding: 12, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#385a83", fontWeight: 800 }}>Loading documents from Clio...</div>
             )}
 
             {matterClioDocumentsResult?.ok && docs.length === 0 && (
-              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#64748b", fontWeight: 800 }}>No documents are currently saved for this matter.</div>
+              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#385a83", fontWeight: 800 }}>No documents are currently saved for this matter.</div>
             )}
 
             {docs.length > 0 && (
@@ -939,9 +939,9 @@ const activeGroupKey =
                   const displayName = matterViewDocumentListDisplayName(doc);
                   const selected = Boolean(id) && id === matterSelectedViewDocumentId;
                   return (
-                    <button key={id || textValue(doc.clioDocumentName)} type="button" title="Select and open document." onClick={() => openDirectMatterListedDocument(doc, id, displayName)} style={{ display: "block", width: "100%", textAlign: "left", border: 0, borderBottom: "1px solid #e5e7eb", background: selected ? "#eff6ff" : "#ffffff", color: "#0f172a", padding: 12, cursor: id ? "pointer" : "not-allowed", opacity: id ? 1 : 0.6 }}>
+                    <button key={id || textValue(doc.clioDocumentName)} type="button" title="Select and open document." onClick={() => openDirectMatterListedDocument(doc, id, displayName)} style={{ display: "block", width: "100%", textAlign: "left", border: 0, borderBottom: "1px solid #e5e7eb", background: selected ? "#eff6ff" : "#ffffff", color: "#00346e", padding: 12, cursor: id ? "pointer" : "not-allowed", opacity: id ? 1 : 0.6 }}>
                       <div style={{ fontWeight: 950 }}>{displayName}</div>
-                      <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+                      <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 700 }}>
                         Uploaded/Saved: {formatMatterDocumentUploadedSavedDate(doc.updatedAt || doc.latestDocumentVersion?.updatedAt)}
                       </div>
                     </button>
@@ -951,16 +951,16 @@ const activeGroupKey =
             )}
 
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#f8fafc", padding: 14 }}>
-              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 950, color: "#0f172a" }}>Selected Document</h3>
+              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 950, color: "#00346e" }}>Selected Document</h3>
               {selectedDocument ? (
-                <div style={{ display: "grid", gap: 8, color: "#334155", fontSize: 13, fontWeight: 800 }}>
+                <div style={{ display: "grid", gap: 8, color: "#385a83", fontSize: 13, fontWeight: 800 }}>
                   <div><strong>Filename:</strong> {matterViewDocumentListDisplayName(selectedDocument)}</div>
                   <div><strong>Updated:</strong> {formatMatterDocumentUploadedSavedDate(selectedDocument.updatedAt || selectedDocument.latestDocumentVersion?.updatedAt)}</div>
                   <div><strong>Type:</strong> {textValue(selectedDocument.latestDocumentVersion?.contentType || selectedDocument.contentType) || "—"}</div>
                   <div><strong>Size:</strong> {textValue(selectedDocument.latestDocumentVersion?.size || selectedDocument.size) || "—"}</div>
                 </div>
               ) : (
-                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800 }}>Select a document to view its stored Clio metadata.</div>
+                <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>Select a document to view its stored Clio metadata.</div>
               )}
             </div>
           </div>
@@ -1143,10 +1143,10 @@ const activeGroupKey =
                   padding: 14,
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>
                   {label}
                 </div>
-                <div style={{ marginTop: 6, fontSize: 24, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 24, fontWeight: 950, color: "#00346e" }}>
                   {String(count)}
                 </div>
               </div>
@@ -1179,7 +1179,7 @@ const activeGroupKey =
                 borderBottom: "1px solid #e2e8f0",
                 fontSize: 12,
                 fontWeight: 950,
-                color: "#475569",
+                color: "#385a83",
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
               }}
@@ -1191,11 +1191,11 @@ const activeGroupKey =
             </div>
 
             {matterDocumentActivityLoading && events.length === 0 ? (
-              <div style={{ padding: 18, fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ padding: 18, fontSize: 13, color: "#385a83", fontWeight: 800 }}>
                 Loading document activity...
               </div>
             ) : events.length === 0 ? (
-              <div style={{ padding: 18, fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ padding: 18, fontSize: 13, color: "#385a83", fontWeight: 800 }}>
                 No document activity found for this matter.
               </div>
             ) : (
@@ -1207,10 +1207,10 @@ const activeGroupKey =
                     gridTemplateColumns: "170px 170px 150px 1fr",
                     borderBottom: index === events.length - 1 ? "none" : "1px solid #f1f5f9",
                     fontSize: 13,
-                    color: "#0f172a",
+                    color: "#00346e",
                   }}
                 >
-                  <div style={{ padding: 12, color: "#475569", fontWeight: 800 }}>
+                  <div style={{ padding: 12, color: "#385a83", fontWeight: 800 }}>
                     {formatMatterDocumentActivityDate(event.occurredAt)}
                   </div>
                   <div style={{ padding: 12, fontWeight: 950 }}>
@@ -1226,13 +1226,13 @@ const activeGroupKey =
                         padding: "4px 9px",
                         fontSize: 12,
                         fontWeight: 900,
-                        color: "#334155",
+                        color: "#385a83",
                       }}
                     >
                       {formatMatterDocumentActivityStatus(event.status)}
                     </span>
                   </div>
-                  <div style={{ padding: 12, color: "#334155", lineHeight: 1.45 }}>
+                  <div style={{ padding: 12, color: "#385a83", lineHeight: 1.45 }}>
                     {describeMatterDocumentActivityEvent(event)}
                   </div>
                 </div>
@@ -1284,10 +1284,10 @@ const activeGroupKey =
           }}
         >
           <div>
-            <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569" }}>
+            <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", textTransform: "uppercase", color: "#385a83" }}>
               Clio Documents Tab
             </div>
-            <div style={{ marginTop: 4, fontWeight: 900, color: "#0f172a" }}>
+            <div style={{ marginTop: 4, fontWeight: 900, color: "#00346e" }}>
               Documents
             </div>
           </div>
@@ -1342,7 +1342,7 @@ const activeGroupKey =
                 </div>
 
                 {docs.length === 0 ? (
-                  <div style={{ padding: 10, border: "1px dashed #cbd5e1", borderRadius: 8, background: "#ffffff", color: "#64748b", fontWeight: 750 }}>
+                  <div style={{ padding: 10, border: "1px dashed #cbd5e1", borderRadius: 8, background: "#ffffff", color: "#385a83", fontWeight: 750 }}>
                     No documents are currently saved for this matter.
                   </div>
                 ) : (
@@ -1362,7 +1362,7 @@ const activeGroupKey =
                           <tr key={textValue(doc.clioDocumentId) || textValue(doc.clioDocumentName)}>
                             <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontWeight: 800 }}>
                               {textValue(doc.clioDocumentName) || textValue(doc.clioDocumentFilename) || "Untitled"}
-                              <div style={{ color: "#64748b", fontWeight: 650 }}>{textValue(doc.clioDocumentFilename) || "—"}</div>
+                              <div style={{ color: "#385a83", fontWeight: 650 }}>{textValue(doc.clioDocumentFilename) || "—"}</div>
                             </td>
                             <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontFamily: "monospace" }}>
                               {textValue(doc.latestDocumentVersion?.uuid) || "—"}
@@ -5569,7 +5569,7 @@ function openClaimAmountEditDialog() {
             style={{
               border: "1px solid #00346e",
               background: alreadyAggregated ? "#e2e8f0" : "#eff6ff",
-              color: alreadyAggregated ? "#64748b" : "#00346e",
+              color: alreadyAggregated ? "#385a83" : "#00346e",
               borderRadius: 999,
               padding: "8px 12px",
               fontWeight: 950,
@@ -5594,7 +5594,7 @@ function openClaimAmountEditDialog() {
                 background:
                   !hasConversationId || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "#f3f4f6" : "#0f766e",
                 color:
-                  !hasConversationId || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "#666" : "#fff",
+                  !hasConversationId || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "#666" : "#ffffff",
                 borderRadius: 4,
                 cursor:
                   !hasConversationId || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
@@ -6202,9 +6202,9 @@ function openClaimAmountEditDialog() {
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 950 }}>Email Finalized Document</h2>
           </div>
           <div style={{ padding: 20, display: "grid", gap: 14, overflowY: "auto" }}>
-            <div style={{ color: "#475569", fontSize: 12, fontWeight: 700 }}>Subject: {textValue(ctx.subject)}</div>
+            <div style={{ color: "#385a83", fontSize: 12, fontWeight: 700 }}>Subject: {textValue(ctx.subject)}</div>
             <label style={{ display: "grid", gap: 6 }}>
-              <span style={{ color: "#334155", fontSize: 13, fontWeight: 900 }}>To</span>
+              <span style={{ color: "#385a83", fontSize: 13, fontWeight: 900 }}>To</span>
               <input
                 type="email"
                 value={emailDeliveryTo}
@@ -6228,8 +6228,8 @@ function openClaimAmountEditDialog() {
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, maxHeight: 220, overflowY: "auto" }}>
                 {emailDeliveryContactResults.map((contact: any, index: number) => (
                   <button key={`${contact.source}-${contact.id || index}`} type="button" onClick={() => selectEmailDeliveryContact(contact)} style={{ display: "block", width: "100%", textAlign: "left", border: 0, borderBottom: "1px solid #f1f5f9", background: "#ffffff", padding: "8px 12px", cursor: "pointer" }}>
-                    <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 13 }}>{contact.name || contact.email || "Contact"}</div>
-                    <div style={{ color: "#64748b", fontSize: 12 }}>{[contact.email || "no email on file", contact.company, contact.source].filter(Boolean).join(" · ")}</div>
+                    <div style={{ fontWeight: 800, color: "#00346e", fontSize: 13 }}>{contact.name || contact.email || "Contact"}</div>
+                    <div style={{ color: "#385a83", fontSize: 12 }}>{[contact.email || "no email on file", contact.company, contact.source].filter(Boolean).join(" · ")}</div>
                   </button>
                 ))}
               </div>
@@ -6321,7 +6321,7 @@ function openClaimAmountEditDialog() {
       <div
         aria-hidden="true"
         style={{
-          color: complete ? "#16a34a" : "#94a3b8",
+          color: complete ? "#16a34a" : "#385a83",
           fontSize: 28,
           lineHeight: 1,
           fontWeight: 950,
@@ -6346,7 +6346,7 @@ function openClaimAmountEditDialog() {
         style={{
           border: disabled ? "1px solid #d1d5db" : "1px solid #00346e",
           background: disabled ? "#f3f4f6" : "#00346e",
-          color: disabled ? "#6b7280" : "#fff",
+          color: disabled ? "#385a83" : "#ffffff",
           borderRadius: 12,
           padding: "10px 14px",
           fontWeight: 900,
@@ -6676,7 +6676,7 @@ function openClaimAmountEditDialog() {
               >
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18 }}>Step 1: Select Document</h3>
-                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                  <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                     Select the document template for this matter.
                   </p>
                 </div>
@@ -6705,7 +6705,7 @@ function openClaimAmountEditDialog() {
                       padding: "11px 12px",
                       fontSize: 15,
                       fontWeight: 850,
-                      color: "#0f172a",
+                      color: "#00346e",
                       background: "#ffffff",
                     }}
                   >
@@ -6730,7 +6730,7 @@ function openClaimAmountEditDialog() {
               >
                 <div data-barsh-direct-document-generation-signer-heading="true">
                   <h3 style={{ margin: 0, fontSize: 18 }}>Step 2: Select Signature / Contact</h3>
-                  <p style={{ margin: "6px 0 0", color: "#64748b", lineHeight: 1.45 }}>
+                  <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                     Choose the signer for <strong>{selectedTemplate.label}</strong> before generating the document.
                   </p>
                 </div>
@@ -6759,7 +6759,7 @@ function openClaimAmountEditDialog() {
                         padding: "9px 11px",
                         fontSize: 13,
                         fontWeight: 900,
-                        color: "#0f172a",
+                        color: "#00346e",
                         background: "#ffffff",
                       }}
                     >
@@ -6770,7 +6770,7 @@ function openClaimAmountEditDialog() {
                       ))}
                     </select>
                   </label>
-                  <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.35 }}>
+                  <div style={{ fontSize: 12, color: "#385a83", lineHeight: 1.35 }}>
                     The selected display name controls signer.* document fields; the stored signer email is sent only for backend signer-profile resolution.
                   </div>
                 </div>
@@ -6810,7 +6810,7 @@ function openClaimAmountEditDialog() {
               >
                 <div data-barsh-direct-document-generation-actions-heading="true">
                   <h3 style={{ margin: 0, fontSize: 18 }}>Step 3: Generate Document</h3>
-                  <p style={{ margin: "6px 0 12px", color: "#64748b", lineHeight: 1.45 }}>
+                  <p style={{ margin: "6px 0 12px", color: "#385a83", lineHeight: 1.45 }}>
                     Signer confirmed. Choose whether to preview, edit, or finalize <strong>{selectedTemplate.label}</strong>.
                   </p>
                 </div>
@@ -6851,7 +6851,7 @@ function openClaimAmountEditDialog() {
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 18 }}>{selectedTemplate.label}</h3>
-                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, fontWeight: 800 }}>
+                <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, fontWeight: 800 }}>
                   {showPreviewStep
                     ? "Preview prepared."
                     : showEditStep
@@ -6907,7 +6907,7 @@ function openClaimAmountEditDialog() {
                       style={{
                         border: "1px solid #00346e",
                         background: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#00346e" : "#f3f4f6",
-                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#ffffff" : "#6b7280",
+                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#ffffff" : "#385a83",
                         borderRadius: 12,
                         padding: "10px 14px",
                         fontWeight: 900,
@@ -6931,7 +6931,7 @@ function openClaimAmountEditDialog() {
                       style={{
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "#334155" : "#94a3b8",
+                        color: matterDocumentFinalizationResult?.workingDocument?.msWordEditUrl ? "#385a83" : "#385a83",
                         borderRadius: 12,
                         padding: "10px 14px",
                         fontWeight: 900,
@@ -6960,7 +6960,7 @@ function openClaimAmountEditDialog() {
                       style={{
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#334155" : "#94a3b8",
+                        color: matterDocumentFinalizationResult?.workingDocument?.webUrl ? "#385a83" : "#385a83",
                         borderRadius: 12,
                         padding: "10px 14px",
                         fontWeight: 900,
@@ -6990,7 +6990,7 @@ function openClaimAmountEditDialog() {
                 <p style={{ margin: 0, color: "#166534", lineHeight: 1.45, fontWeight: 850 }}>
                   Finalization completed for <strong>{selectedTemplate?.label || "the selected document"}</strong>.
                 </p>
-                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45 }}>
                   Choose a delivery action for the finalized document.
                 </p>
 
@@ -7123,7 +7123,7 @@ function openClaimAmountEditDialog() {
                 border: "1px solid #cbd5e1",
                 borderRadius: 10,
                 background: documentPreviewLoading || finalizeUploadLoading ? "#f3f4f6" : "#ffffff",
-                color: documentPreviewLoading || finalizeUploadLoading ? "#94a3b8" : "#334155",
+                color: documentPreviewLoading || finalizeUploadLoading ? "#385a83" : "#385a83",
                 fontWeight: 900,
                 cursor: documentPreviewLoading || finalizeUploadLoading ? "not-allowed" : "pointer",
               }}
@@ -7246,7 +7246,7 @@ function openClaimAmountEditDialog() {
                 border: "1px solid #cbd5e1",
                 borderRadius: 10,
                 background: "#ffffff",
-                color: "#334155",
+                color: "#385a83",
                 fontWeight: 900,
                 cursor: emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
               }}
@@ -7292,7 +7292,7 @@ function openClaimAmountEditDialog() {
               padding: "10px 16px",
               fontWeight: 900,
               background: matterDocumentDataPreviewLoading ? "#e5e7eb" : "#00346e",
-              color: matterDocumentDataPreviewLoading ? "#64748b" : "#fff",
+              color: matterDocumentDataPreviewLoading ? "#385a83" : "#ffffff",
               cursor: matterDocumentDataPreviewLoading ? "not-allowed" : "pointer",
               whiteSpace: "nowrap",
             }}
@@ -7318,19 +7318,19 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Scope</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Scope</div>
                 <div style={{ fontWeight: 900 }}>{textValue(documentData.documentScope) || "direct_matter"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Ready for Templates</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Ready for Templates</div>
                 <div style={{ fontWeight: 900 }}>{documentData.readyForTemplates ? "Yes" : "No"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Generates Documents</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Generates Documents</div>
                 <div style={{ fontWeight: 900 }}>{documentData.generatesDocuments ? "Yes" : "No"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Clio Correctness Dependency</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Clio Correctness Dependency</div>
                 <div style={{ fontWeight: 900 }}>{documentData.clioCorrectnessDependency ? "Yes" : "No"}</div>
               </div>
             </div>
@@ -7344,35 +7344,35 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>BRL Number</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>BRL Number</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.displayNumber) || "—"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Provider</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Provider</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.providerName) || "—"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Patient</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Patient</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.patientName) || "—"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Insurer</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Insurer</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.insurerName) || "—"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Claim Number</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Claim Number</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.claimNumber) || "—"}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Claim Amount</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Claim Amount</div>
                 <div style={{ fontWeight: 900 }}>{money(templateFields.claimAmount)}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Balance</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Balance</div>
                 <div style={{ fontWeight: 900 }}>{money(templateFields.balancePresuit)}</div>
               </div>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase" }}>Treating Provider</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: "#385a83", textTransform: "uppercase" }}>Treating Provider</div>
                 <div style={{ fontWeight: 900 }}>{textValue(templateFields.treatingProviderName) || "—"}</div>
               </div>
             </div>
@@ -7391,7 +7391,7 @@ function openClaimAmountEditDialog() {
               </pre>
             </details>
 
-            <div style={{ marginTop: 10, fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+            <div style={{ marginTop: 10, fontSize: 12, color: "#385a83", fontWeight: 800 }}>
               Refresh: {textValue(refresh.reason) || "—"}.
             </div>
           </>
@@ -7844,7 +7844,7 @@ function openClaimAmountEditDialog() {
         <span
           aria-hidden="true"
           style={{
-            color: active ? "#00346e" : "#94a3b8",
+            color: active ? "#00346e" : "#385a83",
             fontSize: 12,
             fontWeight: 650,
           }}
@@ -8208,7 +8208,7 @@ function openClaimAmountEditDialog() {
     fontSize: 30,
     lineHeight: 1.2,
     fontWeight: 700,
-    color: "#fff",
+    color: "#ffffff",
     letterSpacing: "0.02em",
   };
 
@@ -8218,7 +8218,7 @@ function openClaimAmountEditDialog() {
     gap: 10,
     fontSize: 12,
     fontWeight: 900,
-    color: "#334155",
+    color: "#385a83",
   };
 
   const startLawsuitAmountModePanelStyle: React.CSSProperties = {
@@ -8234,7 +8234,7 @@ function openClaimAmountEditDialog() {
     alignItems: "center",
     gap: 7,
     fontWeight: 800,
-    color: "#0f172a",
+    color: "#00346e",
   };
 
   const startLawsuitModalButtonRowStyle: React.CSSProperties = {
@@ -8247,7 +8247,7 @@ function openClaimAmountEditDialog() {
   const startLawsuitSecondaryButtonStyle: React.CSSProperties = {
     border: "1px solid #94a3b8",
     background: "#fff",
-    color: "#334155",
+    color: "#385a83",
     borderRadius: 999,
     padding: "9px 13px",
     fontWeight: 900,
@@ -8257,7 +8257,7 @@ function openClaimAmountEditDialog() {
   const startLawsuitPrimaryButtonStyle: React.CSSProperties = {
     border: "1px solid #00346e",
     background: "#00346e",
-    color: "#fff",
+    color: "#ffffff",
     borderRadius: 999,
     padding: "9px 14px",
     fontWeight: 950,
@@ -8298,7 +8298,7 @@ function openClaimAmountEditDialog() {
         >
           <div
             style={{
-              color: "#0f172a",
+              color: "#00346e",
               fontSize: 34,
               lineHeight: 1.05,
               fontWeight: 950,
@@ -8342,7 +8342,7 @@ function openClaimAmountEditDialog() {
                 padding: "4px 12px",
                 borderRadius: 999,
                 background: matterIsClosedForPayment() ? "#dc2626" : "#16a34a",
-                color: "#fff",
+                color: "#ffffff",
                 fontSize: 13,
                 fontWeight: 950,
                 letterSpacing: "0.08em",
@@ -8627,8 +8627,8 @@ function openClaimAmountEditDialog() {
         >
           <div data-barsh-direct-claim-amount-edit-standard-modal="true" style={{ display: "grid", gap: 12 }}>
             <div data-barsh-direct-claim-amount-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-              <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-              <strong style={{ fontSize: 16, color: "#0f172a" }}>{formatMoneyInputValue(parseMoneyInputValue(claimAmountInput)) || "—"}</strong>
+              <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+              <strong style={{ fontSize: 16, color: "#00346e" }}>{formatMoneyInputValue(parseMoneyInputValue(claimAmountInput)) || "—"}</strong>
             </div>
             <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
               <span>Claim Amount</span>
@@ -8691,8 +8691,8 @@ function openClaimAmountEditDialog() {
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
               <div data-barsh-direct-dos-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-                <strong style={{ fontSize: 16, color: "#0f172a" }}>{dosStartInput || "—"}{dosEndInput && dosEndInput !== dosStartInput ? ` – ${dosEndInput}` : ""}</strong>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#00346e" }}>{dosStartInput || "—"}{dosEndInput && dosEndInput !== dosStartInput ? ` – ${dosEndInput}` : ""}</strong>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
@@ -8758,8 +8758,8 @@ function openClaimAmountEditDialog() {
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
               <div data-barsh-direct-picklist-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-                <strong style={{ fontSize: 16, color: "#0f172a" }}>{(() => { const currentValue = directPicklistInputValue(directFieldEditModal); const currentOption = picklistOptionsForDirectField(directFieldEditModal).find((option: any) => optionValue(option) === currentValue); return optionLabel(currentOption) || currentValue || "—"; })()}</strong>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#00346e" }}>{(() => { const currentValue = directPicklistInputValue(directFieldEditModal); const currentOption = picklistOptionsForDirectField(directFieldEditModal).find((option: any) => optionValue(option) === currentValue); return optionLabel(currentOption) || currentValue || "—"; })()}</strong>
               </div>
 
               <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
@@ -8850,8 +8850,8 @@ function openClaimAmountEditDialog() {
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
               <div data-barsh-direct-identity-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-                <strong style={{ fontSize: 16, color: "#0f172a" }}>{identityFieldEditModal === "date_of_loss" ? (formatDate(identityFieldEditInput) || "—") : (textValue(identityFieldEditInput) || "—")}</strong>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#00346e" }}>{identityFieldEditModal === "date_of_loss" ? (formatDate(identityFieldEditInput) || "—") : (textValue(identityFieldEditInput) || "—")}</strong>
               </div>
 
               <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
@@ -8869,7 +8869,7 @@ function openClaimAmountEditDialog() {
                       setIdentityFieldEditResult(null);
                     }}
                     disabled={identityFieldEditLoading || identityReferenceOptionsLoading}
-                    style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#0f172a", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
+                    style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#00346e", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
                   >
                     <option value="">
                       {identityReferenceOptionsLoading ? "Loading..." : `Select ${identityFieldEditLabel(identityFieldEditModal)}`}
@@ -8890,7 +8890,7 @@ function openClaimAmountEditDialog() {
                     value={identityFieldEditInput}
                     onChange={(event) => { setIdentityFieldEditInput(event.target.value); setIdentityFieldEditSelectedOptionId(""); setIdentityFieldEditResult(null); }}
                     disabled={identityFieldEditLoading}
-                    style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#0f172a", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
+                    style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#00346e", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
                   />
                 )}
               </label>
@@ -8950,12 +8950,12 @@ function openClaimAmountEditDialog() {
 
             <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
               <div data-barsh-direct-treating-provider-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-                <strong style={{ fontSize: 16, color: "#0f172a" }}>{localTreatingProviderName() || "—"}</strong>
+                <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+                <strong style={{ fontSize: 16, color: "#00346e" }}>{localTreatingProviderName() || "—"}</strong>
               </div>
               <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
                 <span>Treating Provider</span>
-                <select value={treatingProviderInput} onChange={(event) => { setTreatingProviderInput(event.target.value); setTreatingProviderResult(null); }} disabled={treatingProviderOptionsLoading || treatingProviderSaving} style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#0f172a", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}>
+                <select value={treatingProviderInput} onChange={(event) => { setTreatingProviderInput(event.target.value); setTreatingProviderResult(null); }} disabled={treatingProviderOptionsLoading || treatingProviderSaving} style={{ width: "100%", minWidth: 0, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#00346e", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}>
                   <option value="">{treatingProviderOptionsLoading ? "Loading Treating Providers..." : "Select Treating Provider"}</option>
                   {treatingProviderOptions.map((option: any) => (<option key={option.id} value={option.id}>{option.displayName}</option>))}
                 </select>
@@ -9023,7 +9023,7 @@ function openClaimAmountEditDialog() {
                 <div
                   className="barsh-direct-section-title"
                   style={{
-                    color: "#334155",
+                    color: "#385a83",
                     fontSize: 12,
                     fontWeight: 950,
                     letterSpacing: "0.08em",
@@ -9364,7 +9364,7 @@ function openClaimAmountEditDialog() {
                 <div
                   className="barsh-direct-section-title"
                   style={{
-                    color: "#334155",
+                    color: "#385a83",
                     fontSize: 12,
                     fontWeight: 950,
                     letterSpacing: "0.08em",
@@ -9534,7 +9534,7 @@ function openClaimAmountEditDialog() {
                             border: "1px solid #16a34a",
                             borderRadius: 999,
                             background: paymentApplyLoading || matterPaymentControlsDisabled() ? "#f8fafc" : "#f0fdf4",
-                            color: paymentApplyLoading || matterPaymentControlsDisabled() ? "#94a3b8" : "#166534",
+                            color: paymentApplyLoading || matterPaymentControlsDisabled() ? "#385a83" : "#166534",
                             fontSize: 12,
                             fontWeight: 950,
                             cursor: paymentApplyLoading || matterPaymentControlsDisabled() ? "not-allowed" : "pointer",
@@ -9719,7 +9719,7 @@ function openClaimAmountEditDialog() {
                     border: "1px solid #dc2626",
                     borderRadius: 999,
                     background: !matter?.id || matterIsClosedForPayment() || closing ? "#f3f4f6" : "#dc2626",
-                    color: !matter?.id || matterIsClosedForPayment() || closing ? "#6b7280" : "#ffffff",
+                    color: !matter?.id || matterIsClosedForPayment() || closing ? "#385a83" : "#ffffff",
                     fontSize: 13,
                     fontWeight: 950,
                     cursor: !matter?.id || matterIsClosedForPayment() || closing ? "not-allowed" : "pointer",
@@ -9822,7 +9822,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 10,
                             padding: "10px 12px",
                             background: "#fff",
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontWeight: 700,
                             outline: "none",
                           }}
@@ -9846,7 +9846,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 10,
                             padding: "10px 12px",
                             background: "#fff",
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontWeight: 700,
                             outline: "none",
                           }}
@@ -9869,7 +9869,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 10,
                             padding: "10px 12px",
                             background: "#fff",
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontWeight: 800,
                             outline: "none",
                           }}
@@ -9885,7 +9885,7 @@ function openClaimAmountEditDialog() {
                               left: 12,
                               top: "50%",
                               transform: "translateY(-50%)",
-                              color: "#475569",
+                              color: "#385a83",
                               fontWeight: 900,
                               pointerEvents: "none",
                             }}
@@ -9904,7 +9904,7 @@ function openClaimAmountEditDialog() {
                               borderRadius: 10,
                               padding: "10px 12px 10px 28px",
                               background: "#fff",
-                              color: "#0f172a",
+                              color: "#00346e",
                               fontWeight: 800,
                               outline: "none",
                             }}
@@ -9924,7 +9924,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 10,
                             padding: "10px 12px",
                             background: "#fff",
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontWeight: 800,
                             outline: "none",
                           }}
@@ -9943,7 +9943,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 10,
                             padding: "10px 12px",
                             background: "#fff",
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontWeight: 800,
                             outline: "none",
                           }}
@@ -9978,7 +9978,7 @@ function openClaimAmountEditDialog() {
                           border: "1px solid #dc2626",
                           borderRadius: 12,
                           background: paymentApplyLoading ? "#fecaca" : "#dc2626",
-                          color: "#fff",
+                          color: "#ffffff",
                           fontWeight: 900,
                           fontSize: 15,
                           cursor: paymentApplyLoading ? "not-allowed" : "pointer",
@@ -10006,7 +10006,7 @@ function openClaimAmountEditDialog() {
                           border: "1px solid #cbd5e1",
                           borderRadius: 12,
                           background: paymentApplyLoading ? "#f1f5f9" : "#ffffff",
-                          color: "#334155",
+                          color: "#385a83",
                           fontWeight: 900,
                           fontSize: 15,
                           cursor: paymentApplyLoading ? "not-allowed" : "pointer",
@@ -10031,7 +10031,7 @@ function openClaimAmountEditDialog() {
                           border: "1px solid #16a34a",
                           borderRadius: 12,
                           background: paymentFormSubmitDisabled() ? "#bbf7d0" : "#16a34a",
-                          color: "#fff",
+                          color: "#ffffff",
                           fontWeight: 900,
                           fontSize: 15,
                           cursor: paymentFormSubmitDisabled() ? "not-allowed" : "pointer",
@@ -10122,7 +10122,7 @@ function openClaimAmountEditDialog() {
                             borderRadius: 14,
                             background: "#f8fafc",
                             padding: 14,
-                            color: "#0f172a",
+                            color: "#00346e",
                             fontSize: 14,
                             fontWeight: 800,
                             lineHeight: 1.45,
@@ -10143,7 +10143,7 @@ function openClaimAmountEditDialog() {
                           background: "#f8fafc",
                         }}
                       >
-                        <button type="button" onClick={() => setPaymentClosePromptOpen(false)} style={{ minWidth: 104, height: 38, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#334155", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>
+                        <button type="button" onClick={() => setPaymentClosePromptOpen(false)} style={{ minWidth: 104, height: 38, border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#385a83", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>
                           No
                         </button>
                         <button type="button" onClick={openCloseMatterFromPayment} style={{ minWidth: 148, height: 38, border: "1px solid #dc2626", borderRadius: 10, background: "#dc2626", color: "#ffffff", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>
@@ -10184,7 +10184,7 @@ function openClaimAmountEditDialog() {
           >
             <span>Payments</span>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569", fontWeight: 900 }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#385a83", fontWeight: 900 }}>
                 <input
                   type="checkbox"
                   checked={paymentShowVoided}
@@ -10197,7 +10197,7 @@ function openClaimAmountEditDialog() {
                 />
                 Show voided
               </label>
-              <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+              <span style={{ fontSize: 12, color: "#385a83", fontWeight: 800 }}>
                 {paymentReceiptsLoading
           ? "Loading..."
           : `${visiblePaymentReceipts().length.toLocaleString("en-US")} shown / ${paymentReceipts.length.toLocaleString("en-US")} total`}
@@ -10232,12 +10232,12 @@ function openClaimAmountEditDialog() {
           width: "100%",
           borderCollapse: "collapse",
           fontSize: 12,
-          color: "#0f172a",
+          color: "#00346e",
           minWidth: 1420,
         }}
               >
         <thead>
-          <tr style={{ background: "#94a3b8", color: "#1f2937" }}>
+          <tr style={{ background: "#94a3b8", color: "#00346e" }}>
             <th style={{ textAlign: "left", padding: "9px 8px", border: "1px solid #cbd5e1" }}>Action</th>
             <th style={{ textAlign: "left", padding: "9px 8px", border: "1px solid #cbd5e1" }}>Receipt #</th>
             <th style={{ textAlign: "left", padding: "9px 8px", border: "1px solid #cbd5e1" }}>BRL Number</th>
@@ -10293,7 +10293,7 @@ function openClaimAmountEditDialog() {
                       border: "1px solid #64748b",
                       borderRadius: 8,
                       background: Number(expandedPaymentReceiptId) === Number(receipt.id) ? "#334155" : "#64748b",
-                      color: "#fff",
+                      color: "#ffffff",
                       fontSize: 12,
                       fontWeight: 900,
                       cursor: "pointer",
@@ -10313,7 +10313,7 @@ function openClaimAmountEditDialog() {
                         border: "1px solid #991b1b",
                         borderRadius: 8,
                         background: "#991b1b",
-                        color: "#fff",
+                        color: "#ffffff",
                         fontSize: 12,
                         fontWeight: 900,
                         textTransform: "uppercase",
@@ -10335,7 +10335,7 @@ function openClaimAmountEditDialog() {
                           border: "1px solid #ef4444",
                           borderRadius: 8,
                           background: "#ef4444",
-                          color: "#fff",
+                          color: "#ffffff",
                           fontSize: 12,
                           fontWeight: 900,
                           cursor: paymentVoidLoadingId === Number(receipt.id) ? "not-allowed" : "pointer",
@@ -10419,13 +10419,13 @@ function openClaimAmountEditDialog() {
                 border: "1px solid #cbd5e1",
                 borderRadius: 12,
                 background: "#ffffff",
-                color: "#0f172a",
+                color: "#00346e",
                 fontSize: 12,
                 boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
-                <div style={{ fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ fontWeight: 950, color: "#00346e" }}>
                   Receipt Details · #{selectedPaymentReceipt().id}
                 </div>
                 <button
@@ -10435,7 +10435,7 @@ function openClaimAmountEditDialog() {
                     border: "1px solid #cbd5e1",
                     borderRadius: 999,
                     background: "#f8fafc",
-                    color: "#334155",
+                    color: "#385a83",
                     fontSize: 11,
                     fontWeight: 900,
                     padding: "4px 9px",
@@ -10467,7 +10467,7 @@ function openClaimAmountEditDialog() {
           )}
 
           {!paymentReceiptsLoading && paymentReceipts.length > 0 && (
-            <div style={{ marginTop: 8, fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+            <div style={{ marginTop: 8, fontSize: 11, color: "#385a83", fontWeight: 700 }}>
               Void reverses the local payment total and keeps the receipt as an audit record. Posted payments cannot be edited; void and repost if correction is needed.
             </div>
           )}
@@ -10529,7 +10529,7 @@ function openClaimAmountEditDialog() {
                   padding: "6px 10px",
                   border: "1px solid #cbd5e1",
                   background: "#f8fafc",
-                  color: "#475569",
+                  color: "#385a83",
                   borderRadius: 999,
                   fontSize: 12,
                   fontWeight: 800,
@@ -10558,7 +10558,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Selected Matters</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>
+              <div style={{ color: "#385a83", fontSize: 13 }}>
                 {selected.length} selected for lawsuit generation.
               </div>
             </div>
@@ -10572,7 +10572,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Claim Amount</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{money(totals.claim)}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{money(totals.claim)}</div>
             </div>
 
             <div
@@ -10584,7 +10584,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Balance (Presuit)</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{money(totals.balance)}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{money(totals.balance)}</div>
             </div>
           </div>
 
@@ -10601,7 +10601,7 @@ function openClaimAmountEditDialog() {
                 padding: "8px 12px",
                 border: "1px solid #cbd5e1",
                 background: "#f8fafc",
-                color: "#475569",
+                color: "#385a83",
                 borderRadius: 4,
                 fontWeight: 800,
                 fontSize: 13,
@@ -10618,7 +10618,7 @@ function openClaimAmountEditDialog() {
                   padding: "8px 12px",
                   border: "1px solid #dc3545",
                   background: "#dc3545",
-                  color: "#fff",
+                  color: "#ffffff",
                   borderRadius: 4,
                   cursor: "pointer",
                   fontWeight: 700,
@@ -10637,7 +10637,7 @@ function openClaimAmountEditDialog() {
                   padding: "8px 12px",
                   border: "1px solid #4b5563",
                   background: packetLoading ? "#f3f4f6" : "#4b5563",
-                  color: packetLoading ? "#666" : "#fff",
+                  color: packetLoading ? "#666" : "#ffffff",
                   borderRadius: 4,
                   cursor: packetLoading ? "not-allowed" : "pointer",
                   fontWeight: 700,
@@ -10656,7 +10656,7 @@ function openClaimAmountEditDialog() {
                   padding: "8px 12px",
                   border: "1px solid #00346e",
                   background: packetLoading ? "#f3f4f6" : "#00346e",
-                  color: packetLoading ? "#666" : "#fff",
+                  color: packetLoading ? "#666" : "#ffffff",
                   borderRadius: 4,
                   cursor: packetLoading ? "not-allowed" : "pointer",
                   fontWeight: 700,
@@ -10674,7 +10674,7 @@ function openClaimAmountEditDialog() {
                 background: "#f8fafc",
                 border: "1px solid #cbd5e1",
                 borderRadius: 8,
-                color: "#475569",
+                color: "#385a83",
                 fontSize: 13,
               }}
             >
@@ -10688,7 +10688,7 @@ function openClaimAmountEditDialog() {
                 background: "#f8fafc",
                 border: "1px solid #cbd5e1",
                 borderRadius: 8,
-                color: "#475569",
+                color: "#385a83",
                 fontSize: 13,
                 fontWeight: 800,
               }}
@@ -10771,7 +10771,7 @@ function openClaimAmountEditDialog() {
                   padding: "6px 10px",
                   border: "1px solid #cbd5e1",
                   background: "#f8fafc",
-                  color: "#0f172a",
+                  color: "#00346e",
                   borderRadius: 999,
                   fontSize: 12,
                   fontWeight: 800,
@@ -10815,7 +10815,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Provider</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{providerValue(matter) || "—"}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{providerValue(matter) || "—"}</div>
             </div>
 
             <div
@@ -10827,7 +10827,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Insurer</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{insurerValue(matter) || "—"}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{insurerValue(matter) || "—"}</div>
             </div>
 
             <div
@@ -10839,7 +10839,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Claim Number</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{textValue(matter?.claimNumber) || "—"}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{textValue(matter?.claimNumber) || "—"}</div>
             </div>
 
             <div
@@ -10851,7 +10851,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 4 }}>Balance (Presuit)</div>
-              <div style={{ color: "#475569", fontSize: 13 }}>{money(totals.balance)}</div>
+              <div style={{ color: "#385a83", fontSize: 13 }}>{money(totals.balance)}</div>
             </div>
           </div>
 
@@ -10878,7 +10878,7 @@ function openClaimAmountEditDialog() {
                 <div style={{ fontWeight: 900, marginBottom: 4 }}>
                   Settlement Workflow Status
                 </div>
-                <div style={{ color: "#475569", fontSize: 12 }}>
+                <div style={{ color: "#385a83", fontSize: 12 }}>
                   Settlement processing checklist.
                 </div>
               </div>
@@ -10935,7 +10935,7 @@ function openClaimAmountEditDialog() {
                         alignItems: "center",
                         justifyContent: "center",
                         background: item.done ? "#16a34a" : "#cbd5e1",
-                        color: "#fff",
+                        color: "#ffffff",
                         fontSize: 12,
                         fontWeight: 900,
                         flex: "0 0 auto",
@@ -10945,7 +10945,7 @@ function openClaimAmountEditDialog() {
                     </span>
                     <span style={{ fontWeight: 800, fontSize: 13 }}>{item.label}</span>
                   </div>
-                  <div style={{ color: "#475569", fontSize: 12, lineHeight: 1.4 }}>
+                  <div style={{ color: "#385a83", fontSize: 12, lineHeight: 1.4 }}>
                     {item.detail}
                   </div>
                 </div>
@@ -11008,7 +11008,7 @@ function openClaimAmountEditDialog() {
                 <div style={{ fontWeight: 800, marginBottom: 4 }}>
                   Current Local Settlement Values
                 </div>
-                <div style={{ color: "#475569", fontSize: 12 }}>
+                <div style={{ color: "#385a83", fontSize: 12 }}>
                   Settlement value review.
                 </div>
               </div>
@@ -11021,7 +11021,7 @@ function openClaimAmountEditDialog() {
                   padding: "7px 10px",
                   border: "1px solid #00346e",
                   background: currentSettlementValuesLoading || !tabMasterLawsuitId ? "#f3f4f6" : "#00346e",
-                  color: currentSettlementValuesLoading || !tabMasterLawsuitId ? "#666" : "#fff",
+                  color: currentSettlementValuesLoading || !tabMasterLawsuitId ? "#666" : "#ffffff",
                   borderRadius: 4,
                   cursor: currentSettlementValuesLoading || !tabMasterLawsuitId ? "not-allowed" : "pointer",
                   fontWeight: 700,
@@ -11139,12 +11139,12 @@ function openClaimAmountEditDialog() {
             {currentSettlementValuesResult?.ok &&
               Array.isArray(currentSettlementValuesResult.rows) &&
               currentSettlementValuesResult.rows.length === 0 && (
-                <div style={{ color: "#475569", fontSize: 13 }}>
+                <div style={{ color: "#385a83", fontSize: 13 }}>
                   No child/bill settlement values were found for this master lawsuit.
                 </div>
               )}
 
-            <div style={{ marginTop: 8, color: "#475569", fontSize: 12 }}>
+            <div style={{ marginTop: 8, color: "#385a83", fontSize: 12 }}>
               Source: {textValue(currentSettlementValuesResult?.source) || "local Barsh Matters data when loaded"}.
             </div>
           </div>
@@ -11198,7 +11198,7 @@ function openClaimAmountEditDialog() {
                     padding: "7px 10px",
                     border: "1px solid #00346e",
                     background: settlementDocumentsPreviewLoading || !tabMasterLawsuitId ? "#f3f4f6" : "#00346e",
-                    color: settlementDocumentsPreviewLoading || !tabMasterLawsuitId ? "#666" : "#fff",
+                    color: settlementDocumentsPreviewLoading || !tabMasterLawsuitId ? "#666" : "#ffffff",
                     borderRadius: 4,
                     cursor: settlementDocumentsPreviewLoading || !tabMasterLawsuitId ? "not-allowed" : "pointer",
                     fontWeight: 700,
@@ -11308,7 +11308,7 @@ function openClaimAmountEditDialog() {
                                   Download DOCX
                                 </a>
                               ) : (
-                                <span style={{ color: "#64748b" }}>Preview-only</span>
+                                <span style={{ color: "#385a83" }}>Preview-only</span>
                               )}
                             </td>
                           </tr>
@@ -11411,7 +11411,7 @@ function openClaimAmountEditDialog() {
             }}
           >
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Proposed Settlement Workflow</div>
-            <ol style={{ margin: "0 0 0 20px", padding: 0, color: "#475569", fontSize: 13, lineHeight: 1.6 }}>
+            <ol style={{ margin: "0 0 0 20px", padding: 0, color: "#385a83", fontSize: 13, lineHeight: 1.6 }}>
               <li>Settlement workflow is handled only from the Master Lawsuit page.</li>
               <li>Enter or preview gross settlement details without saving.</li>
               <li>Calculate allocation, fees, and provider net amounts per bill.</li>
@@ -11493,7 +11493,7 @@ function openClaimAmountEditDialog() {
                       padding: "8px 10px",
                       border: "1px solid #00346e",
                       background: settledWithContactLoading ? "#f3f4f6" : "#00346e",
-                      color: settledWithContactLoading ? "#666" : "#fff",
+                      color: settledWithContactLoading ? "#666" : "#ffffff",
                       borderRadius: 4,
                       cursor: settledWithContactLoading ? "not-allowed" : "pointer",
                       fontWeight: 700,
@@ -11537,7 +11537,7 @@ function openClaimAmountEditDialog() {
                         }}
                       >
                         <strong>{contact.name}</strong>
-                        {contact.type ? <span style={{ color: "#64748b" }}> — {contact.type}</span> : null}
+                        {contact.type ? <span style={{ color: "#385a83" }}> — {contact.type}</span> : null}
                       </button>
                     ))}
                   </div>
@@ -11643,7 +11643,7 @@ function openClaimAmountEditDialog() {
                     borderRadius: 4,
                   }}
                 />
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 11 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 11 }}>
                   Defaults from provider contact: Retainer Principal NF.
                 </div>
               </label>
@@ -11690,7 +11690,7 @@ function openClaimAmountEditDialog() {
                     borderRadius: 4,
                   }}
                 />
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 11 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 11 }}>
                   Defaults from provider contact: Retainer Interest.
                 </div>
               </label>
@@ -11842,7 +11842,7 @@ function openClaimAmountEditDialog() {
                 border: "1px solid #00346e",
                 background:
                   settlementPreviewLoading || !tabMasterLawsuitId ? "#f3f4f6" : "#00346e",
-                color: settlementPreviewLoading || !tabMasterLawsuitId ? "#666" : "#fff",
+                color: settlementPreviewLoading || !tabMasterLawsuitId ? "#666" : "#ffffff",
                 borderRadius: 4,
                 cursor:
                   settlementPreviewLoading || !tabMasterLawsuitId ? "not-allowed" : "pointer",
@@ -12204,7 +12204,7 @@ function openClaimAmountEditDialog() {
                         padding: "8px 12px",
                         border: "1px solid #b45309",
                         background: settlementWritebackLoading ? "#f3f4f6" : "#b45309",
-                        color: settlementWritebackLoading ? "#666" : "#fff",
+                        color: settlementWritebackLoading ? "#666" : "#ffffff",
                         borderRadius: 4,
                         cursor: settlementWritebackLoading ? "not-allowed" : "pointer",
                         fontWeight: 800,
@@ -12359,7 +12359,7 @@ function openClaimAmountEditDialog() {
                   padding: "7px 10px",
                   border: "1px solid #b45309",
                   background: settlementClosePreviewLoading || !tabMasterLawsuitId ? "#f3f4f6" : "#b45309",
-                  color: settlementClosePreviewLoading || !tabMasterLawsuitId ? "#666" : "#fff",
+                  color: settlementClosePreviewLoading || !tabMasterLawsuitId ? "#666" : "#ffffff",
                   borderRadius: 4,
                   cursor: settlementClosePreviewLoading || !tabMasterLawsuitId ? "not-allowed" : "pointer",
                   fontWeight: 700,
@@ -12485,7 +12485,7 @@ function openClaimAmountEditDialog() {
                       padding: "8px 12px",
                       border: "1px solid #991b1b",
                       background: settlementCloseWritebackLoading ? "#f3f4f6" : "#991b1b",
-                      color: settlementCloseWritebackLoading ? "#666" : "#fff",
+                      color: settlementCloseWritebackLoading ? "#666" : "#ffffff",
                       borderRadius: 4,
                       cursor: settlementCloseWritebackLoading ? "not-allowed" : "pointer",
                       fontWeight: 800,
@@ -12633,7 +12633,7 @@ function openClaimAmountEditDialog() {
                   padding: "7px 10px",
                   border: "1px solid #00346e",
                   background: settlementHistoryLoading || !tabMasterLawsuitId ? "#f3f4f6" : "#00346e",
-                  color: settlementHistoryLoading || !tabMasterLawsuitId ? "#666" : "#fff",
+                  color: settlementHistoryLoading || !tabMasterLawsuitId ? "#666" : "#ffffff",
                   borderRadius: 4,
                   cursor: settlementHistoryLoading || !tabMasterLawsuitId ? "not-allowed" : "pointer",
                   fontWeight: 700,
@@ -12741,7 +12741,7 @@ function openClaimAmountEditDialog() {
               })()}
 
             {settlementHistoryLoading && !settlementHistoryResult && (
-              <div style={{ marginTop: 10, color: "#475569", fontSize: 13 }}>
+              <div style={{ marginTop: 10, color: "#385a83", fontSize: 13 }}>
                 Loading settlement history...
               </div>
             )}
@@ -12749,7 +12749,7 @@ function openClaimAmountEditDialog() {
             {settlementHistoryResult?.ok &&
               Array.isArray(settlementHistoryResult.rows) &&
               settlementHistoryResult.rows.length === 0 && (
-                <div style={{ marginTop: 10, color: "#475569", fontSize: 13 }}>
+                <div style={{ marginTop: 10, color: "#385a83", fontSize: 13 }}>
                   No settlement writeback history recorded yet.
                 </div>
               )}
@@ -12788,7 +12788,7 @@ function openClaimAmountEditDialog() {
                                 ? new Date(row.finalizedAt).toLocaleString()
                                 : "Unknown date"}
                             </div>
-                            <div style={{ color: "#475569", fontSize: 13, marginTop: 2 }}>
+                            <div style={{ color: "#385a83", fontSize: 13, marginTop: 2 }}>
                               Audit ID {rowKey} · Status {textValue(row.status) || "unknown"} ·
                               {row.noWritePerformed ? " No Clio write" : " Clio write attempted"} ·
                               Child matters: {childMatterIds.length}
@@ -12937,7 +12937,7 @@ function openClaimAmountEditDialog() {
               background: "#f8fafc",
               border: "1px solid #cbd5e1",
               borderRadius: 8,
-              color: "#475569",
+              color: "#385a83",
               fontSize: 13,
             }}
           >
@@ -12971,7 +12971,7 @@ function openClaimAmountEditDialog() {
                 padding: "8px 12px",
                 border: "1px solid #94a3b8",
                 background: "#fff",
-                color: "#0f172a",
+                color: "#00346e",
                 borderRadius: 4,
                 textDecoration: "none",
                 fontWeight: 700,
@@ -12983,7 +12983,7 @@ function openClaimAmountEditDialog() {
           </div>
 
           {!tabMasterLawsuitId ? (
-            <div style={{ marginTop: 12, color: "#475569" }}>
+            <div style={{ marginTop: 12, color: "#385a83" }}>
               No MASTER_LAWSUIT_ID is available yet.  Generate or connect a lawsuit before loading matter-level print queue records.
             </div>
           ) : (
@@ -13005,7 +13005,7 @@ function openClaimAmountEditDialog() {
                     padding: "7px 10px",
                     border: "1px solid #0f766e",
                     background: printQueuePreviewLoading ? "#f3f4f6" : "#0f766e",
-                    color: printQueuePreviewLoading ? "#666" : "#fff",
+                    color: printQueuePreviewLoading ? "#666" : "#ffffff",
                     borderRadius: 4,
                     cursor: printQueuePreviewLoading ? "not-allowed" : "pointer",
                     fontWeight: 700,
@@ -13022,7 +13022,7 @@ function openClaimAmountEditDialog() {
                     padding: "7px 10px",
                     border: "1px solid #00346e",
                     background: printQueueListLoading ? "#f3f4f6" : "#00346e",
-                    color: printQueueListLoading ? "#666" : "#fff",
+                    color: printQueueListLoading ? "#666" : "#ffffff",
                     borderRadius: 4,
                     cursor: printQueueListLoading ? "not-allowed" : "pointer",
                     fontWeight: 700,
@@ -13137,7 +13137,7 @@ function openClaimAmountEditDialog() {
               )}
 
               {printQueueListLoading && !printQueueList && (
-                <div style={{ color: "#475569" }}>Loading print queue...</div>
+                <div style={{ color: "#385a83" }}>Loading print queue...</div>
               )}
 
               {printQueueList?.error && (
@@ -13147,7 +13147,7 @@ function openClaimAmountEditDialog() {
               )}
 
               {printQueueList?.ok && num(printQueueList.count) === 0 && (
-                <div style={{ color: "#475569", marginBottom: 10 }}>
+                <div style={{ color: "#385a83", marginBottom: 10 }}>
                   {printQueueStatusFilter
                     ? `No print queue items currently match status "${printQueueStatusFilter}" for this lawsuit.`
                     : "No documents are currently queued for printing for this lawsuit."}
@@ -13231,11 +13231,11 @@ function openClaimAmountEditDialog() {
               )}
 
               {printQueuePreviewLoading && !printQueuePreview && (
-                <div style={{ color: "#475569" }}>Loading print candidates...</div>
+                <div style={{ color: "#385a83" }}>Loading print candidates...</div>
               )}
 
               {printQueuePreview?.ok && num(printQueuePreview.candidateDocumentCount) === 0 && (
-                <div style={{ color: "#475569" }}>
+                <div style={{ color: "#385a83" }}>
                   No verified print candidates are available yet.  Finalize documents before adding them to the print queue.
                 </div>
               )}
@@ -13264,7 +13264,7 @@ function openClaimAmountEditDialog() {
                         </li>
                       ))}
                     </ul>
-                    <div style={{ marginTop: 8, color: "#475569" }}>
+                    <div style={{ marginTop: 8, color: "#385a83" }}>
                       These are proposed print candidates only.  Each listed document has been verified against the current Clio repository storage Documents tab.
                     </div>
                   </div>
@@ -13302,7 +13302,7 @@ function openClaimAmountEditDialog() {
                 padding: "7px 10px",
                 border: "1px solid #00346e",
                 background: matterAuditHistoryLoading ? "#f3f4f6" : "#00346e",
-                color: matterAuditHistoryLoading ? "#666" : "#fff",
+                color: matterAuditHistoryLoading ? "#666" : "#ffffff",
                 borderRadius: 4,
                 cursor: matterAuditHistoryLoading ? "not-allowed" : "pointer",
                 fontWeight: 700,
@@ -13602,7 +13602,7 @@ function openClaimAmountEditDialog() {
                         padding: "5px 10px",
                         border: "1px solid #bfbfbf",
                         background: "#d9d9d9",
-                        color: "#111827",
+                        color: "#00346e",
                         fontSize: 13,
                         fontWeight: 800,
                         letterSpacing: 0.2,
@@ -13619,11 +13619,11 @@ function openClaimAmountEditDialog() {
                         <span />
 
                         <div style={{ textAlign: "center" }}>
-                          <span style={{ color: "#6b7280" }}>•••</span>
+                          <span style={{ color: "#385a83" }}>•••</span>
                           <span style={{ margin: "0 12px" }}>
                             LAWSUIT {masterLawsuitId}
                           </span>
-                          <span style={{ color: "#6b7280" }}>•••</span>
+                          <span style={{ color: "#385a83" }}>•••</span>
                         </div>
 
                         <div
@@ -13641,7 +13641,7 @@ function openClaimAmountEditDialog() {
                               padding: "3px 8px",
                               border: "1px solid #4b5563",
                               background: packetLoading ? "#f3f4f6" : "#4b5563",
-                              color: packetLoading ? "#666" : "#fff",
+                              color: packetLoading ? "#666" : "#ffffff",
                               borderRadius: 4,
                               cursor: packetLoading ? "not-allowed" : "pointer",
                               fontWeight: 700,
@@ -13659,7 +13659,7 @@ function openClaimAmountEditDialog() {
                               padding: "3px 8px",
                               border: "1px solid #00346e",
                               background: packetLoading ? "#f3f4f6" : "#00346e",
-                              color: packetLoading ? "#666" : "#fff",
+                              color: packetLoading ? "#666" : "#ffffff",
                               borderRadius: 4,
                               cursor: packetLoading ? "not-allowed" : "pointer",
                               fontWeight: 700,
@@ -14179,7 +14179,7 @@ function openClaimAmountEditDialog() {
               )}
             </div>
 
-            <div style={{ marginTop: 8, fontSize: 13, color: "#334155" }}>
+            <div style={{ marginTop: 8, fontSize: 13, color: "#385a83" }}>
               Selected Lawsuit Amount: <strong>{money(startLawsuitAmountForMode())}</strong>
             </div>
           </div>
@@ -14235,7 +14235,7 @@ function openClaimAmountEditDialog() {
             </table>
           </div>
 
-          <label style={{ display: "grid", gap: 5, fontSize: 12, fontWeight: 900, color: "#334155", marginBottom: 12 }}>
+          <label style={{ display: "grid", gap: 5, fontSize: 12, fontWeight: 900, color: "#385a83", marginBottom: 12 }}>
             <span>Lawsuit Notes</span>
             <textarea
               value={lawsuitOptions.notes}
@@ -14371,8 +14371,8 @@ function openClaimAmountEditDialog() {
 
           <div style={{ display: "grid", gap: 12, padding: 16, background: "#ffffff" }}>
             <div data-barsh-direct-close-matter-current-card="true" style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
-              <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#64748b" }}>Current</span>
-              <strong style={{ fontSize: 16, color: "#0f172a" }}>{textValue(closeMatterTarget?.displayNumber) || textValue(matter?.displayNumber || matter?.display_number) || "—"}</strong>
+              <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+              <strong style={{ fontSize: 16, color: "#00346e" }}>{textValue(closeMatterTarget?.displayNumber) || textValue(matter?.displayNumber || matter?.display_number) || "—"}</strong>
             </div>
 
             <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
@@ -14380,7 +14380,7 @@ function openClaimAmountEditDialog() {
               <select
                 value={closeReason}
                 onChange={(event) => setCloseReason(event.target.value)}
-                style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#0f172a", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
+                style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 10, background: "#ffffff", color: "#00346e", padding: "11px 12px", fontSize: 14, fontWeight: 800 }}
               >
                 <option value="">Select Close Reason</option>
                 {VALID_CLOSE_REASONS.map((reason) => (<option key={reason} value={reason}>{reason}</option>))}

@@ -162,7 +162,7 @@ const pageStyle: React.CSSProperties = {
   maxWidth: "none",
   margin: 0,
   fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  color: "#0f172a",
+  color: "#00346e",
   background: "#f8fafc",
   minHeight: "100vh",
 };
@@ -204,21 +204,21 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 12,
   padding: "9px 10px",
   fontWeight: 750,
-  color: "#0f172a",
+  color: "#00346e",
 };
 
 const labelStyle: React.CSSProperties = {
   display: "grid",
   gap: 5,
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   fontWeight: 900,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
-  color: "#fff",
+  color: "#ffffff",
   borderRadius: 999,
   padding: "10px 14px",
   fontWeight: 950,
@@ -227,8 +227,8 @@ const primaryButtonStyle: React.CSSProperties = {
 
 const secondaryButtonStyle: React.CSSProperties = {
   border: "1px solid #94a3b8",
-  background: "#fff",
-  color: "#334155",
+  background: "#ffffff",
+  color: "#385a83",
   borderRadius: 999,
   padding: "10px 14px",
   fontWeight: 900,
@@ -241,7 +241,7 @@ const thStyle: React.CSSProperties = {
   padding: "10px 8px",
   borderBottom: "1px solid #cbd5e1",
   background: "#f8fafc",
-  color: "#334155",
+  color: "#385a83",
   fontSize: 12,
   fontWeight: 950,
   whiteSpace: "nowrap",
@@ -613,7 +613,7 @@ export default function CourtCalendarPage() {
         groupsHtml += "<section class=\"court-group\"><div class=\"court-heading\"><span>" + safeHtml(dateOnly(reportDate)) + "</span><span>" + safeHtml(groupName) + "</span></div>" + printableCourtCalendarReportTable(groupEvents, activeReportType) + "</section>";
       }
     }
-    const html = "<!doctype html><html><head><meta charset=\"utf-8\" /><title>" + safeHtml(reportTitle) + "</title><style>@page { size: landscape; margin: 0.28in 0.22in; } * { box-sizing: border-box; } body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; font-size: 9px; } .report-title { text-align: center; font-size: 22px; font-weight: 900; margin: 0 0 14px; } .report-meta { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px; font-size: 8px; color: #334155; } .court-heading { display: grid; grid-template-columns: 115px 1fr; align-items: end; gap: 8px; font-size: 12px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding: 0 0 3px; margin: 0 0 3px; } .court-group { margin-bottom: 14px; } .court-appearance-report { margin-top: 4px; } table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: auto; } thead { display: table-header-group; } tfoot { display: table-footer-group; } tbody { display: table-row-group; } tr { page-break-inside: avoid; break-inside: avoid; } tbody tr { page-break-inside: avoid; break-inside: avoid; } th { text-align: left; vertical-align: bottom; font-size: 7.5px; font-weight: 900; color: #475569; border-bottom: 1px solid #cbd5e1; padding: 2px 3px; line-height: 1.05; page-break-inside: avoid; break-inside: avoid; } td { vertical-align: top; border-bottom: 1px solid #d7dde5; padding: 3px 3px; line-height: 1.08; word-break: break-word; overflow-wrap: anywhere; page-break-inside: avoid; break-inside: avoid; } .money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .trial-result { white-space: nowrap; } .result-line { display: grid; grid-template-columns: 34px 1fr; align-items: end; gap: 2px; line-height: 1.08; } .blank-line { border-bottom: 1px solid #9ca3af; height: 8px; min-width: 72px; } .appearance-date { text-align: center; font-size: 17px; font-weight: 950; margin: 4px 0 18px; } .result-cell { font-size: 7.5px; line-height: 1.12; } .adj-line { display: grid; grid-template-columns: 28px 1fr; gap: 5px; align-items: end; margin-bottom: 4px; } .date-write-line { border-bottom: 1px solid #111827; min-width: 70px; height: 14px; } .scan-choice { display: grid; grid-template-columns: 38px 8px 16px 8px 14px; gap: 2px; align-items: center; margin-top: 1px; white-space: nowrap; } .bubble { display: inline-block; width: 7px; height: 7px; border: 1px solid #111827; border-radius: 999px; } .trial-report th:nth-child(1), .trial-report td:nth-child(1) { width: 5.8%; } .trial-report th:nth-child(2), .trial-report td:nth-child(2) { width: 9.3%; } .trial-report th:nth-child(3), .trial-report td:nth-child(3) { width: 9.3%; } .trial-report th:nth-child(4), .trial-report td:nth-child(4) { width: 9.3%; } .trial-report th:nth-child(5), .trial-report td:nth-child(5) { width: 7.2%; } .trial-report th:nth-child(6), .trial-report td:nth-child(6) { width: 7.4%; } .trial-report th:nth-child(7), .trial-report td:nth-child(7) { width: 17.8%; } .trial-report th:nth-child(8), .trial-report td:nth-child(8) { width: 10%; } .trial-report th:nth-child(9), .trial-report td:nth-child(9) { width: 8.7%; } .trial-report th:nth-child(10), .trial-report td:nth-child(10) { width: 15.2%; } .appearance-report th:nth-child(1), .appearance-report td:nth-child(1) { width: 7.2%; } .appearance-report th:nth-child(2), .appearance-report td:nth-child(2) { width: 5.2%; } .appearance-report th:nth-child(3), .appearance-report td:nth-child(3) { width: 5.4%; } .appearance-report th:nth-child(4), .appearance-report td:nth-child(4) { width: 9%; } .appearance-report th:nth-child(5), .appearance-report td:nth-child(5) { width: 8.2%; } .appearance-report th:nth-child(6), .appearance-report td:nth-child(6) { width: 8.5%; } .appearance-report th:nth-child(7), .appearance-report td:nth-child(7) { width: 7%; } .appearance-report th:nth-child(8), .appearance-report td:nth-child(8) { width: 7%; } .appearance-report th:nth-child(9), .appearance-report td:nth-child(9) { width: 24%; } .appearance-report th:nth-child(10), .appearance-report td:nth-child(10) { width: 8%; } .appearance-report th:nth-child(11), .appearance-report td:nth-child(11) { width: 10.5%; } .court-appearance-report th, .court-appearance-report td { font-size: 9.6px; line-height: 1.18; padding: 5px 5px; } .court-appearance-report tbody tr { min-height: 74px; } .court-appearance-report th { text-align: center; } .court-appearance-report th:nth-child(1), .court-appearance-report td:nth-child(1) { width: 3.2%; white-space: nowrap; } .court-appearance-report th:nth-child(2), .court-appearance-report td:nth-child(2) { width: 6.3%; white-space: nowrap; } .court-appearance-report th:nth-child(3), .court-appearance-report td:nth-child(3) { width: 6.2%; white-space: normal; overflow-wrap: anywhere; } .court-appearance-report th:nth-child(4), .court-appearance-report td:nth-child(4) { width: 8%; } .court-appearance-report th:nth-child(5), .court-appearance-report td:nth-child(5) { width: 5%; white-space: nowrap; text-align: right; } .court-appearance-report th:nth-child(6), .court-appearance-report td:nth-child(6) { width: 5%; white-space: nowrap; text-align: right; } .court-appearance-report th:nth-child(7), .court-appearance-report td:nth-child(7) { width: 30%; padding-left: 10px; } .court-appearance-report th:nth-child(8), .court-appearance-report td:nth-child(8) { width: 12%; } .court-appearance-report th:nth-child(9), .court-appearance-report td:nth-child(9) { width: 7%; } .court-appearance-report th:nth-child(10), .court-appearance-report td:nth-child(10) { width: 16.3%; } .court-appearance-report .result-cell { font-size: 9.2px; line-height: 1.36; white-space: nowrap; padding-top: 8px; padding-bottom: 8px; } .court-appearance-report .scan-choice { grid-template-columns: 54px 14px 22px 14px 20px; column-gap: 5px; row-gap: 7px; margin-top: 8px; margin-bottom: 6px; } .court-appearance-report .bubble { width: 14px; height: 14px; border-width: 1.4px; } .court-appearance-report th:nth-child(2), .court-appearance-report td:nth-child(2), .court-appearance-report th:nth-child(3), .court-appearance-report td:nth-child(3) { white-space: nowrap; word-break: keep-all; overflow-wrap: normal; } .court-appearance-report th:nth-child(4), .court-appearance-report td:nth-child(4) { padding-left: 10px; } .court-appearance-report th:nth-child(9), .court-appearance-report td:nth-child(9) { white-space: nowrap; word-break: keep-all; overflow-wrap: normal; } .court-appearance-report .caption-insurer-line { display: block; margin-top: 2px; } .court-appearance-report .caption { line-height: 1.08; } .all-report th:nth-child(1), .all-report td:nth-child(1) { width: 6.5%; } .all-report th:nth-child(2), .all-report td:nth-child(2) { width: 4.8%; } .all-report th:nth-child(3), .all-report td:nth-child(3) { width: 5%; } .all-report th:nth-child(4), .all-report td:nth-child(4) { width: 8.2%; } .all-report th:nth-child(5), .all-report td:nth-child(5) { width: 7.8%; } .all-report th:nth-child(6), .all-report td:nth-child(6) { width: 7%; } .all-report th:nth-child(7), .all-report td:nth-child(7) { width: 8%; } .all-report th:nth-child(8), .all-report td:nth-child(8) { width: 6.5%; } .all-report th:nth-child(9), .all-report td:nth-child(9) { width: 6.5%; } .all-report th:nth-child(10), .all-report td:nth-child(10) { width: 31.7%; } .all-report th:nth-child(11), .all-report td:nth-child(11) { width: 8%; } .screen-only { margin: 10px 0; text-align: center; } @media print { .screen-only { display: none; } body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }</style></head><body><div class=\"screen-only\"><button onclick=\"window.print()\">Print / Save PDF</button></div>" + (activeReportType === "appearance-calendar" ? "" : "<h1 class=\"report-title\">" + safeHtml(reportTitle) + "</h1>") + (activeReportType === "appearance-calendar" ? "" : "<div class=\"report-meta\"><div>" + safeHtml(filterSummary) + "</div><div>" + safeHtml(events.length) + " matters from current filtered results · Generated " + safeHtml(generatedAt) + "</div></div>") + groupsHtml + "<script>setTimeout(() => window.print(), 250);</script></body></html>";
+    const html = "<!doctype html><html><head><meta charset=\"utf-8\" /><title>" + safeHtml(reportTitle) + "</title><style>@page { size: landscape; margin: 0.28in 0.22in; } * { box-sizing: border-box; } body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #00346e; background: #ffffff; font-size: 9px; } .report-title { text-align: center; font-size: 22px; font-weight: 900; margin: 0 0 14px; } .report-meta { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px; font-size: 8px; color: #385a83; } .court-heading { display: grid; grid-template-columns: 115px 1fr; align-items: end; gap: 8px; font-size: 12px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding: 0 0 3px; margin: 0 0 3px; } .court-group { margin-bottom: 14px; } .court-appearance-report { margin-top: 4px; } table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: auto; } thead { display: table-header-group; } tfoot { display: table-footer-group; } tbody { display: table-row-group; } tr { page-break-inside: avoid; break-inside: avoid; } tbody tr { page-break-inside: avoid; break-inside: avoid; } th { text-align: left; vertical-align: bottom; font-size: 7.5px; font-weight: 900; color: #385a83; border-bottom: 1px solid #cbd5e1; padding: 2px 3px; line-height: 1.05; page-break-inside: avoid; break-inside: avoid; } td { vertical-align: top; border-bottom: 1px solid #d7dde5; padding: 3px 3px; line-height: 1.08; word-break: break-word; overflow-wrap: anywhere; page-break-inside: avoid; break-inside: avoid; } .money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .trial-result { white-space: nowrap; } .result-line { display: grid; grid-template-columns: 34px 1fr; align-items: end; gap: 2px; line-height: 1.08; } .blank-line { border-bottom: 1px solid #9ca3af; height: 8px; min-width: 72px; } .appearance-date { text-align: center; font-size: 17px; font-weight: 950; margin: 4px 0 18px; } .result-cell { font-size: 7.5px; line-height: 1.12; } .adj-line { display: grid; grid-template-columns: 28px 1fr; gap: 5px; align-items: end; margin-bottom: 4px; } .date-write-line { border-bottom: 1px solid #111827; min-width: 70px; height: 14px; } .scan-choice { display: grid; grid-template-columns: 38px 8px 16px 8px 14px; gap: 2px; align-items: center; margin-top: 1px; white-space: nowrap; } .bubble { display: inline-block; width: 7px; height: 7px; border: 1px solid #111827; border-radius: 999px; } .trial-report th:nth-child(1), .trial-report td:nth-child(1) { width: 5.8%; } .trial-report th:nth-child(2), .trial-report td:nth-child(2) { width: 9.3%; } .trial-report th:nth-child(3), .trial-report td:nth-child(3) { width: 9.3%; } .trial-report th:nth-child(4), .trial-report td:nth-child(4) { width: 9.3%; } .trial-report th:nth-child(5), .trial-report td:nth-child(5) { width: 7.2%; } .trial-report th:nth-child(6), .trial-report td:nth-child(6) { width: 7.4%; } .trial-report th:nth-child(7), .trial-report td:nth-child(7) { width: 17.8%; } .trial-report th:nth-child(8), .trial-report td:nth-child(8) { width: 10%; } .trial-report th:nth-child(9), .trial-report td:nth-child(9) { width: 8.7%; } .trial-report th:nth-child(10), .trial-report td:nth-child(10) { width: 15.2%; } .appearance-report th:nth-child(1), .appearance-report td:nth-child(1) { width: 7.2%; } .appearance-report th:nth-child(2), .appearance-report td:nth-child(2) { width: 5.2%; } .appearance-report th:nth-child(3), .appearance-report td:nth-child(3) { width: 5.4%; } .appearance-report th:nth-child(4), .appearance-report td:nth-child(4) { width: 9%; } .appearance-report th:nth-child(5), .appearance-report td:nth-child(5) { width: 8.2%; } .appearance-report th:nth-child(6), .appearance-report td:nth-child(6) { width: 8.5%; } .appearance-report th:nth-child(7), .appearance-report td:nth-child(7) { width: 7%; } .appearance-report th:nth-child(8), .appearance-report td:nth-child(8) { width: 7%; } .appearance-report th:nth-child(9), .appearance-report td:nth-child(9) { width: 24%; } .appearance-report th:nth-child(10), .appearance-report td:nth-child(10) { width: 8%; } .appearance-report th:nth-child(11), .appearance-report td:nth-child(11) { width: 10.5%; } .court-appearance-report th, .court-appearance-report td { font-size: 9.6px; line-height: 1.18; padding: 5px 5px; } .court-appearance-report tbody tr { min-height: 74px; } .court-appearance-report th { text-align: center; } .court-appearance-report th:nth-child(1), .court-appearance-report td:nth-child(1) { width: 3.2%; white-space: nowrap; } .court-appearance-report th:nth-child(2), .court-appearance-report td:nth-child(2) { width: 6.3%; white-space: nowrap; } .court-appearance-report th:nth-child(3), .court-appearance-report td:nth-child(3) { width: 6.2%; white-space: normal; overflow-wrap: anywhere; } .court-appearance-report th:nth-child(4), .court-appearance-report td:nth-child(4) { width: 8%; } .court-appearance-report th:nth-child(5), .court-appearance-report td:nth-child(5) { width: 5%; white-space: nowrap; text-align: right; } .court-appearance-report th:nth-child(6), .court-appearance-report td:nth-child(6) { width: 5%; white-space: nowrap; text-align: right; } .court-appearance-report th:nth-child(7), .court-appearance-report td:nth-child(7) { width: 30%; padding-left: 10px; } .court-appearance-report th:nth-child(8), .court-appearance-report td:nth-child(8) { width: 12%; } .court-appearance-report th:nth-child(9), .court-appearance-report td:nth-child(9) { width: 7%; } .court-appearance-report th:nth-child(10), .court-appearance-report td:nth-child(10) { width: 16.3%; } .court-appearance-report .result-cell { font-size: 9.2px; line-height: 1.36; white-space: nowrap; padding-top: 8px; padding-bottom: 8px; } .court-appearance-report .scan-choice { grid-template-columns: 54px 14px 22px 14px 20px; column-gap: 5px; row-gap: 7px; margin-top: 8px; margin-bottom: 6px; } .court-appearance-report .bubble { width: 14px; height: 14px; border-width: 1.4px; } .court-appearance-report th:nth-child(2), .court-appearance-report td:nth-child(2), .court-appearance-report th:nth-child(3), .court-appearance-report td:nth-child(3) { white-space: nowrap; word-break: keep-all; overflow-wrap: normal; } .court-appearance-report th:nth-child(4), .court-appearance-report td:nth-child(4) { padding-left: 10px; } .court-appearance-report th:nth-child(9), .court-appearance-report td:nth-child(9) { white-space: nowrap; word-break: keep-all; overflow-wrap: normal; } .court-appearance-report .caption-insurer-line { display: block; margin-top: 2px; } .court-appearance-report .caption { line-height: 1.08; } .all-report th:nth-child(1), .all-report td:nth-child(1) { width: 6.5%; } .all-report th:nth-child(2), .all-report td:nth-child(2) { width: 4.8%; } .all-report th:nth-child(3), .all-report td:nth-child(3) { width: 5%; } .all-report th:nth-child(4), .all-report td:nth-child(4) { width: 8.2%; } .all-report th:nth-child(5), .all-report td:nth-child(5) { width: 7.8%; } .all-report th:nth-child(6), .all-report td:nth-child(6) { width: 7%; } .all-report th:nth-child(7), .all-report td:nth-child(7) { width: 8%; } .all-report th:nth-child(8), .all-report td:nth-child(8) { width: 6.5%; } .all-report th:nth-child(9), .all-report td:nth-child(9) { width: 6.5%; } .all-report th:nth-child(10), .all-report td:nth-child(10) { width: 31.7%; } .all-report th:nth-child(11), .all-report td:nth-child(11) { width: 8%; } .screen-only { margin: 10px 0; text-align: center; } @media print { .screen-only { display: none; } body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }</style></head><body><div class=\"screen-only\"><button onclick=\"window.print()\">Print / Save PDF</button></div>" + (activeReportType === "appearance-calendar" ? "" : "<h1 class=\"report-title\">" + safeHtml(reportTitle) + "</h1>") + (activeReportType === "appearance-calendar" ? "" : "<div class=\"report-meta\"><div>" + safeHtml(filterSummary) + "</div><div>" + safeHtml(events.length) + " matters from current filtered results · Generated " + safeHtml(generatedAt) + "</div></div>") + groupsHtml + "<script>setTimeout(() => window.print(), 250);</script></body></html>";
     printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
@@ -796,7 +796,7 @@ export default function CourtCalendarPage() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ margin: "0 0 5px", fontSize: 20 }}>Filters</h2>
-            <p style={{ margin: 0, color: "#64748b", fontWeight: 750 }}>
+            <p style={{ margin: 0, color: "#385a83", fontWeight: 750 }}>
               
             </p>
           </div>
@@ -804,7 +804,7 @@ export default function CourtCalendarPage() {
             <button type="button" onClick={() => void searchEvents()} style={primaryButtonStyle} disabled={loading}>
               {loading ? "Searching..." : "Search Calendar"}
             </button>
-            <button type="button" onClick={resetCourtCalendarFilters} style={{ ...secondaryButtonStyle, border: "1px solid #64748b", background: "#f8fafc", color: "#334155" }} data-barsh-court-calendar-reset-filters="true">Reset Filters</button>
+            <button type="button" onClick={resetCourtCalendarFilters} style={{ ...secondaryButtonStyle, border: "1px solid #64748b", background: "#ffffff", color: "#385a83" }} data-barsh-court-calendar-reset-filters="true">Reset Filters</button>
           </div>
         </div>
 
@@ -843,7 +843,7 @@ export default function CourtCalendarPage() {
           </label>
           <label style={{ ...labelStyle, justifyContent: "end" }}>
             Hide Closed Matters
-            <span style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 38, fontWeight: 900, color: "#334155" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 38, fontWeight: 900, color: "#385a83" }}>
               <input type="checkbox" checked={hideClosedMatters} onChange={(event) => setHideClosedMatters(event.target.checked)} data-barsh-court-calendar-hide-closed-matters-filter="true" />
               {hideClosedMatters ? "Yes" : "No"}
             </span>
@@ -856,7 +856,7 @@ export default function CourtCalendarPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Import Calendar Numbers from WebCivil Local</h2>
-              <p style={{ margin: 0, color: "#64748b", fontWeight: 750, maxWidth: 980 }}>
+              <p style={{ margin: 0, color: "#385a83", fontWeight: 750, maxWidth: 980 }}>
                 Copy the template from the currently loaded calendar results, look up the calendar numbers in WebCivil Local, paste the completed rows here, preview, then apply.
               </p>
             </div>
@@ -915,7 +915,7 @@ export default function CourtCalendarPage() {
             <label style={labelStyle}>Index Number<input value={form.indexAaaNumber} onChange={(event) => setForm((prev) => ({ ...prev, indexAaaNumber: event.target.value }))} style={inputStyle} /></label>
             <label style={labelStyle}>Calendar Number
               <input value={form.calendarNumber} onChange={(event) => setForm((prev) => ({ ...prev, calendarNumber: event.target.value }))} style={inputStyle} />
-              <span style={{ marginTop: 4, color: "#64748b", fontSize: 11, fontWeight: 800, lineHeight: 1.25 }} data-barsh-court-calendar-webcivil-local-helper="true">
+              <span style={{ marginTop: 4, color: "#385a83", fontSize: 11, fontWeight: 800, lineHeight: 1.25 }} data-barsh-court-calendar-webcivil-local-helper="true">
                 Confirm manually in WebCivil Local using court, date range, and index number.
                 <a href={WEB_CIVIL_LOCAL_CALENDAR_URL} target="_blank" rel="noreferrer" style={{ color: "#00346e", fontWeight: 950, marginLeft: 8 }}>Open WebCivil Local Court Calendars</a>
               </span>
@@ -924,7 +924,7 @@ export default function CourtCalendarPage() {
             <label style={labelStyle}>Reminder Date<input type="date" value={form.reminderDate} onChange={(event) => setForm((prev) => ({ ...prev, reminderDate: event.target.value }))} style={inputStyle} /></label>
             <label style={{ ...labelStyle, alignContent: "end" }}>
               Reminder Tickler
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#0f172a" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#00346e" }}>
                 <input type="checkbox" checked={form.createReminderTickler} onChange={(event) => setForm((prev) => ({ ...prev, createReminderTickler: event.target.checked }))} />
                 Create if reminder date is set
               </span>
@@ -951,7 +951,7 @@ export default function CourtCalendarPage() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 20 }}>Calendar Results</h2>
-            <p style={{ margin: "4px 0 0", color: "#64748b", fontWeight: 750 }}>
+            <p style={{ margin: "4px 0 0", color: "#385a83", fontWeight: 750 }}>
               {result?.ok ? `${events.length} event(s).` : "Run a search to load events."}
             </p>
           </div>

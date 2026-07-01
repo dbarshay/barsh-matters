@@ -50,7 +50,7 @@ const inputStyle = {
   padding: "10px 12px",
   fontSize: 14,
   background: "#ffffff",
-  color: "#0f172a",
+  color: "#00346e",
 } as const;
 
 const primaryButtonStyle = {
@@ -67,7 +67,7 @@ const primaryButtonStyle = {
 const secondaryButtonStyle = {
   border: "1px solid #64748b",
   background: "#f8fafc",
-  color: "#334155",
+  color: "#385a83",
   borderRadius: 999,
   padding: "10px 14px",
   fontSize: 13,
@@ -149,7 +149,7 @@ function adminUsersPhase12TwoFactorStatusLabel(user: {
 function adminUsersTwoFactorStatusBadgeStyle(status: string): React.CSSProperties {
   const base: React.CSSProperties = { display: "inline-block", borderRadius: 999, padding: "3px 9px", fontSize: 12, fontWeight: 850, border: "1px solid", whiteSpace: "nowrap" };
   if (status === "Enabled") return { ...base, background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" };
-  if (status === "Disabled") return { ...base, background: "#f1f5f9", borderColor: "#cbd5e1", color: "#475569" };
+  if (status === "Disabled") return { ...base, background: "#f1f5f9", borderColor: "#cbd5e1", color: "#385a83" };
   if (status === "Pending Setup") return { ...base, background: "#fefce8", borderColor: "#fde68a", color: "#713f12" };
   return { ...base, background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }; // Missing Phone
 }
@@ -1241,12 +1241,12 @@ export default function AdminUsersPlanningPage() {
   }
 
   return (
-    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" data-barsh-admin-users-audit-history-back-cache-bust="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
+    <main data-barsh-admin-users-planning-page="phase3-guarded" data-barsh-admin-users-browser-back-action-history="true" data-barsh-admin-users-audit-history-back-live-reload="true" data-barsh-admin-users-audit-history-back-always-live="true" data-barsh-admin-users-audit-history-back-hard-refresh="true" data-barsh-admin-users-audit-history-back-cache-bust="true" style={{ minHeight: "100vh", background: "#f8fafc", color: "#00346e", padding: 30, boxSizing: "border-box" }}>
       <BarshHeader />
       <div style={{ width: "100%", maxWidth: "none", margin: 0, display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
-          <p data-barsh-admin-users-signer-profile-location-note="true" style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>
+          <p data-barsh-admin-users-signer-profile-location-note="true" style={{ margin: "8px 0 0", color: "#385a83", lineHeight: 1.5 }}>
             Signer profiles are managed on each Admin User. Use <strong>Signer Profile</strong> to manage signer eligibility, signature name, email, phone extension, and fax. Use <strong>Edit</strong> for roles, security, and general user settings. These fields drive signer.* document-generation tokens.
           </p>
         </section>
@@ -1284,21 +1284,21 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Create User</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.5 }}>Create a new administrator user with signer profile and two-factor setup fields. Preview remains required before Apply. Roles are assigned separately, and this action does not change permission enforcement.</p>
+              <p style={{ margin: "8px 0 0", color: "#385a83", lineHeight: 1.5 }}>Create a new administrator user with signer profile and two-factor setup fields. Preview remains required before Apply. Roles are assigned separately, and this action does not change permission enforcement.</p>
             </div>
             <span data-barsh-admin-users-create-user-enforcement-disabled="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>Enforcement Disabled</span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 14 }}>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               First Name
               <input data-barsh-admin-users-create-first-name="true" value={createFirstName} onChange={(event) => { setCreateFirstName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Jane" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Last Name
               <input data-barsh-admin-users-create-last-name="true" value={createLastName} onChange={(event) => { setCreateLastName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Doe" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Username
               <input data-barsh-admin-users-create-username="true" value={createUsername} onChange={(event) => { setCreateUsername(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="JDoe" />
             </label>
@@ -1310,15 +1310,15 @@ export default function AdminUsersPlanningPage() {
               Display Name
               <input data-barsh-admin-users-create-display-name="true" value={createDisplayName} onChange={(event) => setCreateDisplayName(event.target.value)} style={inputStyle} placeholder="New Admin User" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Phone Extension
               <input data-barsh-admin-users-create-phone-extension="true" value={createPhoneExtension} onChange={(event) => { setCreatePhoneExtension(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="101" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Fax Number
               <input data-barsh-admin-users-create-fax-number="true" value={createFaxNumber} onChange={(event) => { setCreateFaxNumber(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="(516) 706-5055" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Signature Name
               <input data-barsh-admin-users-create-signature-block-name="true" value={createSignatureBlockName} onChange={(event) => { setCreateSignatureBlockName(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Jane Doe" />
             </label>
@@ -1326,30 +1326,30 @@ export default function AdminUsersPlanningPage() {
               <input data-barsh-admin-users-create-signer-eligible="true" type="checkbox" checked={createSignerEligible} onChange={(event) => { setCreateSignerEligible(event.target.checked); setCreateResult(null); }} />
               Eligible signer for document generation
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Status
               <select data-barsh-admin-users-create-status="true" value={createStatus} onChange={(event) => { setCreateStatus(event.target.value); setCreateInactive(event.target.value !== "active"); setCreateResult(null); }} style={inputStyle}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155" }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83" }}>
               Cell Phone (required) <span style={{ color: "#dc2626" }}>*</span>
               <input data-barsh-admin-users-create-two-factor-phone="true" required value={createTwoFactorPhone} onChange={(event) => { setCreateTwoFactorPhone(event.target.value); setCreateResult(null); }} style={inputStyle} placeholder="Expected format: (631) 555-1234" />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
               <input data-barsh-admin-users-create-locked="true" type="checkbox" checked={createLocked} onChange={(event) => { setCreateLocked(event.target.checked); setCreateResult(null); }} />
               Locked
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83", display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
               <input data-barsh-admin-users-create-inactive="true" type="checkbox" checked={createInactive} onChange={(event) => { setCreateInactive(event.target.checked); setCreateStatus(event.target.checked ? "inactive" : "active"); setCreateResult(null); }} />
               Inactive
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83", display: "flex", alignItems: "center", gap: 8 }}>
               <input data-barsh-admin-users-create-two-factor-disabled="true" type="checkbox" checked={createTwoFactorDisabled} onChange={(event) => { setCreateTwoFactorDisabled(event.target.checked); setCreateResult(null); }} />
               2FA Disabled
             </label>
-            <label style={{ fontSize: 12, fontWeight: 900, color: "#334155", display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83", display: "flex", alignItems: "center", gap: 8 }}>
               <input data-barsh-admin-users-create-two-factor-pending-setup="true" type="checkbox" checked={createTwoFactorPendingSetup} onChange={(event) => { setCreateTwoFactorPendingSetup(event.target.checked); setCreateResult(null); }} />
               2FA Pending Setup
             </label>
@@ -1373,7 +1373,7 @@ export default function AdminUsersPlanningPage() {
           </div>
 
           <div data-barsh-admin-users-create-result="true" style={{ marginTop: 14, background: createResult?.ok ? "#f0fdf4" : createResult ? "#fef2f2" : "#f8fafc", border: `1px solid ${createResult?.ok ? "#bbf7d0" : createResult ? "#fecaca" : "#e2e8f0"}`, borderRadius: 14, padding: 12 }}>
-            <div style={{ fontWeight: 950, color: createResult?.ok ? "#166534" : createResult ? "#991b1b" : "#475569" }}>{createMessage || "Preview the request before applying. Apply remains disabled until a matching preview succeeds."}</div>
+            <div style={{ fontWeight: 950, color: createResult?.ok ? "#166534" : createResult ? "#991b1b" : "#385a83" }}>{createMessage || "Preview the request before applying. Apply remains disabled until a matching preview succeeds."}</div>
             {createResult ? <pre style={{ margin: "10px 0 0", whiteSpace: "pre-wrap", fontSize: 12, fontFamily: "monospace" }}>{JSON.stringify(createResult, null, 2)}</pre> : null}
           </div>
         </section>) : null}
@@ -1455,8 +1455,8 @@ export default function AdminUsersPlanningPage() {
                           />
                           {card.label}
                         </span>
-                        <span style={{ fontFamily: "monospace", color: "#475569", fontSize: 12 }}>{card.grantPermissionKey}</span>
-                        <span style={{ color: "#475569", lineHeight: 1.35, fontSize: 12 }}>{card.description}</span>
+                        <span style={{ fontFamily: "monospace", color: "#385a83", fontSize: 12 }}>{card.grantPermissionKey}</span>
+                        <span style={{ color: "#385a83", lineHeight: 1.35, fontSize: 12 }}>{card.description}</span>
                         {card.ownerOnlyRecommended ? <span style={{ color: "#7c2d12", fontSize: 12, fontWeight: 900 }}>Owner-only recommended unless explicitly granted.</span> : null}
                       </label>
                     );
@@ -1476,7 +1476,7 @@ export default function AdminUsersPlanningPage() {
                       </button>
                     </div>
                     {editAdminCardGrantResult ? (
-                      <pre data-barsh-admin-users-phase-v4c-card-grant-result="true" style={{ width: "100%", whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #dbeafe", borderRadius: 12, padding: 10, margin: 0, color: "#0f172a", fontSize: 12 }}>
+                      <pre data-barsh-admin-users-phase-v4c-card-grant-result="true" style={{ width: "100%", whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #dbeafe", borderRadius: 12, padding: 10, margin: 0, color: "#00346e", fontSize: 12 }}>
                         {JSON.stringify({
                           mode: editAdminCardGrantResult.mode,
                           requestedGrantKeys: editAdminCardGrantResult.requestedGrantKeys,
@@ -1508,7 +1508,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Start 2FA Setup</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", fontWeight: 800 }}>This starts pending setup only. It does not directly enforce 2FA for the sole owner account.</p>
+              <p style={{ margin: "8px 0 0", color: "#385a83", fontWeight: 800 }}>This starts pending setup only. It does not directly enforce 2FA for the sole owner account.</p>
             </div>
             <button data-barsh-admin-users-2fa-setup-cancel-button="true" type="button" onClick={closeTwoFactorSetupPanel} disabled={twoFactorSetupBusy} style={secondaryButtonStyle}>Cancel</button>
           </div>
@@ -1540,7 +1540,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
             <div>
               <h2 style={{ margin: 0 }}>Verify 2FA Setup</h2>
-              <p style={{ margin: "8px 0 0", color: "#475569", fontWeight: 800 }}>Create a setup challenge, enter the verification code, and then mark 2FA as enforced.</p>
+              <p style={{ margin: "8px 0 0", color: "#385a83", fontWeight: 800 }}>Create a setup challenge, enter the verification code, and then mark 2FA as enforced.</p>
             </div>
             <button data-barsh-admin-users-2fa-verify-cancel-button="true" type="button" onClick={closeTwoFactorVerifyPanel} disabled={twoFactorVerifyBusy} style={secondaryButtonStyle}>Cancel</button>
           </div>
@@ -1560,7 +1560,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 20 }}>Signer Profiles</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Each signer profile is stored directly on the Admin User record. A signer is usable for template generation only when eligible, active, unlocked, and complete.
               </p>
             </div>
@@ -1569,10 +1569,10 @@ export default function AdminUsersPlanningPage() {
             </span>
           </div>
           <div data-barsh-admin-users-signer-profile-required-fields="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Eligibility</strong><p style={{ margin: "6px 0 0", color: "#475569" }}>Signer Eligible must be enabled.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Signature Name</strong><p style={{ margin: "6px 0 0", color: "#475569" }}>This is the typed signature/name used by generated documents.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Contact Fields</strong><p style={{ margin: "6px 0 0", color: "#475569" }}>Email, extension, and fax resolve signer contact tokens.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>No Wet Signature</strong><p style={{ margin: "6px 0 0", color: "#475569" }}>Wet signature upload/storage remains intentionally disabled.</p></div>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Eligibility</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Signer Eligible must be enabled.</p></div>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Signature Name</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>This is the typed signature/name used by generated documents.</p></div>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Contact Fields</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Email, extension, and fax resolve signer contact tokens.</p></div>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>No Wet Signature</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Wet signature upload/storage remains intentionally disabled.</p></div>
           </div>
         </section>
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
@@ -1595,7 +1595,7 @@ export default function AdminUsersPlanningPage() {
                     <td data-barsh-admin-users-table-signature-name="true" style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{user.signatureBlockName || "—"}</td>
                     <td data-barsh-admin-users-table-signer-contact="true" style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
                       <div>{user.email || "—"}</div>
-                      <div style={{ color: "#64748b", fontSize: 12 }}>Ext: {user.phoneExtension || "—"} · Fax: {user.faxNumber || "—"}</div>
+                      <div style={{ color: "#385a83", fontSize: 12 }}>Ext: {user.phoneExtension || "—"} · Fax: {user.faxNumber || "—"}</div>
                     </td>
                   <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
                     <div style={{ fontWeight: 900 }}>{adminUsersPhaseV4ERoleDisplay(user)}</div>
@@ -1616,7 +1616,7 @@ export default function AdminUsersPlanningPage() {
                   </td>
                 </tr>
               );
-            }) : <tr><td colSpan={9} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No administrator users found.</td></tr>}</tbody>
+            }) : <tr><td colSpan={9} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#385a83" }}>No administrator users found.</td></tr>}</tbody>
           </table>
         </section>
 
@@ -1658,13 +1658,13 @@ export default function AdminUsersPlanningPage() {
               <h2 id="password-reset-one-time-title" style={{ margin: 0, fontSize: 20, fontWeight: 950 }}>Temporary Password</h2>
             </div>
             <div style={{ padding: 20 }}>
-              <p style={{ margin: "0 0 12px", color: "#334155", lineHeight: 1.5, fontWeight: 800 }}>
+              <p style={{ margin: "0 0 12px", color: "#385a83", lineHeight: 1.5, fontWeight: 800 }}>
                 This temporary password is shown once. Copy it now; it is not stored or recoverable.
               </p>
               <div data-barsh-admin-users-password-reset-one-time-password="true" style={{ padding: 14, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", fontFamily: "monospace", fontSize: 16, fontWeight: 900, overflowWrap: "anywhere" }}>
                 {passwordResetOneTimePassword}
               </div>
-              {passwordResetCopyMessage ? <p style={{ margin: "10px 0 0", color: "#475569", fontWeight: 800 }}>{passwordResetCopyMessage}</p> : null}
+              {passwordResetCopyMessage ? <p style={{ margin: "10px 0 0", color: "#385a83", fontWeight: 800 }}>{passwordResetCopyMessage}</p> : null}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
                 <button data-barsh-admin-users-password-reset-copy-button="true" type="button" onClick={() => void copyPasswordResetOneTimePassword()} style={secondaryButtonStyle}>
                   Copy Temporary Password
@@ -1690,7 +1690,7 @@ export default function AdminUsersPlanningPage() {
               <button data-barsh-admin-users-signer-profile-close-button="true" type="button" onClick={closeSignerProfilePanel} disabled={signerProfileBusy} style={{ border: "1px solid rgba(255,255,255,0.75)", background: "transparent", color: "#ffffff", borderRadius: 999, padding: "8px 12px", fontWeight: 950, cursor: "pointer" }}>Close</button>
             </div>
             <div style={{ padding: 20, display: "grid", gap: 14 }}>
-              <p style={{ margin: 0, color: "#475569", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, color: "#385a83", lineHeight: 1.5 }}>
                 These fields control signer.* template generation tokens only. This popup does not edit roles, password, lockout, 2FA, or admin-card access.
               </p>
               <div data-barsh-admin-users-signer-profile-only-fields="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
@@ -1727,23 +1727,23 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>Owner</strong>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Everything. Full system access, all Admin cards, user/security controls, and no-lockout protection.</p>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>Everything. Full system access, all Admin cards, user/security controls, and no-lockout protection.</p>
             </div>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>Administrator</strong>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Everything outside Admin. Admin access is limited to the selected Admin-card grants shown under the role.</p>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>Everything outside Admin. Admin access is limited to the selected Admin-card grants shown under the role.</p>
             </div>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>Full User</strong>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Full non-admin app access, including payment functions. No Admin screen.</p>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>Full non-admin app access, including payment functions. No Admin screen.</p>
             </div>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>Basic User</strong>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Full non-admin app access except payment, billing, and payment-status functions. No Admin screen.</p>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>Full non-admin app access except payment, billing, and payment-status functions. No Admin screen.</p>
             </div>
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#ffffff" }}>
               <strong>View Only</strong>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>Can view non-admin screens only. No create, edit, delete, upload, finalize, payment, or Admin actions.</p>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>Can view non-admin screens only. No create, edit, delete, upload, finalize, payment, or Admin actions.</p>
             </div>
           </div>
         </section>
@@ -1752,7 +1752,7 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 18 }}>Permission Simulator Preview</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Read-only dry-run summary from the current role coverage and route classification. Permission enforcement is not active yet.
               </p>
             </div>
@@ -1764,7 +1764,7 @@ export default function AdminUsersPlanningPage() {
           <div data-barsh-admin-users-phase-w4-simulator-summary="true" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#475569" }}>
+                <tr style={{ textAlign: "left", color: "#385a83" }}>
                   <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Role</th>
                   <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Allowed</th>
                   <th style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>Blocked</th>
@@ -1794,7 +1794,7 @@ export default function AdminUsersPlanningPage() {
             </table>
           </div>
 
-          <p data-barsh-admin-users-phase-w4-no-enforcement-note="true" style={{ margin: 0, color: "#64748b", lineHeight: 1.45, fontSize: 13 }}>
+          <p data-barsh-admin-users-phase-w4-no-enforcement-note="true" style={{ margin: 0, color: "#385a83", lineHeight: 1.45, fontSize: 13 }}>
             These numbers are planning output only. They do not hide buttons, block routes, change sessions, or modify database permissions.
           </p>
         </section>

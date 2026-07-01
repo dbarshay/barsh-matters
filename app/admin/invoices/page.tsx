@@ -25,7 +25,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e5e7eb",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   background: "#f8fafc",
 };
 
@@ -94,11 +94,11 @@ export default function AdminInvoiceSearchPage() {
       </div>
 
       <section style={{ marginBottom: 22 }}>
-        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>
+        <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>
           Provider-Level Reporting
         </div>
         <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>Global Invoice Search</h1>
-        <p style={{ color: "#475569", margin: 0 }}>
+        <p style={{ color: "#385a83", margin: 0 }}>
           Invoice reporting across provider/clients. Search by invoice number, provider, matter, patient, insurer, lawsuit, source row, or description.
         </p>
       </section>
@@ -132,7 +132,7 @@ export default function AdminInvoiceSearchPage() {
             <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }} />
           </label>
 
-          <button type="button" onClick={search} disabled={loading} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #00346e", background: "#00346e", color: "#fff", fontWeight: 900 }}>
+          <button type="button" onClick={search} disabled={loading} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #00346e", background: "#00346e", color: "#ffffff", fontWeight: 900 }}>
             {loading ? "Searching..." : "Search"}
           </button>
         </div>

@@ -283,7 +283,7 @@ const cardStyle: React.CSSProperties = {
 const buttonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
-  color: "#fff",
+  color: "#ffffff",
   borderRadius: 14,
   padding: "11px 15px",
   fontWeight: 950,
@@ -293,8 +293,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#0f172a",
+  background: "#ffffff",
+  color: "#00346e",
 };
 
 function formatDate(value: string): string {
@@ -361,7 +361,7 @@ function detailRow(label: string, value: React.ReactNode) {
   return (
     <tr key={label} style={{ borderBottom: "1px solid #f1f5f9" }}>
       <td style={{ padding: "9px 8px", fontWeight: 950, width: 260, verticalAlign: "top" }}>{label}</td>
-      <td style={{ padding: "9px 8px", color: "#334155", wordBreak: "break-word", verticalAlign: "top" }}>{value ?? "—"}</td>
+      <td style={{ padding: "9px 8px", color: "#385a83", wordBreak: "break-word", verticalAlign: "top" }}>{value ?? "—"}</td>
     </tr>
   );
 }
@@ -970,7 +970,7 @@ export default function AdminBackupRestorePage() {
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
-        color: "#0f172a",
+        color: "#00346e",
         padding: "28px 30px 46px",
         boxSizing: "border-box",
       }}
@@ -982,25 +982,25 @@ export default function AdminBackupRestorePage() {
             Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Backup / Restore</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 960 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, maxWidth: 960 }}>
             Run a manual local Barsh Matters database/index backup, review recent backups, and run a restore preview.  Restore execution is intentionally disabled in this UI and requires a separate approved guarded workflow.
           </p>
         </header>
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
           <div style={cardStyle}>
-            <div style={{ fontSize: 13, fontWeight: 950, color: "#64748b", textTransform: "uppercase" }}>Latest Backup</div>
+            <div style={{ fontSize: 13, fontWeight: 950, color: "#385a83", textTransform: "uppercase" }}>Latest Backup</div>
             <div style={{ marginTop: 8, fontSize: 18, fontWeight: 950 }}>
               {loading ? "Loading..." : formatDate(status?.latestManifest?.createdAt || "")}
             </div>
-            <div style={{ marginTop: 8, color: "#475569", lineHeight: 1.45, wordBreak: "break-word" }}>
+            <div style={{ marginTop: 8, color: "#385a83", lineHeight: 1.45, wordBreak: "break-word" }}>
               {status?.latestBackupDisplay || "No latest backup pointer found."}
             </div>
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 13, fontWeight: 950, color: "#64748b", textTransform: "uppercase" }}>Database Snapshot</div>
-            <div style={{ marginTop: 8, display: "grid", gap: 5, color: "#334155", lineHeight: 1.45 }}>
+            <div style={{ fontSize: 13, fontWeight: 950, color: "#385a83", textTransform: "uppercase" }}>Database Snapshot</div>
+            <div style={{ marginTop: 8, display: "grid", gap: 5, color: "#385a83", lineHeight: 1.45 }}>
               <div><strong>Kind:</strong> {status?.latestManifest?.database?.kind || "—"}</div>
               <div><strong>Tables:</strong> {latestCounts?.tables ?? "—"}</div>
               <div><strong>Indexes:</strong> {latestCounts?.indexes ?? "—"}</div>
@@ -1009,8 +1009,8 @@ export default function AdminBackupRestorePage() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 13, fontWeight: 950, color: "#64748b", textTransform: "uppercase" }}>Safety Contract</div>
-            <div style={{ marginTop: 8, display: "grid", gap: 5, color: "#334155", lineHeight: 1.45 }}>
+            <div style={{ fontSize: 13, fontWeight: 950, color: "#385a83", textTransform: "uppercase" }}>Safety Contract</div>
+            <div style={{ marginTop: 8, display: "grid", gap: 5, color: "#385a83", lineHeight: 1.45 }}>
               <div><strong>Uses pg_dump:</strong> {passFail(status?.latestManifest?.databasePolicy?.usesPgDump)}</div>
               <div><strong>Uses Prisma client:</strong> {passFail(status?.latestManifest?.databasePolicy?.usesPrismaClient)}</div>
               <div><strong>Pulls docs from Clio:</strong> {passFail(status?.latestManifest?.documentFilePolicy?.pullsDocumentsFromClio)}</div>
@@ -1028,7 +1028,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Log Archive Preview</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Preview for cleaning up old scheduled-backup log noise.  This section shows log health, old-error presence, file size, line count, and proposed archive names.
             </p>
           </div>
@@ -1109,7 +1109,7 @@ export default function AdminBackupRestorePage() {
                   borderRadius: 14,
                   padding: 12,
                   fontWeight: 850,
-                  color: "#0f172a",
+                  color: "#00346e",
                 }}
               />
             </label>
@@ -1122,7 +1122,7 @@ export default function AdminBackupRestorePage() {
               style={{
                 border: "1px solid #b45309",
                 background: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "#b45309" : "#e2e8f0",
-                color: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "#fff" : "#64748b",
+                color: archiveErrorLogConfirm === "ARCHIVE ERROR LOG" && !actionBusy ? "#ffffff" : "#385a83",
                 borderRadius: 14,
                 padding: "12px 15px",
                 fontWeight: 950,
@@ -1143,7 +1143,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Alert State</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Alert state from the monitored backup wrapper.  This panel shows the last alert and duplicate-suppression state.
             </p>
           </div>
@@ -1170,7 +1170,7 @@ export default function AdminBackupRestorePage() {
                   gap: 5,
                 }}
               >
-                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 950, textTransform: "uppercase" }}>{label}</div>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase" }}>{label}</div>
                 <div style={{ fontSize: 15, fontWeight: 950, wordBreak: "break-word" }}>{String(value ?? "—")}</div>
               </div>
             ))}
@@ -1197,7 +1197,7 @@ export default function AdminBackupRestorePage() {
             style={{
               border: "1px solid #e5e7eb",
               background: "#f8fafc",
-              color: "#334155",
+              color: "#385a83",
               borderRadius: 16,
               padding: 13,
               lineHeight: 1.45,
@@ -1215,7 +1215,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Scheduled Backup Health</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Visibility for the scheduled local database/index backup system.  This section reads backup status, retention policy, and recent backup logs.
             </p>
           </div>
@@ -1265,7 +1265,7 @@ export default function AdminBackupRestorePage() {
               style={{
                 border: "1px solid #e5e7eb",
                 background: "#fff",
-                color: "#334155",
+                color: "#385a83",
                 borderRadius: 16,
                 padding: 13,
                 fontWeight: 900,
@@ -1314,7 +1314,7 @@ export default function AdminBackupRestorePage() {
                   }}
                 >
                   <span>{title}</span>
-                  <span style={{ color: "#64748b", fontSize: 12, wordBreak: "break-word" }}>
+                  <span style={{ color: "#385a83", fontSize: 12, wordBreak: "break-word" }}>
                     {log?.displayPath || "—"}; exists: {log?.exists ? "YES" : "NO"}
                   </span>
                 </div>
@@ -1342,7 +1342,7 @@ export default function AdminBackupRestorePage() {
         <section style={{ ...cardStyle, display: "grid", gap: 14 }} data-backup-health-warnings="display-only">
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Health</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Warnings based on the latest local backup manifest and backup files.
             </p>
           </div>
@@ -1385,7 +1385,7 @@ export default function AdminBackupRestorePage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 22 }}>Manual Backup</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Creates a local database/index backup using the existing backup script and then refreshes the latest-backup status.
               </p>
             </div>
@@ -1403,7 +1403,7 @@ export default function AdminBackupRestorePage() {
         <section style={{ ...cardStyle, display: "grid", gap: 14 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Restore Preview Only</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Select a backup and run the existing restore preview script.  This displays what would be reviewed before a guarded restore.
             </p>
           </div>
@@ -1420,7 +1420,7 @@ export default function AdminBackupRestorePage() {
                 padding: 12,
                 fontWeight: 850,
                 background: "#fff",
-                color: "#0f172a",
+                color: "#00346e",
               }}
             >
               {(status?.backups || []).map((backup) => (
@@ -1430,7 +1430,7 @@ export default function AdminBackupRestorePage() {
               ))}
             </select>
             {selectedBackupRow && (
-              <div style={{ color: "#475569", lineHeight: 1.45 }}>
+              <div style={{ color: "#385a83", lineHeight: 1.45 }}>
                 Selected: {formatDate(selectedBackupRow.createdAt || selectedBackupRow.modifiedAt)}; git {shortHead(selectedBackupRow.gitHead)}; tables {selectedBackupRow.tableCount ?? "—"}; indexes {selectedBackupRow.indexCount ?? "—"}.
               </div>
             )}
@@ -1453,7 +1453,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Guarded Restore Plan Preview</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               This section summarizes the selected backup and the required future restore checklist.
             </p>
           </div>
@@ -1475,7 +1475,7 @@ export default function AdminBackupRestorePage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ textAlign: "left", color: "#385a83", borderBottom: "1px solid #e5e7eb" }}>
                   <th style={{ padding: "10px 8px", width: 220 }}>Restore-plan field</th>
                   <th style={{ padding: "10px 8px" }}>Value</th>
                 </tr>
@@ -1484,7 +1484,7 @@ export default function AdminBackupRestorePage() {
                 {restorePlanRows.map(([label, value]) => (
                   <tr key={label} style={{ borderBottom: "1px solid #f1f5f9" }}>
                     <td style={{ padding: "10px 8px", fontWeight: 950 }}>{label}</td>
-                    <td style={{ padding: "10px 8px", wordBreak: "break-word", color: "#334155" }}>{value}</td>
+                    <td style={{ padding: "10px 8px", wordBreak: "break-word", color: "#385a83" }}>{value}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1521,7 +1521,7 @@ export default function AdminBackupRestorePage() {
             style={{
               border: "1px solid #cbd5e1",
               background: "#e2e8f0",
-              color: "#64748b",
+              color: "#385a83",
               borderRadius: 14,
               padding: "12px 15px",
               fontWeight: 950,
@@ -1542,7 +1542,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Compare Backups</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Comparison preview for two backup manifests.
             </p>
           </div>
@@ -1560,7 +1560,7 @@ export default function AdminBackupRestorePage() {
                   padding: 12,
                   fontWeight: 850,
                   background: "#fff",
-                  color: "#0f172a",
+                  color: "#00346e",
                 }}
               >
                 {(status?.backups || []).map((backup) => (
@@ -1583,7 +1583,7 @@ export default function AdminBackupRestorePage() {
                   padding: 12,
                   fontWeight: 850,
                   background: "#fff",
-                  color: "#0f172a",
+                  color: "#00346e",
                 }}
               >
                 {(status?.backups || []).map((backup) => (
@@ -1617,7 +1617,7 @@ export default function AdminBackupRestorePage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ textAlign: "left", color: "#385a83", borderBottom: "1px solid #e5e7eb" }}>
                   <th style={{ padding: "10px 8px", width: 260 }}>Field</th>
                   <th style={{ padding: "10px 8px" }}>Baseline</th>
                   <th style={{ padding: "10px 8px" }}>Comparison</th>
@@ -1634,8 +1634,8 @@ export default function AdminBackupRestorePage() {
                     }}
                   >
                     <td style={{ padding: "10px 8px", fontWeight: 950 }}>{row.label}</td>
-                    <td style={{ padding: "10px 8px", color: "#334155", wordBreak: "break-word" }}>{row.baseline}</td>
-                    <td style={{ padding: "10px 8px", color: "#334155", wordBreak: "break-word" }}>{row.comparison}</td>
+                    <td style={{ padding: "10px 8px", color: "#385a83", wordBreak: "break-word" }}>{row.baseline}</td>
+                    <td style={{ padding: "10px 8px", color: "#385a83", wordBreak: "break-word" }}>{row.comparison}</td>
                     <td style={{ padding: "10px 8px", fontWeight: 950 }}>{row.differs ? "YES" : "NO"}</td>
                   </tr>
                 ))}
@@ -1654,7 +1654,7 @@ export default function AdminBackupRestorePage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>Backup Audit Report</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
               Audit report generated from the backup metadata already loaded on this page.
             </p>
           </div>
@@ -1685,7 +1685,7 @@ export default function AdminBackupRestorePage() {
                   gap: 5,
                 }}
               >
-                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 950, textTransform: "uppercase" }}>{label}</div>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase" }}>{label}</div>
                 <div style={{ fontSize: 18, fontWeight: 950 }}>{String(value ?? "—")}</div>
               </div>
             ))}
@@ -1703,7 +1703,7 @@ export default function AdminBackupRestorePage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ textAlign: "left", color: "#385a83", borderBottom: "1px solid #e5e7eb" }}>
                   <th style={{ padding: "10px 8px" }}>Backup</th>
                   <th style={{ padding: "10px 8px" }}>Created</th>
                   <th style={{ padding: "10px 8px" }}>Git</th>
@@ -1745,7 +1745,7 @@ export default function AdminBackupRestorePage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e5e7eb" }}>
+                <tr style={{ textAlign: "left", color: "#385a83", borderBottom: "1px solid #e5e7eb" }}>
                   <th style={{ padding: "10px 8px" }}>Created</th>
                   <th style={{ padding: "10px 8px" }}>Path</th>
                   <th style={{ padding: "10px 8px" }}>Git</th>
@@ -1759,7 +1759,7 @@ export default function AdminBackupRestorePage() {
                 {(status?.backups || []).map((backup) => (
                   <tr key={backup.path} style={{ borderBottom: "1px solid #f1f5f9" }}>
                     <td style={{ padding: "10px 8px", whiteSpace: "nowrap" }}>{formatDate(backup.createdAt || backup.modifiedAt)}</td>
-                    <td style={{ padding: "10px 8px", wordBreak: "break-word", color: "#334155" }}>{backup.displayPath}</td>
+                    <td style={{ padding: "10px 8px", wordBreak: "break-word", color: "#385a83" }}>{backup.displayPath}</td>
                     <td style={{ padding: "10px 8px", whiteSpace: "nowrap" }}>{shortHead(backup.gitHead)}</td>
                     <td style={{ padding: "10px 8px" }}>{backup.tableCount ?? "—"}</td>
                     <td style={{ padding: "10px 8px" }}>{backup.indexCount ?? "—"}</td>
@@ -1777,7 +1777,7 @@ export default function AdminBackupRestorePage() {
                         style={{
                           border: "1px solid #cbd5e1",
                           background: "#fff",
-                          color: "#0f172a",
+                          color: "#00346e",
                           borderRadius: 12,
                           padding: "8px 10px",
                           fontWeight: 950,
@@ -1808,12 +1808,12 @@ export default function AdminBackupRestorePage() {
           >
             {message && <div style={{ fontWeight: 950 }}>{message}</div>}
             {actionResult?.output && (
-              <pre style={{ margin: 0, whiteSpace: "pre-wrap", overflowX: "auto", color: "#0f172a" }}>
+              <pre style={{ margin: 0, whiteSpace: "pre-wrap", overflowX: "auto", color: "#00346e" }}>
                 {actionResult.output}
               </pre>
             )}
             {actionResult?.stdoutTail && (
-              <pre style={{ margin: 0, whiteSpace: "pre-wrap", overflowX: "auto", color: "#0f172a" }}>
+              <pre style={{ margin: 0, whiteSpace: "pre-wrap", overflowX: "auto", color: "#00346e" }}>
                 {actionResult.stdoutTail}
               </pre>
             )}
@@ -1864,7 +1864,7 @@ export default function AdminBackupRestorePage() {
                   Backup Manifest Detail
                 </div>
                 <h2 style={{ margin: 0, fontSize: 26 }}>Backup Manifest Inspector</h2>
-                <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+                <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45 }}>
                   Passwords and database URLs are not displayed; the manifest only reports whether a password was stored.
                 </p>
               </header>
@@ -1982,7 +1982,7 @@ export default function AdminBackupRestorePage() {
                   style={{
                     border: "1px solid #cbd5e1",
                     background: "#fff",
-                    color: "#0f172a",
+                    color: "#00346e",
                     borderRadius: 14,
                     padding: "11px 15px",
                     fontWeight: 950,
@@ -2010,10 +2010,10 @@ export default function AdminBackupRestorePage() {
         </section>
 
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <a href="/admin" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>
+          <a href="/admin" style={{ color: "#385a83", fontWeight: 900, textDecoration: "none" }}>
             ← Back to Admin Home
           </a>
-          <a href="/" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>
+          <a href="/" style={{ color: "#385a83", fontWeight: 900, textDecoration: "none" }}>
             ← Back to Barsh Matters
           </a>
         </div>

@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       margin: 0;
       padding: 32px;
       font-family: Arial, Helvetica, sans-serif;
-      color: #111827;
+      color: #00346e;
       background: #f8fafc;
     }
     .toolbar {
@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
     }
     .subtitle {
       margin-top: 8px;
-      color: #475569;
+      color: #385a83;
       line-height: 1.45;
     }
     .section {
@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
     .section h2 {
       margin: 0 0 12px;
       font-size: 16px;
-      color: #0f172a;
+      color: #00346e;
     }
     .grid {
       display: grid;
@@ -170,13 +170,13 @@ export async function GET(req: NextRequest) {
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #64748b;
+      color: #385a83;
       margin-bottom: 3px;
     }
     .value {
       font-size: 14px;
       font-weight: 700;
-      color: #111827;
+      color: #00346e;
       line-height: 1.35;
     }
     .notice {

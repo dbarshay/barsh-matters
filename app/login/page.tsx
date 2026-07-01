@@ -54,7 +54,7 @@ const pageStyle: React.CSSProperties = {
   placeItems: "center",
   background: "linear-gradient(135deg, #e0f2fe 0%, #f8fafc 52%, #eef2ff 100%)",
   padding: 24,
-  color: "#0f172a",
+  color: "#00346e",
 };
 
 const cardStyle: React.CSSProperties = {
@@ -84,7 +84,7 @@ const labelStyle: React.CSSProperties = {
   gap: 8,
   fontSize: 13,
   fontWeight: 900,
-  color: "#334155",
+  color: "#385a83",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -94,7 +94,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 12,
   padding: "12px 14px",
   fontSize: 15,
-  color: "#0f172a",
+  color: "#00346e",
   outline: "none",
 };
 
@@ -112,8 +112,8 @@ const primaryButtonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
   borderRadius: 12,
-  background: "#f8fafc",
-  color: "#334155",
+  background: "#ffffff",
+  color: "#385a83",
   fontWeight: 900,
   fontSize: 14,
   padding: "10px 14px",
@@ -298,7 +298,7 @@ export default function LoginPage() {
 
         {twoFactor?.active ? (
           <form data-barsh-login-2fa-form="true" onSubmit={handleVerifyCode} style={bodyStyle}>
-            <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.5 }}>{twoFactor.info}</p>
+            <p style={{ margin: 0, color: "#385a83", fontSize: 14, lineHeight: 1.5 }}>{twoFactor.info}</p>
 
             <label style={labelStyle}>
               Verification code
@@ -336,7 +336,7 @@ export default function LoginPage() {
           </form>
         ) : (
         <form data-barsh-login-form="true" onSubmit={handleSubmit} style={bodyStyle}>
-          <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.5 }}>
+          <p style={{ margin: 0, color: "#385a83", fontSize: 14, lineHeight: 1.5 }}>
             Sign in with your username and password. During rollout, the legacy admin password still works if the username field is left blank.
           </p>
 

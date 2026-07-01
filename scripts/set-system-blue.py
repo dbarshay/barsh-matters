@@ -47,6 +47,20 @@ def main():
     nr, ng, nb = rgb(new)
     cur_rgb = re.compile(rf"{cr},\s*{cg},\s*{cb}")
 
+    # Muted system blue = the navy softened toward a light slate. Derived from the navy so
+    # secondary/muted text stays in the same family and moves with it.
+    def blend(a, b, w):
+        return tuple(round(a[i] * (1 - w) + b[i] * w) for i in range(3))
+
+    mm = re.search(r'BRAND_NAVY_MUTED\s*=\s*"(#[0-9a-fA-F]{6})"', brand)
+    cur_muted = mm.group(1).lower() if mm else None
+    nmr, nmg, nmb = blend((nr, ng, nb), (112, 128, 152), 0.5)
+    new_muted = "#%02x%02x%02x" % (nmr, nmg, nmb)
+    cur_muted_rgb = None
+    if cur_muted:
+        mr, mg, mb = rgb(cur_muted)
+        cur_muted_rgb = re.compile(rf"{mr},\s*{mg},\s*{mb}")
+
     # 1 + 2: code replace (scoped to source dirs; leaves docs/ historical snapshots alone)
     exts = (".ts", ".tsx", ".mjs", ".cjs", ".js", ".css", ".md")
     changed = 0
@@ -64,10 +78,14 @@ def main():
                     continue
                 n = t.replace(cur, new).replace(cur.upper(), new)
                 n = cur_rgb.sub(f"{nr}, {ng}, {nb}", n)
+                if cur_muted and cur_muted != new_muted:
+                    n = n.replace(cur_muted, new_muted).replace(cur_muted.upper(), new_muted)
+                    if cur_muted_rgb:
+                        n = cur_muted_rgb.sub(f"{nmr}, {nmg}, {nmb}", n)
                 if n != t:
                     open(p, "w", encoding="utf-8").write(n)
                     changed += 1
-    print(f"code files updated: {changed} ({cur} -> {new})")
+    print(f"code files updated: {changed} (navy {cur} -> {new}; muted {cur_muted} -> {new_muted})")
 
     # 3: re-tint logo PNGs (navy pixels -> new; keep gold/white/alpha)
     if Image is None:

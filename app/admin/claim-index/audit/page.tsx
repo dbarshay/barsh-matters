@@ -75,7 +75,7 @@ type AuditResult = {
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#f8fafc",
-  color: "#0f172a",
+  color: "#00346e",
   padding: "28px 30px 46px",
   boxSizing: "border-box",
 };
@@ -91,7 +91,7 @@ const cardStyle: React.CSSProperties = {
 const buttonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
-  color: "#fff",
+  color: "#ffffff",
   borderRadius: 12,
   padding: "10px 14px",
   fontWeight: 950,
@@ -105,8 +105,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#334155",
+  background: "#ffffff",
+  color: "#385a83",
 };
 
 const thStyle: React.CSSProperties = {
@@ -114,7 +114,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #cbd5e1",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#334155",
+  color: "#385a83",
   background: "#f8fafc",
   whiteSpace: "nowrap",
 };
@@ -256,11 +256,11 @@ function exportAuditCsv(result: AuditResult) {
 function SummaryCard({ label, value, note }: { label: string; value: React.ReactNode; note?: string }) {
   return (
     <div style={cardStyle}>
-      <div style={{ fontSize: 12, fontWeight: 950, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      <div style={{ fontSize: 12, fontWeight: 950, color: "#385a83", textTransform: "uppercase", letterSpacing: "0.06em" }}>
         {label}
       </div>
       <div style={{ marginTop: 8, fontSize: 30, fontWeight: 950 }}>{value}</div>
-      {note ? <div style={{ marginTop: 6, color: "#64748b", fontSize: 13 }}>{note}</div> : null}
+      {note ? <div style={{ marginTop: 6, color: "#385a83", fontSize: 13 }}>{note}</div> : null}
     </div>
   );
 }
@@ -339,7 +339,7 @@ export default function AdminClaimIndexAuditPage() {
             Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>ClaimIndex Data-Quality Audit</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, maxWidth: 980 }}>
             Restore-confidence audit of the local ClaimIndex table. This page identifies missing identity fields,
             close-status inconsistencies, lawsuit grouping issues, and financial review flags.
           </p>
@@ -370,7 +370,7 @@ export default function AdminClaimIndexAuditPage() {
         <section style={{ ...cardStyle, borderColor: result?.summary?.criticalIssues ? "#fecaca" : "#bbf7d0", background: result?.summary?.criticalIssues ? "#fff7f7" : "#f0fdf4" }}>
           <strong>Status:</strong> {message}
           {result?.generatedAt ? (
-            <span style={{ color: "#64748b" }}> Generated {dateText(result.generatedAt)}.</span>
+            <span style={{ color: "#385a83" }}> Generated {dateText(result.generatedAt)}.</span>
           ) : null}
         </section>
 
@@ -411,7 +411,7 @@ export default function AdminClaimIndexAuditPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                       <div>
                         <h3 style={{ margin: 0, fontSize: 18 }}>{check.label}</h3>
-                        <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>{check.description}</p>
+                        <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>{check.description}</p>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                         <span style={{ ...severityStyle(check.severity), borderRadius: 999, padding: "6px 10px", fontWeight: 950, textTransform: "uppercase", fontSize: 12 }}>
@@ -472,7 +472,7 @@ export default function AdminClaimIndexAuditPage() {
               </div>
             </section>
 
-            <section style={{ ...cardStyle, color: "#475569", lineHeight: 1.45 }}>
+            <section style={{ ...cardStyle, color: "#385a83", lineHeight: 1.45 }}>
               API safety message: {result.safety || "Read-only ClaimIndex data-quality audit. No write actions are available."}
             </section>
           </>

@@ -40,7 +40,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e5e7eb",
   padding: "8px 8px",
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   background: "#f8fafc",
   position: "sticky",
   top: 0,
@@ -215,7 +215,7 @@ export default function AdminClientsPage() {
       </div>
 
       <section style={{ marginBottom: 22 }}>
-        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
+        <div style={{ color: "#385a83", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
           Administrator
         </div>
         <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>Clients</h1>
@@ -273,7 +273,7 @@ export default function AdminClientsPage() {
           </label>
         </div>
 
-        <div style={{ marginTop: 12, color: error ? "#b91c1c" : "#475569", fontWeight: 700 }}>
+        <div style={{ marginTop: 12, color: error ? "#b91c1c" : "#385a83", fontWeight: 700 }}>
           {error || status}
         </div>
 

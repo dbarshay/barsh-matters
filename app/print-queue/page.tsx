@@ -373,7 +373,7 @@ export default function PrintQueuePage() {
             padding: "6px 10px",
             border: "1px solid #94a3b8",
             borderRadius: 6,
-            color: "#0f172a",
+            color: "#00346e",
             textDecoration: "none",
             background: "#fff",
           }}
@@ -420,7 +420,7 @@ export default function PrintQueuePage() {
         </div>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginTop: 10 }}>
-          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#334155" }}>
+          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#385a83" }}>
             <input
               type="checkbox"
               checked={finalizedPdfOnly}
@@ -428,7 +428,7 @@ export default function PrintQueuePage() {
             />
             Finalized PDFs only
           </label>
-          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#334155" }}>
+          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, fontWeight: 800, color: "#385a83" }}>
             <input
               type="checkbox"
               checked={dedupeClioDocumentId}
@@ -516,7 +516,7 @@ export default function PrintQueuePage() {
           <div style={{ fontWeight: 800 }}>
             Print Queue Items
           </div>
-          <div style={{ color: "#475569", fontSize: 12 }}>
+          <div style={{ color: "#385a83", fontSize: 12 }}>
             Showing {num(queue?.count)} row(s)
             {typeof queue?.rawCount === "number" && queue.rawCount !== queue.count ? ` from ${queue.rawCount} raw row(s)` : ""}
             {queue?.status ? ` with status "${queue.status}"` : ""}
@@ -527,11 +527,11 @@ export default function PrintQueuePage() {
         </div>
 
         {loading && !queue && (
-          <div style={{ padding: 12, color: "#475569" }}>Loading print queue...</div>
+          <div style={{ padding: 12, color: "#385a83" }}>Loading print queue...</div>
         )}
 
         {queue?.ok && rows.length === 0 && (
-          <div style={{ padding: 12, color: "#475569" }}>
+          <div style={{ padding: 12, color: "#385a83" }}>
             No print queue items match the current filters.
           </div>
         )}
@@ -599,7 +599,7 @@ export default function PrintQueuePage() {
                               href={clioMatterUrl(row.masterMatterId)}
                               target="_blank"
                               rel="noreferrer"
-                              style={{ color: "#475569", fontSize: 11 }}
+                              style={{ color: "#385a83", fontSize: 11 }}
                             >
                               Open in Clio
                             </a>
@@ -610,7 +610,7 @@ export default function PrintQueuePage() {
                       <td style={{ ...tdStyle, minWidth: 360 }}>
                         <div style={{ fontWeight: 750 }}>{textValue(row.filename) || "—"}</div>
                         {textValue(row.documentSnapshot?.printCandidateReason) && (
-                          <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                          <div style={{ color: "#385a83", fontSize: 11, marginTop: 3 }}>
                             {textValue(row.documentSnapshot.printCandidateReason)}
                           </div>
                         )}
@@ -714,7 +714,7 @@ const primaryButtonStyle: React.CSSProperties = {
   border: "1px solid #0f172a",
   borderRadius: 6,
   background: "#0f172a",
-  color: "#fff",
+  color: "#ffffff",
   cursor: "pointer",
   fontWeight: 700,
 };

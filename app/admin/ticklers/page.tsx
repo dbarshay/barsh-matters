@@ -725,7 +725,7 @@ export default function AdminTicklersPage() {
 
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 32 }}>
+    <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#00346e", padding: 32 }}>
       <BarshHeader />
       <details
         data-barsh-admin-duplicate-settlement-tickler-compact-panel="true"
@@ -749,7 +749,7 @@ export default function AdminTicklersPage() {
           }}
         >
           <span>Duplicate Tickler Tools</span>
-          <span style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+          <span style={{ color: "#385a83", fontSize: 12, fontWeight: 700 }}>
             Preview duplicate diagnostics and cleanup plan
           </span>
         </summary>
@@ -770,7 +770,7 @@ export default function AdminTicklersPage() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
           <div>
             <strong>Duplicate Settlement Tickler Diagnostic</strong>
-            <div style={{ color: "#475569", fontSize: 13 }}>
+            <div style={{ color: "#385a83", fontSize: 13 }}>
               Preview of duplicate open settlement payment follow-up ticklers grouped by settlement record, master lawsuit, and due date.
             </div>
           </div>
@@ -828,7 +828,7 @@ export default function AdminTicklersPage() {
                   Cleanup preview found {duplicateCleanupPreviewResult.cleanupPreviewGroupCount || 0} duplicate group(s) and {duplicateCleanupPreviewResult.wouldRemoveTotal || 0} would-remove candidate(s).
                 </p>
                 {(duplicateCleanupPreviewResult.cleanupPreviewGroups || []).length === 0 ? (
-                  <p style={{ margin: 0, color: "#64748b" }}>No duplicate cleanup candidates found.</p>
+                  <p style={{ margin: 0, color: "#385a83" }}>No duplicate cleanup candidates found.</p>
                 ) : (
                   <div style={{ display: "grid", gap: 10 }}>
                     {(duplicateCleanupPreviewResult.cleanupPreviewGroups || []).map((group: any) => (
@@ -845,7 +845,7 @@ export default function AdminTicklersPage() {
                         <div style={{ fontWeight: 800 }}>
                           {group.masterLawsuitId || "No master lawsuit"} / {group.settlementRecordId || "No settlement record"} / Due {group.dueDate || "—"}
                         </div>
-                        <div style={{ color: "#475569", fontSize: 13, marginTop: 4 }}>
+                        <div style={{ color: "#385a83", fontSize: 13, marginTop: 4 }}>
                           Would retain: {group.wouldRetainId || "—"}.  Would remove: {(group.wouldRemoveCandidateIds || []).join(", ") || "—"}.
                         </div>
                         <pre
@@ -888,7 +888,7 @@ export default function AdminTicklersPage() {
                   Found {duplicateDiagnosticResult.duplicateGroupCount || 0} duplicate group(s) from {duplicateDiagnosticResult.checkedCount || 0} checked open settlement payment follow-up tickler(s).
                 </p>
                 {(duplicateDiagnosticResult.duplicateGroups || []).length === 0 ? (
-                  <p style={{ margin: 0, color: "#64748b" }}>No duplicate open settlement payment follow-up ticklers found.</p>
+                  <p style={{ margin: 0, color: "#385a83" }}>No duplicate open settlement payment follow-up ticklers found.</p>
                 ) : (
                   <div style={{ display: "grid", gap: 10 }}>
                     {(duplicateDiagnosticResult.duplicateGroups || []).map((group: any) => (
@@ -905,7 +905,7 @@ export default function AdminTicklersPage() {
                         <div style={{ fontWeight: 800 }}>
                           {group.masterLawsuitId || "No master lawsuit"} / {group.settlementRecordId || "No settlement record"} / Due {group.dueDate || "—"}
                         </div>
-                        <div style={{ color: "#475569", fontSize: 13, marginTop: 4 }}>
+                        <div style={{ color: "#385a83", fontSize: 13, marginTop: 4 }}>
                           Count: {group.count}.  Retain candidate: {group.retainedCandidateId || "—"}.  Duplicate candidates: {(group.duplicateCandidateIds || []).join(", ") || "—"}.
                         </div>
                         <pre
@@ -953,7 +953,7 @@ export default function AdminTicklersPage() {
       >
         <div>
           <strong>Tickler Search Mode</strong>
-          <div style={{ color: "#475569", fontSize: 13 }}>
+          <div style={{ color: "#385a83", fontSize: 13 }}>
             Open mode searches active ticklers.  Completed History is audit review.
           </div>
         </div>
@@ -965,7 +965,7 @@ export default function AdminTicklersPage() {
             style={{
               border: ticklerStatusMode === "open" ? "1px solid #1f4f73" : "1px solid #cbd5e1",
               background: ticklerStatusMode === "open" ? "#1f4f73" : "#ffffff",
-              color: ticklerStatusMode === "open" ? "#ffffff" : "#1f2937",
+              color: ticklerStatusMode === "open" ? "#ffffff" : "#00346e",
               borderRadius: 10,
               padding: "8px 12px",
               fontWeight: 800,
@@ -981,7 +981,7 @@ export default function AdminTicklersPage() {
             style={{
               border: ticklerStatusMode === "completed" ? "1px solid #7f1d1d" : "1px solid #cbd5e1",
               background: ticklerStatusMode === "completed" ? "#7f1d1d" : "#ffffff",
-              color: ticklerStatusMode === "completed" ? "#ffffff" : "#1f2937",
+              color: ticklerStatusMode === "completed" ? "#ffffff" : "#00346e",
               borderRadius: 10,
               padding: "8px 12px",
               fontWeight: 800,
@@ -1022,7 +1022,7 @@ export default function AdminTicklersPage() {
       <div style={{ maxWidth: "none", margin: 0, display: "grid", gap: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: "#475569", fontWeight: 900 }}>
+            <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: "#385a83", fontWeight: 900 }}>
               Administrator
             </div>
             <h1 style={{ margin: "4px 0 0", fontSize: 34 }}>Ticklers</h1>
@@ -1054,7 +1054,7 @@ export default function AdminTicklersPage() {
           }}
         >
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(180px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Type / Kind
               <select value={kind} onChange={(event) => setKind(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle}>
                 <option value="all">All types</option>
@@ -1066,12 +1066,12 @@ export default function AdminTicklersPage() {
               </select>
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Due From
               <input type="date" value={dueAfter} onChange={(event) => setDueAfter(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Due Through
               <input type="date" value={dueBefore} onChange={(event) => setDueBefore(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
@@ -1093,59 +1093,59 @@ export default function AdminTicklersPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(160px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Provider / Client
               <input list="admin-tickler-provider-options" value={provider} onChange={(event) => setProvider(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Provider or client" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-provider-options", referenceOptions.provider || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Patient
               <input value={patient} onChange={(event) => setPatient(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Patient name" style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Insurance Company
               <input list="admin-tickler-insurer-options" value={insuranceCompany} onChange={(event) => setInsuranceCompany(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Insurer" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-insurer-options", referenceOptions.insurer || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Claim Number
               <input value={claim} onChange={(event) => setClaim(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Claim number" style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Date of Loss
               <input type="date" value={dateOfLoss} onChange={(event) => setDateOfLoss(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Service Type
               <input list="admin-tickler-service-type-options" value={serviceType} onChange={(event) => setServiceType(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Service type" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-service-type-options", referenceOptions.serviceType || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Treating Provider
               <input list="admin-tickler-treating-provider-options" value={treatingProvider} onChange={(event) => setTreatingProvider(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Treating provider" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-treating-provider-options", referenceOptions.treatingProvider || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Denial Reason
               <input list="admin-tickler-denial-reason-options" value={denialReason} onChange={(event) => setDenialReason(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Denial reason" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-denial-reason-options", referenceOptions.denialReason || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Status
               <input value={claimStatus} onChange={(event) => setClaimStatus(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Matter status" style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Closed Reason
               <input list="admin-tickler-closed-reason-options" value={closeReason} onChange={(event) => setCloseReason(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Closed reason" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-closed-reason-options", referenceOptions.closedReason || [])}
@@ -1153,30 +1153,30 @@ export default function AdminTicklersPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Court
               <input list="admin-tickler-court-options" value={court} onChange={(event) => setCourt(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="Court" style={inputStyle} />
               {renderReferenceDatalist("admin-tickler-court-options", referenceOptions.court || [])}
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Date Filed From
               <input type="date" value={dateFiledFrom} onChange={(event) => setDateFiledFrom(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Date Filed Through
               <input type="date" value={dateFiledTo} onChange={(event) => setDateFiledTo(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} style={inputStyle} />
             </label>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Master Lawsuit
               <input value={masterLawsuitId} onChange={(event) => setMasterLawsuitId(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="2026.06.00001" style={inputStyle} />
             </label>
 
-            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#334155" }}>
+            <label style={{ display: "grid", gap: 6, fontWeight: 800, color: "#385a83" }}>
               Matter Number
               <input value={displayNumber} onChange={(event) => setDisplayNumber(event.target.value)} onKeyDown={handleTicklerSearchKeyDown} placeholder="BRL_202600001" style={inputStyle} />
             </label>
@@ -1192,7 +1192,7 @@ export default function AdminTicklersPage() {
               style={{
                 border: "none",
                 background: loading ? "#94a3b8" : "#00346e",
-                color: "#fff",
+                color: "#ffffff",
                 borderRadius: 14,
                 padding: "12px 16px",
                 fontWeight: 950,
@@ -1238,7 +1238,7 @@ export default function AdminTicklersPage() {
               style={{
                 border: "1px solid #cbd5e1",
                 background: "#fff",
-                color: "#334155",
+                color: "#385a83",
                 borderRadius: 14,
                 padding: "12px 16px",
                 fontWeight: 900,
@@ -1256,13 +1256,13 @@ export default function AdminTicklersPage() {
               <h2 style={{ margin: 0, fontSize: 20 }}>Tickler Results</h2>
               <p
                 data-barsh-admin-tickler-results-mode-label="true"
-                style={{ margin: "4px 0 0", color: ticklerStatusMode === "completed" ? "#7f1d1d" : "#475569", fontSize: 13, fontWeight: 700 }}
+                style={{ margin: "4px 0 0", color: ticklerStatusMode === "completed" ? "#7f1d1d" : "#385a83", fontSize: 13, fontWeight: 700 }}
               >
                 {ticklerStatusMode === "completed" ? "Completed History: audit results." : "Open Ticklers: active follow-up results."}
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ fontWeight: 900, color: "#475569" }}>
+              <div style={{ fontWeight: 900, color: "#385a83" }}>
                 {loading ? "Loading..." : `${result?.count ?? 0} result${(result?.count ?? 0) === 1 ? "" : "s"}`}
               </div>
               {Array.isArray(result?.ticklers) && result.ticklers.length > 0 && (
@@ -1272,7 +1272,7 @@ export default function AdminTicklersPage() {
                   style={{
                     border: "1px solid #00346e",
                     background: "#00346e",
-                    color: "#fff",
+                    color: "#ffffff",
                     borderRadius: 999,
                     padding: "8px 12px",
                     fontWeight: 900,
@@ -1293,16 +1293,16 @@ export default function AdminTicklersPage() {
           ) : null}
 
           {!searched ? (
-            <div style={{ color: "#64748b", fontWeight: 800 }}>Enter criteria and click Search Ticklers.</div>
+            <div style={{ color: "#385a83", fontWeight: 800 }}>Enter criteria and click Search Ticklers.</div>
           ) : !loading && result?.ok && !result.ticklers?.length ? (
-            <div style={{ color: "#64748b", fontWeight: 800 }}>No matching ticklers found.</div>
+            <div style={{ color: "#385a83", fontWeight: 800 }}>No matching ticklers found.</div>
           ) : null}
 
           {result?.ticklers?.length ? (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
-                  <tr style={{ textAlign: "left", color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
+                  <tr style={{ textAlign: "left", color: "#385a83", borderBottom: "1px solid #e2e8f0" }}>
                     <th style={{ padding: "10px 8px" }}>Due</th>
                     <th style={{ padding: "10px 8px" }}>Type</th>
                     <th style={{ padding: "10px 8px" }}>Matter</th>

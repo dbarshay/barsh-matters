@@ -77,7 +77,7 @@ const auditConfigs: DashboardAuditConfig[] = [
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#f8fafc",
-  color: "#0f172a",
+  color: "#00346e",
   padding: "28px 30px 46px",
   boxSizing: "border-box",
 };
@@ -93,7 +93,7 @@ const cardStyle: React.CSSProperties = {
 const buttonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
-  color: "#fff",
+  color: "#ffffff",
   borderRadius: 12,
   padding: "10px 14px",
   fontWeight: 950,
@@ -107,8 +107,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#334155",
+  background: "#ffffff",
+  color: "#385a83",
 };
 
 const thStyle: React.CSSProperties = {
@@ -116,7 +116,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #cbd5e1",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#334155",
+  color: "#385a83",
   background: "#f8fafc",
   whiteSpace: "nowrap",
 };
@@ -197,7 +197,7 @@ function toneStyle(tone: "pass" | "warning" | "critical" | "loading"): React.CSS
   if (tone === "critical") return { color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca" };
   if (tone === "warning") return { color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a" };
   if (tone === "pass") return { color: "#166534", background: "#dcfce7", border: "1px solid #bbf7d0" };
-  return { color: "#334155", background: "#f8fafc", border: "1px solid #cbd5e1" };
+  return { color: "#385a83", background: "#f8fafc", border: "1px solid #cbd5e1" };
 }
 
 function severityBadge(severity: unknown): React.CSSProperties {
@@ -210,11 +210,11 @@ function severityBadge(severity: unknown): React.CSSProperties {
 function SummaryCard({ label, value, note }: { label: string; value: React.ReactNode; note?: string }) {
   return (
     <div style={cardStyle}>
-      <div style={{ fontSize: 12, fontWeight: 950, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      <div style={{ fontSize: 12, fontWeight: 950, color: "#385a83", textTransform: "uppercase", letterSpacing: "0.06em" }}>
         {label}
       </div>
       <div style={{ marginTop: 8, fontSize: 30, fontWeight: 950 }}>{value}</div>
-      {note ? <div style={{ marginTop: 6, color: "#64748b", fontSize: 13 }}>{note}</div> : null}
+      {note ? <div style={{ marginTop: 6, color: "#385a83", fontSize: 13 }}>{note}</div> : null}
     </div>
   );
 }
@@ -278,7 +278,7 @@ export default function AdminReadinessDashboardPage() {
             Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Admin Readiness Dashboard</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, maxWidth: 980 }}>
             Consolidated dashboard for ClaimIndex data quality, Lawsuit/master integrity, and document-generation readiness.
             This page fetches existing read-only audit APIs and summarizes their status.
           </p>
@@ -321,7 +321,7 @@ export default function AdminReadinessDashboardPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                   <div>
                     <h2 style={{ margin: 0, fontSize: 20 }}>{audit.config.label}</h2>
-                    <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.4 }}>{audit.config.description}</p>
+                    <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.4 }}>{audit.config.description}</p>
                   </div>
                   <span style={{ ...toneStyle(auditTone), borderRadius: 999, padding: "6px 10px", fontWeight: 950, whiteSpace: "nowrap" }}>
                     {audit.error ? "Error" : auditTone === "pass" ? "Pass" : auditTone === "warning" ? "Review" : auditTone === "critical" ? "Critical" : "Loading"}
@@ -333,26 +333,26 @@ export default function AdminReadinessDashboardPage() {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
                     <div>
-                      <div style={{ fontSize: 12, color: "#64748b", fontWeight: 900 }}>{audit.config.primaryMetricLabel}</div>
+                      <div style={{ fontSize: 12, color: "#385a83", fontWeight: 900 }}>{audit.config.primaryMetricLabel}</div>
                       <div style={{ fontSize: 24, fontWeight: 950 }}>{summaryNumber(result?.summary, audit.config.primaryMetricKey)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, color: "#64748b", fontWeight: 900 }}>Checks</div>
+                      <div style={{ fontSize: 12, color: "#385a83", fontWeight: 900 }}>Checks</div>
                       <div style={{ fontSize: 24, fontWeight: 950 }}>{checksRun(result)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, color: "#64748b", fontWeight: 900 }}>Critical</div>
+                      <div style={{ fontSize: 12, color: "#385a83", fontWeight: 900 }}>Critical</div>
                       <div style={{ fontSize: 24, fontWeight: 950 }}>{criticalCount(result)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, color: "#64748b", fontWeight: 900 }}>Warnings</div>
+                      <div style={{ fontSize: 12, color: "#385a83", fontWeight: 900 }}>Warnings</div>
                       <div style={{ fontSize: 24, fontWeight: 950 }}>{warningCount(result)}</div>
                     </div>
                   </div>
                 )}
 
                 {result?.generatedAt ? (
-                  <div style={{ color: "#64748b", fontSize: 13 }}>Generated: {dateText(result.generatedAt)}</div>
+                  <div style={{ color: "#385a83", fontSize: 13 }}>Generated: {dateText(result.generatedAt)}</div>
                 ) : null}
 
                 <a href={audit.config.detailHref} style={{ ...secondaryButtonStyle, justifySelf: "start" }}>

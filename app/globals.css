@@ -95,11 +95,11 @@ body {
 }
 
 .barsh-direct-summary-link-card:hover .barsh-direct-summary-value {
-  color: #0f172a;
+  color: #00346e;
 }
 
 .barsh-direct-summary-label {
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 850;
   letter-spacing: 0.04em;
@@ -108,7 +108,7 @@ body {
 
 .barsh-direct-summary-value {
   margin-top: 6px;
-  color: #0f172a;
+  color: #00346e;
   font-size: 14px;
   font-weight: 850;
   line-height: 1.25;
@@ -135,7 +135,7 @@ body {
   appearance: none;
   border: 1px solid #cbd5e1;
   background: #ffffff;
-  color: #111827;
+  color: #00346e;
   border-radius: 14px;
   padding: 10px 16px;
   font-size: 14px;
@@ -153,7 +153,7 @@ body {
 }
 
 .barsh-summary-workflow-button.active {
-  border-color: #0f172a;
+  border-color: #00346e;
   background: #0f172a;
   color: #ffffff;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
@@ -177,7 +177,7 @@ body {
 }
 
 .barsh-global-direct-matter-number {
-  color: #0f172a;
+  color: #00346e;
   font-size: 36px;
   line-height: 1.05;
   font-weight: 950;
@@ -212,7 +212,7 @@ body {
   box-shadow: none;
 }
 .barsh-direct-financial-title {
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.11em;
@@ -224,13 +224,13 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
-  color: #475569;
+  color: #385a83;
   font-size: 14px;
   font-weight: 800;
 }
 
 .barsh-direct-financial-row strong {
-  color: #0f172a;
+  color: #00346e;
   font-size: 15px;
   font-weight: 950;
   font-variant-numeric: tabular-nums;
@@ -240,7 +240,7 @@ body {
   margin-top: 4px;
   padding-top: 9px;
   border-top: 1px solid #dbe3ee;
-  color: #0f172a;
+  color: #00346e;
 }
 
 .barsh-direct-financial-row.total strong {
@@ -295,7 +295,7 @@ body {
 }
 
 .barsh-direct-payment-receipts-title {
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -303,7 +303,7 @@ body {
 }
 
 .barsh-direct-payment-receipt-empty {
-  color: #64748b;
+  color: #385a83;
   font-size: 12px;
   font-weight: 750;
 }
@@ -322,7 +322,7 @@ body {
 }
 
 .barsh-direct-payment-receipt-date {
-  color: #334155;
+  color: #385a83;
   font-size: 12px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
@@ -335,14 +335,14 @@ body {
 }
 
 .barsh-direct-payment-receipt-amount {
-  color: #0f172a;
+  color: #00346e;
   font-size: 13px;
   font-weight: 950;
   font-variant-numeric: tabular-nums;
 }
 
 .barsh-direct-payment-receipt-meta {
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 800;
 }
@@ -365,7 +365,7 @@ body {
 }
 
 .barsh-direct-payment-field span {
-  color: #64748b;
+  color: #385a83;
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -377,7 +377,7 @@ body {
   padding: 9px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-  color: #0f172a;
+  color: #00346e;
   font-size: 13px;
   font-weight: 850;
   outline: none;
@@ -392,7 +392,7 @@ body {
   padding: 8px 10px;
   border-radius: 10px;
   background: #f8fafc;
-  color: #475569;
+  color: #385a83;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
@@ -423,7 +423,7 @@ body {
 .barsh-direct-payment-cancel-button {
   border: 1px solid #cbd5e1;
   background: #ffffff;
-  color: #0f172a;
+  color: #00346e;
 }
 
 .barsh-direct-payment-submit-button:disabled,
@@ -494,7 +494,7 @@ body {
 }
 
 .barsh-direct-launch-table-kicker {
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.10em;
@@ -503,7 +503,7 @@ body {
 
 .barsh-direct-launch-table-header h2 {
   margin: 4px 0 0;
-  color: #0f172a;
+  color: #00346e;
   font-size: 20px;
   font-weight: 950;
   letter-spacing: -0.02em;
@@ -513,7 +513,7 @@ body {
   appearance: none;
   border: 1px solid #cbd5e1;
   background: #ffffff;
-  color: #0f172a;
+  color: #00346e;
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 13px;
@@ -526,7 +526,7 @@ body {
   border: 1px dashed #cbd5e1;
   border-radius: 14px;
   background: #f8fafc;
-  color: #475569;
+  color: #385a83;
   font-size: 13px;
   font-weight: 750;
 }
@@ -548,7 +548,7 @@ body {
   padding: 10px 12px;
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
-  color: #64748b;
+  color: #385a83;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -560,7 +560,7 @@ body {
 .barsh-direct-launch-table td {
   padding: 11px 12px;
   border-bottom: 1px solid #f1f5f9;
-  color: #0f172a;
+  color: #00346e;
   font-weight: 750;
   vertical-align: top;
 }
@@ -712,17 +712,17 @@ body {
 }
 
 [data-barsh-standard-modal-current-card="true"] span {
-  color: #64748b !important;
+  color: #385a83 !important;
   font-size: 11px !important;
 }
 
 [data-barsh-standard-modal-current-card="true"] strong {
-  color: #0f172a !important;
+  color: #00346e !important;
   font-size: 15px !important;
 }
 
 [data-barsh-standard-modal-overlay="true"] label {
-  color: #334155 !important;
+  color: #385a83 !important;
 }
 
 [data-barsh-standard-modal-overlay="true"] input,
@@ -731,7 +731,7 @@ body {
   border: 1px solid #cbd5e1 !important;
   border-radius: 10px !important;
   background: #ffffff !important;
-  color: #0f172a !important;
+  color: #00346e !important;
   box-shadow: none !important;
 }
 
@@ -764,7 +764,7 @@ body {
 [data-barsh-standard-modal-overlay="true"] form > div:last-child button[type="button"] {
   border-color: #cbd5e1 !important;
   background: #ffffff !important;
-  color: #334155 !important;
+  color: #385a83 !important;
 }\n
 /* BARSH MATTERS FINAL STANDARD MODAL OVERRIDES */
 [data-barsh-standard-modal-header="true"] {
@@ -838,22 +838,22 @@ body {
 .barsh-direct-financial-row > span:first-child {
   font-size: 16px;
   font-weight: 800;
-  color: #475569;
+  color: #385a83;
 }
 .barsh-direct-financial-row > span:last-child,
 .barsh-direct-financial-row > strong {
   font-size: 19px;
   font-weight: 950;
-  color: #0f172a;
+  color: #00346e;
 }
 .barsh-direct-financial-row.total > span:first-child {
   font-size: 17px;
   font-weight: 900;
-  color: #334155;
+  color: #385a83;
 }
 .barsh-direct-financial-row.total > span:last-child,
 .barsh-direct-financial-row.total > strong {
   font-size: 23px;
   font-weight: 950;
-  color: #0f172a;
+  color: #00346e;
 }

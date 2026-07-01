@@ -248,7 +248,7 @@ export default function BuildTemplatePage() {
     <main style={{ padding: "24px 28px", width: "100%", maxWidth: "none", margin: 0, boxSizing: "border-box" }}>
       <BarshHeader />
       <a href="/admin/document-templates" style={{ color: "#00346e", fontWeight: 700 }}>Back to Document Templates</a>
-      <h1 style={{ margin: "18px 0 18px", fontSize: "30px", color: "#0f172a" }}>Build Template</h1>
+      <h1 style={{ margin: "18px 0 18px", fontSize: "30px", color: "#00346e" }}>Build Template</h1>
 
       
       <TemplateDocxCompatibilityUpload />
@@ -263,11 +263,11 @@ export default function BuildTemplatePage() {
       </div>
 
       <section style={{ display: "grid", gridTemplateColumns: "minmax(520px, 1fr) 280px", gap: "14px", marginBottom: "16px" }}>
-        <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
+        <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#00346e" }}>
           Search merge fields
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search category, label, token, example output, aliases, type" style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "10px" }} />
         </label>
-        <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#0f172a" }}>
+        <label style={{ display: "grid", gap: "6px", fontWeight: 700, color: "#00346e" }}>
           Example matter
           <select value={exampleMatter} onChange={(event) => setExampleMatter(event.target.value)} style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "10px", background: "#ffffff" }}>
               <option value="2026.06.00011">2026.06.00011</option>
@@ -278,7 +278,7 @@ export default function BuildTemplatePage() {
       </section>
 
       <section style={{ marginBottom: "18px", padding: "14px", border: "1px solid #cbd5e1", borderRadius: "12px", background: "#ffffff" }}>
-        <div style={{ marginBottom: "10px", fontWeight: 800, color: "#0f172a" }}>Formats for copy</div>
+        <div style={{ marginBottom: "10px", fontWeight: 800, color: "#00346e" }}>Formats for copy</div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {TEMPLATE_BUILDER_SUPPORTED_FORMAT_MODIFIERS.map((format) => {
             const formatValue = String(format).trim();
@@ -294,7 +294,7 @@ export default function BuildTemplatePage() {
                   border: checked ? "1px solid #00346e" : "1px solid #cbd5e1",
                   borderRadius: "999px",
                   background: checked ? "#dbeafe" : "#ffffff",
-                  color: checked ? "#00346e" : "#334155",
+                  color: checked ? "#00346e" : "#385a83",
                   padding: "8px 12px",
                   fontWeight: 800,
                   cursor: "pointer",
@@ -308,7 +308,7 @@ export default function BuildTemplatePage() {
         </div>
       </section>
 
-      <div style={{ margin: "-6px 0 12px", color: "#475569", fontSize: "13px", fontWeight: 700 }}>
+      <div style={{ margin: "-6px 0 12px", color: "#385a83", fontSize: "13px", fontWeight: 700 }}>
         {examplePreviewStatus}
       </div>
 
@@ -413,9 +413,9 @@ export default function BuildTemplatePage() {
             <header style={{ background: "#00346e", padding: "14px 18px" }}>
               <h2 id="custom-placeholder-title" style={{ margin: 0, color: "#ffffff", textAlign: "center", fontSize: "20px" }}>Custom Placeholder</h2>
             </header>
-            <div style={{ padding: "18px", color: "#0f172a", lineHeight: 1.55 }}>
+            <div style={{ padding: "18px", color: "#00346e", lineHeight: 1.55 }}>
               <p style={{ margin: "0 0 12px" }}>Use the Custom Placeholder row when a reviewed template contains a placeholder that has not yet been mapped to a canonical Barsh Matters field.</p>
-              <p style={{ margin: 0, color: "#475569" }}>Custom placeholders remain review aids only until they are replaced with canonical tokens during document-by-document template review.</p>
+              <p style={{ margin: 0, color: "#385a83" }}>Custom placeholders remain review aids only until they are replaced with canonical tokens during document-by-document template review.</p>
               <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button type="button" onClick={() => setCustomPlaceholderDialogOpen(false)} style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #00346e", background: "#ffffff", color: "#00346e", fontWeight: 800, cursor: "pointer" }}>
                   Cancel
@@ -435,11 +435,11 @@ export default function BuildTemplatePage() {
             <header style={{ background: "#00346e", padding: "14px 18px" }}>
               <h2 id="delete-field-title" style={{ margin: 0, color: "#ffffff", textAlign: "center", fontSize: "20px" }}>Delete Field</h2>
             </header>
-            <div style={{ padding: "18px", color: "#0f172a", lineHeight: 1.55 }}>
+            <div style={{ padding: "18px", color: "#00346e", lineHeight: 1.55 }}>
               <p style={{ margin: "0 0 14px" }}>
                 Delete <strong>{deleteCandidate.fieldLabel}</strong> from this Build Template view?
               </p>
-              <p style={{ margin: 0, color: "#475569" }}>
+              <p style={{ margin: 0, color: "#385a83" }}>
                 This removes the field from the current UI session only. Persistent field deletion will be wired in a later Template Builder management phase.
               </p>
               <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>

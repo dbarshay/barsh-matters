@@ -25,7 +25,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e5e7eb",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   background: "#f8fafc",
 };
 
@@ -39,7 +39,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   padding: "5px 8px",
   borderRadius: 8,
   border: "1px solid #d1d5db",
-  background: "#fff",
+  background: "#ffffff",
   fontWeight: 800,
   cursor: "pointer",
 };
@@ -55,12 +55,12 @@ const filterControlStyle: React.CSSProperties = {
   background: "#fff",
   boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.08)",
   fontWeight: 800,
-  color: "#0f172a",
+  color: "#00346e",
 };
 
 const compactInfoLabelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   fontWeight: 900,
   textTransform: "uppercase",
   letterSpacing: "0.02em",
@@ -80,7 +80,7 @@ const compactInfoGroupStyle: React.CSSProperties = {
 
 const summarySectionLabelStyle: React.CSSProperties = {
   marginBottom: 10,
-  color: "#475569",
+  color: "#385a83",
   fontSize: 12,
   fontWeight: 950,
   textTransform: "uppercase",
@@ -717,8 +717,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <title>Invoice ${safeHtml(invoice.invoiceNumber)}</title>
   <style>
     @page { margin: 0.35in; size: landscape; }
-    body { font-family: Arial, sans-serif; color: #0f172a; font-size: 13px; line-height: 1.35; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    button { margin: 0 0 14px; padding: 8px 12px; border: 1px solid #0f172a; border-radius: 8px; background: #0f172a; color: #fff; font-weight: 800; }
+    body { font-family: Arial, sans-serif; color: #00346e; font-size: 13px; line-height: 1.35; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    button { margin: 0 0 14px; padding: 8px 12px; border: 1px solid #0f172a; border-radius: 8px; background: #0f172a; color: #ffffff; font-weight: 800; }
     h1 { margin: 0; font-size: 28px; letter-spacing: -0.025em; }
     h2 { margin: 20px 0 6px; font-size: 16px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; }
     .topline { display: grid; grid-template-columns: 390px minmax(720px, 1fr) 340px; gap: 34px; align-items: stretch; border-bottom: 2px solid #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
@@ -727,18 +727,18 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     .header-right { display: flex; flex-direction: column; align-items: flex-end; }
     .brl-logo { height: 170px; max-width: 380px; object-fit: contain; display: block; }
     .provider-name { width: 100%; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.15; text-align: center; white-space: nowrap; }
-    .provider-address { width: 100%; margin-top: 6px; font-size: 12px; font-weight: 700; color: #334155; line-height: 1.35; text-align: center; }
+    .provider-address { width: 100%; margin-top: 6px; font-size: 12px; font-weight: 700; color: #385a83; line-height: 1.35; text-align: center; }
     .statement-title { width: 100%; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; text-align: center; white-space: nowrap; }
-    .statement-address { width: 320px; max-width: 100%; color: #334155; line-height: 1.35; text-align: left; }
+    .statement-address { width: 320px; max-width: 100%; color: #385a83; line-height: 1.35; text-align: left; }
     .statement-meta-block { width: 320px; max-width: 100%; margin-top: 14px; text-align: left; }
-    .statement-meta-row { margin-top: 7px; color: #0f172a; }
+    .statement-meta-row { margin-top: 7px; color: #00346e; }
     .statement-meta-label { display: block; font-size: 18px; font-weight: 900; line-height: 1.1; }
-    .statement-meta-value { display: block; margin-top: 4px; font-size: 16px; font-weight: 800; line-height: 1.15; color: #334155; }
-    .muted { color: #475569; }
-    .meta { margin-top: 4px; color: #334155; }
+    .statement-meta-value { display: block; margin-top: 4px; font-size: 16px; font-weight: 800; line-height: 1.15; color: #385a83; }
+    .muted { color: #385a83; }
+    .meta { margin-top: 4px; color: #385a83; }
     .grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin: 16px 0; }
     .card { border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px; min-height: 72px; }
-    .label { color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 800; }
+    .label { color: #385a83; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 800; }
     .value { margin-top: 3px; font-weight: 700; }
     table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 14px; page-break-inside: auto; }
     thead { display: table-header-group; }
@@ -748,8 +748,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     th { background: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; color: #ffffff; white-space: nowrap; text-align: center; font-weight: 900; }
     .money { text-align: right; white-space: nowrap; }
     .date { white-space: nowrap; }
-    .section-note { color: #475569; font-size: 12px; margin: 4px 0 8px; display: flex; gap: 20px; flex-wrap: wrap; }
-    .empty { color: #64748b; font-style: italic; text-align: center; padding: 10px; }
+    .section-note { color: #385a83; font-size: 12px; margin: 4px 0 8px; display: flex; gap: 20px; flex-wrap: wrap; }
+    .empty { color: #385a83; font-style: italic; text-align: center; padding: 10px; }
     .section-total td { font-weight: 800; background: #f8fafc; border-top: 2px solid #94a3b8; }
     .totals { margin-top: 30px; width: 680px; margin-left: auto; border: 3px solid #94a3b8; border-radius: 14px; padding: 22px 24px; font-size: 20px; break-inside: avoid; page-break-inside: avoid; }
     .totals div { display: flex; justify-content: space-between; gap: 30px; padding: 10px 0; }
@@ -757,7 +757,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     .summary-emphasis span { font-weight: 900; }
     .negative-remit-adjustment { color: #b91c1c; font-weight: 900; }
     .total { font-weight: 900; border-top: 4px solid #0f172a; margin-top: 12px; padding-top: 16px !important; font-size: 28px; }
-    .footer { margin-top: 18px; color: #64748b; font-size: 10px; }
+    .footer { margin-top: 18px; color: #385a83; font-size: 10px; }
     @media print { button { display: none; } body { padding: 0; } thead { display: table-header-group; } tfoot { display: table-footer-group; } .totals { break-inside: avoid; page-break-inside: avoid; } }
   </style>
 </head>
@@ -1051,7 +1051,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ margin: 0 }}>Client Cost Ledger</h2>
-            <p style={{ margin: "6px 0 0", color: "#475569", fontSize: 13 }}>
+            <p style={{ margin: "6px 0 0", color: "#385a83", fontSize: 13 }}>
               Cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
             </p>
           </div>
@@ -1100,21 +1100,21 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                     <td style={tdStyle}>{row.costType || "—"}</td>
                     <td style={tdStyle}>
                       <strong>{row.matter || "—"}</strong>
-                      {row.lawsuit ? <><br /><span style={{ color: "#475569" }}>{row.lawsuit}</span></> : null}
-                      {row.patient ? <><br /><span style={{ color: "#64748b" }}>{row.patient}</span></> : null}
+                      {row.lawsuit ? <><br /><span style={{ color: "#385a83" }}>{row.lawsuit}</span></> : null}
+                      {row.patient ? <><br /><span style={{ color: "#385a83" }}>{row.patient}</span></> : null}
                     </td>
                     <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>{money(row.amount)}</td>
                     <td style={tdStyle}>{row.voided ? "Yes" : "No"}</td>
                     <td style={tdStyle}>
                       <div>{row.invoiceStatus || "not_invoiced"}</div>
-                      {row.invoiceNumber ? <div style={{ color: "#475569", fontSize: 12 }}>{row.invoiceNumber}</div> : null}
-                      {row.invoiceId ? <div style={{ color: "#64748b", fontSize: 11 }}>{row.invoiceId}</div> : null}
+                      {row.invoiceNumber ? <div style={{ color: "#385a83", fontSize: 12 }}>{row.invoiceNumber}</div> : null}
+                      {row.invoiceId ? <div style={{ color: "#385a83", fontSize: 11 }}>{row.invoiceId}</div> : null}
                     </td>
                     <td style={tdStyle}>
                       <strong style={{ color: row.eligibleForFutureInvoice ? "#166534" : "#991b1b" }}>
                         {row.eligibleForFutureInvoice ? "Yes" : "No"}
                       </strong>
-                      <div style={{ color: "#64748b", fontSize: 12 }}>{row.eligibilityReason || ""}</div>
+                      <div style={{ color: "#385a83", fontSize: 12 }}>{row.eligibilityReason || ""}</div>
                     </td>
                   </tr>
                 )) : (
@@ -1149,8 +1149,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
     const shadedRowStyle = { ...rowBaseStyle, background: "#f1f5f9", borderRadius: 12, borderBottom: "1px solid #dbe4ef", margin: "8px 0" } as const;
     const blueRowStyle = { ...rowBaseStyle, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, margin: "8px 0" } as const;
-    const labelStyle = { color: "#334155", fontWeight: 850 } as const;
-    const amountStyle = { color: "#0f172a", fontWeight: 900, whiteSpace: "nowrap" } as const;
+    const labelStyle = { color: "#385a83", fontWeight: 850 } as const;
+    const amountStyle = { color: "#00346e", fontWeight: 900, whiteSpace: "nowrap" } as const;
     const redAmountStyle = { ...amountStyle, color: "#b91c1c" } as const;
     const blueAmountStyle = { ...amountStyle, color: "#00346e" } as const;
 
@@ -1169,8 +1169,8 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       <section style={{ marginTop: 18, border: "1px solid #cbd5e1", borderRadius: 18, padding: 18, background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)", boxShadow: "0 10px 28px rgba(15, 23, 42, 0.08)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 14 }}>
           <div>
-            <h3 style={{ margin: 0, fontWeight: 950, fontSize: 20, color: "#0f172a" }}>Remittance Summary</h3>
-            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 13 }}>
+            <h3 style={{ margin: 0, fontWeight: 950, fontSize: 20, color: "#00346e" }}>Remittance Summary</h3>
+            <p style={{ margin: "4px 0 0", color: "#385a83", fontSize: 13 }}>
               Provider net remittance, cost recovery, and negative cost balance impact.
             </p>
           </div>
@@ -1197,7 +1197,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           </div>
         </div>
 
-        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: 12, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#385a83", fontSize: 12, lineHeight: 1.5 }}>
           Cost Excess / Shortfall This Remittance = Costs Received During This Remittance Period minus Costs Expended During This Remittance Period. Cost excess first reduces any Negative Cost Balance, and any remaining excess is added to Net Remit. Cost shortfalls and prior negative balances may be deducted from Net Remit Before Costs up to the 25% cap, with any unrecovered balance carried forward.
         </div>
       </section>
@@ -1418,7 +1418,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
       </div>
 
       <section style={{ marginBottom: 22 }}>
-        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>
+        <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>
           Invoicing / Remittance
         </div>
         <h1 style={{ margin: "6px 0 8px", fontSize: 34 }}>Provider Client Invoice Workflow</h1>
@@ -1433,7 +1433,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
         </div>
 
         {clientDetailLoading ? (
-          <p style={{ color: "#64748b" }}>Loading provider/client info...</p>
+          <p style={{ color: "#385a83" }}>Loading provider/client info...</p>
         ) : (
           <div
             style={{
@@ -1509,7 +1509,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                         >
                           {row.value}
                         </div>
-                        <div style={{ marginTop: 6, color: "#64748b", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap" }}>
+                        <div style={{ marginTop: 6, color: "#385a83", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap" }}>
                           {Number(row.amount || 0) > 0 ? "Outstanding client cost balance" : "No client cost balance"}
                         </div>
                       </div>
@@ -1547,10 +1547,10 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
                       <div>
                         <div style={{ ...compactInfoLabelStyle, marginBottom: 4 }}>{row.label}</div>
-                        <div style={{ fontSize: 20, lineHeight: 1.05, fontWeight: 950, color: "#0f172a" }}>
+                        <div style={{ fontSize: 20, lineHeight: 1.05, fontWeight: 950, color: "#00346e" }}>
                           {row.value}
                         </div>
-                        <div style={{ marginTop: 5, color: "#64748b", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>
+                        <div style={{ marginTop: 5, color: "#385a83", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>
                           Latest: {row.latest || "—"}
                         </div>
                       </div>
@@ -1592,7 +1592,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
               Select Invoice Criteria
             </h2>
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
+            <p style={{ margin: 0, color: "#385a83", fontSize: 13, lineHeight: 1.4 }}>
               Select the receipt status, transaction type, and date range that should be included in the invoice preview.
             </p>
           </div>
@@ -1610,7 +1610,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             alignItems: "end",
           }}
         >
-          <label style={{ fontWeight: 900, color: "#334155" }}>
+          <label style={{ fontWeight: 900, color: "#385a83" }}>
             <span style={{ display: "block", marginBottom: 6 }}>Status</span>
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={filterControlStyle}>
               <option value="posted">Posted</option>
@@ -1619,7 +1619,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             </select>
           </label>
 
-          <label style={{ fontWeight: 900, color: "#334155" }}>
+          <label style={{ fontWeight: 900, color: "#385a83" }}>
             <span style={{ display: "block", marginBottom: 6 }}>Transaction Type</span>
             <select value={transactionType} onChange={(event) => setTransactionType(event.target.value)} style={filterControlStyle}>
               <option value="">All</option>
@@ -1632,12 +1632,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             </select>
           </label>
 
-          <label style={{ fontWeight: 900, color: "#334155" }}>
+          <label style={{ fontWeight: 900, color: "#385a83" }}>
             <span style={{ display: "block", marginBottom: 6 }}>Date From</span>
             <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} style={filterControlStyle} />
           </label>
 
-          <label style={{ fontWeight: 900, color: "#334155" }}>
+          <label style={{ fontWeight: 900, color: "#385a83" }}>
             <span style={{ display: "block", marginBottom: 6 }}>Date To</span>
             <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} style={filterControlStyle} />
           </label>
@@ -1655,7 +1655,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               borderRadius: 10,
               border: "1px solid #00346e",
               background: "#00346e",
-              color: "#fff",
+              color: "#ffffff",
               fontWeight: 950,
               boxShadow: "0 2px 6px rgba(0, 52, 110, 0.25)",
             }}
@@ -1674,7 +1674,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
               Review Invoice Preview
             </h2>
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
+            <p style={{ margin: 0, color: "#385a83", fontSize: 13, lineHeight: 1.4 }}>
               Confirm the previewed receipt rows, cost rows, retainer calculation, and remittance summary before creating a draft invoice.
             </p>
           </div>
@@ -1691,61 +1691,61 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               }}
             >
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Principal / Interest
                 </div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#00346e" }}>
                   {money(principalInterestPaymentTotal)}
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   {principalInterestPaymentCount} payment row{principalInterestPaymentCount === 1 ? "" : "s"}
                 </div>
               </div>
 
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Direct Payments to Provider
                 </div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#00346e" }}>
                   {money(directProviderPaymentTotal)}
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   Retainer Fee: {money(directProviderRetainerFeeTotal)} · {directProviderPaymentCount} row{directProviderPaymentCount === 1 ? "" : "s"}
                 </div>
               </div>
 
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Costs Received
                 </div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#00346e" }}>
                   {money(costsReceivedPaymentTotal)}
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   {costsReceivedPaymentCount} cost receipt row{costsReceivedPaymentCount === 1 ? "" : "s"}
                 </div>
               </div>
 
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Costs Expended
                 </div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#00346e" }}>
                   {money(feesCostsExpendedTotal)}
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   {feesCostsExpendedCount} cost row{feesCostsExpendedCount === 1 ? "" : "s"}
                 </div>
               </div>
 
               <div style={{ border: "1px solid #dbeafe", background: "#f8fbff", borderRadius: 14, padding: 14 }}>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Final Net Remit
                 </div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#0f172a" }}>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 950, color: "#00346e" }}>
                   {money(previewTotals.netRemitToProviderTotal)}
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   Cost balance after: {money(previewTotals.costBalanceLedgerAfter)}
                 </div>
               </div>
@@ -1802,13 +1802,13 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               }}
             >
               <div>
-                <div style={{ color: "#475569", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <div style={{ color: "#385a83", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Draft Invoice Action
                 </div>
-                <div style={{ marginTop: 4, color: "#0f172a", fontSize: 14, fontWeight: 850 }}>
+                <div style={{ marginTop: 4, color: "#00346e", fontSize: 14, fontWeight: 850 }}>
                   Create a draft invoice from this reviewed preview.
                 </div>
-                <div style={{ marginTop: 4, color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 800 }}>
                   Draft invoices freeze package lines for review but do not mark receipt rows as invoiced.
                 </div>
               </div>
@@ -1824,7 +1824,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
                   borderRadius: 10,
                   border: "1px solid #00346e",
                   background: preview ? "#00346e" : "#94a3b8",
-                  color: "#fff",
+                  color: "#ffffff",
                   fontWeight: 950,
                   boxShadow: preview ? "0 2px 6px rgba(0, 52, 110, 0.25)" : undefined,
                   whiteSpace: "nowrap",
@@ -1836,7 +1836,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             </div>
           </>
         ) : (
-          <p style={{ color: "#64748b" }}>No preview loaded.</p>
+          <p style={{ color: "#385a83" }}>No preview loaded.</p>
         )}
       </section>
 
@@ -1850,7 +1850,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <h2 style={{ margin: "4px 0 4px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.01em" }}>
               Finalize Invoice
             </h2>
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.4 }}>
+            <p style={{ margin: 0, color: "#385a83", fontSize: 13, lineHeight: 1.4 }}>
               Finalize only after reviewing the draft. Finalization marks included MatterPaymentReceipt rows with this invoice ID and keeps frozen invoice lines as the review/output source.
             </p>
           </div>
@@ -1873,7 +1873,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
             <div style={{ color: "#166534", fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Finalization Action
             </div>
-            <div style={{ marginTop: 4, color: "#0f172a", fontSize: 14, fontWeight: 850 }}>
+            <div style={{ marginTop: 4, color: "#00346e", fontSize: 14, fontWeight: 850 }}>
               Convert the draft invoice into a finalized invoice package.
             </div>
             <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1897,7 +1897,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               borderRadius: 10,
               border: "1px solid #166534",
               background: createdInvoice?.status === "draft" ? "#166534" : "#94a3b8",
-              color: "#fff",
+              color: "#ffffff",
               fontWeight: 950,
               boxShadow: createdInvoice?.status === "draft" ? "0 2px 6px rgba(22, 101, 52, 0.25)" : undefined,
               whiteSpace: "nowrap",
@@ -1914,16 +1914,16 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ marginTop: 0 }}>Invoice Detail: {detailInvoice?.invoiceNumber}</h2>
-              <p style={{ color: "#475569", marginTop: 0 }}>
+              <p style={{ color: "#385a83", marginTop: 0 }}>
                 {detailInvoice?.status === "draft" && "Draft invoice created. Receipt rows are not yet marked as invoiced. Review the frozen package before finalizing."}
                 {detailInvoice?.status === "finalized" && "Invoice finalized. Included receipt rows are marked with this invoice ID and excluded from future invoice previews by default. The invoice review/output remains based on frozen invoice lines."}
                 {detailInvoice?.status === "voided" && "Invoice voided. Receipt rows previously marked with this invoice ID were released for future invoicing. The voided invoice remains in history."}
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "start", flexWrap: "wrap" }}>
-              <button type="button" onClick={printableInvoice} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #0f172a", background: "#0f172a", color: "#fff", fontWeight: 900 }}>Print / Save PDF</button>
+              <button type="button" onClick={printableInvoice} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #0f172a", background: "#0f172a", color: "#ffffff", fontWeight: 900 }}>Print / Save PDF</button>
               {detailInvoice?.status === "draft" && (
-                <button type="button" onClick={() => finalizeInvoice(detailInvoice)} disabled={finalizing} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #166534", background: "#166534", color: "#fff", fontWeight: 900 }}>Finalize</button>
+                <button type="button" onClick={() => finalizeInvoice(detailInvoice)} disabled={finalizing} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #166534", background: "#166534", color: "#ffffff", fontWeight: 900 }}>Finalize</button>
               )}
               {detailInvoice?.status === "finalized" && (
                 <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900 }}>Void</button>

@@ -46,7 +46,7 @@ const providerHubCardStyle: React.CSSProperties = {
 };
 
 const providerHubHeaderLabelStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "#385a83",
   fontSize: 11,
   fontWeight: 950,
   textTransform: "uppercase",
@@ -55,7 +55,7 @@ const providerHubHeaderLabelStyle: React.CSSProperties = {
 
 const providerHubSectionTitleStyle: React.CSSProperties = {
   margin: "4px 0 6px",
-  color: "#0f172a",
+  color: "#00346e",
   fontSize: 22,
   fontWeight: 950,
   letterSpacing: "-0.015em",
@@ -63,7 +63,7 @@ const providerHubSectionTitleStyle: React.CSSProperties = {
 
 const providerHubSubtleTextStyle: React.CSSProperties = {
   margin: 0,
-  color: "#475569",
+  color: "#385a83",
   fontSize: 14,
   lineHeight: 1.45,
 };
@@ -103,7 +103,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e5e7eb",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#475569",
+  color: "#385a83",
   background: "#f8fafc",
 };
 
@@ -764,7 +764,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           type="button"
           disabled={savingClient}
           onClick={saveClientDefaults}
-          style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#fff", fontSize: 12, fontWeight: 800, lineHeight: 1.1, alignSelf: "start", marginTop: 0 }}
+          style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 800, lineHeight: 1.1, alignSelf: "start", marginTop: 0 }}
         >
           {savingClient ? "Saving..." : "Save"}
         </button>
@@ -859,10 +859,10 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
       )}
 
       <section style={{ marginBottom: 22 }}>
-        <div style={{ color: "#64748b", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
+        <div style={{ color: "#385a83", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
           PROVIDER ACCOUNT
         </div>
-        <h1 style={{ margin: "6px 0 8px", fontSize: 38, lineHeight: 1.08, letterSpacing: "-0.035em", fontWeight: 950, color: "#0f172a" }}>{client?.displayName || "Loading client..."}</h1>
+        <h1 style={{ margin: "6px 0 8px", fontSize: 38, lineHeight: 1.08, letterSpacing: "-0.035em", fontWeight: 950, color: "#00346e" }}>{client?.displayName || "Loading client..."}</h1>
       </section>
 
       <section
@@ -882,7 +882,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                   type="button"
                   disabled={savingClient}
                   onClick={saveClientDefaults}
-                  style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#fff", fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}
+                  style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}
                 >
                   {savingClient ? "Saving..." : "Save"}
                 </button>
@@ -933,7 +933,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                   type="button"
                   disabled={savingClient}
                   onClick={saveClientDefaults}
-                  style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#fff", fontSize: 12, fontWeight: 800, lineHeight: 1.1, alignSelf: "start", marginTop: 0 }}
+                  style={{ padding: "1px 6px", borderRadius: 6, border: "1px solid #00346e", background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 800, lineHeight: 1.1, alignSelf: "start", marginTop: 0 }}
                 >
                   {savingClient ? "Saving..." : "Save"}
                 </button>
@@ -1063,7 +1063,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
             <Link
               href={`/admin/clients/${encodeURIComponent(id)}/invoice`}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #00346e", background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: "#0f172a", textDecoration: "none" }}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #00346e", background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)", color: "#00346e", textDecoration: "none" }}
               data-barsh-provider-invoice-workflow-link="true"
             >
               Invoicing / Remittance
@@ -1071,21 +1071,21 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             <button
               type="button"
               onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "individual" ? "" : "individual")}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #047857", background: activeWorkflowPanel === "individual" ? "#047857" : "linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%)", color: activeWorkflowPanel === "individual" ? "#fff" : "#0f172a" }}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #047857", background: activeWorkflowPanel === "individual" ? "#047857" : "linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%)", color: activeWorkflowPanel === "individual" ? "#ffffff" : "#00346e" }}
             >
               Individual Matters
             </button>
             <button
               type="button"
               onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "lawsuits" ? "" : "lawsuits")}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #7c3aed", background: activeWorkflowPanel === "lawsuits" ? "#7c3aed" : "linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%)", color: activeWorkflowPanel === "lawsuits" ? "#fff" : "#0f172a" }}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #7c3aed", background: activeWorkflowPanel === "lawsuits" ? "#7c3aed" : "linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%)", color: activeWorkflowPanel === "lawsuits" ? "#ffffff" : "#00346e" }}
             >
               Lawsuit Matters
             </button>
             <button
               type="button"
               onClick={() => setActiveWorkflowPanel(activeWorkflowPanel === "attorney_fees" ? "" : "attorney_fees")}
-              style={{ ...providerHubButtonBaseStyle, border: "1px solid #b45309", background: activeWorkflowPanel === "attorney_fees" ? "#b45309" : "linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)", color: activeWorkflowPanel === "attorney_fees" ? "#fff" : "#0f172a" }}
+              style={{ ...providerHubButtonBaseStyle, border: "1px solid #b45309", background: activeWorkflowPanel === "attorney_fees" ? "#b45309" : "linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)", color: activeWorkflowPanel === "attorney_fees" ? "#ffffff" : "#00346e" }}
               data-barsh-attorney-fee-report-button="true"
             >
               Attorney Fee Report
@@ -1111,7 +1111,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
               <button
                 type="button"
                 onClick={startEditNotes}
-                style={{ padding: "3px 8px", borderRadius: 7, border: "1px solid #64748b", background: "#ffffff", color: "#0f172a", fontSize: 12, fontWeight: 900, lineHeight: 1.1 }}
+                style={{ padding: "3px 8px", borderRadius: 7, border: "1px solid #64748b", background: "#ffffff", color: "#00346e", fontSize: 12, fontWeight: 900, lineHeight: 1.1 }}
               >
                 Edit Notes
               </button>
@@ -1122,7 +1122,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
         {editingField === "notes" ? (
           notesEditorMode === "add" ? (
             <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ color: "#475569", fontSize: 13, fontWeight: 850 }}>
+              <div style={{ color: "#385a83", fontSize: 13, fontWeight: 850 }}>
                 Add a new note. Saving will append it with the current date and time.
               </div>
               <textarea
@@ -1142,7 +1142,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
             </div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              <div style={{ color: "#475569", fontSize: 13, fontWeight: 850 }}>
+              <div style={{ color: "#385a83", fontSize: 13, fontWeight: 850 }}>
                 Edit any individual note below or use Delete to remove that note. Saving replaces the notes list.
               </div>
               {editableNotes.length ? (
@@ -1163,7 +1163,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                   </div>
                 ))
               ) : (
-                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 800 }}>No notes remain.</div>
+                <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>No notes remain.</div>
               )}
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <button type="button" disabled={savingClient} onClick={cancelEdit} style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#ffffff", fontWeight: 850 }}>
@@ -1191,7 +1191,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Individual Matters</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Matched local ClaimIndex child matters for this provider/client. Use this panel to review the child-matter population behind invoice/remittance reporting.
               </p>
             </div>
@@ -1207,23 +1207,23 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Individual Matters</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Individual Matters</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{matterPanelTotals.count}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Linked Lawsuits</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Linked Lawsuits</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{linkedLawsuitCount}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(matterPanelTotals.billAmount)}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Balance</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Balance</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(matterPanelTotals.balance)}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 160 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Open / Closed</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Open / Closed</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{matterPanelTotals.openCount} / {matterPanelTotals.closedCount}</div>
             </div>
           </div>
@@ -1298,7 +1298,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Attorney Fee Report</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Admin-only report for Attorney Fee receipts. These rows are not part of provider invoice/remittance calculations.
               </p>
             </div>
@@ -1314,15 +1314,15 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Rows</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Rows</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{attorneyFeeReportTotals.count}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Active Attorney Fee</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Active Attorney Fee</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(attorneyFeeReportTotals.activeTotal)}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Voided Attorney Fee</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Voided Attorney Fee</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(attorneyFeeReportTotals.voidedTotal)}</div>
             </div>
           </div>
@@ -1402,7 +1402,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0 }}>Lawsuit Matters</h2>
-              <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                 Lawsuit matters are summarized from this provider/client's matched individual matters.
               </p>
             </div>
@@ -1418,19 +1418,19 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "14px 0" }}>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Lawsuits</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Lawsuits</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{lawsuitPanelTotals.count}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Child Matters</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Child Matters</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{lawsuitPanelTotals.childMatterCount}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Bill Amount</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(lawsuitPanelTotals.billAmount)}</div>
             </div>
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, minWidth: 170 }}>
-              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900 }}>Balance</div>
+              <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900 }}>Balance</div>
               <div style={{ fontSize: 24, fontWeight: 950 }}>{money(lawsuitPanelTotals.balance)}</div>
             </div>
           </div>

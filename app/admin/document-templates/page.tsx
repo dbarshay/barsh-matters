@@ -2,10 +2,10 @@ import BarshHeader from "@/app/components/BarshHeader";
 
 export default function DocumentTemplatesPage() {
   return (
-    <main style={{ padding: "32px 48px", color: "#1f2937" }}>
+    <main style={{ padding: "32px 48px", color: "#00346e" }}>
       <BarshHeader />
       <div style={{ maxWidth: "none", margin: 0 }}>
-        <h1 style={{ margin: "0 0 16px", fontSize: "30px", fontWeight: 700, color: "#111827" }}>
+        <h1 style={{ margin: "0 0 16px", fontSize: "30px", fontWeight: 700, color: "#00346e" }}>
           Document Templates
         </h1>
 
@@ -30,10 +30,10 @@ export default function DocumentTemplatesPage() {
               boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
             }}
           >
-            <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#111827" }}>
+            <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#00346e" }}>
               Build Template
             </h2>
-            <p style={{ margin: 0, lineHeight: 1.5, color: "#4b5563" }}>
+            <p style={{ margin: 0, lineHeight: 1.5, color: "#385a83" }}>
               Browse and copy canonical merge fields for a fresh DOCX.
             </p>
           </a>
@@ -51,10 +51,10 @@ export default function DocumentTemplatesPage() {
               boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
             }}
           >
-            <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#111827" }}>
+            <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#00346e" }}>
               View Templates
             </h2>
-            <p style={{ margin: 0, lineHeight: 1.5, color: "#4b5563" }}>
+            <p style={{ margin: 0, lineHeight: 1.5, color: "#385a83" }}>
               Review template records and lifecycle status.
             </p>
           </a>

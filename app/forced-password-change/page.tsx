@@ -41,13 +41,13 @@ export default function ForcedPasswordChangePage() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 950 }}>Change Password Required</h1>
         </div>
         <div style={{ padding: 22, display: "grid", gap: 12 }}>
-          <p style={{ margin: 0, color: "#334155", fontWeight: 800 }}>Enter the temporary password you were given, then choose a new password.</p>
+          <p style={{ margin: 0, color: "#385a83", fontWeight: 800 }}>Enter the temporary password you were given, then choose a new password.</p>
           <input data-barsh-forced-password-change-email="true" style={inputStyle} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" autoComplete="username" />
           <input data-barsh-forced-password-change-current-password="true" style={inputStyle} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Temporary password" type="password" autoComplete="current-password" />
           <input data-barsh-forced-password-change-new-password="true" style={inputStyle} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" type="password" autoComplete="new-password" />
           <input data-barsh-forced-password-change-confirm-password="true" style={inputStyle} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" type="password" autoComplete="new-password" />
           <button data-barsh-forced-password-change-submit="true" type="button" disabled={busy} onClick={() => void submit()} style={primaryButtonStyle}>{busy ? "Saving..." : "Change Password"}</button>
-          {status ? <p data-barsh-forced-password-change-status="true" style={{ margin: 0, color: "#334155", fontWeight: 800 }}>{status}</p> : null}
+          {status ? <p data-barsh-forced-password-change-status="true" style={{ margin: 0, color: "#385a83", fontWeight: 800 }}>{status}</p> : null}
         </div>
       </section>
     </main>

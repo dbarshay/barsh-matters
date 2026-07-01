@@ -76,7 +76,7 @@ export default function AdminAuditHistoryPage() {
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
-        color: "#0f172a",
+        color: "#00346e",
         padding: "28px 30px 46px",
         boxSizing: "border-box",
       }}
@@ -102,7 +102,7 @@ export default function AdminAuditHistoryPage() {
               <h1 style={{ margin: "4px 0 0", fontSize: 30, lineHeight: 1.1 }}>
                 Audit / History
               </h1>
-              <p style={{ margin: "8px 0 0", color: "#475569", lineHeight: 1.45, maxWidth: 900 }}>
+              <p style={{ margin: "8px 0 0", color: "#385a83", lineHeight: 1.45, maxWidth: 900 }}>
                 Administrator view for recent local Barsh Matters audit/history entries.
               </p>
             </div>
@@ -115,7 +115,7 @@ export default function AdminAuditHistoryPage() {
                 alignSelf: "flex-start",
                 border: "1px solid #0f172a",
                 background: loading ? "#e5e7eb" : "#0f172a",
-                color: loading ? "#64748b" : "#fff",
+                color: loading ? "#385a83" : "#ffffff",
                 borderRadius: 12,
                 padding: "9px 13px",
                 fontWeight: 950,
@@ -174,15 +174,15 @@ export default function AdminAuditHistoryPage() {
         >
           <div style={{ padding: "16px 18px", borderBottom: "1px solid #e5e7eb" }}>
             <h2 style={{ margin: 0, fontSize: 20 }}>Recent Audit Entries</h2>
-            <p style={{ margin: "4px 0 0", color: "#64748b", lineHeight: 1.4 }}>
+            <p style={{ margin: "4px 0 0", color: "#385a83", lineHeight: 1.4 }}>
               Shows the most recent local audit/history records available from the existing audit-log API.
             </p>
           </div>
 
-          {loading && <div style={{ padding: 18, color: "#475569", fontWeight: 900 }}>Loading audit history...</div>}
+          {loading && <div style={{ padding: 18, color: "#385a83", fontWeight: 900 }}>Loading audit history...</div>}
 
           {!loading && entries.length === 0 && (
-            <div style={{ padding: 18, color: "#64748b", fontWeight: 900 }}>
+            <div style={{ padding: 18, color: "#385a83", fontWeight: 900 }}>
               No audit/history entries returned.
             </div>
           )}
@@ -191,7 +191,7 @@ export default function AdminAuditHistoryPage() {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 920 }}>
                 <thead>
-                  <tr style={{ background: "#f8fafc", color: "#334155", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <tr style={{ background: "#f8fafc", color: "#385a83", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     <th style={{ textAlign: "left", padding: "11px 12px", borderBottom: "1px solid #e5e7eb" }}>Date</th>
                     <th style={{ textAlign: "left", padding: "11px 12px", borderBottom: "1px solid #e5e7eb" }}>Action</th>
                     <th style={{ textAlign: "left", padding: "11px 12px", borderBottom: "1px solid #e5e7eb" }}>Matter</th>
@@ -207,11 +207,11 @@ export default function AdminAuditHistoryPage() {
                       </td>
                       <td style={{ padding: 12, verticalAlign: "top" }}>
                         <div style={{ fontWeight: 950 }}>{display(entry.actionSummary || entry.action)}</div>
-                        <div style={{ color: "#64748b", fontSize: 13 }}>{display(entry.action)}</div>
+                        <div style={{ color: "#385a83", fontSize: 13 }}>{display(entry.action)}</div>
                       </td>
                       <td style={{ padding: 12, verticalAlign: "top" }}>
                         <div>{display(entry.matterId)}</div>
-                        <div style={{ color: "#64748b", fontSize: 13 }}>{display(entry.masterLawsuitId)}</div>
+                        <div style={{ color: "#385a83", fontSize: 13 }}>{display(entry.masterLawsuitId)}</div>
                       </td>
                       <td style={{ padding: 12, verticalAlign: "top" }}>{display(entry.user)}</td>
                       <td style={{ padding: 12, verticalAlign: "top" }}>

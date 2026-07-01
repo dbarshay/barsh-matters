@@ -25,7 +25,7 @@ const baseActionStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
   borderRadius: 999,
   background: "#f8fafc",
-  color: "#475569",
+  color: "#385a83",
   fontSize: 12,
   fontWeight: 900,
   textDecoration: "none",

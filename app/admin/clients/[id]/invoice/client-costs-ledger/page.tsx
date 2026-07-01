@@ -25,7 +25,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e2e8f0",
   padding: "9px 10px",
   background: "#f8fafc",
-  color: "#334155",
+  color: "#385a83",
   fontSize: 12,
   textTransform: "uppercase",
   letterSpacing: "0.02em",
@@ -54,7 +54,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   borderRadius: 10,
   border: "1px solid #cbd5e1",
   background: "#ffffff",
-  color: "#0f172a",
+  color: "#00346e",
   fontWeight: 900,
   cursor: "pointer",
 };
@@ -178,12 +178,12 @@ export default function ClientCostsLedgerPage() {
       <section style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Invoicing / Remittance
             </div>
             <h1 style={{ margin: "6px 0 4px" }}>Client Costs Ledger</h1>
             <h2 style={{ margin: 0, fontSize: 18 }}>{clientName}</h2>
-            <p style={{ color: "#475569", marginBottom: 0 }}>
+            <p style={{ color: "#385a83", marginBottom: 0 }}>
               Cost activity for this invoice/remittance workflow. Finalized non-voided invoice lines block the same cost from future invoice previews; draft invoice lines do not permanently mark source rows.
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function ClientCostsLedgerPage() {
                   <td style={tdStyle}>
                     <strong>{row.matterDisplay || row.matterDisplayNumber || row.masterLawsuitId || "—"}</strong>
                     <br />
-                    <span style={{ color: "#64748b" }}>{row.patientName || row.providerName || ""}</span>
+                    <span style={{ color: "#385a83" }}>{row.patientName || row.providerName || ""}</span>
                   </td>
                   <td style={{ ...tdStyle, textAlign: "right" }}>{money(row.amount)}</td>
                   <td style={tdStyle}>{row.voided ? "Yes" : "No"}</td>
@@ -251,7 +251,7 @@ export default function ClientCostsLedgerPage() {
                       {row.eligibleForFutureInvoice ? "Yes" : "No"}
                     </strong>
                     <br />
-                    <span style={{ color: "#64748b" }}>{row.eligibilityReason || ""}</span>
+                    <span style={{ color: "#385a83" }}>{row.eligibilityReason || ""}</span>
                   </td>
                 </tr>
               ))}

@@ -83,7 +83,7 @@ const emptyFilters: FilterState = {
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#f8fafc",
-  color: "#0f172a",
+  color: "#00346e",
   padding: "28px 30px 46px",
   boxSizing: "border-box",
 };
@@ -111,13 +111,13 @@ const labelStyle: React.CSSProperties = {
   gap: 6,
   fontSize: 13,
   fontWeight: 900,
-  color: "#334155",
+  color: "#385a83",
 };
 
 const buttonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
-  color: "#fff",
+  color: "#ffffff",
   borderRadius: 12,
   padding: "10px 14px",
   fontWeight: 950,
@@ -127,8 +127,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#334155",
+  background: "#ffffff",
+  color: "#385a83",
 };
 
 const thStyle: React.CSSProperties = {
@@ -136,7 +136,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #cbd5e1",
   padding: "10px 8px",
   fontSize: 12,
-  color: "#334155",
+  color: "#385a83",
   background: "#f8fafc",
   position: "sticky",
   top: 0,
@@ -406,10 +406,10 @@ export default function AdminClaimIndexPage() {
             Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>ClaimIndex Viewer</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 980 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, maxWidth: 980 }}>
             Audit view of the local Barsh Matters ClaimIndex table.
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", color: "#334155", fontWeight: 900 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", color: "#385a83", fontWeight: 900 }}>
             <span>Source: {result?.sourceOfTruth || "ClaimIndex/local Barsh Matters"}</span>
             <span>Read-only: {result?.readOnly === false ? "NO" : "YES"}</span>
             <span>Limit: {result?.limit ?? 500}</span>
@@ -420,7 +420,7 @@ export default function AdminClaimIndexPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 20 }}>Search / Filter</h2>
-              <div style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>
+              <div style={{ color: "#385a83", fontSize: 13, marginTop: 4 }}>
                 {activeFilterCount} active filter(s). Results are capped at 500 rows.
               </div>
             </div>
@@ -489,12 +489,12 @@ export default function AdminClaimIndexPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 20 }}>Results</h2>
-              <div style={{ color: "#64748b", marginTop: 4 }}>{message}</div>
+              <div style={{ color: "#385a83", marginTop: 4 }}>{message}</div>
             </div>
               <a href="/admin/claim-index/audit" style={secondaryButtonStyle}>
                 Data-Quality Audit
               </a>
-            <a href="/admin" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>
+            <a href="/admin" style={{ color: "#385a83", fontWeight: 900, textDecoration: "none" }}>
               ← Back to Admin Home
             </a>
           </div>
@@ -508,7 +508,7 @@ export default function AdminClaimIndexPage() {
                       <button
                         type="button"
                         onClick={() => changeSort(column)}
-                        style={{ border: 0, background: "transparent", padding: 0, margin: 0, font: "inherit", fontWeight: 950, color: "#334155", cursor: "pointer" }}
+                        style={{ border: 0, background: "transparent", padding: 0, margin: 0, font: "inherit", fontWeight: 950, color: "#385a83", cursor: "pointer" }}
                       >
                         {label}{sortLabel(column)}
                       </button>
@@ -531,13 +531,13 @@ export default function AdminClaimIndexPage() {
                     <td style={tdStyle}>{row.patient_name || ""}</td>
                     <td style={tdStyle}>
                       <div>{row.provider_name || row.client_name || ""}</div>
-                      {row.treating_provider ? <div style={{ color: "#64748b", fontSize: 12 }}>Treating: {row.treating_provider}</div> : null}
+                      {row.treating_provider ? <div style={{ color: "#385a83", fontSize: 12 }}>Treating: {row.treating_provider}</div> : null}
                     </td>
                     <td style={tdStyle}>{row.insurer_name || ""}</td>
                     <td style={tdStyle}>
                       <div>{row.claim_number_raw || ""}</div>
                       {row.claim_number_normalized && row.claim_number_normalized !== row.claim_number_raw ? (
-                        <div style={{ color: "#64748b", fontSize: 12 }}>{row.claim_number_normalized}</div>
+                        <div style={{ color: "#385a83", fontSize: 12 }}>{row.claim_number_normalized}</div>
                       ) : null}
                     </td>
                     <td style={tdStyle}>{row.status || ""}</td>
@@ -555,7 +555,7 @@ export default function AdminClaimIndexPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={18} style={{ ...tdStyle, color: "#64748b", padding: 18 }}>
+                    <td colSpan={18} style={{ ...tdStyle, color: "#385a83", padding: 18 }}>
                       No ClaimIndex rows matched the current filters.
                     </td>
                   </tr>
@@ -564,7 +564,7 @@ export default function AdminClaimIndexPage() {
             </table>
           </div>
 
-          <div style={{ color: "#64748b", fontSize: 13, lineHeight: 1.45 }}>
+          <div style={{ color: "#385a83", fontSize: 13, lineHeight: 1.45 }}>
             API safety message: {result?.safety || "Read-only ClaimIndex viewer. No write actions are available."}
           </div>
         </section>

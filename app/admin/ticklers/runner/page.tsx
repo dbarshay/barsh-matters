@@ -224,7 +224,7 @@ export default function AdminTicklerRunnerPage() {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
         <div>
           <h1 style={{ margin: 0 }}>Admin Tickler Bulk Runner</h1>
-          <p style={{ marginTop: 8, color: "#475569", maxWidth: 880 }}>
+          <p style={{ marginTop: 8, color: "#385a83", maxWidth: 880 }}>
             Administrator action screen for bulk processing open ticklers.
           </p>
         </div>
@@ -408,7 +408,7 @@ export default function AdminTicklerRunnerPage() {
                   <tbody>
                     {ticklers.length === 0 ? (
                       <tr>
-                        <td colSpan={11} style={{ padding: 12, color: "#64748b" }}>
+                        <td colSpan={11} style={{ padding: 12, color: "#385a83" }}>
                           No matching ticklers.
                         </td>
                       </tr>

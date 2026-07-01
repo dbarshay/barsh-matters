@@ -181,7 +181,7 @@ export default function ViewTemplatesPage() {
     <main style={{ padding: "32px 40px", width: "100%", maxWidth: "none", margin: "0" }}>
       <BarshHeader />
       <a href="/admin/document-templates" style={{ color: "#00346e", fontWeight: 700 }}>Back to Document Templates</a>
-      <h1 style={{ margin: "18px 0 10px", fontSize: "30px", color: "#0f172a" }}>View Templates</h1>
+      <h1 style={{ margin: "18px 0 10px", fontSize: "30px", color: "#00346e" }}>View Templates</h1>
       <section
         data-template-view-repository-status="true"
         style={{
@@ -225,7 +225,7 @@ export default function ViewTemplatesPage() {
           <tbody>
             {visibleRows.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ padding: "18px", color: "#64748b" }}>
+                <td colSpan={10} style={{ padding: "18px", color: "#385a83" }}>
                   No templates match this filter.
                 </td>
               </tr>
@@ -236,7 +236,7 @@ export default function ViewTemplatesPage() {
                     <a href={"/admin/document-templates/" + encodeURIComponent(template.key)} style={{ color: "#00346e", fontWeight: 800 }}>
                       {template.label || template.key}
                     </a>
-                    <div style={{ marginTop: "4px", color: "#64748b", fontSize: "12px" }}>{template.key}</div>
+                    <div style={{ marginTop: "4px", color: "#385a83", fontSize: "12px" }}>{template.key}</div>
                   </td>
                   <td style={{ padding: "12px" }}>{status}</td>
                   <td style={{ padding: "12px" }}>{template.category || "—"}</td>
@@ -247,7 +247,7 @@ export default function ViewTemplatesPage() {
                   <td style={{ padding: "12px" }}>
                     {template.currentVersion?.hasStoredDocx ? "Yes" : "No"}
                     {template.currentVersion?.uploadedTemplateFile?.name ? (
-                      <div style={{ marginTop: "4px", color: "#64748b", fontSize: "12px" }}>{template.currentVersion.uploadedTemplateFile.name}</div>
+                      <div style={{ marginTop: "4px", color: "#385a83", fontSize: "12px" }}>{template.currentVersion.uploadedTemplateFile.name}</div>
                     ) : null}
                   </td>
                   <td style={{ padding: "12px" }}>{Array.isArray(template.mergeFields) ? template.mergeFields.length : 0}</td>

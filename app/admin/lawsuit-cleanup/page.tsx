@@ -495,7 +495,7 @@ const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#f8fafc",
   padding: 24,
-  color: "#0f172a",
+  color: "#00346e",
 };
 
 const heroStyle: React.CSSProperties = {
@@ -522,14 +522,14 @@ const eyebrowStyle: React.CSSProperties = {
 
 const subtitleStyle: React.CSSProperties = {
   margin: "10px 0 0",
-  color: "#64748b",
+  color: "#385a83",
   maxWidth: 900,
   fontSize: 15,
   lineHeight: 1.5,
 };
 
 const backLinkStyle: React.CSSProperties = {
-  color: "#334155",
+  color: "#385a83",
   fontWeight: 900,
   textDecoration: "none",
   whiteSpace: "nowrap",
@@ -569,7 +569,7 @@ const filterGridStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "grid",
   gap: 6,
-  color: "#334155",
+  color: "#385a83",
   fontSize: 13,
   fontWeight: 900,
 };
@@ -578,7 +578,7 @@ const checkLabelStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  color: "#334155",
+  color: "#385a83",
   fontSize: 13,
   fontWeight: 900,
 };
@@ -625,7 +625,7 @@ const summaryCardStyle: React.CSSProperties = {
 };
 
 const summaryLabelStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "#385a83",
   fontSize: 12,
   fontWeight: 900,
   textTransform: "uppercase",
@@ -647,7 +647,7 @@ const panelStyle: React.CSSProperties = {
 };
 
 const mutedTextStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "#385a83",
   fontSize: 13,
   fontWeight: 700,
 };
@@ -670,7 +670,7 @@ const thStyle: React.CSSProperties = {
   padding: 10,
   background: "#f8fafc",
   borderBottom: "1px solid #e2e8f0",
-  color: "#475569",
+  color: "#385a83",
   fontSize: 12,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
@@ -722,7 +722,7 @@ const metaGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(160px, 1fr))",
   gap: 10,
-  color: "#334155",
+  color: "#385a83",
   fontSize: 13,
   marginBottom: 10,
 };
@@ -730,7 +730,7 @@ const metaGridStyle: React.CSSProperties = {
 const emptyChildStyle: React.CSSProperties = {
   background: "#f8fafc",
   border: "1px dashed #cbd5e1",
-  color: "#64748b",
+  color: "#385a83",
   borderRadius: 12,
   padding: 12,
   fontWeight: 800,

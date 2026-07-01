@@ -155,7 +155,7 @@ export default function AdminHomePage() {
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
-        color: "#0f172a",
+        color: "#00346e",
         padding: "28px 30px 46px",
         boxSizing: "border-box",
       }}
@@ -165,7 +165,7 @@ export default function AdminHomePage() {
         <section data-barsh-admin-session-control="true" style={{ background: "#ffffff", border: "1px solid #dbeafe", borderRadius: 18, padding: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)" }}>
           <div style={{ display: "grid", gap: 2 }}>
             <div style={{ fontSize: 12, fontWeight: 950, color: "#00346e", textTransform: "uppercase", letterSpacing: "0.08em" }}>Session</div>
-            <div data-barsh-admin-session-status="true" style={{ fontWeight: 900, color: "#0f172a" }}>{adminSessionStatus}</div>
+            <div data-barsh-admin-session-status="true" style={{ fontWeight: 900, color: "#00346e" }}>{adminSessionStatus}</div>
           </div>
           <button data-barsh-admin-logout-button="true" type="button" onClick={logoutAdministrator} disabled={adminSessionBusy} style={{ border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", borderRadius: 999, padding: "9px 13px", fontSize: 12, fontWeight: 950, cursor: "pointer", opacity: adminSessionBusy ? 0.7 : 1 }}>
             {adminSessionBusy ? "Logging out..." : "Logout"}
@@ -187,7 +187,7 @@ export default function AdminHomePage() {
             Administrator
           </div>
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.1 }}>Admin Home</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45, maxWidth: 900 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45, maxWidth: 900 }}>
             Admin-only Barsh Matters functions.  This page is protected by the administrator gate.
           </p>
         </header>
@@ -209,7 +209,7 @@ export default function AdminHomePage() {
                 borderRadius: 22,
                 padding: 20,
                 textDecoration: "none",
-                color: "#0f172a",
+                color: "#00346e",
                 boxShadow: "0 14px 32px rgba(15, 23, 42, 0.07)",
                 display: "grid",
                 gap: 10,
@@ -217,14 +217,14 @@ export default function AdminHomePage() {
             >
               <div style={{ fontSize: 28 }}>{card.icon}</div>
               <div style={{ fontSize: 20, fontWeight: 950 }}>{card.label}</div>
-              <div style={{ color: "#475569", lineHeight: 1.45 }}>{card.description}</div>
+              <div style={{ color: "#385a83", lineHeight: 1.45 }}>{card.description}</div>
               <div style={{ marginTop: 8, fontWeight: 950, color: "#00346e" }}>Open →</div>
             </a>
           ))}
         </section>
 
         <div>
-          <a href="/" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>
+          <a href="/" style={{ color: "#385a83", fontWeight: 900, textDecoration: "none" }}>
             ← Back to Barsh Matters
           </a>
         </div>

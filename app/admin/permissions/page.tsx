@@ -42,7 +42,7 @@ const TIER_DESCRIPTION: Record<string, string> = {
   security: "Manage admin users, roles, permissions, and security. Owner only.",
 };
 
-const th: React.CSSProperties = { padding: 8, borderBottom: "1px solid #cbd5e1", textAlign: "left", fontSize: 12, color: "#334155", textTransform: "uppercase", letterSpacing: ".04em" };
+const th: React.CSSProperties = { padding: 8, borderBottom: "1px solid #cbd5e1", textAlign: "left", fontSize: 12, color: "#385a83", textTransform: "uppercase", letterSpacing: ".04em" };
 const td: React.CSSProperties = { padding: 8, borderBottom: "1px solid #e5e7eb", verticalAlign: "top" };
 const mono: React.CSSProperties = { ...td, fontFamily: "monospace", fontWeight: 800 };
 
@@ -53,7 +53,7 @@ function tierBadge(tier: string): React.CSSProperties {
   if (tier === "process") return { ...base, background: "#fef9c3", borderColor: "#fde68a", color: "#854d0e" };
   if (tier === "admin") return { ...base, background: "#ede9fe", borderColor: "#c4b5fd", color: "#5b21b6" };
   if (tier === "security") return { ...base, background: "#fee2e2", borderColor: "#fecaca", color: "#991b1b" };
-  return { ...base, background: "#f1f5f9", borderColor: "#cbd5e1", color: "#334155" };
+  return { ...base, background: "#f1f5f9", borderColor: "#cbd5e1", color: "#385a83" };
 }
 
 function decisionBadge(allowed: boolean): React.CSSProperties {
@@ -98,14 +98,14 @@ export default function AdminPermissionsPage() {
   const simTier = simRow?.tier || catalog.find((item) => item.key === simPermission)?.tier || "—";
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", padding: 30, boxSizing: "border-box" }}>
+    <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#00346e", padding: 30, boxSizing: "border-box" }}>
       <div style={{ maxWidth: "none", margin: 0, display: "grid", gap: 18 }}>
         <BarshHeader />
 
         <header style={cardStyle}>
           <div style={{ fontSize: 13, fontWeight: 900, color: "#00346e", textTransform: "uppercase", letterSpacing: ".08em" }}>Administrator</div>
           <h1 style={{ margin: "8px 0", fontSize: 32 }}>Permissions</h1>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.45 }}>
+          <p style={{ margin: 0, color: "#385a83", lineHeight: 1.45 }}>
             Five permission tiers and the five roles built from them. {catalog.length} permissions · {roles.length} roles.
           </p>
         </header>
@@ -138,7 +138,7 @@ export default function AdminPermissionsPage() {
             <tbody>
               {roles.map((role) => (
                 <tr key={role.roleKey}>
-                  <td style={{ ...td, fontWeight: 800 }}>{role.label} <span style={{ fontFamily: "monospace", color: "#94a3b8", fontWeight: 400 }}>{role.roleKey}</span></td>
+                  <td style={{ ...td, fontWeight: 800 }}>{role.label} <span style={{ fontFamily: "monospace", color: "#385a83", fontWeight: 400 }}>{role.roleKey}</span></td>
                   {TIERS.map((tier) => {
                     const has = role.allowedTiers.includes(tier);
                     const grantedNote = tier === "admin" && role.roleKey === "administrator";
@@ -149,7 +149,7 @@ export default function AdminPermissionsPage() {
               ))}
             </tbody>
           </table>
-          <p style={{ margin: "10px 0 0", color: "#64748b", fontSize: 12 }}>Administrator&apos;s admin functions are granted per-user. Security (manage users/roles/permissions) is Owner-only.</p>
+          <p style={{ margin: "10px 0 0", color: "#385a83", fontSize: 12 }}>Administrator&apos;s admin functions are granted per-user. Security (manage users/roles/permissions) is Owner-only.</p>
         </section>
 
         <section style={{ ...cardStyle, overflowX: "auto" }}>
@@ -185,7 +185,7 @@ export default function AdminPermissionsPage() {
 
         <section style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Simulator</h2>
-          <p style={{ margin: "0 0 12px", color: "#475569" }}>Check whether a role allows a permission under this model.</p>
+          <p style={{ margin: "0 0 12px", color: "#385a83" }}>Check whether a role allows a permission under this model.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, alignItems: "end" }}>
             <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>Role
               <select value={simRole} onChange={(e) => setSimRole(e.target.value)} style={{ padding: 10, border: "1px solid #cbd5e1", borderRadius: 10 }}>
@@ -204,7 +204,7 @@ export default function AdminPermissionsPage() {
           </div>
         </section>
 
-        <a href="/admin" style={{ color: "#334155", fontWeight: 900, textDecoration: "none" }}>Back to Admin Home</a>
+        <a href="/admin" style={{ color: "#385a83", fontWeight: 900, textDecoration: "none" }}>Back to Admin Home</a>
       </div>
     </main>
   );

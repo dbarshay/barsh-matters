@@ -42,13 +42,13 @@ const inputStyle: React.CSSProperties = {
   padding: "10px 12px",
   fontSize: "14px",
   background: "#ffffff",
-  color: "#0f172a",
+  color: "#00346e",
 };
 
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontWeight: 900,
-  color: "#0f172a",
+  color: "#00346e",
   marginBottom: 6,
 };
 
@@ -241,7 +241,7 @@ export default function AdminDocumentTemplateDetailPage() {
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
-        color: "#0f172a",
+        color: "#00346e",
         padding: "32px 40px",
         width: "100%",
         maxWidth: "none",
@@ -260,7 +260,7 @@ export default function AdminDocumentTemplateDetailPage() {
               <h1 style={{ margin: "12px 0 4px", fontSize: 34, lineHeight: 1.1 }}>
                 {display(template?.label, "Edit Template")}
               </h1>
-              <div style={{ color: "#64748b", fontWeight: 800 }}>{display(template?.key || key)}</div>
+              <div style={{ color: "#385a83", fontWeight: 800 }}>{display(template?.key || key)}</div>
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -276,7 +276,7 @@ export default function AdminDocumentTemplateDetailPage() {
             </div>
           </div>
 
-          {loading && <div style={{ color: "#64748b", fontWeight: 800 }}>Loading template detail…</div>}
+          {loading && <div style={{ color: "#385a83", fontWeight: 800 }}>Loading template detail…</div>}
           {statusMessage && (
             <div style={{ border: "1px solid #bfdbfe", background: "#eff6ff", color: "#00346e", borderRadius: 12, padding: 12, fontWeight: 900 }}>
               {statusMessage}
@@ -357,7 +357,7 @@ export default function AdminDocumentTemplateDetailPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                     <div>
                       <h3 style={{ margin: 0, fontSize: 16 }}>Edit Template</h3>
-                      <p style={{ margin: "6px 0 0", color: "#475569", lineHeight: 1.45 }}>
+                      <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
                         Open the current repository DOCX in Word, make edits, save in Word, then save the edited DOCX back as the new active template version. Prior versions are preserved.
                       </p>
                     </div>
@@ -393,7 +393,7 @@ export default function AdminDocumentTemplateDetailPage() {
                 ["Merge Fields", String(mergeFields.length)],
               ].map(([label, value]) => (
                 <div key={label} style={cardStyle()}>
-                  <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".06em" }}>
+                  <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".06em" }}>
                     {label}
                   </div>
                   <div style={{ marginTop: 6, fontWeight: 950, overflowWrap: "anywhere" }}>{value}</div>

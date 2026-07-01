@@ -25,7 +25,7 @@ const thStyle: React.CSSProperties = {
   borderBottom: "1px solid #e2e8f0",
   padding: "9px 10px",
   background: "#f8fafc",
-  color: "#334155",
+  color: "#385a83",
   fontSize: 12,
   textTransform: "uppercase",
   letterSpacing: "0.02em",
@@ -54,7 +54,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   borderRadius: 10,
   border: "1px solid #cbd5e1",
   background: "#ffffff",
-  color: "#0f172a",
+  color: "#00346e",
   fontWeight: 900,
   cursor: "pointer",
 };
@@ -87,7 +87,7 @@ function statusBadge(status: unknown) {
     fontWeight: 900,
     border: "1px solid #cbd5e1",
     background: "#f8fafc",
-    color: "#334155",
+    color: "#385a83",
   };
   if (lower === "finalized") {
     style.border = "1px solid #bbf7d0";
@@ -278,12 +278,12 @@ export default function ClientInvoiceHistoryPage() {
       <section style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
-            <div style={{ color: "#64748b", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            <div style={{ color: "#385a83", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Invoicing / Remittance
             </div>
             <h1 style={{ margin: "6px 0 4px" }}>Client Invoice History</h1>
             <h2 style={{ margin: 0, fontSize: 18 }}>{clientName}</h2>
-            <p style={{ color: "#475569", marginBottom: 0 }}>
+            <p style={{ color: "#385a83", marginBottom: 0 }}>
               View finalized invoice detail, finalize drafts, void finalized invoices, and print/save invoices as PDF.
             </p>
           </div>

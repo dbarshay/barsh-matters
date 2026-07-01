@@ -225,19 +225,23 @@ env flag is set. Superseded the earlier "Phase 21" hash-based OTP for the login 
 
 ## Brand color — one system navy
 
-The Barsh Matters "system blue" is a single navy: `#0a1c35` (= `BRAND_NAVY` in
+The Barsh Matters "system blue" is a single navy: `#00346e` (= `BRAND_NAVY` in
 `lib/brand.ts`), matching the BRL + BM logos. It is the ONLY primary blue — buttons,
-banners, headers, and the `colors.blue` palette all resolve to it.
+banners, headers, `colors.blue`, headings, AND all black/near-black body text all resolve
+to it. Secondary / muted text is a single **muted** system blue `#385a83`
+(= `BRAND_NAVY_MUTED`, a softened `BRAND_NAVY`). Mid grays used for borders/lines
+(`#cbd5e1` etc.) are NOT text and stay as-is.
 
 To change it everywhere in ONE command — code AND the raster logo PNGs — run:
 
     python3 scripts/set-system-blue.py "#RRGGBB"
 
 It reads the current `BRAND_NAVY`, replaces that hex + its `rgb()` form across
-app/lib/src/scripts, updates `BRAND_NAVY`, and re-tints the `public/` logo PNGs
-(navy → new, keeping the gold accents, white lettering, and transparency). Do NOT
-hand-edit navy hexes piecemeal — that's how it drifted before (a named `colors.blue`
-and `rgb()` shadow forms slipped past a hex-only find/replace). Exception: the
+app/lib/src/scripts, updates `BRAND_NAVY`, recomputes + replaces `BRAND_NAVY_MUTED`
+(so muted text moves with the navy), and re-tints the `public/` logo PNGs (navy → new,
+keeping the gold accents, white lettering, and transparency). Do NOT hand-edit navy hexes
+piecemeal — that's how it drifted before (a named `colors.blue` and `rgb()` shadow forms
+slipped past a hex-only find/replace). Exception: the
 `admin/permissions` tier-badge legend (view=blue, edit=green, process=amber,
 admin=purple, security=red) is a deliberate color code, not the system blue, and is
 intentionally excluded.

@@ -53,9 +53,9 @@ type AdvancedSearchFields = {
 
 
 const colors = {
-  ink: "#0f172a",
-  muted: "#475569",
-  subtle: "#64748b",
+  ink: "#00346e",
+  muted: "#385a83",
+  subtle: "#385a83",
   line: "#d7dee9",
   lineSoft: "#e5e7eb",
   page: "#eef2f7",
@@ -2356,7 +2356,7 @@ export default function Home() {
             <div
               style={{
                 marginBottom: 14,
-                color: "#475569",
+                color: "#385a83",
                 fontSize: 18,
                 fontWeight: 950,
                 letterSpacing: "0.10em",
@@ -2419,7 +2419,7 @@ export default function Home() {
             >
               <div
                 style={{
-                  color: "#475569",
+                  color: "#385a83",
                   fontSize: 18,
                   fontWeight: 950,
                   letterSpacing: "0.10em",
@@ -2558,7 +2558,7 @@ export default function Home() {
                       margin: "0 0 10px",
                       fontSize: 13,
                       fontWeight: 800,
-                      color: "#334155",
+                      color: "#385a83",
                     }}
                   >
                     <input
@@ -3156,7 +3156,7 @@ const printQueueButtonStyle: React.CSSProperties = {
   padding: "7px 11px",
   border: "1px solid #cbd5e1",
   borderRadius: 999,
-  background: "#f8fafc",
+  background: "#ffffff",
   color: colors.muted,
   fontSize: 12,
   fontWeight: 800,
@@ -3772,7 +3772,7 @@ const searchResultsHeaderStyle: React.CSSProperties = {
 };
 
 const searchResultsKickerStyle: React.CSSProperties = {
-  color: "#475569",
+  color: "#385a83",
   fontSize: 12,
   fontWeight: 950,
   letterSpacing: "0.14em",
@@ -3831,7 +3831,7 @@ const homeResultsThStyle: React.CSSProperties = {
   padding: "10px 12px",
   borderBottom: "1px solid #cbd5e1",
   background: "#f8fafc",
-  color: "#334155",
+  color: "#385a83",
   fontWeight: 950,
   textAlign: "left",
   whiteSpace: "nowrap",
@@ -3840,7 +3840,7 @@ const homeResultsThStyle: React.CSSProperties = {
 const homeResultsTdStyle: React.CSSProperties = {
   padding: "10px 12px",
   borderBottom: "1px solid #e2e8f0",
-  color: "#0f172a",
+  color: "#00346e",
   verticalAlign: "top",
   whiteSpace: "nowrap",
 };

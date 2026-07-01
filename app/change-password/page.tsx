@@ -48,7 +48,7 @@ export default function ChangePasswordPage() {
           <input data-barsh-change-password-new-password="true" style={inputStyle} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" type="password" autoComplete="new-password" />
           <input data-barsh-change-password-confirm-password="true" style={inputStyle} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" type="password" autoComplete="new-password" />
           <button data-barsh-change-password-submit="true" type="button" disabled={busy} onClick={() => void submit()} style={primaryButtonStyle}>{busy ? "Saving..." : "Change Password"}</button>
-          {status ? <p data-barsh-change-password-status="true" style={{ margin: 0, color: "#334155", fontWeight: 800 }}>{status}</p> : null}
+          {status ? <p data-barsh-change-password-status="true" style={{ margin: 0, color: "#385a83", fontWeight: 800 }}>{status}</p> : null}
         </div>
       </section>
     </main>

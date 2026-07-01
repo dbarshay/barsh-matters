@@ -906,7 +906,7 @@ export default function LawsuitsPage() {
       >
         <div>
           <h1 style={{ fontSize: 24, margin: "0 0 4px 0" }}>Lawsuit Aggregation</h1>
-          <div style={{ color: "#475569", fontSize: 13 }}>
+          <div style={{ color: "#385a83", fontSize: 13 }}>
             Search, aggregate, and manage lawsuit matter groups.
           </div>
         </div>
@@ -974,7 +974,7 @@ export default function LawsuitsPage() {
             style={{
               border: "1px solid #00346e",
               background: "#00346e",
-              color: "#fff",
+              color: "#ffffff",
               borderRadius: 999,
               padding: "8px 12px",
               fontWeight: 900,
@@ -1312,7 +1312,7 @@ export default function LawsuitsPage() {
                 )}
               </div>
 
-              <div style={{ marginTop: 8, fontSize: 13, color: "#334155" }}>
+              <div style={{ marginTop: 8, fontSize: 13, color: "#385a83" }}>
                 Selected Lawsuit Amount: <strong>{money(lawsuitAmountForMode())}</strong> ({lawsuitAmountLabel()})
               </div>
             </div>
@@ -1576,7 +1576,7 @@ const modalTitle: React.CSSProperties = {
   fontSize: 30,
   lineHeight: 1.2,
   fontWeight: 700,
-  color: "#fff",
+  color: "#ffffff",
   letterSpacing: "0.02em",
 };
 
@@ -1585,7 +1585,7 @@ const fieldLabel: React.CSSProperties = {
   gap: 5,
   fontSize: 12,
   fontWeight: 900,
-  color: "#334155",
+  color: "#385a83",
 };
 
 const inlineFieldLabel: React.CSSProperties = {
@@ -1594,7 +1594,7 @@ const inlineFieldLabel: React.CSSProperties = {
   gap: 10,
   fontSize: 12,
   fontWeight: 900,
-  color: "#334155",
+  color: "#385a83",
 };
 
 const amountModePanel: React.CSSProperties = {
@@ -1611,7 +1611,7 @@ const radioLabel: React.CSSProperties = {
   gap: 6,
   fontSize: 13,
   fontWeight: 800,
-  color: "#334155",
+  color: "#385a83",
 };
 
 const modalButtonRow: React.CSSProperties = {
@@ -1626,7 +1626,7 @@ const secondaryBtn: React.CSSProperties = {
   padding: "8px 10px",
   borderRadius: 6,
   background: "#f8fafc",
-  color: "#0f172a",
+  color: "#00346e",
   border: "1px solid #cbd5e1",
   cursor: "pointer",
 };
