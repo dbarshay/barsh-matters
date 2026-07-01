@@ -3,7 +3,10 @@ import { resolveAccess, roleEnforcementEnabled } from "@/lib/admin-permissions/r
 import { adminPermissionKeysForTier } from "@/lib/admin-permissions/catalog";
 
 const ADMIN_COOKIE_NAME = "barsh_admin_gate";
-const OWNER_ADMIN_EMAIL = "dbarshay15@gmail.com";
+// Owner identity for the fail-safe email path. Configurable via env so it never drifts from the
+// real AdminUser email; defaults to the live owner. Owner is still also detected by the
+// owner_admin / owner role key, so this is a redundant (not sole) check.
+const OWNER_ADMIN_EMAIL = (process.env.BARSH_OWNER_ADMIN_EMAIL || "dbarshay@brlfirm.com").trim().toLowerCase();
 
 type SignedGatePayload = {
   token?: string;

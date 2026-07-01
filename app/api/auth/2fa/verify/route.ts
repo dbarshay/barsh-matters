@@ -20,7 +20,9 @@ import { readTwoFactorPendingToken, TWO_FACTOR_PENDING_COOKIE } from "@/src/lib/
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const OWNER_ADMIN_EMAIL = "dbarshay15@gmail.com";
+// Configurable owner email (defaults to the live owner). Break-glass also requires the owner role
+// key, so this email match is a redundant fail-safe, not the sole owner check.
+const OWNER_ADMIN_EMAIL = (process.env.BARSH_OWNER_ADMIN_EMAIL || "dbarshay@brlfirm.com").trim().toLowerCase();
 
 type TwoFactorVerifyBody = {
   email?: unknown;
