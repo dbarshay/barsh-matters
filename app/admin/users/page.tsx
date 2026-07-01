@@ -146,6 +146,14 @@ function adminUsersPhase12TwoFactorStatusLabel(user: {
   return "Enabled";
 }
 
+function adminUsersTwoFactorStatusBadgeStyle(status: string): React.CSSProperties {
+  const base: React.CSSProperties = { display: "inline-block", borderRadius: 999, padding: "3px 9px", fontSize: 12, fontWeight: 850, border: "1px solid", whiteSpace: "nowrap" };
+  if (status === "Enabled") return { ...base, background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" };
+  if (status === "Disabled") return { ...base, background: "#f1f5f9", borderColor: "#cbd5e1", color: "#475569" };
+  if (status === "Pending Setup") return { ...base, background: "#fefce8", borderColor: "#fde68a", color: "#713f12" };
+  return { ...base, background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }; // Missing Phone
+}
+
 function adminUsersPhaseV4CNormalizeGrantKeys(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return Array.from(new Set(value.map((entry) => String(entry || "").trim()).filter(Boolean))).sort();
@@ -1569,7 +1577,7 @@ export default function AdminUsersPlanningPage() {
         </section>
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr>{["Display Name", "User Name", "Signer Profile", "Signature Name", "Signer Contact", "Role", "Last Sign-in", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
+            <thead><tr>{["Display Name", "User Name", "Signer Profile", "Signature Name", "Signer Contact", "Role", "Last Sign-in", "2FA", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
             <tbody>{dbUsers.length ? dbUsers.map((user: any) => {
               const active = user.status === "active" && !user.locked && !user.inactive;
               const twoFactorSetupPending = twoFactorSetupPendingForUser(user);
@@ -1594,6 +1602,9 @@ export default function AdminUsersPlanningPage() {
 
                   </td>
                   <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>{formatAdminUserDate(user.lastLoginAt)}</td>
+                  <td data-barsh-admin-users-table-2fa-status="true" style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
+                    {(() => { const s = adminUsersPhase12TwoFactorStatusLabel(user); return <span style={adminUsersTwoFactorStatusBadgeStyle(s)}>{s}</span>; })()}
+                  </td>
                   <td style={{ padding: 8, borderBottom: "1px solid #e5e7eb" }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button data-barsh-admin-users-edit-row-button="true" type="button" onClick={() => openEditAdminUserPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Edit</button><button data-barsh-admin-users-signer-profile-row-button="true" type="button" onClick={() => openSignerProfilePanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Signer Profile</button>
@@ -1605,7 +1616,7 @@ export default function AdminUsersPlanningPage() {
                   </td>
                 </tr>
               );
-            }) : <tr><td colSpan={8} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No administrator users found.</td></tr>}</tbody>
+            }) : <tr><td colSpan={9} style={{ padding: 10, borderBottom: "1px solid #e5e7eb", color: "#64748b" }}>No administrator users found.</td></tr>}</tbody>
           </table>
         </section>
 
