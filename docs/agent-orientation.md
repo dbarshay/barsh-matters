@@ -46,6 +46,24 @@ It's a Vercel-hosted web app, so end users just open it in a browser. Key facts:
 - Env: `CLIO_SINGLE_MASTER_ROOT_FOLDER_ID` (primary). Upload writes are gated behind
   `CLIO_SINGLE_MASTER_UPLOAD_REWIRE_ENABLED`, `CLIO_SINGLE_MASTER_CREATE_FOLDERS_ENABLED`,
   `CLIO_SINGLE_MASTER_LIVE_WRITE_ENABLED`.
+- **The ONLY thing synced to Clio is documents** (save/retrieve inside the master folder tree).
+  No matter/lawsuit status, settlement, or any other field is ever written to Clio.
+
+### Close / reopen are LOCAL-ONLY (no Clio status writes)
+
+- Closing a matter (`app/api/matters/close`) or lawsuit (`app/api/lawsuits/close`) is purely
+  local: it sets `final_status: "Closed"` in ClaimIndex/Lawsuit + audit. `clioWrite: false`.
+  The old "guarded Clio close-sync" is removed (there was never a per-matter Clio shell to write).
+- **Reopen** is an admin action, also local-only: `app/api/matters/reopen`,
+  `app/api/lawsuits/reopen`. Reopening a lawsuit **cascades** its child matters back to Open
+  (mirror of close). Admin Reopen buttons live under the "Matter Closed" badge (matter page) and
+  under Close Lawsuit (matters page), gated via `runAdministratorGate`.
+- **Close guard:** an individual matter that is aggregated into an **open** lawsuit cannot be
+  closed on its own (409) — close the lawsuit instead. A matter that belongs to a lawsuit is
+  reopened via the lawsuit, not individually. Shared rule: `lib/lawsuitMembership.ts`.
+- Guarded by `verify-reopen-and-close-guard-safety` and `verify-guarded-clio-close-sync-safety`
+  (the latter now asserts close is local-only). Removed dead helpers: `lib/clioCloseSync.ts`,
+  `lib/settlementClioWriteback.ts`. Admin lawsuit cleanup no longer deletes a Clio matter shell.
 
 ### Clio boundary — source of truth (ADR 0001)
 
@@ -245,6 +263,62 @@ slipped past a hex-only find/replace). Exception: the
 `admin/permissions` tier-badge legend (view=blue, edit=green, process=amber,
 admin=purple, security=red) is a deliberate color code, not the system blue, and is
 intentionally excluded.
+
+## Matter Import module (IN DESIGN — not built yet)
+
+Building a module to import new matters into BM. **Data import is highly sensitive** — a wrong or
+duplicated matter propagates into aggregation, lawsuits, billing, and settlement. Design is being
+ironed out first, Q&A style, before any code.
+
+Three intake paths:
+
+1. **Carisk sheet** — Carisk (clearinghouse) export reflecting intake → carrier submission →
+   accept/reject. Large share of volume. Sample: `searchResults (3).xlsx` (890 rows, 41 cols:
+   ClaimNumber, CIC #, patient, DOS, Status, ClaimType Auto/WC, facility/billing/pay-to addresses,
+   NPI, physician, ServiceLines, CarrierName, StatusNotes, totalCharges, filename[X12]). Documents
+   (images) still need a Carisk export mechanism — not yet discussed with Carisk; ~4% of rows have a
+   filename. Document linkage is a **separate workstream**, deferred.
+2. **Provider sheet** — provider bills the clearinghouse themselves and sends us a report. Sample:
+   `May 2026.xlsx` = Dow (1840 rows, 8 cols: insuredsID, CarrierName, DOI, PatientsName,
+   DateOfService[semicolon multi-date], PhysicianName, totalCharges, BillType Chiro/PT/EMG).
+   **No documents** on this path (we request from provider if/when needed).
+3. **Manual creation** — BPO team manually creates claims + drags/drops/categorizes documents.
+
+Decisions locked so far:
+
+- **One BM matter per spreadsheet row** (one bill/claim).
+- **Preview + triage, then confirm** — upload → parse to staging → validated preview (new vs
+  duplicate, errors, mapping, provider resolution) → operator confirms → matters created. Nothing
+  is created before confirm.
+- **Carisk status filter is selectable per import** (show status counts, operator chooses which to
+  include).
+- **Numbering:** `BRL_{YYYY}{seq}`, seq **resets each calendar year**. Starting BM **fresh** (no
+  current max). Must scale to **hundreds of thousands/year** → NOT `MAX()+1` per row; use a
+  `MatterSequenceCounter` keyed by year (mirror existing `LawsuitSequenceCounter` in
+  `lib/buildMasterId.ts`) with **batch allocation** (atomic increment by row-count → contiguous
+  block → bulk `createMany`). Internal `matter_id` Int PK needs its own high-start global counter
+  (avoid colliding with any legacy Clio-era ids in ClaimIndex). **OPEN:** counter width — sample is
+  `BRL_202600001` (5 digits, caps at 99,999); proposed 6 digits for >100k/yr, growing if needed.
+  Note: doc's earlier `BRL_YYYYNNNNN` (5 N) format may need widening — confirm with user.
+- Lawsuit numbering (`YYYY.MM.NNNNN`) is unchanged — BM-generated at lawsuit commencement.
+- **Provider/client identity is always pickable** when not an obvious exact match against the
+  existing registry (`ProviderClientInfo` / `ReferenceEntity`). Exact match auto-links; otherwise
+  operator picks an existing provider or creates a new one — never a silent guess. Dow-type sheets
+  don't name the provider entity (only the physician), so provider must be supplied at import.
+- Store the **entire row in `raw_json`**; surface only the mapped subset. "Not every value must be
+  viewable in the UI."
+
+**CRITICAL dedup caution (user):** many rows may look nearly identical — even every data point
+exact except one — and still be legitimately distinct bills. **Do NOT assume rows are duplicates.**
+Dedup must be conservative and surfaced for operator review, never auto-merged/auto-skipped.
+
+Open questions for tomorrow's Q&A (in priority order): (1) natural unique key per source
+(Carisk ClaimNumber vs CIC # vs pair; Dow has no claim number); (2) re-import lifecycle — when a
+known claim reappears with a newer Carisk status, update the existing matter or create new?;
+(3) validation/eligibility rules (required fields; handling of Saved Incomplete / rejected);
+(4) field mapping + normalization specifics (carrier "[Electronic]" cleanup, multi-DOS →
+dos_start/dos_end, money/date parsing); (5) carrier/insurer canonicalization (72 distinct strings);
+(6) auditability + **reversibility** of an import batch; (7) governance/roles (who can import).
 
 ## Gotchas / workflow
 
