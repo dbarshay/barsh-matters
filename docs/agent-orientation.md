@@ -223,6 +223,25 @@ env flag is set. Superseded the earlier "Phase 21" hash-based OTP for the login 
   five env vars in a preview env, log in as a user with a phone → confirm the SMS step, test Owner
   break-glass, then enable in prod (unset the flag = rollback).
 
+## Brand color — one system navy
+
+The Barsh Matters "system blue" is a single navy: `#0a1c35` (= `BRAND_NAVY` in
+`lib/brand.ts`), matching the BRL + BM logos. It is the ONLY primary blue — buttons,
+banners, headers, and the `colors.blue` palette all resolve to it.
+
+To change it everywhere in ONE command — code AND the raster logo PNGs — run:
+
+    python3 scripts/set-system-blue.py "#RRGGBB"
+
+It reads the current `BRAND_NAVY`, replaces that hex + its `rgb()` form across
+app/lib/src/scripts, updates `BRAND_NAVY`, and re-tints the `public/` logo PNGs
+(navy → new, keeping the gold accents, white lettering, and transparency). Do NOT
+hand-edit navy hexes piecemeal — that's how it drifted before (a named `colors.blue`
+and `rgb()` shadow forms slipped past a hex-only find/replace). Exception: the
+`admin/permissions` tier-badge legend (view=blue, edit=green, process=amber,
+admin=purple, security=red) is a deliberate color code, not the system blue, and is
+intentionally excluded.
+
 ## Gotchas / workflow
 
 - **Do not run `npm run build`** unless necessary. Use `npx tsc --noEmit` for type
