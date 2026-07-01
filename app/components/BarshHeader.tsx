@@ -101,7 +101,7 @@ export default function BarshHeader({ center, onAdministratorClick }: BarshHeade
   return (
     <section style={headerStyle} data-barsh-standard-header="true">
       <div style={leftWrapStyle}>
-        <img src="/brl-logo.png" alt="BRL Logo" style={brlLogoStyle} />
+        <img src="/brl-logo-navy.png" alt="Barshay, Rizzo & Lopez, PLLC" style={brlLogoStyle} />
         <div style={{ paddingTop: 8 }}>
           <BarshHeaderQuickNav />
         </div>
@@ -117,7 +117,7 @@ export default function BarshHeader({ center, onAdministratorClick }: BarshHeade
         </div>
 
         <a href="/" style={bmLogoLinkStyle} title="Return to Barsh Matters entry screen">
-          <img src="/barsh-matters-cropped-transparent.png" alt="Barsh Matters Logo" style={bmLogoStyle} />
+          <img src="/barsh-matters-logo-navy-transparent.png" alt="Barsh Matters" style={bmLogoStyle} />
         </a>
       </div>
     </section>
