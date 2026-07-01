@@ -200,33 +200,33 @@ export default function AdminUsersPlanningPage() {
   const [createTwoFactorPendingSetup, setCreateTwoFactorPendingSetup] = useState(false);
   const [createStatus, setCreateStatus] = useState("active");
   const [createNotes, setCreateNotes] = useState("");
-  const [createActorEmail, setCreateActorEmail] = useState("dbarshay15@gmail.com");
+  const [createActorEmail, setCreateActorEmail] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [createMessage, setCreateMessage] = useState("");
   const [createResult, setCreateResult] = useState<any>(null);
   const [assignTargetEmail, setAssignTargetEmail] = useState("");
   const [assignRoleKey, setAssignRoleKey] = useState("");
-  const [assignActorEmail, setAssignActorEmail] = useState("dbarshay15@gmail.com");
+  const [assignActorEmail, setAssignActorEmail] = useState("");
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignMessage, setAssignMessage] = useState("");
   const [assignResult, setAssignResult] = useState<any>(null);
   const [removeTargetEmail, setRemoveTargetEmail] = useState("");
   const [removeRoleKey, setRemoveRoleKey] = useState("");
-  const [removeActorEmail, setRemoveActorEmail] = useState("dbarshay15@gmail.com");
+  const [removeActorEmail, setRemoveActorEmail] = useState("");
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeMessage, setRemoveMessage] = useState("");
   const [removeResult, setRemoveResult] = useState<any>(null);
   const [lockoutTargetEmail, setLockoutTargetEmail] = useState("");
   const [lockoutAction, setLockoutAction] = useState("lock");
   const [lockoutReason, setLockoutReason] = useState("");
-  const [lockoutActorEmail, setLockoutActorEmail] = useState("dbarshay15@gmail.com");
+  const [lockoutActorEmail, setLockoutActorEmail] = useState("");
   const [lockoutBusy, setLockoutBusy] = useState(false);
   const [lockoutMessage, setLockoutMessage] = useState("");
   const [lockoutResult, setLockoutResult] = useState<any>(null);
   const [passwordResetTargetEmail, setPasswordResetTargetEmail] = useState("");
   const [passwordResetTemporaryPassword, setPasswordResetTemporaryPassword] = useState("");
   const [passwordResetReason, setPasswordResetReason] = useState("");
-  const [passwordResetActorEmail, setPasswordResetActorEmail] = useState("dbarshay15@gmail.com");
+  const [passwordResetActorEmail, setPasswordResetActorEmail] = useState("");
   const [passwordResetBusy, setPasswordResetBusy] = useState(false);
   const [passwordResetMessage, setPasswordResetMessage] = useState("");
   const [passwordResetResult, setPasswordResetResult] = useState<any>(null);
@@ -326,6 +326,19 @@ export default function AdminUsersPlanningPage() {
     createActorEmail ||
     ""
   ).trim().toLowerCase();
+
+  // Prefill the owner-actor email fields from the actual active owner_admin user once data loads,
+  // so owner-gated writes don't fail against a stale hardcoded default. Only fills empty fields, so
+  // it never clobbers a value the operator typed.
+  useEffect(() => {
+    if (!ownerAdminActorEmail) return;
+    setCreateActorEmail((v) => v || ownerAdminActorEmail);
+    setAssignActorEmail((v) => v || ownerAdminActorEmail);
+    setRemoveActorEmail((v) => v || ownerAdminActorEmail);
+    setLockoutActorEmail((v) => v || ownerAdminActorEmail);
+    setPasswordResetActorEmail((v) => v || ownerAdminActorEmail);
+  }, [ownerAdminActorEmail]);
+
   const previewReady = Boolean(createResult?.ok && createResult?.mode === "preview" && createResult?.wouldCreate?.email === cleanEmail(createEmail));
   const assignPreviewReady = Boolean(
     assignResult?.ok &&
