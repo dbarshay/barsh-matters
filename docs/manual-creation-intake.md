@@ -43,7 +43,18 @@ hand-keyed single-matter creation + manual document handling.
       14) Their Pleadings · 15) Discovery · 16) Liens · 17) Misc.
     - Applies to ALL matters (any intake path), not just manual. Confirm ordering/naming.
 
-## Open questions
-- Exact **field subset** for the manual form, and which fields are **required** to create a matter.
-- **Document categories** (the taxonomy for the scanning module) and the scan/upload workflow.
-- Whether "patient" is a true master registry (reused across matters) or just per-matter with autocomplete.
+## Open questions — Manual creation (#3) is NOT complete; we paused at the folder structure
+
+Still to spec:
+- **Complex folder structure** (pinned) — replaces the provisional flat 17-folder list.
+- **Registries / picklists** — how each controlled input works (patient, denial reason, provider,
+  insurer, service type, case type); which already exist vs. need building; add/edit governance.
+- **Patient registry** — is "patient" a reusable master (same injured person across matters) or
+  per-matter with autocomplete?
+- **Scan/upload module mechanics** — file upload, the drag-into-category UI, storing flat to Clio
+  + category as BM metadata, supported file types, multi-file handling.
+- **Field formats/validation** on the manual form (dates, money, name normalization → same rules as
+  imports?).
+- **Case Type** — operator selects WC vs No-Fault at manual entry (confirm).
+- **Numbering** — confirm manual matters mint the next `BRL_{YYYY}{seq}` (assumed).
+- **Governance** — who may manually create matters.

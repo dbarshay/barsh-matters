@@ -270,6 +270,11 @@ Building a module to import new matters into BM. **Data import is highly sensiti
 duplicated matter propagates into aggregation, lawsuits, billing, and settlement. Design is being
 ironed out first, Q&A style, before any code.
 
+**Authoritative design docs (read these first — they supersede the summary below):**
+- `docs/carisk-data-dictionary.md` — Carisk path, all 41 columns decided.
+- `docs/dow-data-dictionary.md` — Dow/provider-sheet path, all 8 columns decided.
+- `docs/manual-creation-intake.md` — manual path (#3); IN PROGRESS (paused at folder structure).
+
 Three intake paths:
 
 1. **Carisk sheet** — Carisk (clearinghouse) export reflecting intake → carrier submission →
@@ -290,8 +295,12 @@ Decisions locked so far:
 - **Preview + triage, then confirm** — upload → parse to staging → validated preview (new vs
   duplicate, errors, mapping, provider resolution) → operator confirms → matters created. Nothing
   is created before confirm.
-- **Carisk status filter is selectable per import** (show status counts, operator chooses which to
-  include).
+- **Carisk routing by `Status`** (deterministic — supersedes the earlier "selectable per import"):
+  `Carrier Submission` → create matter; `Submitted` → ignore; `Saved Incomplete` → Carisk Management
+  Report (running tracker + weekly email), removed when it later arrives as `Carrier Submission`.
+- **Dedup keys:** Carisk = `CIC #` (bill-unique, **hard-unique** constraint). Dow/manual = derived
+  **fingerprint** (claim#-or-policy# + patient + DOS + gross charges) — **soft** key, flag matches
+  for operator review, never auto-skip/merge. Dow sheets are disjoint (new bills only).
 - **Numbering:** `BRL_{YYYY}{seq}`, seq **resets each calendar year**. Starting BM **fresh** (no
   current max). Must scale to **hundreds of thousands/year** → NOT `MAX()+1` per row; use a
   `MatterSequenceCounter` keyed by year (mirror existing `LawsuitSequenceCounter` in
@@ -312,13 +321,21 @@ Decisions locked so far:
 exact except one — and still be legitimately distinct bills. **Do NOT assume rows are duplicates.**
 Dedup must be conservative and surfaced for operator review, never auto-merged/auto-skipped.
 
-Open questions for tomorrow's Q&A (in priority order): (1) natural unique key per source
-(Carisk ClaimNumber vs CIC # vs pair; Dow has no claim number); (2) re-import lifecycle — when a
-known claim reappears with a newer Carisk status, update the existing matter or create new?;
-(3) validation/eligibility rules (required fields; handling of Saved Incomplete / rejected);
-(4) field mapping + normalization specifics (carrier "[Electronic]" cleanup, multi-DOS →
-dos_start/dos_end, money/date parsing); (5) carrier/insurer canonicalization (72 distinct strings);
-(6) auditability + **reversibility** of an import batch; (7) governance/roles (who can import).
+Status (as of this session): **Carisk + Dow dictionaries COMPLETE**; identity/dedup, routing,
+provider/carrier registry resolution, and `BRL_{YYYY}{seq}` batch numbering all decided (see docs).
+Carrier canonicalization = resolve to carrier registry (strip `[Electronic]`). Provider = resolve to
+`ProviderClientInfo` registry (Carisk `FacilityName`; Dow operator-picks canonical, e.g. "Suffolk
+Physical Therapy & Chiropractic, PLLC"). Case Type: Carisk `NY WC`→Workers Comp / `Auto`→No-Fault;
+Dow = No-Fault constant.
+
+**Still open (parked):** (1) Manual path #3 — NOT finished (paused at folders): complex nested
+**document-folder structure** (provisional flat taxonomy of 17 folders exists), registries/picklists
+mechanics, patient-master question, scan/upload module mechanics, field validation, governance;
+(2) Carisk lifecycle sub-question — `Carrier Submission` for a CIC # that's ALREADY a matter: skip vs.
+update; (3) import batch **reversibility**/audit; (4) governance/roles; (5) `balance_presuit` vs gross
+claim amount; (6) **Carisk document integration** (deferred — WC-only; request doc drafted at
+workspace `Carisk Document Integration Request.docx`). BRL counter width: sample `BRL_202600001`
+(5-digit) likely widened to 6 for >100k/yr — confirm.
 
 ## Gotchas / workflow
 
