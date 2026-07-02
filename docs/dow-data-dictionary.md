@@ -47,15 +47,32 @@ Patient Name ← `PatientsName` (`First Last`, all three) · Date(s) of Service 
 Claim Amount ← `totalCharges` (`claim_amount`, all three) · Service Type ← `BillType`
 (`service_type`, all three).
 
-**Derived/constant:** Case Type = **No-Fault** on every Dow matter · Provider/Client = **Dow**
-(supplied at import; not a column).
+**Derived/constant:** Case Type = **No-Fault** on every Dow matter · Provider/Client = the canonical
+provider the operator **selects once at import** (applies to all rows). For this sheet that is
+**"Suffolk Physical Therapy & Chiropractic, PLLC"** — "Dow" is internal shorthand, NOT a canonical name.
 
 **No Carisk-style machinery here:** no unique bill key, no Status routing, no management report, no
 documents.
 
 ---
 
+## Dow identity / dedup — RESOLVED
+
+- **Sheets are disjoint** — each Dow sheet contains only that period's new bills (prior bills are not
+  re-listed). A duplicate therefore only arises if the **same file is imported twice**.
+- **No natural unique key** (unlike Carisk's `CIC #`). Identity = a derived **bill fingerprint** =
+  normalized( claim number `insuredsID` + patient name + DOS span + gross charges ). Proven **100%
+  unique across the 1,838-row sample** — co-claimants on one policy (same claim #, DOI, doctor,
+  charges) are correctly separated by patient name.
+- **Store the fingerprint** on each Dow matter (indexed) for fast cross-import matching. It is a
+  **soft key — NO hard DB uniqueness constraint** (two legitimately distinct bills could share it;
+  never block them). Contrast Carisk `CIC #`, which IS hard-unique.
+- On import, a row whose fingerprint **matches an existing matter is flagged as a likely duplicate in
+  the preview for operator review** (skip or import-anyway). **Never auto-skip, never auto-merge.**
+- Fingerprint normalization (define precisely at build): claim # trimmed as written; patient name
+  normalized (case/whitespace); DOS reduced to the start–end span; charges to cents.
+
 ## Open (Dow-specific)
-1. **Matter identity / dedup** — no unique key. How do we tell two near-identical Dow bills apart, and avoid double-creating on re-import?
-2. **Provider identity at import** — the sheet doesn't name the provider; how is "Dow" supplied (filename convention vs. picker)?
-3. Whether provider-sheet formats vary by provider (is one adapter enough, or per-provider mapping?).
+1. _(identity/dedup — resolved above)_
+2. ~~Provider identity at import~~ **RESOLVED: operator selects the canonical provider once at import; it applies to every row. "Dow" = "Suffolk Physical Therapy & Chiropractic, PLLC" (canonical). Provider must exist in / be added to the registry.**
+3. **Per-provider layout variance** — do other providers' sheets use Dow's exact 8-column layout, or different columns/order? (Design so a per-provider column mapping can be added; default to Dow's layout.) — still open.
