@@ -66,8 +66,8 @@ export default function ManualMatterPage() {
       const r = await fetch(`/api/import/manual/patient-defaults?patientId=${c.id}`, { cache: "no-store" });
       const j = await r.json();
       if (j?.ok && j.found) {
-        setForm((f) => ({ ...f, ...j.defaults, patientName: c.name }));
-        setInfo(`Linked ${c.name} — carry-over fields pre-filled from matter ${j.fromMatter}. Adjust any that changed, then enter this bill's DOS, amount, service type, and denial reason.`);
+        setForm((f) => ({ ...f, ...j.defaults, patientName: c.name, dosStart: "", dosEnd: "", grossClaimAmount: "" }));
+        setInfo(`Linked ${c.name} — pre-filled from matter ${j.fromMatter}. Locked fields are read-only; highlighted fields carried over but are editable; enter this bill's date(s) of service and amount.`);
       } else {
         setForm((f) => ({ ...f, patientName: c.name }));
         setInfo(`Linked ${c.name} (no prior matter to pre-fill from).`);
@@ -89,12 +89,18 @@ export default function ManualMatterPage() {
 
   function addAnotherForPatient() {
     const pid = done?.patientId || patientId;
-    // Keep carry-over fields; clear only the bill-level ones.
-    setForm((f) => ({ ...f, dosStart: "", dosEnd: "", grossClaimAmount: "", serviceTypeId: "", denialReasonId: "" }));
+    // Keep carry-over fields (locked identity + pre-filled editable); clear only what MUST be re-entered.
+    setForm((f) => ({ ...f, dosStart: "", dosEnd: "", grossClaimAmount: "" }));
     setPatientId(pid || "");
     setDone(null);
     setError(""); setDuplicate(null); setCandidates([]);
-    setInfo("Same patient & claim carried over. Enter the next bill's DOS, amount, service type, and denial reason.");
+    setInfo("Same patient & claim carried over. Enter this bill's date(s) of service and amount; adjust the highlighted fields if they changed.");
+  }
+
+  function unlinkPatient() {
+    setPatientId("");
+    setInfo("");
+    setForm((f) => ({ ...f, patientName: "" }));
   }
 
   const loadOpts = useCallback(async (type: string, setter: (o: Opt[]) => void) => {
@@ -143,12 +149,19 @@ export default function ManualMatterPage() {
     setPatientId(""); setCandidates([]); setPatientSuggestions([]); setDuplicate(null); setError(""); setInfo(""); setDone(null);
   }
 
-  const sel = (v: string, on: (x: string) => void, opts: Opt[], placeholder: string) => (
-    <select value={v} onChange={(e) => on(e.target.value)} style={input}>
+  const locked = !!patientId; // linked to / carried over from an existing patient
+  const roBox: React.CSSProperties = { ...input, display: "flex", alignItems: "center", background: "#eef2f7", color: NAVY, fontWeight: 700, cursor: "not-allowed" };
+  const hl: React.CSSProperties = locked ? { ...input, background: "#fffbeb", borderColor: "#fcd34d" } : input; // pre-filled but editable
+  const nameOf = (id: string, opts: Opt[]) => opts.find((o) => o.id === id)?.displayName || "—";
+  const mdy = (iso: string) => { const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[2]}/${m[3]}/${m[1]}` : iso; };
+
+  const sel = (v: string, on: (x: string) => void, opts: Opt[], placeholder: string, style: React.CSSProperties = input) => (
+    <select value={v} onChange={(e) => on(e.target.value)} style={style}>
       <option value="">{placeholder}</option>
       {opts.map((o) => <option key={o.id} value={o.id}>{o.displayName}</option>)}
     </select>
   );
+  const roField = (l: string, v: string) => field(<><span style={label}>{l} <span style={{ color: MUTED }}>· locked</span></span><div style={roBox}>{v || "—"}</div></>);
 
   return (
     <main style={{ padding: "12px 14px 40px", background: "#f8fafc", minHeight: "100vh", color: NAVY, fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -193,36 +206,52 @@ export default function ManualMatterPage() {
 
             <div style={box}>
               <div style={{ fontWeight: 900, marginBottom: 12 }}>Matter details — all fields required (Claim # or Policy # — at least one)</div>
+              {locked ? (
+                <div style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+                  <span style={{ background: "#eef2f7", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Locked</span> = read-only (patient/claim identity) ·{" "}
+                  <span style={{ background: "#fffbeb", border: "1px solid #fcd34d", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Highlighted</span> = carried over, editable ·{" "}
+                  <button type="button" onClick={unlinkPatient} style={{ border: "none", background: "transparent", color: "#dc2626", fontWeight: 800, cursor: "pointer", textDecoration: "underline", padding: 0 }}>Unlink patient</button>
+                </div>
+              ) : null}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                {field(<><span style={label}>Claim Number</span><input style={input} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
-                {field(<><span style={label}>Policy Number</span><input style={input} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
-                {field(
-                  <>
-                    <span style={label}>Patient (First Last){patientId ? <span style={{ color: "#166534", marginLeft: 6 }}>· linked</span> : null}</span>
-                    <div style={{ position: "relative" }}>
-                      <input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); setInfo(""); }} placeholder="Type to search existing patients…" />
-                      {patientSuggestions.length ? (
-                        <div style={{ position: "absolute", zIndex: 5, top: 40, left: 0, right: 0, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 8px 20px rgba(15,23,42,0.12)", maxHeight: 200, overflowY: "auto" }}>
-                          {patientSuggestions.map((c) => (
-                            <div key={c.id} onClick={() => void linkPatient(c)} style={{ padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #eef2f7", fontSize: 13 }}>
-                              <span style={{ fontWeight: 700 }}>{c.name}</span>
-                              {" "}<span style={{ color: c.dol ? "#00346e" : MUTED }}>· D/L: {c.dol || "—"}</span>
-                              {" "}<span style={{ color: MUTED }}>· use &amp; pre-fill</span>
+                {/* Patient — typeahead when new, locked display when linked */}
+                {locked
+                  ? field(<><span style={label}>Patient (First Last) <span style={{ color: "#166534" }}>· linked</span></span><div style={roBox}>{form.patientName || "—"}</div></>)
+                  : field(
+                      <>
+                        <span style={label}>Patient (First Last)</span>
+                        <div style={{ position: "relative" }}>
+                          <input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); setInfo(""); }} placeholder="Type to search existing patients…" />
+                          {patientSuggestions.length ? (
+                            <div style={{ position: "absolute", zIndex: 5, top: 40, left: 0, right: 0, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 8px 20px rgba(15,23,42,0.12)", maxHeight: 200, overflowY: "auto" }}>
+                              {patientSuggestions.map((c) => (
+                                <div key={c.id} onClick={() => void linkPatient(c)} style={{ padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #eef2f7", fontSize: 13 }}>
+                                  <span style={{ fontWeight: 700 }}>{c.name}</span>
+                                  {" "}<span style={{ color: c.dol ? "#00346e" : MUTED }}>· D/L: {c.dol || "—"}</span>
+                                  {" "}<span style={{ color: MUTED }}>· use &amp; pre-fill</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                  </>
-                )}
-                {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…")}</>)}
-                {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…")}</>)}
-                {field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…")}</>)}
-                {field(<><span style={label}>Denial Reason</span>{sel(form.denialReasonId, (v) => set("denialReasonId", v), denials, "Select denial reason…")}</>)}
-                {field(<><span style={label}>Service Type</span>{sel(form.serviceTypeId, (v) => set("serviceTypeId", v), services, "Select service type…")}</>)}
-                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={input}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select></>)}
+                      </>
+                    )}
+
+                {/* Locked identity fields */}
+                {locked ? roField("Claim Number", form.claimNumber) : field(<><span style={label}>Claim Number</span><input style={input} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
+                {locked ? roField("Policy Number", form.policyNumber) : field(<><span style={label}>Policy Number</span><input style={input} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
+                {locked ? roField("Insurer / Carrier", nameOf(form.insurerEntityId, insurers)) : field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…")}</>)}
+                {locked ? roField("Date of Injury", form.dateOfInjury ? mdy(form.dateOfInjury) : "") : field(<><span style={label}>Date of Injury</span><input type="date" style={input} value={form.dateOfInjury} onChange={(e) => set("dateOfInjury", e.target.value)} /></>)}
+
+                {/* Pre-filled editable (highlighted when carried) */}
+                {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…", hl)}</>)}
+                {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…", hl)}</>)}
+                {field(<><span style={label}>Service Type</span>{sel(form.serviceTypeId, (v) => set("serviceTypeId", v), services, "Select service type…", hl)}</>)}
+                {field(<><span style={label}>Denial Reason</span>{sel(form.denialReasonId, (v) => set("denialReasonId", v), denials, "Select denial reason…", hl)}</>)}
+                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={hl}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select></>)}
+
+                {/* Always entered per bill */}
                 {field(<><span style={label}>Gross Claim Amount</span><input style={input} value={form.grossClaimAmount} onChange={(e) => set("grossClaimAmount", e.target.value)} placeholder="0.00" /></>)}
-                {field(<><span style={label}>Date of Injury</span><input type="date" style={input} value={form.dateOfInjury} onChange={(e) => set("dateOfInjury", e.target.value)} /></>)}
                 {field(<><span style={label}>DOS start</span><input type="date" style={input} value={form.dosStart} onChange={(e) => set("dosStart", e.target.value)} /></>)}
                 {field(<><span style={label}>DOS end (blank = same as start)</span><input type="date" style={input} value={form.dosEnd} onChange={(e) => set("dosEnd", e.target.value)} /></>)}
               </div>

@@ -30,15 +30,18 @@ export async function GET(request: Request) {
     orderBy: { matter_id: "desc" },
     select: {
       claim_number_raw: true, policy_number: true, case_type: true, date_of_loss: true,
-      insurer_name: true, provider_name: true, treating_provider: true, display_number: true,
+      insurer_name: true, provider_name: true, treating_provider: true,
+      service_type: true, denial_reason: true, display_number: true,
     },
   });
   if (!last) return NextResponse.json({ ok: true, found: false });
 
-  const [insurerEntityId, providerEntityId, treatingPhysicianId] = await Promise.all([
+  const [insurerEntityId, providerEntityId, treatingPhysicianId, serviceTypeId, denialReasonId] = await Promise.all([
     entityIdFor(last.insurer_name, "insurer_company"),
     entityIdFor(last.provider_name, "provider_client"),
     entityIdFor(last.treating_provider, "treating_provider"),
+    entityIdFor(last.service_type, "service_type"),
+    entityIdFor(last.denial_reason, "denial_reason"),
   ]);
 
   return NextResponse.json({
@@ -46,15 +49,17 @@ export async function GET(request: Request) {
     found: true,
     fromMatter: last.display_number,
     defaults: {
-      // sticky (claim/accident-level)
+      // LOCKED (read-only sticky): claim/accident identity.
       claimNumber: last.claim_number_raw || "",
       policyNumber: last.policy_number || "",
-      caseType: last.case_type || "",
-      dateOfInjury: last.date_of_loss || "",
       insurerEntityId: insurerEntityId || "",
-      // soft defaults (often the same, but expected to change)
+      dateOfInjury: last.date_of_loss || "",
+      // PRE-FILLED editable (expected to change per bill).
+      caseType: last.case_type || "",
       providerEntityId: providerEntityId || "",
       treatingPhysicianId: treatingPhysicianId || "",
+      serviceTypeId: serviceTypeId || "",
+      denialReasonId: denialReasonId || "",
     },
   });
 }

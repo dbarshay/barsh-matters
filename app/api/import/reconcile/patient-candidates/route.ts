@@ -25,9 +25,13 @@ async function withDatesOfLoss<T extends { id: string }>(candidates: T[]): Promi
     if (!byPatient.has(m.patient_id)) byPatient.set(m.patient_id, new Set());
     byPatient.get(m.patient_id)!.add(m.date_of_loss);
   }
+  const mdy = (iso: string) => {
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[2]}/${m[3]}/${m[1]}` : iso;
+  };
   return candidates.map((c) => ({
     ...c,
-    dol: Array.from(byPatient.get(c.id) ?? []).sort().reverse().join(", "),
+    dol: Array.from(byPatient.get(c.id) ?? []).sort().reverse().map(mdy).join(", "),
   }));
 }
 
