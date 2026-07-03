@@ -65,6 +65,7 @@ export default function DowImportPage() {
   const [batchSortKey, setBatchSortKey] = useState("createdAt");
   const [batchSortDir, setBatchSortDir] = useState<1 | -1>(-1); // newest first by default
   const [source, setSource] = useState<"dow" | "carisk">("dow");
+  const [flash, setFlash] = useState("");
   const [dragging, setDragging] = useState(false);
 
   function toggleBatchSort(key: string) {
@@ -195,6 +196,7 @@ export default function DowImportPage() {
     setConfirmResult(null);
     setUndoResult(null);
     setError("");
+    setFlash("");
     if (!file) return;
     const lower = file.name.toLowerCase();
     if (!lower.endsWith(".xlsx") && !lower.endsWith(".xls")) {
@@ -256,8 +258,17 @@ export default function DowImportPage() {
       const j = await r.json();
       if (!j.ok) setError(j.error || "Confirm failed.");
       else {
-        setConfirmResult(j);
-        void loadBatches();
+        // Return to the clean module screen; the new batch (with its Reconcile Held Cases button)
+        // appears in Existing imports below.
+        const created = j.summary?.created ?? 0;
+        const held = j.summary?.held ?? 0;
+        setFlash(`Imported ${created} matter(s)${held ? ` · ${held} held — reconcile from the table below` : ""}.`);
+        setPreview(null);
+        setConfirmResult(null);
+        setFileBase64("");
+        setFileName("");
+        await loadBatches();
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (e: any) {
       setError(e?.message || "Confirm failed.");
@@ -429,6 +440,12 @@ export default function DowImportPage() {
           </div>
         </div>
 
+        {flash ? (
+          <div style={{ ...box, borderColor: "#bbf7d0", background: "#f0fdf4", color: "#166534", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <span>{flash}</span>
+            <button type="button" onClick={() => setFlash("")} style={{ border: "none", background: "transparent", color: "#166534", fontWeight: 900, cursor: "pointer", fontSize: 16 }}>×</button>
+          </div>
+        ) : null}
         {error ? <div style={{ ...box, borderColor: "#fecaca", background: "#fef2f2", color: "#991b1b", fontWeight: 700 }}>{error}</div> : null}
 
         {s ? (
