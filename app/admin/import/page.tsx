@@ -561,7 +561,11 @@ export default function DowImportPage() {
                 <div style={{ fontWeight: 900 }}>
                   Import details — {detail.batch.source?.toUpperCase()} · {detail.batch.sourceFile || "—"}
                 </div>
-                <a href={`/admin/import/reconcile?batchId=${detailId}`} style={{ ...btn("#b45309"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
+                {detail.batch.status === "undone" ? (
+                  <span style={{ color: MUTED, fontSize: 13, fontWeight: 700 }}>Undone — reconcile unavailable</span>
+                ) : (
+                  <a href={`/admin/import/reconcile?batchId=${detailId}`} style={{ ...btn("#b45309"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
+                )}
               </div>
               <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>
                 Batch {detail.batch.id} · {new Date(detail.batch.createdAt).toLocaleString()} · Provider: {detail.batch.providerName || "—"} · Status: {detail.batch.status}
