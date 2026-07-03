@@ -18,6 +18,7 @@ console.log("=== VERIFY DOW IMPORT CONFIRM + UNDO SAFETY ===");
 
 const schema = read("prisma/schema.prisma");
 const confirm = read("app/api/import/dow/confirm/route.ts");
+const creator = read("lib/import/createMatters.ts");
 const undo = read("app/api/import/undo/route.ts");
 const pkg = read("package.json");
 
@@ -32,13 +33,15 @@ must("confirm flag gate", confirm, "if (!isImportEnabled())");
 must("confirm requires provider", confirm, "providerEntityId is required");
 must("confirm validates provider type", confirm, 'provider.type !== "provider_client"');
 must("confirm re-parses server-side", confirm, "parseSheetToObjects(fileBase64)");
-must("confirm batch-allocates numbers", confirm, "allocateMatterNumbers(toCreate.length)");
-must("confirm createMany matters", confirm, "prisma.claimIndex.createMany");
 must("confirm held for unmatched carrier", confirm, 'outcome: "held"');
 must("confirm skips duplicates", confirm, 'outcome: "duplicate"');
-must("confirm patient exact links", confirm, 'res.status === "exact"');
-must("confirm patient else creates", confirm, "createPatient(name");
-must("confirm presuit from gross", confirm, "balance_presuit: a.s.balance_presuit");
+must("confirm patient exact links", confirm, 'pr.status === "exact"');
+must("confirm delegates creation", confirm, "createMattersFromStaged(toCreate");
+// Shared creator (used by confirm + reconcile-commit) preserves the create behavior.
+must("creator batch-allocates numbers", creator, "allocateMatterNumbers(rows.length)");
+must("creator createMany matters", creator, "prisma.claimIndex.createMany");
+must("creator new patient else-branch", creator, "createPatient(name");
+must("creator presuit from gross", creator, "balance_presuit: r.staged.balance_presuit");
 must("confirm records batch", confirm, "prisma.importBatch.create");
 must("confirm records rows", confirm, "prisma.importRow.createMany");
 must("confirm returns undo hint", confirm, "undoHint");

@@ -1,3 +1,6 @@
+// Default status applied to matters created by an import (must be one of the options below).
+export const BARSH_IMPORT_DEFAULT_MATTER_STATUS = "PRE-LIT- NEW COLLECTIONS INTAKE (NEEDS TO BE REVIEWED)";
+
 export const BARSH_MATTER_STATUS_OPTIONS = Array.from(
   new Set([
     "AAA- DECISION- READY TO CLOSE- DISMISSED WITH PREJUDICE",

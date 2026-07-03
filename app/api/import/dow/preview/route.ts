@@ -5,17 +5,20 @@ import { parseSheetToObjects } from "@/lib/import/xlsxParse";
 import { mapDowRows, type StagedDowMatter } from "@/lib/import/dowAdapter";
 import { resolveCarrier, type ReferenceResolution } from "@/lib/referenceResolution";
 import { resolvePatient, type PatientResolution } from "@/lib/patientResolution";
+import { HOLD_CARRIER_UNMATCHED, HOLD_PATIENT_AMBIGUOUS, HOLD_DATA_QUALITY, dataQualityHold } from "@/lib/import/holdReasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // READ-ONLY Dow import preview. Parses the sheet, maps + validates rows, resolves carrier/patient,
-// and detects duplicates (existing matters + within-file) — WITHOUT writing anything. The confirm
-// step performs the actual creation. Gated behind BARSH_IMPORT_ENABLED.
+// detects duplicates (existing + within-file), and classifies each row WITHOUT writing anything.
+// Held rows carry a sub-reason (carrier_unmatched | patient_ambiguous | data_quality) so the preview
+// and the reconcile page agree on why a row is held. Gated behind BARSH_IMPORT_ENABLED.
 
 type PreviewRow = {
   rowIndex: number;
   outcome: "ready" | "error" | "duplicate_existing" | "duplicate_in_file" | "held";
+  holdReason: string | null;
   errors: string[];
   fingerprint: string;
   staged: Omit<StagedDowMatter, "raw" | "errors" | "fingerprint">;
@@ -74,23 +77,35 @@ export async function POST(request: Request) {
     if (s.fingerprint) seenInFile.add(s.fingerprint);
 
     const carrier = carrierMap.get(s.carrier_raw) ?? ({ status: "unmatched", normalizedTried: [] } as ReferenceResolution);
+    const patient = patientMap.get(s.patient_name) ?? ({ status: "new" } as PatientResolution);
 
+    // Same order as confirm: error -> duplicate -> carrier -> patient -> data-quality -> ready.
     let outcome: PreviewRow["outcome"];
+    let holdReason: string | null = null;
     if (s.errors.length) outcome = "error";
     else if (existingMatch) outcome = "duplicate_existing";
     else if (dupInFile) outcome = "duplicate_in_file";
-    else if (carrier.status !== "matched") outcome = "held"; // carrier not in registry -> Owner must add
-    else outcome = "ready";
+    else if (carrier.status !== "matched") {
+      outcome = "held";
+      holdReason = HOLD_CARRIER_UNMATCHED;
+    } else if (patient.status === "suggest") {
+      outcome = "held";
+      holdReason = HOLD_PATIENT_AMBIGUOUS;
+    } else if (dataQualityHold(s)) {
+      outcome = "held";
+      holdReason = HOLD_DATA_QUALITY;
+    } else outcome = "ready";
 
     const { raw, errors, fingerprint, ...stagedVisible } = s;
     return {
       rowIndex: i,
       outcome,
+      holdReason,
       errors,
       fingerprint,
       staged: stagedVisible,
       carrier,
-      patient: patientMap.get(s.patient_name) ?? { status: "new" },
+      patient,
       existingMatterId: existingMatch?.matter_id ?? null,
       existingDisplayNumber: existingMatch?.display_number ?? null,
     };
@@ -100,6 +115,9 @@ export async function POST(request: Request) {
     total: previewRows.length,
     ready: previewRows.filter((r) => r.outcome === "ready").length,
     held: previewRows.filter((r) => r.outcome === "held").length,
+    heldCarrier: previewRows.filter((r) => r.holdReason === HOLD_CARRIER_UNMATCHED).length,
+    heldPatient: previewRows.filter((r) => r.holdReason === HOLD_PATIENT_AMBIGUOUS).length,
+    heldDataQuality: previewRows.filter((r) => r.holdReason === HOLD_DATA_QUALITY).length,
     errors: previewRows.filter((r) => r.outcome === "error").length,
     duplicatesExisting: previewRows.filter((r) => r.outcome === "duplicate_existing").length,
     duplicatesInFile: previewRows.filter((r) => r.outcome === "duplicate_in_file").length,

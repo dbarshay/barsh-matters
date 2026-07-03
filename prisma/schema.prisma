@@ -70,6 +70,11 @@ model ImportRow {
   reason      String?
   matterId    Int?
   fingerprint String?
+  // Reconcile support (held rows): persisted staged payload + sub-reason + review lifecycle.
+  holdReason   String? // carrier_unmatched | patient_ambiguous | data_quality
+  reviewStatus String? // open | ready | committed | dismissed  (held rows only)
+  staged       Json? // mapped/staged row data, so the matter can be created in-place after fixing
+  resolution   Json? // operator decisions, e.g. { patient: "link"|"new", patientId?: string }
   createdAt   DateTime @default(now())
 
   batch ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
@@ -77,6 +82,8 @@ model ImportRow {
   @@index([batchId])
   @@index([matterId])
   @@index([outcome])
+  @@index([holdReason])
+  @@index([reviewStatus])
 }
 
 // Reusable PATIENT master — one record per injured person, linked across all their matters.

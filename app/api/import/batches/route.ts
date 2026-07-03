@@ -32,6 +32,7 @@ export async function GET(request: Request) {
       rejectedCount: true,
       reportCount: true,
       ignoredCount: true,
+      details: true,
       createdAt: true,
     },
   });
@@ -39,9 +40,14 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     count: batches.length,
-    batches: batches.map((b) => ({
-      ...b,
-      createdAt: b.createdAt.toISOString(),
-    })),
+    batches: batches.map((b) => {
+      const details = (b.details ?? {}) as Record<string, unknown>;
+      const held = Number(details.heldUnmatchedCarrier ?? 0) || 0;
+      // "Other" catches any rows not otherwise accounted for so the columns always reconcile to totalRows.
+      const other = Math.max(0, b.totalRows - b.createdCount - b.rejectedCount - b.reportCount - b.ignoredCount - held);
+      const { details: _drop, ...rest } = b;
+      void _drop;
+      return { ...rest, held, other, createdAt: b.createdAt.toISOString() };
+    }),
   });
 }

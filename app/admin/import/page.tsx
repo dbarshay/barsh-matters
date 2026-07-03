@@ -57,9 +57,80 @@ export default function DowImportPage() {
   const [confirmResult, setConfirmResult] = useState<any>(null);
   const [undoResult, setUndoResult] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
+  const [detailId, setDetailId] = useState("");
+  const [detail, setDetail] = useState<any>(null);
+  const [detailOutcome, setDetailOutcome] = useState("all");
+  const [detailSortKey, setDetailSortKey] = useState("rowIndex");
+  const [detailSortDir, setDetailSortDir] = useState<1 | -1>(1);
+  const [batchSortKey, setBatchSortKey] = useState("createdAt");
+  const [batchSortDir, setBatchSortDir] = useState<1 | -1>(-1); // newest first by default
   const [dragging, setDragging] = useState(false);
+
+  function toggleBatchSort(key: string) {
+    if (key === batchSortKey) setBatchSortDir((d) => (d === 1 ? -1 : 1));
+    else {
+      setBatchSortKey(key);
+      setBatchSortDir(key === "createdAt" ? -1 : 1);
+    }
+  }
+
+  function batchSortValue(b: any, key: string): string | number {
+    switch (key) {
+      case "source": return b.source || "";
+      case "sourceFile": return b.sourceFile || "";
+      case "totalRows": return b.totalRows ?? 0;
+      case "createdCount": return b.createdCount ?? 0;
+      case "held": return b.held ?? 0;
+      case "rejectedCount": return b.rejectedCount ?? 0;
+      case "other": return b.other ?? 0;
+      case "status": return b.status || "";
+      default: return new Date(b.createdAt).getTime();
+    }
+  }
+  const [sortKey, setSortKey] = useState("rowIndex");
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+
+  function toggleSort(key: string) {
+    if (key === sortKey) setSortDir((d) => (d === 1 ? -1 : 1));
+    else {
+      setSortKey(key);
+      setSortDir(1);
+    }
+  }
+
+  function sortValue(r: PreviewRow, key: string): string | number {
+    switch (key) {
+      case "patient": return r.staged.patient_name || "";
+      case "claim": return r.staged.claim_number_raw || "";
+      case "dos": return r.staged.dos_start || "";
+      case "charges": return r.staged.claim_amount ?? Number.NEGATIVE_INFINITY;
+      case "carrier": return r.carrier.status === "matched" ? (r.carrier.displayName || "") : "unmatched";
+      case "patientMatch": return r.patient.status || "";
+      case "outcome": return r.outcome || "";
+      default: return r.rowIndex;
+    }
+  }
+
+  function toggleDetailSort(key: string) {
+    if (key === detailSortKey) setDetailSortDir((d) => (d === 1 ? -1 : 1));
+    else {
+      setDetailSortKey(key);
+      setDetailSortDir(1);
+    }
+  }
+
+  function detailSortValue(r: any, key: string): string | number {
+    switch (key) {
+      case "outcome": return r.outcome || "";
+      case "matter": return r.displayNumber || "";
+      case "patient": return r.patientName || "";
+      case "stage": return r.stage || "";
+      case "reason": return r.reason || "";
+      default: return r.rowIndex;
+    }
+  }
 
   async function loadProviders() {
     try {
@@ -79,6 +150,27 @@ export default function DowImportPage() {
       if (j?.ok) setBatches(j.batches || []);
     } catch {
       /* history is optional to load */
+    }
+  }
+
+  async function openBatchDetail(id: string) {
+    if (detailId === id) {
+      setDetailId("");
+      setDetail(null);
+      return;
+    }
+    setDetailId(id);
+    setDetail(null);
+    setBusy("detail:" + id);
+    try {
+      const r = await fetch(`/api/import/batches/${id}`, { cache: "no-store" });
+      const j = await r.json().catch(() => ({}));
+      if (j?.ok) setDetail(j);
+      else setError(j?.error || "Could not load import details.");
+    } catch (e: any) {
+      setError(e?.message || "Could not load import details.");
+    } finally {
+      setBusy("");
     }
   }
 
@@ -207,6 +299,49 @@ export default function DowImportPage() {
 
   const s = preview?.summary;
 
+  const sortedRows: PreviewRow[] = preview?.rows
+    ? [...(preview.rows as PreviewRow[])].sort((a, b) => {
+        const va = sortValue(a, sortKey);
+        const vb = sortValue(b, sortKey);
+        let cmp: number;
+        if (typeof va === "number" && typeof vb === "number") cmp = va - vb;
+        else cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" });
+        return cmp * sortDir;
+      })
+    : [];
+
+  const columns: { key: string; label: string }[] = [
+    { key: "rowIndex", label: "#" },
+    { key: "patient", label: "Patient" },
+    { key: "claim", label: "Claim #" },
+    { key: "dos", label: "DOS" },
+    { key: "charges", label: "Charges" },
+    { key: "carrier", label: "Carrier" },
+    { key: "patientMatch", label: "Patient match" },
+    { key: "outcome", label: "Outcome" },
+  ];
+
+  const batchColumns: { key: string; label: string }[] = [
+    { key: "createdAt", label: "When" },
+    { key: "source", label: "Source" },
+    { key: "sourceFile", label: "File" },
+    { key: "totalRows", label: "Rows" },
+    { key: "createdCount", label: "Created" },
+    { key: "held", label: "Held" },
+    { key: "rejectedCount", label: "Rejected" },
+    { key: "other", label: "Other" },
+    { key: "status", label: "Status" },
+  ];
+
+  const sortedBatches = [...batches].sort((a, b) => {
+    const va = batchSortValue(a, batchSortKey);
+    const vb = batchSortValue(b, batchSortKey);
+    const cmp = typeof va === "number" && typeof vb === "number"
+      ? va - vb
+      : String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" });
+    return cmp * batchSortDir;
+  });
+
   return (
     <main style={{ padding: "12px 14px 40px", background: "#f8fafc", minHeight: "100vh", color: NAVY, fontFamily: "Inter, system-ui, sans-serif" }}>
       <BarshHeader center={<div style={{ fontSize: 28, fontWeight: 950, color: "#fff" }}>Import Matters</div>} />
@@ -223,20 +358,41 @@ export default function DowImportPage() {
               borderRadius: 12,
               background: dragging ? "#eef4fb" : "#f8fafc",
               padding: "22px 16px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
               textAlign: "center",
               color: MUTED,
               transition: "background 120ms, border-color 120ms",
             }}
           >
-            <div style={{ fontWeight: 800, color: dragging ? NAVY : MUTED, marginBottom: 10 }}>
-              {dragging ? "Drop to load" : "Drag & Drop or Pick File"}
+            <div style={{ fontWeight: 800, color: dragging || fileName ? NAVY : MUTED, marginBottom: 12 }}>
+              {dragging ? "Drop to load" : fileName ? "File Selected" : "Drag & Drop or Pick File"}
             </div>
-            <input type="file" accept=".xlsx,.xls" onChange={onFile} style={{ display: "block", margin: "0 auto" }} />
-            {fileName ? <div style={{ marginTop: 10, color: NAVY, fontWeight: 700 }}>{fileName}</div> : null}
+            <input id="dow-file-input" type="file" accept=".xlsx,.xls" onChange={onFile} style={{ display: "none" }} />
+            {fileName ? (
+              <div>
+                <div style={{ color: NAVY, fontWeight: 700 }}>{fileName}</div>
+                <label htmlFor="dow-file-input" style={{ marginTop: 8, display: "inline-block", color: MUTED, fontSize: 13, textDecoration: "underline", cursor: "pointer" }}>
+                  Choose a different file
+                </label>
+              </div>
+            ) : (
+              <label
+                htmlFor="dow-file-input"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 38,
+                  padding: "0 18px",
+                  border: `1px solid ${NAVY}`,
+                  borderRadius: 10,
+                  background: NAVY,
+                  color: "#fff",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Choose File
+              </label>
+            )}
           </div>
           <div style={{ marginTop: 12 }}>
             <button type="button" style={btn(NAVY, !fileBase64 || busy === "preview")} disabled={!fileBase64 || busy === "preview"} onClick={runPreview}>
@@ -275,9 +431,14 @@ export default function DowImportPage() {
                 ))}
               </select>
               <div style={{ marginTop: 12 }}>
-                <button type="button" style={btn("#16a34a", !providerId || busy === "confirm")} disabled={!providerId || busy === "confirm"} onClick={runConfirm}>
-                  {busy === "confirm" ? "Creating…" : `Confirm — create ${s.ready} matters`}
+                <button type="button" style={btn("#16a34a", !providerId || busy === "confirm" || !!confirmResult)} disabled={!providerId || busy === "confirm" || !!confirmResult} onClick={runConfirm}>
+                  {confirmResult ? "Imported ✓" : busy === "confirm" ? "Creating…" : `Confirm — create ${s.ready} matters`}
                 </button>
+                {confirmResult ? (
+                  <div style={{ marginTop: 8, color: MUTED, fontSize: 13 }}>
+                    Already imported this preview (batch {confirmResult.batchId}). Re-run Preview to import again.
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -285,11 +446,20 @@ export default function DowImportPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ textAlign: "left", color: MUTED }}>
-                    <th style={{ padding: 6 }}>#</th><th>Patient</th><th>Claim #</th><th>DOS</th><th>Charges</th><th>Carrier</th><th>Patient match</th><th>Outcome</th>
+                    {columns.map((c) => (
+                      <th
+                        key={c.key}
+                        onClick={() => toggleSort(c.key)}
+                        style={{ padding: 6, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                        title="Click to sort"
+                      >
+                        {c.label}{sortKey === c.key ? (sortDir === 1 ? " ▲" : " ▼") : ""}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {(preview.rows as PreviewRow[]).slice(0, 200).map((r) => (
+                  {sortedRows.map((r) => (
                     <tr key={r.rowIndex} style={{ borderTop: "1px solid #eef2f7" }}>
                       <td style={{ padding: 6 }}>{r.rowIndex + 1}</td>
                       <td>{r.staged.patient_name}</td>
@@ -305,7 +475,7 @@ export default function DowImportPage() {
                   ))}
                 </tbody>
               </table>
-              {preview.rows.length > 200 ? <div style={{ color: MUTED, marginTop: 6 }}>Showing first 200 of {preview.rows.length} rows.</div> : null}
+              <div style={{ color: MUTED, marginTop: 6 }}>Showing all {sortedRows.length} rows. Click a column header to sort.</div>
             </div>
           </div>
         ) : null}
@@ -334,9 +504,12 @@ export default function DowImportPage() {
         <div style={box}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontWeight: 900 }}>Existing imports</div>
-            <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>
-              Refresh
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <a href="/admin/import/reconcile" style={{ ...btn("#b45309"), height: 32, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile held</a>
+              <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>
+                Refresh
+              </button>
+            </div>
           </div>
           {batches.length === 0 ? (
             <div style={{ color: MUTED }}>No imports yet.</div>
@@ -345,22 +518,30 @@ export default function DowImportPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ textAlign: "left", color: MUTED }}>
-                    <th style={{ padding: 6 }}>When</th><th>Source</th><th>File</th><th>Rows</th><th>Created</th><th>Rejected</th><th>Report</th><th>Ignored</th><th>Status</th><th></th>
+                    {batchColumns.map((c) => (
+                      <th key={c.key} onClick={() => toggleBatchSort(c.key)} style={{ padding: 6, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }} title="Click to sort">
+                        {c.label}{batchSortKey === c.key ? (batchSortDir === 1 ? " ▲" : " ▼") : ""}
+                      </th>
+                    ))}
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {batches.map((b) => (
+                  {sortedBatches.map((b) => (
                     <tr key={b.id} style={{ borderTop: "1px solid #eef2f7" }}>
                       <td style={{ padding: 6, whiteSpace: "nowrap" }}>{new Date(b.createdAt).toLocaleString()}</td>
                       <td style={{ textTransform: "uppercase", fontWeight: 700 }}>{b.source}</td>
                       <td>{b.sourceFile || "—"}</td>
                       <td>{b.totalRows}</td>
                       <td style={{ color: "#16a34a", fontWeight: 700 }}>{b.createdCount}</td>
-                      <td>{b.rejectedCount}</td>
-                      <td>{b.reportCount}</td>
-                      <td>{b.ignoredCount}</td>
+                      <td style={{ color: (b.held || 0) > 0 ? "#dc2626" : MUTED, fontWeight: (b.held || 0) > 0 ? 700 : 400 }}>{b.held || 0}</td>
+                      <td style={{ color: (b.rejectedCount || 0) > 0 ? "#dc2626" : MUTED, fontWeight: (b.rejectedCount || 0) > 0 ? 700 : 400 }}>{b.rejectedCount}</td>
+                      <td>{b.other || 0}</td>
                       <td style={{ fontWeight: 800, color: b.status === "undone" ? "#9a3412" : "#166534" }}>{b.status}</td>
-                      <td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <button type="button" style={{ ...btn(NAVY, busy === "detail:" + b.id), height: 28, padding: "0 10px", fontSize: 12, marginRight: 8 }} disabled={busy === "detail:" + b.id} onClick={() => openBatchDetail(b.id)}>
+                          {detailId === b.id ? "Hide" : busy === "detail:" + b.id ? "Loading…" : "Details"}
+                        </button>
                         {b.status === "undone" ? (
                           <span style={{ color: MUTED }}>—</span>
                         ) : (
@@ -375,6 +556,86 @@ export default function DowImportPage() {
               </table>
             </div>
           )}
+
+          {detailId && detail?.batch ? (
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: "2px solid #eef2f7" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <div style={{ fontWeight: 900 }}>
+                  Import details — {detail.batch.source?.toUpperCase()} · {detail.batch.sourceFile || "—"}
+                </div>
+                <a href={`/admin/import/reconcile?batchId=${detailId}`} style={{ ...btn("#b45309"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
+              </div>
+              <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>
+                Batch {detail.batch.id} · {new Date(detail.batch.createdAt).toLocaleString()} · Provider: {detail.batch.providerName || "—"} · Status: {detail.batch.status}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                {[
+                  { key: "all", label: `All (${detail.rows.length})` },
+                  { key: "created", label: `Created (${detail.byOutcome?.created || 0})` },
+                  { key: "held", label: `Held (${detail.byOutcome?.held || 0})` },
+                  { key: "duplicate", label: `Duplicates (${detail.byOutcome?.duplicate || 0})` },
+                  { key: "error", label: `Errors (${detail.byOutcome?.error || 0})` },
+                ].map((f) => {
+                  const on = detailOutcome === f.key;
+                  return (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setDetailOutcome(f.key)}
+                      style={{ height: 30, padding: "0 12px", borderRadius: 999, fontSize: 12, fontWeight: 800, cursor: "pointer", border: `1px solid ${on ? NAVY : "#cbd5e1"}`, background: on ? NAVY : "#fff", color: on ? "#fff" : MUTED }}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ textAlign: "left", color: MUTED }}>
+                      {[
+                        { key: "rowIndex", label: "Row" },
+                        { key: "outcome", label: "Outcome" },
+                        { key: "matter", label: "Matter #" },
+                        { key: "patient", label: "Patient" },
+                        { key: "stage", label: "Stage" },
+                        { key: "reason", label: "Reason" },
+                      ].map((c) => (
+                        <th key={c.key} onClick={() => toggleDetailSort(c.key)} style={{ padding: 6, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }} title="Click to sort">
+                          {c.label}{detailSortKey === c.key ? (detailSortDir === 1 ? " ▲" : " ▼") : ""}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(detail.rows as any[])
+                      .filter((r) => detailOutcome === "all" || r.outcome === detailOutcome)
+                      .slice()
+                      .sort((a, b) => {
+                        const va = detailSortValue(a, detailSortKey);
+                        const vb = detailSortValue(b, detailSortKey);
+                        const cmp = typeof va === "number" && typeof vb === "number"
+                          ? va - vb
+                          : String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" });
+                        return cmp * detailSortDir;
+                      })
+                      .map((r) => (
+                        <tr key={r.rowIndex} style={{ borderTop: "1px solid #eef2f7" }}>
+                          <td style={{ padding: 6 }}>{r.rowIndex + 1}</td>
+                          <td style={{ fontWeight: 800, color: r.outcome === "created" ? "#16a34a" : r.outcome === "held" ? "#b45309" : r.outcome === "error" ? "#dc2626" : MUTED }}>{r.outcome}</td>
+                          <td>{r.displayNumber ? <a href={`/matter/${r.matterId}`} style={{ color: NAVY, fontWeight: 700 }}>{r.displayNumber}</a> : "—"}</td>
+                          <td>{r.patientName || "—"}</td>
+                          <td>{r.stage || "—"}</td>
+                          <td style={{ color: MUTED }}>{r.reason || "—"}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </main>
