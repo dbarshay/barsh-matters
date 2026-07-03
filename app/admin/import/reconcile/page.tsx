@@ -174,10 +174,9 @@ export default function ReconcilePage() {
         </div>
 
         {/* MISSING FIELD holds — fill in the missing values */}
-        {missingRows.length ? (
-          <div style={box}>
-            <div style={{ fontWeight: 900, marginBottom: 4 }}>Missing required fields ({missingRows.length} rows)</div>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Fill in the missing values for each row. When all required fields are present the row becomes Ready to Commit.</div>
+        <Section title="Missing required fields" count={missingRows.length}>
+          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Fill in the missing values for each row. When all required fields are present the row becomes Ready to Commit.</div>
+          {missingRows.length === 0 ? <div style={{ color: MUTED }}>No missing-field holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr><th style={th}>Row</th><th style={th}>Patient</th><th style={th}>Claim #</th><th style={th}>What&apos;s missing</th><th style={th}></th></tr></thead>
               <tbody>
@@ -191,12 +190,11 @@ export default function ReconcilePage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : null}
+          )}
+        </Section>
 
         {/* CARRIER holds — Owner-gated registry write */}
-        <div style={box}>
-          <div style={{ fontWeight: 900, marginBottom: 4 }}>Carrier not in registry ({carrierGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
+        <Section title="Carrier not in registry" count={carrierGroups.reduce((a, c) => a + c.count, 0)}>
           <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>For each raw carrier: <strong>Assign Alias</strong> — save this raw name as an alias of an approved insurer — or <strong>Add new</strong> insurer. This updates the registry (Owner-gated) and applies to all future imports.</div>
           {carrierGroups.length === 0 ? <div style={{ color: MUTED }}>No carrier holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -211,13 +209,12 @@ export default function ReconcilePage() {
               </tbody>
             </table>
           )}
-        </div>
+        </Section>
 
         {/* PROVIDER holds — Owner-gated registry write (Carisk resolves provider from the sheet) */}
-        {providerGroups.length ? (
-          <div style={box}>
-            <div style={{ fontWeight: 900, marginBottom: 4 }}>Provider not in registry ({providerGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>For each raw provider: <strong>Assign Alias</strong> to an approved provider, or <strong>Add new</strong> provider. Owner-gated; applies to all future imports.</div>
+        <Section title="Provider not in registry" count={providerGroups.reduce((a, c) => a + c.count, 0)}>
+          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>For each raw provider: <strong>Assign Alias</strong> to an approved provider, or <strong>Add new</strong> provider. Owner-gated; applies to all future imports.</div>
+          {providerGroups.length === 0 ? <div style={{ color: MUTED }}>No provider holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr><th style={th}>Raw provider</th><th style={th}>Rows</th><th style={th}>Assign Alias (to approved provider)</th><th style={th}>or Add new provider</th></tr></thead>
               <tbody>
@@ -229,14 +226,13 @@ export default function ReconcilePage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : null}
+          )}
+        </Section>
 
         {/* CASE-TYPE holds — map unknown ClaimType */}
-        {caseTypeGroups.length ? (
-          <div style={box}>
-            <div style={{ fontWeight: 900, marginBottom: 4 }}>Unknown case type / ClaimType ({caseTypeGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Map each unrecognized ClaimType to a case type. Applies to all rows with that ClaimType.</div>
+        <Section title="Unknown case type / ClaimType" count={caseTypeGroups.reduce((a, c) => a + c.count, 0)}>
+          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Map each unrecognized ClaimType to a case type. Applies to all rows with that ClaimType.</div>
+          {caseTypeGroups.length === 0 ? <div style={{ color: MUTED }}>No case-type holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr><th style={th}>Raw ClaimType</th><th style={th}>Rows</th><th style={th}>Set case type</th></tr></thead>
               <tbody>
@@ -254,14 +250,13 @@ export default function ReconcilePage() {
                 })}
               </tbody>
             </table>
-          </div>
-        ) : null}
+          )}
+        </Section>
 
         {/* TIN mismatch holds */}
-        {tinRows.length ? (
-          <div style={box}>
-            <div style={{ fontWeight: 900, marginBottom: 4 }}>Provider TIN mismatch ({tinRows.length} rows)</div>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>The row&apos;s TIN differs from the provider&apos;s registry TIN. Accept the row&apos;s TIN (import) or dismiss the row.</div>
+        <Section title="Provider TIN mismatch" count={tinRows.length}>
+          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>The row&apos;s TIN differs from the provider&apos;s registry TIN. Accept the row&apos;s TIN (import) or dismiss the row.</div>
+          {tinRows.length === 0 ? <div style={{ color: MUTED }}>No TIN-mismatch holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr><th style={th}>Patient</th><th style={th}>Provider</th><th style={th}>Row TIN</th><th style={th}>Detail</th><th style={th}>Action</th></tr></thead>
               <tbody>
@@ -279,12 +274,11 @@ export default function ReconcilePage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : null}
+          )}
+        </Section>
 
         {/* PATIENT holds */}
-        <div style={box}>
-          <div style={{ fontWeight: 900, marginBottom: 4 }}>Patient match ambiguous ({patientRows.length} rows)</div>
+        <Section title="Patient match ambiguous" count={patientRows.length}>
           <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Confirm whether the incoming patient is an existing person (link) or a new person (create).</div>
           {patientRows.length === 0 ? <div style={{ color: MUTED }}>No patient holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -299,11 +293,10 @@ export default function ReconcilePage() {
               </tbody>
             </table>
           )}
-        </div>
+        </Section>
 
         {/* DATA QUALITY holds */}
-        <div style={box}>
-          <div style={{ fontWeight: 900, marginBottom: 4 }}>Data quality ({dataRows.length} rows)</div>
+        <Section title="Data quality" count={dataRows.length}>
           <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Accept the flagged value (import anyway) or dismiss the row (don&apos;t import).</div>
           {dataRows.length === 0 ? <div style={{ color: MUTED }}>No data-quality holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -324,7 +317,7 @@ export default function ReconcilePage() {
               </tbody>
             </table>
           )}
-        </div>
+        </Section>
 
         {/* READY TO COMMIT */}
         <div style={{ ...box, borderColor: "#bbf7d0", background: "#f0fdf4" }}>
@@ -359,6 +352,23 @@ export default function ReconcilePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={box}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: 8 }}
+      >
+        <span style={{ color: MUTED, fontWeight: 900, width: 14 }}>{open ? "▾" : "▸"}</span>
+        <span style={{ fontWeight: 900 }}>{title}</span>
+        <span style={{ fontWeight: 800, color: count > 0 ? "#b45309" : MUTED }}>({count} {count === 1 ? "row" : "rows"})</span>
+      </div>
+      {open ? <div style={{ marginTop: 12 }}>{children}</div> : null}
+    </div>
   );
 }
 
