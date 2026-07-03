@@ -56,6 +56,7 @@ export default function DowImportPage() {
   const [preview, setPreview] = useState<any>(null);
   const [confirmResult, setConfirmResult] = useState<any>(null);
   const [undoResult, setUndoResult] = useState<any>(null);
+  const [batches, setBatches] = useState<any[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -70,8 +71,19 @@ export default function DowImportPage() {
     }
   }
 
+  async function loadBatches() {
+    try {
+      const r = await fetch("/api/import/batches?take=50", { cache: "no-store" });
+      const j = await r.json().catch(() => ({}));
+      if (j?.ok) setBatches(j.batches || []);
+    } catch {
+      /* history is optional to load */
+    }
+  }
+
   useEffect(() => {
     void loadProviders();
+    void loadBatches();
   }, []);
 
   async function seedTest(remove: boolean) {
@@ -140,7 +152,10 @@ export default function DowImportPage() {
       });
       const j = await r.json();
       if (!j.ok) setError(j.error || "Confirm failed.");
-      else setConfirmResult(j);
+      else {
+        setConfirmResult(j);
+        void loadBatches();
+      }
     } catch (e: any) {
       setError(e?.message || "Confirm failed.");
     } finally {
@@ -148,16 +163,16 @@ export default function DowImportPage() {
     }
   }
 
-  async function runUndo() {
-    if (!confirmResult?.batchId) return;
+  async function undoBatch(batchId: string) {
+    if (!batchId) return;
     if (!window.confirm("Undo this import? Removes only untouched matters it created.")) return;
-    setBusy("undo");
+    setBusy("undo:" + batchId);
     setError("");
     try {
       const r = await fetch("/api/import/undo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batchId: confirmResult.batchId }),
+        body: JSON.stringify({ batchId }),
       });
       const j = await r.json();
       if (!j.ok) setError(j.error || "Undo failed.");
@@ -166,7 +181,13 @@ export default function DowImportPage() {
       setError(e?.message || "Undo failed.");
     } finally {
       setBusy("");
+      void loadBatches();
     }
+  }
+
+  async function runUndo() {
+    if (!confirmResult?.batchId) return;
+    await undoBatch(confirmResult.batchId);
   }
 
   const s = preview?.summary;
@@ -259,8 +280,8 @@ export default function DowImportPage() {
               Created: {confirmResult.summary.created} · Duplicates: {confirmResult.summary.duplicates} · Errors: {confirmResult.summary.errors} · Held (unmatched carrier): {confirmResult.summary.held} · Provider: {confirmResult.provider}
             </div>
             <div style={{ marginTop: 12 }}>
-              <button type="button" style={btn("#dc2626", busy === "undo")} disabled={busy === "undo"} onClick={runUndo}>
-                {busy === "undo" ? "Undoing…" : "Undo this import"}
+              <button type="button" style={btn("#dc2626", busy.startsWith("undo"))} disabled={busy.startsWith("undo")} onClick={runUndo}>
+                {busy.startsWith("undo") ? "Undoing…" : "Undo this import"}
               </button>
             </div>
           </div>
@@ -272,6 +293,52 @@ export default function DowImportPage() {
             <div style={{ color: MUTED, marginTop: 6 }}>{undoResult.note}</div>
           </div>
         ) : null}
+
+        <div style={box}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontWeight: 900 }}>Existing imports</div>
+            <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>
+              Refresh
+            </button>
+          </div>
+          {batches.length === 0 ? (
+            <div style={{ color: MUTED }}>No imports yet.</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ textAlign: "left", color: MUTED }}>
+                    <th style={{ padding: 6 }}>When</th><th>Source</th><th>File</th><th>Rows</th><th>Created</th><th>Rejected</th><th>Report</th><th>Ignored</th><th>Status</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {batches.map((b) => (
+                    <tr key={b.id} style={{ borderTop: "1px solid #eef2f7" }}>
+                      <td style={{ padding: 6, whiteSpace: "nowrap" }}>{new Date(b.createdAt).toLocaleString()}</td>
+                      <td style={{ textTransform: "uppercase", fontWeight: 700 }}>{b.source}</td>
+                      <td>{b.sourceFile || "—"}</td>
+                      <td>{b.totalRows}</td>
+                      <td style={{ color: "#16a34a", fontWeight: 700 }}>{b.createdCount}</td>
+                      <td>{b.rejectedCount}</td>
+                      <td>{b.reportCount}</td>
+                      <td>{b.ignoredCount}</td>
+                      <td style={{ fontWeight: 800, color: b.status === "undone" ? "#9a3412" : "#166534" }}>{b.status}</td>
+                      <td>
+                        {b.status === "undone" ? (
+                          <span style={{ color: MUTED }}>—</span>
+                        ) : (
+                          <button type="button" style={{ ...btn("#dc2626", busy === "undo:" + b.id), height: 28, padding: "0 10px", fontSize: 12 }} disabled={busy.startsWith("undo")} onClick={() => undoBatch(b.id)}>
+                            {busy === "undo:" + b.id ? "Undoing…" : "Undo"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

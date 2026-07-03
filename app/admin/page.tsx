@@ -77,6 +77,13 @@ const adminCards = [
     icon: "Permissions",
   },
   {
+    label: "Import New Matters",
+    href: "/admin/import",
+    description:
+      "Import new matters from a provider spreadsheet (Dow): upload, preview read-only, confirm, and undo. Flag-gated.",
+    icon: "📥",
+  },
+  {
     label: "Reference Data Import",
     href: "/admin/reference-data",
     description:
