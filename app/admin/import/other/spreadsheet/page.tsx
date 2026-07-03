@@ -20,11 +20,11 @@ export default function OtherSpreadsheetPage() {
   const [fileBase64, setFileBase64] = useState("");
   const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
+  const [samples, setSamples] = useState<Record<string, unknown>[]>([]);
   const [fields, setFields] = useState<FieldDef[]>([]);
-  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [colMap, setColMap] = useState<Record<string, string>>({}); // source column -> BM field key
   const [providers, setProviders] = useState<Opt[]>([]);
   const [providerEntityId, setProviderEntityId] = useState("");
-  const [caseMode, setCaseMode] = useState<"map" | "pick">("pick");
   const [caseTypePick, setCaseTypePick] = useState("No-Fault");
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateName, setTemplateName] = useState("");
@@ -48,7 +48,7 @@ export default function OtherSpreadsheetPage() {
   useEffect(() => { void loadProviders(); void loadTemplates(); void loadBatches(); }, [loadProviders, loadTemplates, loadBatches]);
 
   function ingest(file?: File | null) {
-    setHeaders([]); setMapping({}); setPreview(null); setError(""); setFlash("");
+    setHeaders([]); setSamples([]); setColMap({}); setPreview(null); setError(""); setFlash("");
     if (!file) return;
     if (!/\.xlsx?$/.test(file.name.toLowerCase())) { setError("Choose an .xlsx or .xls file."); return; }
     setFileName(file.name);
@@ -63,29 +63,52 @@ export default function OtherSpreadsheetPage() {
     const r = await fetch("/api/import/other/headers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64 }) });
     const j = await r.json(); setBusy("");
     if (!j.ok) { setError(j.error || "Could not read columns."); return; }
-    setHeaders(j.headers || []); setFields(j.fields || []); setMapping(j.suggested || {});
+    setHeaders(j.headers || []); setSamples(j.samples || []); setFields(j.fields || []);
+    // Suggested is BM field -> column; invert to column -> BM field for the column-oriented UI.
+    const inv: Record<string, string> = {};
+    for (const [f, c] of Object.entries((j.suggested || {}) as Record<string, string>)) inv[c] = f;
+    setColMap(inv);
   }
 
+  // Example values from the sheet for a given column (for mapping context).
+  const exFor = (col: string) => {
+    if (!col) return "";
+    const vals = samples.map((r) => (r?.[col] === null || r?.[col] === undefined ? "" : String(r[col]).trim())).filter(Boolean);
+    return Array.from(new Set(vals)).slice(0, 2).join("  ·  ");
+  };
+  const exLine = (col: string) => {
+    const ex = exFor(col);
+    return <div style={{ fontSize: 11, color: col ? "#0f766e" : MUTED, marginTop: 2, minHeight: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{col ? (ex ? `e.g. ${ex}` : "(blank in sample)") : " "}</div>;
+  };
+
+  // A column mapped to "case_type" overrides the picked value.
+  const caseMappedCol = Object.keys(colMap).find((c) => colMap[c] === "case_type") || "";
+  const caseMode: "map" | "pick" = caseMappedCol ? "map" : "pick";
+  const fieldLabel = (key: string) => fields.find((f) => f.key === key)?.label || key;
+  const usedBy = (fieldKey: string) => Object.keys(colMap).find((c) => colMap[c] === fieldKey); // column currently mapped to a field
+  // Build BM field -> column from the column-oriented selections (last write wins for a field).
+  const bmMapping = () => { const m: Record<string, string> = {}; for (const [c, f] of Object.entries(colMap)) if (f) m[f] = c; return m; };
   const fixed = () => ({ providerEntityId, ...(caseMode === "pick" ? { caseType: caseTypePick } : {}) });
-  const bodyMapping = () => { const m = { ...mapping }; if (caseMode === "pick") delete m.case_type; return m; };
 
   async function saveTemplate() {
     if (!templateName.trim()) { setError("Name the mapping first."); return; }
-    const r = await fetch("/api/import/other/mappings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: templateName.trim(), mapping: bodyMapping(), fixed: fixed() }) });
+    const r = await fetch("/api/import/other/mappings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: templateName.trim(), mapping: bmMapping(), fixed: fixed() }) });
     const j = await r.json(); if (j.ok) { setFlash(`Saved mapping "${templateName.trim()}".`); await loadTemplates(); } else setError(j.error || "Save failed.");
   }
   function applyTemplate(t: any) {
-    setMapping(t.mapping || {});
+    const inv: Record<string, string> = {};
+    for (const [f, c] of Object.entries((t.mapping || {}) as Record<string, string>)) inv[c] = f;
+    setColMap(inv);
     const f = t.fixed || {};
     if (f.providerEntityId) setProviderEntityId(f.providerEntityId);
-    if (f.caseType) { setCaseMode("pick"); setCaseTypePick(f.caseType); } else setCaseMode("map");
+    if (f.caseType) setCaseTypePick(f.caseType);
     setFlash(`Loaded mapping "${t.name}".`);
   }
 
   async function runPreview() {
     if (!providerEntityId) { setError("Pick a Provider/Client."); return; }
     setBusy("preview"); setError("");
-    const r = await fetch("/api/import/other/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64, mapping: bodyMapping(), fixed: fixed() }) });
+    const r = await fetch("/api/import/other/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64, mapping: bmMapping(), fixed: fixed() }) });
     const j = await r.json(); setBusy("");
     if (!j.ok) setError(j.error || "Preview failed."); else setPreview(j);
   }
@@ -93,7 +116,7 @@ export default function OtherSpreadsheetPage() {
   async function runConfirm() {
     if (!window.confirm("Create matters for all 'ready' rows? You can undo afterward.")) return;
     setBusy("confirm"); setError("");
-    const r = await fetch("/api/import/other/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64, mapping: bodyMapping(), fixed: fixed(), sourceFile: fileName }) });
+    const r = await fetch("/api/import/other/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64, mapping: bmMapping(), fixed: fixed(), sourceFile: fileName }) });
     const j = await r.json(); setBusy("");
     if (!j.ok) { setError(j.error || "Confirm failed."); return; }
     setFlash(`Imported ${j.summary?.created ?? 0} matter(s)${j.summary?.held ? ` · ${j.summary.held} held — reconcile below` : ""}.`);
@@ -141,43 +164,47 @@ export default function OtherSpreadsheetPage() {
             <div style={{ fontWeight: 900, marginBottom: 4 }}>2. Map columns → BM fields</div>
             <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Auto-suggested from your headers — adjust as needed. Provider is picked (never parsed). Required fields are marked *.</div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {/* Provider pick (required) */}
+            {/* Provider (pick) + Case Type (pick, unless a column below is mapped to it) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: MUTED }}>Provider / Client * <span style={{ color: NAVY }}>(pick)</span></div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: MUTED }}>Provider / Client * <span style={{ color: NAVY }}>(pick — never parsed)</span></div>
                 <select value={providerEntityId} onChange={(e) => setProviderEntityId(e.target.value)} style={{ ...input, width: "100%", height: 34 }}>
                   <option value="">Select provider…</option>
                   {providers.map((p) => <option key={p.id} value={p.id}>{p.displayName}</option>)}
                 </select>
               </div>
-              {/* Case type: map or pick */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: MUTED }}>Case Type *</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <select value={caseMode} onChange={(e) => setCaseMode(e.target.value as any)} style={{ ...input, height: 34 }}>
-                    <option value="pick">Pick one</option>
-                    <option value="map">Map column</option>
-                  </select>
-                  {caseMode === "pick" ? (
-                    <select value={caseTypePick} onChange={(e) => setCaseTypePick(e.target.value)} style={{ ...input, height: 34, flex: 1 }}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select>
-                  ) : (
-                    <select value={mapping.case_type || ""} onChange={(e) => setMapping((m) => ({ ...m, case_type: e.target.value }))} style={{ ...input, height: 34, flex: 1 }}>
-                      <option value="">Select column…</option>
-                      {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  )}
-                </div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: MUTED }}>Case Type * {caseMode === "map" ? <span style={{ color: "#0f766e" }}>(from column “{caseMappedCol}”)</span> : <span style={{ color: NAVY }}>(pick)</span>}</div>
+                <select value={caseTypePick} onChange={(e) => setCaseTypePick(e.target.value)} disabled={caseMode === "map"} style={{ ...input, width: "100%", height: 34, background: caseMode === "map" ? "#eef2f7" : "#fff" }}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select>
               </div>
-              {/* Remaining fields (mapped) */}
-              {fields.filter((f) => f.key !== "case_type").map((f) => (
-                <div key={f.key}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: MUTED }}>{f.label}{f.required ? " *" : ""}</div>
-                  <select value={mapping[f.key] || ""} onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value }))} style={{ ...input, width: "100%", height: 34 }}>
-                    <option value="">— unmapped —</option>
-                    {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-              ))}
+            </div>
+
+            {/* THEIR columns -> OUR fields */}
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr style={{ textAlign: "left", color: MUTED }}><th style={{ padding: 6 }}>Their column</th><th>Example values</th><th>Maps to (our field)</th></tr></thead>
+              <tbody>
+                {headers.map((h) => {
+                  const selected = colMap[h] || "";
+                  const conflict = selected && usedBy(selected) !== h; // another column already claims this field
+                  return (
+                    <tr key={h} style={{ borderTop: "1px solid #eef2f7" }}>
+                      <td style={{ padding: 6, fontWeight: 700 }}>{h}</td>
+                      <td style={{ color: "#0f766e", maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exFor(h) || "—"}</td>
+                      <td>
+                        <select value={selected} onChange={(e) => setColMap((m) => ({ ...m, [h]: e.target.value }))} style={{ ...input, minWidth: 260, height: 32, border: conflict ? "1px solid #dc2626" : "1px solid #cbd5e1" }}>
+                          <option value="">— ignore —</option>
+                          {fields.map((f) => <option key={f.key} value={f.key}>{f.label}{f.required ? " *" : ""}</option>)}
+                        </select>
+                        {conflict ? <span style={{ color: "#dc2626", fontSize: 11, marginLeft: 6 }}>also on “{usedBy(selected)}”</span> : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ marginTop: 8, fontSize: 12, color: MUTED }}>
+              Required fields still needing a column:{" "}
+              {fields.filter((f) => f.required && f.key !== "case_type" && !usedBy(f.key)).map((f) => f.label).join(", ") || "none — all required fields mapped."}
             </div>
 
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #dbe4f0", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
