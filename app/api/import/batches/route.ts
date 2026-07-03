@@ -18,8 +18,10 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const takeRaw = Number(url.searchParams.get("take") || "25");
   const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 100) : 25;
+  const source = (url.searchParams.get("source") || "").trim(); // "dow" | "carisk" | "" (all)
 
   const batches = await prisma.importBatch.findMany({
+    where: source ? { source } : {},
     orderBy: { createdAt: "desc" },
     take,
     select: { id: true, source: true, sourceFile: true, actorName: true, status: true, totalRows: true, createdAt: true },

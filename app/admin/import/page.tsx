@@ -144,9 +144,10 @@ export default function DowImportPage() {
     }
   }
 
-  async function loadBatches() {
+  async function loadBatches(forSource?: "dow" | "carisk") {
     try {
-      const r = await fetch("/api/import/batches?take=50", { cache: "no-store" });
+      const src = forSource ?? source;
+      const r = await fetch(`/api/import/batches?take=50&source=${src}`, { cache: "no-store" });
       const j = await r.json().catch(() => ({}));
       if (j?.ok) setBatches(j.batches || []);
     } catch {
@@ -176,8 +177,17 @@ export default function DowImportPage() {
   }
 
   useEffect(() => {
+    // Honor ?source=carisk|dow from the launching tile.
+    let initial: "dow" | "carisk" = "dow";
+    if (typeof window !== "undefined") {
+      const q = new URLSearchParams(window.location.search).get("source");
+      if (q === "carisk" || q === "dow") {
+        initial = q;
+        setSource(q);
+      }
+    }
     void loadProviders();
-    void loadBatches();
+    void loadBatches(initial);
   }, []);
 
   async function seedTest(remove: boolean) {
@@ -352,24 +362,42 @@ export default function DowImportPage() {
 
       <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={box}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {(["dow", "carisk"] as const).map((src) => {
-              const on = source === src;
-              return (
-                <button
-                  key={src}
-                  type="button"
-                  onClick={() => { setSource(src); setPreview(null); setConfirmResult(null); setUndoResult(null); setError(""); }}
-                  style={{ height: 34, padding: "0 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, cursor: "pointer", border: `1px solid ${on ? NAVY : "#cbd5e1"}`, background: on ? NAVY : "#fff", color: on ? "#fff" : MUTED }}
-                >
-                  {src === "dow" ? "Dow (provider sheet)" : "Carisk (searchResults)"}
-                </button>
-              );
-            })}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              marginBottom: 14,
+              padding: "12px 16px",
+              borderRadius: 12,
+              border: `2px solid ${source === "dow" ? "#00346e" : "#7c3aed"}`,
+              background: source === "dow" ? "#eaf1fb" : "#f3ecff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 950,
+                  letterSpacing: "0.04em",
+                  color: source === "dow" ? "#00346e" : "#5b21b6",
+                }}
+              >
+                {source === "dow" ? "DOW IMPORT" : "CARISK IMPORT"}
+              </span>
+              <span style={{ fontSize: 13, color: MUTED, fontWeight: 700 }}>
+                {source === "dow" ? "provider spreadsheet" : "searchResults export"}
+              </span>
+            </div>
+            <a
+              href={source === "dow" ? "/admin/import?source=carisk" : "/admin/import?source=dow"}
+              style={{ fontSize: 13, fontWeight: 900, color: source === "dow" ? "#7c3aed" : "#00346e", textDecoration: "none", whiteSpace: "nowrap" }}
+            >
+              Wrong module? Switch to {source === "dow" ? "Carisk" : "Dow"} →
+            </a>
           </div>
-          <div style={{ fontWeight: 900, marginBottom: 8 }}>
-            1. Upload {source === "dow" ? "Dow provider sheet" : "Carisk export"} (.xlsx)
-          </div>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>1. Upload provider sheet (.xlsx)</div>
           <div
             onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
             onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
@@ -536,7 +564,7 @@ export default function DowImportPage() {
 
         <div style={box}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div style={{ fontWeight: 900 }}>Existing imports</div>
+            <div style={{ fontWeight: 900 }}>Existing {source === "dow" ? "Dow" : "Carisk"} imports</div>
             <div style={{ display: "flex", gap: 8 }}>
               <a href="/admin/import/reconcile" style={{ ...btn("#b45309"), height: 32, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile held</a>
               <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>

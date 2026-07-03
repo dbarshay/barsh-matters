@@ -77,11 +77,26 @@ const adminCards = [
     icon: "Permissions",
   },
   {
-    label: "Import New Matters",
+    label: "Import Dow Matters",
+    href: "/admin/import?source=dow",
+    description:
+      "Import matters from a Dow provider spreadsheet: upload, preview read-only, confirm, reconcile holds, and undo. Flag-gated.",
+    icon: "📥",
+  },
+  {
+    label: "Import Carisk Matters",
+    href: "/admin/import?source=carisk",
+    description:
+      "Import matters from a Carisk export: Status routing, CIC# dedup, per-row provider/case-type, reconcile holds, and undo. Flag-gated.",
+    icon: "📥",
+  },
+  {
+    label: "Import Others",
     href: "/admin/import",
     description:
-      "Import new matters from a provider spreadsheet (Dow): upload, preview read-only, confirm, and undo. Flag-gated.",
+      "Additional import sources — coming soon.",
     icon: "📥",
+    comingSoon: true,
   },
   {
     label: "Reference Data Import",
@@ -206,28 +221,34 @@ export default function AdminHomePage() {
             gap: 14,
           }}
         >
-          {adminCards.map((card) => (
-            <a
-              key={card.href}
-              href={card.href}
-              style={{
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 22,
-                padding: 20,
-                textDecoration: "none",
-                color: "#00346e",
-                boxShadow: "0 14px 32px rgba(15, 23, 42, 0.07)",
-                display: "grid",
-                gap: 10,
-              }}
-            >
-              <div style={{ fontSize: 28 }}>{card.icon}</div>
-              <div style={{ fontSize: 20, fontWeight: 950 }}>{card.label}</div>
-              <div style={{ color: "#385a83", lineHeight: 1.45 }}>{card.description}</div>
-              <div style={{ marginTop: 8, fontWeight: 950, color: "#00346e" }}>Open →</div>
-            </a>
-          ))}
+          {adminCards.map((card) => {
+            const comingSoon = (card as { comingSoon?: boolean }).comingSoon;
+            const baseStyle: React.CSSProperties = {
+              background: comingSoon ? "#f8fafc" : "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 22,
+              padding: 20,
+              textDecoration: "none",
+              color: comingSoon ? "#94a3b8" : "#00346e",
+              boxShadow: comingSoon ? "none" : "0 14px 32px rgba(15, 23, 42, 0.07)",
+              display: "grid",
+              gap: 10,
+              cursor: comingSoon ? "default" : "pointer",
+            };
+            const inner = (
+              <>
+                <div style={{ fontSize: 28, opacity: comingSoon ? 0.5 : 1 }}>{card.icon}</div>
+                <div style={{ fontSize: 20, fontWeight: 950 }}>{card.label}</div>
+                <div style={{ color: comingSoon ? "#94a3b8" : "#385a83", lineHeight: 1.45 }}>{card.description}</div>
+                <div style={{ marginTop: 8, fontWeight: 950, color: comingSoon ? "#94a3b8" : "#00346e" }}>{comingSoon ? "Coming soon" : "Open →"}</div>
+              </>
+            );
+            return comingSoon ? (
+              <div key={card.label} style={baseStyle}>{inner}</div>
+            ) : (
+              <a key={card.label} href={card.href} style={baseStyle}>{inner}</a>
+            );
+          })}
         </section>
 
         <div>
