@@ -52,6 +52,10 @@ Still to spec:
   per-matter with autocomplete?
 - **Scan/upload module mechanics** — file upload, the drag-into-category UI, storing flat to Clio
   + category as BM metadata, supported file types, multi-file handling.
+- **OCR for manual creation (candidate):** OCR the scanned/uploaded documents to **pre-fill the manual
+  matter-creation fields** (patient, claim/policy #, DOI, DOS, carrier, charges, etc.) for the operator
+  to VERIFY/correct — same review-required + confidence-highlight rules as the document OCR pre-fill.
+  Consider when speccing #3.
 - **Field formats/validation** on the manual form (dates, money, name normalization → same rules as
   imports?).
 - **Case Type** — operator selects WC vs No-Fault at manual entry (confirm).

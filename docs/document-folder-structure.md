@@ -4,8 +4,10 @@ Supersedes the provisional flat 17-folder list in `manual-creation-intake.md`.
 Accessed via the existing **Documents** action button → **View Documents** → the master-folder tree.
 Applies to every matter (all intake paths), not just manual creation.
 
-Clio note: Clio storage stays **flat** under the matter folder (no subfolders in Clio); this nested
-tree is the **BM-side** organization (folder = BM metadata on each document). (Confirm still true.)
+> **INVARIANT (user-confirmed):** The BM documents/folders tree **NEVER changes the Clio repository's
+> folder structure.** Clio storage stays **FLAT** under the matter folder (no subfolders created in
+> Clio). This entire nested tree — masters, subfolders, titles, moves, case-type greying, everything —
+> is **BM-side metadata only**. Clio is just the file store; BM owns organization/labels/placement.
 
 ## Folder tree (as described — some names/branches TBD)
 
