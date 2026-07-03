@@ -41,23 +41,36 @@ export async function POST(request: Request) {
   // Only remove UNTOUCHED matters: not aggregated (master_lawsuit_id null) and not closed.
   const current = await prisma.claimIndex.findMany({
     where: { matter_id: { in: matterIds } },
-    select: { matter_id: true, master_lawsuit_id: true, final_status: true, close_reason: true },
+    select: { matter_id: true, patient_id: true, master_lawsuit_id: true, final_status: true, close_reason: true },
   });
 
   const untouched: number[] = [];
   const kept: { matterId: number; reason: string }[] = [];
+  const touchedPatientIds: string[] = [];
   for (const m of current) {
     const aggregated = !!(m.master_lawsuit_id && String(m.master_lawsuit_id).trim());
     const closed = String(m.final_status || "").toLowerCase() === "closed" || !!(m.close_reason && String(m.close_reason).trim());
     if (aggregated) kept.push({ matterId: m.matter_id, reason: "Aggregated into a lawsuit." });
     else if (closed) kept.push({ matterId: m.matter_id, reason: "Matter was closed/edited." });
-    else untouched.push(m.matter_id);
+    else {
+      untouched.push(m.matter_id);
+      if (m.patient_id) touchedPatientIds.push(m.patient_id);
+    }
   }
 
   let removed = 0;
   if (untouched.length) {
     const res = await prisma.claimIndex.deleteMany({ where: { matter_id: { in: untouched } } });
     removed = res.count;
+  }
+
+  // A patient should not persist without a matter: delete any patient orphaned by this undo (i.e. one
+  // of the removed matters' patients that now has zero remaining matters).
+  let removedPatients = 0;
+  const distinctPatientIds = Array.from(new Set(touchedPatientIds));
+  if (distinctPatientIds.length) {
+    const del = await prisma.patient.deleteMany({ where: { id: { in: distinctPatientIds }, matters: { none: {} } } });
+    removedPatients = del.count;
   }
 
   await prisma.importBatch.update({
@@ -72,6 +85,7 @@ export async function POST(request: Request) {
     ok: true,
     batchId,
     removed,
+    removedPatients,
     kept: kept.length,
     keptDetail: kept,
     note: kept.length ? "Kept matters that were aggregated or closed since import." : "All created matters were untouched and removed.",

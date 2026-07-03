@@ -77,6 +77,16 @@ export default function ManualMatterPage() {
     }
   }
 
+  async function cleanupOrphans() {
+    if (!window.confirm("Delete all patient records that have no matters?\n\nThis removes leftover patients (e.g. from undone test imports). Patients linked to a matter are untouched.")) return;
+    try {
+      const r = await fetch("/api/admin/patients/cleanup-orphans", { method: "POST" });
+      const j = await r.json();
+      if (j.ok) { window.alert(`Removed ${j.removed} orphaned patient(s).`); setPatientSuggestions([]); }
+      else setError(j.error || "Cleanup failed.");
+    } catch { setError("Cleanup failed."); }
+  }
+
   function addAnotherForPatient() {
     const pid = done?.patientId || patientId;
     // Keep carry-over fields; clear only the bill-level ones.
@@ -216,6 +226,12 @@ export default function ManualMatterPage() {
               </div>
               <div style={{ marginTop: 8 }}>
                 <button type="button" style={btn("#16a34a", busy)} disabled={busy} onClick={() => void submit()}>{busy ? "Creating…" : "Create matter"}</button>
+              </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #dbe4f0", fontSize: 12, color: MUTED }}>
+                Patient predictions come from the patient master. A patient only exists once it's on a matter.{" "}
+                <button type="button" onClick={cleanupOrphans} style={{ border: "none", background: "transparent", color: "#dc2626", fontWeight: 800, cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                  Remove patients with no matters
+                </button>
               </div>
             </div>
           </>
