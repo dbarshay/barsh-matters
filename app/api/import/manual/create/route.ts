@@ -157,5 +157,5 @@ export async function POST(request: Request) {
     data: { batchId: batch.id, rowIndex: 0, outcome: "created", matterId: created.matterId, fingerprint },
   });
 
-  return NextResponse.json({ ok: true, source: "manual", matterId: created.matterId, displayNumber: created.displayNumber, batchId: batch.id });
+  return NextResponse.json({ ok: true, source: "manual", matterId: created.matterId, displayNumber: created.displayNumber, patientId: created.patientId, batchId: batch.id });
 }

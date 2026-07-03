@@ -37,10 +37,55 @@ export default function ManualMatterPage() {
 
   const [patientId, setPatientId] = useState("");
   const [candidates, setCandidates] = useState<{ id: string; name: string }[]>([]);
+  const [patientSuggestions, setPatientSuggestions] = useState<{ id: string; name: string }[]>([]);
   const [duplicate, setDuplicate] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [done, setDone] = useState<any>(null);
+
+  // Debounced patient search while typing (only when not already linked to an existing patient).
+  useEffect(() => {
+    const name = form.patientName.trim();
+    if (patientId || name.length < 2) { setPatientSuggestions([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/import/reconcile/patient-candidates?q=${encodeURIComponent(name)}`, { cache: "no-store" });
+        const j = await r.json();
+        setPatientSuggestions(j?.candidates || []);
+      } catch { setPatientSuggestions([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [form.patientName, patientId]);
+
+  async function linkPatient(c: { id: string; name: string }) {
+    setPatientId(c.id);
+    setPatientSuggestions([]);
+    setInfo("");
+    try {
+      const r = await fetch(`/api/import/manual/patient-defaults?patientId=${c.id}`, { cache: "no-store" });
+      const j = await r.json();
+      if (j?.ok && j.found) {
+        setForm((f) => ({ ...f, ...j.defaults, patientName: c.name }));
+        setInfo(`Linked ${c.name} — carry-over fields pre-filled from matter ${j.fromMatter}. Adjust any that changed, then enter this bill's DOS, amount, service type, and denial reason.`);
+      } else {
+        setForm((f) => ({ ...f, patientName: c.name }));
+        setInfo(`Linked ${c.name} (no prior matter to pre-fill from).`);
+      }
+    } catch {
+      setForm((f) => ({ ...f, patientName: c.name }));
+    }
+  }
+
+  function addAnotherForPatient() {
+    const pid = done?.patientId || patientId;
+    // Keep carry-over fields; clear only the bill-level ones.
+    setForm((f) => ({ ...f, dosStart: "", dosEnd: "", grossClaimAmount: "", serviceTypeId: "", denialReasonId: "" }));
+    setPatientId(pid || "");
+    setDone(null);
+    setError(""); setDuplicate(null); setCandidates([]);
+    setInfo("Same patient & claim carried over. Enter the next bill's DOS, amount, service type, and denial reason.");
+  }
 
   const loadOpts = useCallback(async (type: string, setter: (o: Opt[]) => void) => {
     try {
@@ -85,7 +130,7 @@ export default function ManualMatterPage() {
 
   function resetForm() {
     setForm({ claimNumber: "", policyNumber: "", patientName: "", providerEntityId: "", insurerEntityId: "", denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "", grossClaimAmount: "", treatingPhysicianId: "" });
-    setPatientId(""); setCandidates([]); setDuplicate(null); setError(""); setDone(null);
+    setPatientId(""); setCandidates([]); setPatientSuggestions([]); setDuplicate(null); setError(""); setInfo(""); setDone(null);
   }
 
   const sel = (v: string, on: (x: string) => void, opts: Opt[], placeholder: string) => (
@@ -106,14 +151,16 @@ export default function ManualMatterPage() {
         {done ? (
           <div style={{ ...box, borderColor: "#bbf7d0", background: "#f0fdf4" }}>
             <div style={{ fontWeight: 900, color: "#166534" }}>Created matter {done.displayNumber || done.matterId} — Open · Pre-Lit intake.</div>
-            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <a href={`/matter/${done.matterId}`} style={{ ...btn(NAVY), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Open matter</a>
-              <button type="button" style={btn("#16a34a")} onClick={resetForm}>Create another</button>
+              <button type="button" style={btn("#16a34a")} onClick={addAnotherForPatient}>Add another for this patient</button>
+              <button type="button" style={btn(MUTED)} onClick={resetForm}>Create a different matter</button>
             </div>
           </div>
         ) : (
           <>
             {error ? <div style={{ ...box, borderColor: "#fecaca", background: "#fef2f2", color: "#991b1b", fontWeight: 700 }}>{error}</div> : null}
+            {info ? <div style={{ ...box, borderColor: "#bfdbfe", background: "#eff6ff", color: "#1e40af", fontWeight: 700 }}>{info}</div> : null}
 
             {candidates.length ? (
               <div style={{ ...box, borderColor: "#fde68a", background: "#fffbeb" }}>
@@ -139,7 +186,23 @@ export default function ManualMatterPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 {field(<><span style={label}>Claim Number</span><input style={input} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
                 {field(<><span style={label}>Policy Number</span><input style={input} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
-                {field(<><span style={label}>Patient (First Last)</span><input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); }} /></>)}
+                {field(
+                  <>
+                    <span style={label}>Patient (First Last){patientId ? <span style={{ color: "#166534", marginLeft: 6 }}>· linked</span> : null}</span>
+                    <div style={{ position: "relative" }}>
+                      <input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); setInfo(""); }} placeholder="Type to search existing patients…" />
+                      {patientSuggestions.length ? (
+                        <div style={{ position: "absolute", zIndex: 5, top: 40, left: 0, right: 0, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 8px 20px rgba(15,23,42,0.12)", maxHeight: 200, overflowY: "auto" }}>
+                          {patientSuggestions.map((c) => (
+                            <div key={c.id} onClick={() => void linkPatient(c)} style={{ padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #eef2f7", fontSize: 13 }}>
+                              {c.name} <span style={{ color: MUTED }}>· use & pre-fill</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </>
+                )}
                 {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…")}</>)}
                 {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…")}</>)}
                 {field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…")}</>)}

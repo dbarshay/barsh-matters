@@ -51,6 +51,17 @@ must("form posts to manual create", form, "/api/import/manual/create");
 must("form has all controlled dropdowns", form, "provider_client");
 must("admin OTHERS links to landing", admin, '"/admin/import/other"');
 
+// Carry-over: patient-defaults endpoint + form typeahead/auto-fill + add-another.
+const defaults = read("app/api/import/manual/patient-defaults/route.ts");
+must("defaults flag-gated", defaults, "isImportEnabled()");
+must("defaults from latest matter", defaults, 'orderBy: { matter_id: "desc" }');
+must("defaults resolves entity ids", defaults, "entityIdFor");
+must("defaults excludes bill-level", defaults, "intentionally NOT returned");
+must("create returns patientId", route, "patientId: created.patientId");
+must("form patient typeahead", form, "linkPatient");
+must("form loads defaults", form, "/api/import/manual/patient-defaults");
+must("form add-another keeps carry-over", form, "addAnotherForPatient");
+
 must("package.json registers verifier", pkg, "verify:manual-create-safety");
 
 if (failures) {
