@@ -42,7 +42,12 @@ export async function GET(request: Request) {
     count: batches.length,
     batches: batches.map((b) => {
       const details = (b.details ?? {}) as Record<string, unknown>;
-      const held = Number(details.heldUnmatchedCarrier ?? 0) || 0;
+      // Total held across ALL sub-reasons. New batches store details.held; older ones only stored the
+      // carrier count, so fall back to the sum of whatever sub-reason counts are present.
+      const carrierHeld = Number(details.heldUnmatchedCarrier ?? 0) || 0;
+      const patientHeld = Number(details.heldPatientAmbiguous ?? 0) || 0;
+      const dataHeld = Number(details.heldDataQuality ?? 0) || 0;
+      const held = Number(details.held ?? carrierHeld + patientHeld + dataHeld) || 0;
       // "Other" catches any rows not otherwise accounted for so the columns always reconcile to totalRows.
       const other = Math.max(0, b.totalRows - b.createdCount - b.rejectedCount - b.reportCount - b.ignoredCount - held);
       const { details: _drop, ...rest } = b;
