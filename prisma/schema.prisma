@@ -37,6 +37,24 @@ model MatterIdCounter {
   updatedAt DateTime @updatedAt
 }
 
+// Reusable PATIENT master — one record per injured person, linked across all their matters.
+// Identity resolution (lib/patientResolution.ts): fuzzy suggest-and-confirm, never auto-link on a
+// fuzzy name; new patients auto-create when there is no match (patient is the sole auto-create
+// exception to the owner-managed registry rule).
+model Patient {
+  id             String   @id @default(cuid())
+  name           String // canonical "First Last"
+  normalizedName String // lowercase/stripped match key
+  source         String   @default("import")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  matters ClaimIndex[]
+
+  @@index([normalizedName])
+  @@index([name])
+}
+
 model Lawsuit {
   id                          Int       @id @default(autoincrement())
   masterLawsuitId             String    @unique
@@ -136,8 +154,11 @@ model ClaimIndex {
   place_of_service_state     String?
   place_of_service_zip       String?
   carisk_operator            String?
+  patient_id                 String?
+  patient                    Patient? @relation(fields: [patient_id], references: [id])
 
   @@index([case_type])
+  @@index([patient_id])
   @@index([claim_number_normalized])
   @@index([patient_name])
   @@index([provider_name])
