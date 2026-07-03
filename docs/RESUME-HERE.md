@@ -1,5 +1,20 @@
 # RESUME HERE — Matter Import design (handoff)
 
+> ## ⚠️ BEFORE GO-LIVE — HIPAA (do not skip)
+> The app will hold **PHI** (currently only fictitious test data). Before real patient data lands,
+> get **HIPAA posture + signed BAAs** across the whole stack:
+> - **Neon** (DB) — enable HIPAA at the org level + accept the BAA (Scale plan).
+> - **Vercel** (hosting) — BAA.
+> - **Microsoft 365** (the native email integration) — BAA.
+> - **OCR provider** (document/field extraction) — BAA.
+> - **Clio** (document storage) — BAA.
+> - Plus: access controls (turn on RBAC), audit logging, encryption at rest/in transit, breach plan.
+> - **Lock down security + rotate ALL passwords/credentials** before go-live — DB/Neon, Vercel env,
+>   Microsoft Graph, Twilio, any API keys/tokens/secrets used during development; remove test/break-glass
+>   creds; enforce 2FA.
+> _Track this as a go-live checklist. Flagged at the user's request._
+
+
 _Phone-friendly session handoff. Everything is DESIGN — nothing is built yet._
 
 ## What we're doing

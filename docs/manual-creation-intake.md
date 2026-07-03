@@ -19,8 +19,46 @@ hand-keyed single-matter creation + manual document handling.
   same flag-for-review behavior as Dow.
 - **Controlled input (registries + picklists):** use the registry tables we set up plus predictable
   picklists (some already exist) for: **patient, denial reason, provider, insurer, service type,
-  case type.** (Patient = a lookup/registry so the same injured person can be reused across matters —
-  confirm.)
+  case type.**
+- **Registry/vocabulary governance — UNIVERSAL RULE for ALL table-driven data** (provider, insurer,
+  denial reason, service type, case type, and any other reference/lookup table):
+  - Operators **and imports** may only **select existing** values.
+  - An **unmatched value is flagged for the Owner to add** (or held) — **never auto-created** by an
+    operator or an import.
+  - **Only the Owner can add / edit / delete** registry entries (audited).
+  - Applies everywhere: manual intake AND Carisk/Dow imports. (Case Type stays No-Fault / WC.)
+  - **Patient is the ONE exception** — new patients auto-create (see below).
+- **Reference-entity matching (carriers, providers, etc.) uses ALIASES, not fuzzy matching.** BM
+  already has `ReferenceEntity` + **`ReferenceAlias`** (alias + `normalizedAlias`, unique per entity;
+  `/api/reference-data/aliases`). Carrier strings on imports are often non-exact, carry noise, or are
+  client **nicknames**, and **canonical carrier names are dangerously similar** to each other.
+  - **Matching:** **normalize** the incoming string (strip `[Electronic]`, `c/o <clearinghouse>`
+    routing, `Single Payer ID`, punctuation/case) → **exact match on `normalizedAlias` (or canonical
+    name)** → link to the canonical entity.
+  - **NO fuzzy auto-match** — near-identical canonical names make fuzzy matching unsafe. An unmatched
+    string is **flagged for the Owner** to either **map it to an existing entity (which adds a new
+    alias)** or **add a new entity**. Each mapping **grows the alias table**, so future imports of that
+    variant/nickname auto-resolve.
+  - _(Live carrier table not readable from here — Neon. Confirm noise-stripping rules against real
+    data when we build.)_
+- **Patient = reusable MASTER record** (one per injured person, linked across all their matters).
+  - **Identity resolution / fuzzy matching:** incoming names vary (typos, transpositions, middle
+    initials, LAST/FIRST order). Fuzzy-match to existing patients so a variant does NOT create a
+    duplicate person.
+  - **Hard constraint:** similar names can be **different people** (co-claimants on one policy share a
+    last name — e.g. `Aragon, Meyling` vs `Aragon, Paula`). **Never auto-merge on name alone.** Use a
+    corroborating identifier (TBD) to distinguish "same person, typo" from "two similar-named people."
+  - **Behavior (match spectrum):**
+    - **No match → create a new patient master record** (normal — first time we import for that
+      patient; no prompt, no friction). New patients are expected.
+    - **Close / ambiguous match → SUGGEST the likely patient(s); operator links or creates new.
+      Never auto-link on a fuzzy name.**
+    - **Exact match → link** to that patient.
+    - At bulk-import scale, brand-new patients auto-create; only close-match cases are flagged for
+      operator review in the preview.
+  - **Corroborating identifiers** used to rank/raise confidence in the suggestions: **policy/claim #**
+    and **DOI** (a patient may have several across matters). DOB/address not used.
+  - Merge/un-merge tool (admin/owner) to fix any duplicate discovered later, audited.
 - **Dedup:** use the **same fingerprint keys as Dow** (claim # + patient + DOS + gross charges) —
   flag a likely-duplicate match for operator review; never auto-skip/auto-merge.
 - **Numbering:** manual matters mint the next `BRL_{YYYY}{seq}` number, same as imports (confirm).
