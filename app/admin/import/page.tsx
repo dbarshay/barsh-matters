@@ -57,6 +57,7 @@ export default function DowImportPage() {
   const [confirmResult, setConfirmResult] = useState<any>(null);
   const [undoResult, setUndoResult] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
+  const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -104,17 +105,31 @@ export default function DowImportPage() {
     }
   }
 
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function ingestFile(file?: File | null) {
     setPreview(null);
     setConfirmResult(null);
     setUndoResult(null);
     setError("");
     if (!file) return;
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith(".xlsx") && !lower.endsWith(".xls")) {
+      setError("Please choose an Excel spreadsheet (.xlsx or .xls).");
+      return;
+    }
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => setFileBase64(String(reader.result).split(",")[1] || "");
     reader.readAsDataURL(file);
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    ingestFile(e.target.files?.[0]);
+  }
+
+  function onDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+    ingestFile(e.dataTransfer.files?.[0]);
   }
 
   async function runPreview() {
@@ -194,13 +209,35 @@ export default function DowImportPage() {
 
   return (
     <main style={{ padding: "12px 14px 40px", background: "#f8fafc", minHeight: "100vh", color: NAVY, fontFamily: "Inter, system-ui, sans-serif" }}>
-      <BarshHeader center={<div style={{ fontSize: 28, fontWeight: 950, color: "#fff" }}>Import Matters — Dow</div>} />
+      <BarshHeader center={<div style={{ fontSize: 28, fontWeight: 950, color: "#fff" }}>Import Matters</div>} />
 
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={box}>
           <div style={{ fontWeight: 900, marginBottom: 8 }}>1. Upload provider sheet (.xlsx)</div>
-          <input type="file" accept=".xlsx,.xls" onChange={onFile} />
-          {fileName ? <span style={{ marginLeft: 12, color: MUTED }}>{fileName}</span> : null}
+          <div
+            onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
+            onDrop={onDrop}
+            style={{
+              border: `2px dashed ${dragging ? NAVY : "#cbd5e1"}`,
+              borderRadius: 12,
+              background: dragging ? "#eef4fb" : "#f8fafc",
+              padding: "22px 16px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              color: MUTED,
+              transition: "background 120ms, border-color 120ms",
+            }}
+          >
+            <div style={{ fontWeight: 800, color: dragging ? NAVY : MUTED, marginBottom: 10 }}>
+              {dragging ? "Drop to load" : "Drag & Drop or Pick File"}
+            </div>
+            <input type="file" accept=".xlsx,.xls" onChange={onFile} style={{ display: "block", margin: "0 auto" }} />
+            {fileName ? <div style={{ marginTop: 10, color: NAVY, fontWeight: 700 }}>{fileName}</div> : null}
+          </div>
           <div style={{ marginTop: 12 }}>
             <button type="button" style={btn(NAVY, !fileBase64 || busy === "preview")} disabled={!fileBase64 || busy === "preview"} onClick={runPreview}>
               {busy === "preview" ? "Previewing…" : "Preview (read-only)"}
