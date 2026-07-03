@@ -151,10 +151,10 @@ export default function ReconcilePage() {
         {/* CARRIER holds — Owner-gated registry write */}
         <div style={box}>
           <div style={{ fontWeight: 900, marginBottom: 4 }}>Carrier not in registry ({carrierGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
-          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Map each raw carrier to an existing carrier (adds an alias) or add it as a new carrier. This updates the registry (Owner-gated) and applies to all future imports.</div>
+          <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>For each raw carrier: <strong>Assign Alias</strong> — save this raw name as an alias of an approved insurer — or <strong>Add new</strong> insurer. This updates the registry (Owner-gated) and applies to all future imports.</div>
           {carrierGroups.length === 0 ? <div style={{ color: MUTED }}>No carrier holds.</div> : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead><tr><th style={th}>Raw carrier</th><th style={th}>Rows</th><th style={th}>Map to existing</th><th style={th}>or Add new</th></tr></thead>
+              <thead><tr><th style={th}>Raw carrier</th><th style={th}>Rows</th><th style={th}>Assign Alias (to approved insurer)</th><th style={th}>or Add new insurer</th></tr></thead>
               <tbody>
                 {carrierGroups.map((g) => (
                   <CarrierRow key={g.carrierRaw} group={g} carriers={carriers} busy={busy}
@@ -257,16 +257,23 @@ function CarrierRow({ group, carriers, busy, onMap, onAddNew }: {
   const [entityId, setEntityId] = useState("");
   const [newName, setNewName] = useState(group.carrierRaw);
   const working = busy === "carrier:" + group.carrierRaw;
+  const selectedName = carriers.find((c) => c.id === entityId)?.displayName || "";
+  function assignAlias() {
+    if (!entityId) return;
+    if (window.confirm(`Save "${group.carrierRaw}" as an alias of approved insurer "${selectedName}"?\n\nThis applies to all ${group.count} held row(s) and every future import.`)) {
+      onMap(entityId);
+    }
+  }
   return (
     <tr style={{ borderTop: "1px solid #eef2f7" }}>
       <td style={{ padding: 6, fontWeight: 600 }}>{group.carrierRaw}</td>
       <td>{group.count}</td>
       <td>
         <select value={entityId} onChange={(e) => setEntityId(e.target.value)} style={{ height: 32, minWidth: 240, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px", marginRight: 6 }}>
-          <option value="">Select carrier…</option>
+          <option value="">Select approved insurer…</option>
           {carriers.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}
         </select>
-        <button type="button" style={btn(NAVY, working || !entityId)} disabled={working || !entityId} onClick={() => onMap(entityId)}>Map</button>
+        <button type="button" style={btn(NAVY, working || !entityId)} disabled={working || !entityId} onClick={assignAlias}>Assign Alias</button>
       </td>
       <td>
         <input value={newName} onChange={(e) => setNewName(e.target.value)} style={{ height: 32, minWidth: 200, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px", marginRight: 6 }} />
