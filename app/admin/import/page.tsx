@@ -508,6 +508,12 @@ export default function DowImportPage() {
                       <td>{r.patient.status}</td>
                       <td style={{ fontWeight: 800, color: r.outcome === "ready" ? "#16a34a" : r.outcome === "error" ? "#dc2626" : MUTED }}>
                         {r.outcome}{r.existingDisplayNumber ? ` (${r.existingDisplayNumber})` : ""}
+                        {(() => {
+                          const why = (r as any).reason || ((r as any).errors || []).join(" ") || "";
+                          return why && r.outcome !== "ready" ? (
+                            <div style={{ fontWeight: 400, color: MUTED, fontSize: 12, whiteSpace: "normal" }}>{why}</div>
+                          ) : null;
+                        })()}
                       </td>
                     </tr>
                   ))}
