@@ -92,11 +92,10 @@ const adminCards = [
   },
   {
     label: "Import OTHERS",
-    href: "/admin/import",
+    href: "/admin/import/other",
     description:
-      "Additional import sources — coming soon.",
+      "Sources that aren't a Dow or Carisk spreadsheet: create a matter manually (paper / non-standard sheet), or a future generic importer.",
     icon: "📥",
-    comingSoon: true,
   },
   {
     label: "Reference Data Import",
