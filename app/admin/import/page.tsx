@@ -413,13 +413,11 @@ export default function DowImportPage() {
             <div style={{ fontWeight: 900, marginBottom: 8 }}>2. Preview — {s.total} rows</div>
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap", color: MUTED, fontWeight: 700 }}>
               <span style={{ color: "#16a34a" }}>Ready: {s.ready}</span>
-              <span style={{ color: "#b45309" }}>Held (add carrier): {s.held}</span>
+              <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, patient {s.heldPatient ?? 0}, data {s.heldDataQuality ?? 0})</span>
               <span style={{ color: "#dc2626" }}>Errors: {s.errors}</span>
               <span>Duplicates (existing): {s.duplicatesExisting}</span>
               <span>Duplicates (in file): {s.duplicatesInFile}</span>
-              <span style={{ color: "#b45309" }}>Unmatched carriers: {s.unmatchedCarriers}</span>
               <span>New patients: {s.newPatients}</span>
-              <span>Patients to confirm: {s.patientsToConfirm}</span>
             </div>
 
             <div style={{ marginTop: 14 }}>
