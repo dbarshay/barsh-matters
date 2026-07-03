@@ -264,16 +264,22 @@ slipped past a hex-only find/replace). Exception: the
 admin=purple, security=red) is a deliberate color code, not the system blue, and is
 intentionally excluded.
 
-## Matter Import module (IN DESIGN — not built yet)
+## Matter Import module (BUILT — behind `BARSH_IMPORT_ENABLED`)
+
+> **STATUS UPDATE:** This module is now **implemented**, not just designed. See
+> **`docs/RESUME-HERE.md`** for the authoritative current-state handoff (what's built, what's left,
+> setup, verifiers). The design docs below remain the authoritative spec for each path; the summary
+> in this section describes the original design intent. Built: Dow, Carisk, Manual, and Other
+> Spreadsheet paths + the shared preview/hold/reconcile/undo pipeline. Not built: Document OCR, Carisk
+> Management Report (Saved Incomplete tracker + weekly email), RBAC enforcement.
 
 Building a module to import new matters into BM. **Data import is highly sensitive** — a wrong or
-duplicated matter propagates into aggregation, lawsuits, billing, and settlement. Design is being
-ironed out first, Q&A style, before any code.
+duplicated matter propagates into aggregation, lawsuits, billing, and settlement.
 
 **Authoritative design docs (read these first — they supersede the summary below):**
 - `docs/carisk-data-dictionary.md` — Carisk path, all 41 columns decided.
 - `docs/dow-data-dictionary.md` — Dow/provider-sheet path, all 8 columns decided.
-- `docs/manual-creation-intake.md` — manual path (#3); IN PROGRESS (paused at folder structure).
+- `docs/manual-creation-intake.md` — manual path (#3).
 
 Three intake paths:
 
