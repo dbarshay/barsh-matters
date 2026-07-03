@@ -90,6 +90,10 @@ export default function ReconcilePage() {
     void loadRegistry("provider_client");
   }, [load, loadRegistry]);
 
+  const backSource =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("source") === "carisk" ? "carisk" : "dow";
+  const backHref = `/admin/import?source=${backSource}`;
+
   const rows: Row[] = data?.rows || [];
   const carrierGroups: { carrierRaw: string; count: number }[] = data?.carrierGroups || [];
   const providerGroups: { providerRaw: string; count: number }[] = data?.providerGroups || [];
@@ -142,7 +146,7 @@ export default function ReconcilePage() {
 
       <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={{ marginBottom: 12 }}>
-          <a href="/admin/import" style={{ color: MUTED, fontWeight: 800, textDecoration: "none" }}>← Back to Import Matters</a>
+          <a href={backHref} style={{ color: MUTED, fontWeight: 800, textDecoration: "none" }}>← Back to {backSource === "carisk" ? "CARISK" : "DOW"} import</a>
         </div>
 
         {error ? <div style={{ ...box, borderColor: "#fecaca", background: "#fef2f2", color: "#991b1b", fontWeight: 700 }}>{error}</div> : null}
