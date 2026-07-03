@@ -179,6 +179,7 @@
     "verify:dow-adapter-safety": "node scripts/verify-dow-adapter-safety.mjs",
     "verify:dow-import-preview-safety": "node scripts/verify-dow-import-preview-safety.mjs",
     "verify:dow-import-confirm-undo-safety": "node scripts/verify-dow-import-confirm-undo-safety.mjs",
+    "verify:dow-import-ui-safety": "node scripts/verify-dow-import-ui-safety.mjs",
     "verify:local-document-packet-safety": "node scripts/verify-local-document-packet-safety.mjs",
     "verify:local-first-payment-safety": "node scripts/verify-local-first-payment-safety.mjs",
     "verify:local-first-settlement-preview-safety": "node scripts/verify-local-first-settlement-preview-safety.mjs",
