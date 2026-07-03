@@ -109,6 +109,23 @@ Folders that **DO** prompt:
 Folders that do **NOT** prompt: Claim Documents → Bills, Reports, Denials, Payments;
 Litigation → Pleadings / Receipts.
 
+## Matter-level vs lawsuit-level documents (aggregation)
+The **lawsuit is its own BM matter** (the "lawsuit file matter"). Documents split by level:
+- **Lawsuit-level folders (live on the lawsuit matter):** **Arbitration** and **Litigation** (and all
+  their subfolders/titles).
+- **Child / per-bill folders (live on each individual matter):** **Claim Documents** (Bills, Reports,
+  Denials, Verification Req/Resp, Payments, Miscellaneous) and **Workers' Comp**.
+- **Lawsuit's View Documents shows:** the lawsuit's own Arbitration + Litigation branches, **plus one
+  collapsed folder per child matter, named by the child's BM matter number** (`BRL_YYYYNNNNN`).
+  Expanding a child reveals that child's **subfolders + documents that are present** (not empty
+  scaffolding).
+- From the lawsuit, the user can **view child documents** and **attach/call them into templates
+  generated from the lawsuit file matter**.
+- Applies even to **single-matter lawsuits** (litigation still lives on the lawsuit matter; the one
+  child rolls up).
+- _Minor opens:_ whether an individual child matter's view also surfaces the lawsuit-level docs;
+  where deadlines/emails attach (lawsuit vs child). Revisit.
+
 ## Adopted enhancements
 1. **Document audit trail** — log every add / move / retitle / delete (who + when + source) on the
    existing AuditLog. Chain-of-custody for the legal file.
@@ -128,7 +145,8 @@ Litigation → Pleadings / Receipts.
    date, **only if preview renders/streams from Clio and does NOT duplicate files into BM (non-Clio)
    storage** (no storage bloat). If streaming from Clio isn't feasible without local caching, limit.
 
-_Deferred (not now):_ **Missing-document checklist** per case type/stage — revisit later.
+_Deferred (not now):_ **Missing-document checklist** per case type/stage; **per-folder role
+restrictions** (view/edit) — defer to the RBAC rollout (delete tiering still applies now).
 
 ## Adopted enhancements (round 2)
 - **#2 Auto-suggested attachments on finalize** — each template can define its **usual attachments**
@@ -157,6 +175,13 @@ _Deferred (not now):_ **Missing-document checklist** per case type/stage — rev
     firm mailbox). The sent email is recorded in the matter's existing **"View Emails"** area.
   - **Attach documents to outgoing email:** the compose dialog includes a **document picker** to
     attach the matter's filed documents (from the folder tree) — for **both new emails and replies**.
+  - **Sender identity:** send as the **individual logged-in user** (their name + signature); replies
+    come back to them and thread to the matter.
+  - **Reply-matching = threading + standardized subject tag:** primary match via invisible threading
+    headers (Message-ID / In-Reply-To / References); **plus a standardized subject tag containing the
+    matter number as a LEADING prefix** (e.g. `[BRL_YYYYNNNNN] Subject…`) — front-loaded so it's easy
+    to spot when scrolling in Outlook, and a durable fallback when headers are stripped/forwarded/new.
+    Exact tag format TBD.
   - **Attachments (template-based):** stored **as part of the email** (visible when the email is
     viewed) **AND** filed into the **applicable document folder** in the tree.
   - **Inbound replies:** the recipient's replies come back to the firm mailbox; BM (existing **Graph
