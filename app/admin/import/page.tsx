@@ -583,7 +583,7 @@ export default function DowImportPage() {
                 </thead>
                 <tbody>
                   {sortedBatches.map((b) => (
-                    <tr key={b.id} style={{ borderTop: "1px solid #eef2f7" }}>
+                    <tr key={b.id} style={{ borderTop: "1px solid #eef2f7", opacity: b.status === "undone" ? 0.45 : 1, color: b.status === "undone" ? MUTED : undefined }}>
                       <td style={{ padding: 6, whiteSpace: "nowrap" }}>{new Date(b.createdAt).toLocaleString()}</td>
                       <td style={{ textTransform: "uppercase", fontWeight: 700 }}>{b.source}</td>
                       <td>{b.sourceFile || "—"}</td>
