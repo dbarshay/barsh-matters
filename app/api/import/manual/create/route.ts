@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 // follows suggest-and-confirm (never auto-links on a fuzzy name). Creates via the shared creator and
 // records a 1-row source="manual" batch for audit + guarded undo. Flag-gated.
 
-const CASE_TYPES = new Set(["No-Fault", "Workers Compensation"]);
+const CASE_TYPES = new Set(["No-Fault", "Workers Compensation", "Lien"]);
 
 async function displayNameOf(id: string, type: string): Promise<string | null> {
   if (!id) return null;
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const denialReasonId = String(b?.denialReasonId || "").trim();
   const serviceTypeId = String(b?.serviceTypeId || "").trim();
   const caseType = String(b?.caseType || "").trim();
-  const treatingPhysician = toFirstLastProperCase(b?.treatingPhysician);
+  const treatingPhysicianId = String(b?.treatingPhysicianId || "").trim();
   const doi = toDateOnly(b?.dateOfInjury);
   const dosStart = toDateOnly(b?.dosStart);
   const dosEnd = toDateOnly(b?.dosEnd) || dosStart;
@@ -53,24 +53,26 @@ export async function POST(request: Request) {
   if (!insurerEntityId) errors.push("Insurer/Carrier is required.");
   if (!denialReasonId) errors.push("Denial Reason is required.");
   if (!serviceTypeId) errors.push("Service Type is required.");
-  if (!CASE_TYPES.has(caseType)) errors.push("Case Type must be No-Fault or Workers Compensation.");
-  if (!treatingPhysician) errors.push("Treating Physician is required.");
+  if (!CASE_TYPES.has(caseType)) errors.push("Case Type must be No-Fault, Workers Compensation, or Lien.");
+  if (!treatingPhysicianId) errors.push("Treating Physician is required.");
   if (!doi) errors.push("Date of Injury is required/invalid.");
   if (!dosStart) errors.push("Date(s) of Service is required/invalid.");
   if (grossAmount === null) errors.push("Gross Claim Amount is required/invalid.");
   if (errors.length) return NextResponse.json({ ok: false, error: errors.join(" "), errors }, { status: 400 });
 
   // Resolve controlled values to their canonical display names (verifies they are the right type).
-  const [provider, insurerName, denialReason, serviceType] = await Promise.all([
+  const [provider, insurerName, denialReason, serviceType, treatingProviderName] = await Promise.all([
     prisma.referenceEntity.findUnique({ where: { id: providerEntityId }, select: { id: true, displayName: true, type: true } }),
     displayNameOf(insurerEntityId, "insurer_company"),
     displayNameOf(denialReasonId, "denial_reason"),
     displayNameOf(serviceTypeId, "service_type"),
+    displayNameOf(treatingPhysicianId, "treating_provider"),
   ]);
   if (!provider || provider.type !== "provider_client") return NextResponse.json({ ok: false, error: "Invalid provider." }, { status: 400 });
   if (!insurerName) return NextResponse.json({ ok: false, error: "Invalid insurer." }, { status: 400 });
   if (!denialReason) return NextResponse.json({ ok: false, error: "Invalid denial reason." }, { status: 400 });
   if (!serviceType) return NextResponse.json({ ok: false, error: "Invalid service type." }, { status: 400 });
+  if (!treatingProviderName) return NextResponse.json({ ok: false, error: "Invalid treating physician." }, { status: 400 });
 
   const patientName = toFirstLastProperCase(patientNameRaw);
 
@@ -133,7 +135,7 @@ export async function POST(request: Request) {
       extra: {
         policy_number: policyNumber || null,
         denial_reason: denialReason,
-        treating_provider: treatingPhysician,
+        treating_provider: treatingProviderName,
         insurer_name: insurerName,
       },
     }],

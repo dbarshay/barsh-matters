@@ -26,11 +26,12 @@ export default function ManualMatterPage() {
   const [insurers, setInsurers] = useState<Opt[]>([]);
   const [denials, setDenials] = useState<Opt[]>([]);
   const [services, setServices] = useState<Opt[]>([]);
+  const [physicians, setPhysicians] = useState<Opt[]>([]);
 
   const [form, setForm] = useState({
     claimNumber: "", policyNumber: "", patientName: "", providerEntityId: "", insurerEntityId: "",
     denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "",
-    grossClaimAmount: "", treatingPhysician: "",
+    grossClaimAmount: "", treatingPhysicianId: "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -55,6 +56,7 @@ export default function ManualMatterPage() {
     void loadOpts("insurer_company", setInsurers);
     void loadOpts("denial_reason", setDenials);
     void loadOpts("service_type", setServices);
+    void loadOpts("treating_provider", setPhysicians);
   }, [loadOpts]);
 
   async function submit(opts?: { override?: boolean; createNewPatient?: boolean; usePatientId?: string }) {
@@ -82,7 +84,7 @@ export default function ManualMatterPage() {
   }
 
   function resetForm() {
-    setForm({ claimNumber: "", policyNumber: "", patientName: "", providerEntityId: "", insurerEntityId: "", denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "", grossClaimAmount: "", treatingPhysician: "" });
+    setForm({ claimNumber: "", policyNumber: "", patientName: "", providerEntityId: "", insurerEntityId: "", denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "", grossClaimAmount: "", treatingPhysicianId: "" });
     setPatientId(""); setCandidates([]); setDuplicate(null); setError(""); setDone(null);
   }
 
@@ -96,7 +98,7 @@ export default function ManualMatterPage() {
   return (
     <main style={{ padding: "12px 14px 40px", background: "#f8fafc", minHeight: "100vh", color: NAVY, fontFamily: "Inter, system-ui, sans-serif" }}>
       <BarshHeader center={<div style={{ fontSize: 28, fontWeight: 950, color: "#fff" }}>Create Matter — Manual</div>} />
-      <div style={{ width: "100%", maxWidth: 900, margin: "0 auto", boxSizing: "border-box" }}>
+      <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={{ marginBottom: 12 }}>
           <a href="/admin/import/other" style={{ color: MUTED, fontWeight: 800, textDecoration: "none" }}>← Back to Other Sources</a>
         </div>
@@ -138,12 +140,12 @@ export default function ManualMatterPage() {
                 {field(<><span style={label}>Claim Number</span><input style={input} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
                 {field(<><span style={label}>Policy Number</span><input style={input} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
                 {field(<><span style={label}>Patient (First Last)</span><input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); }} /></>)}
-                {field(<><span style={label}>Treating Physician</span><input style={input} value={form.treatingPhysician} onChange={(e) => set("treatingPhysician", e.target.value)} /></>)}
+                {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…")}</>)}
                 {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…")}</>)}
                 {field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…")}</>)}
                 {field(<><span style={label}>Denial Reason</span>{sel(form.denialReasonId, (v) => set("denialReasonId", v), denials, "Select denial reason…")}</>)}
                 {field(<><span style={label}>Service Type</span>{sel(form.serviceTypeId, (v) => set("serviceTypeId", v), services, "Select service type…")}</>)}
-                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={input}><option>No-Fault</option><option>Workers Compensation</option></select></>)}
+                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={input}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select></>)}
                 {field(<><span style={label}>Gross Claim Amount</span><input style={input} value={form.grossClaimAmount} onChange={(e) => set("grossClaimAmount", e.target.value)} placeholder="0.00" /></>)}
                 {field(<><span style={label}>Date of Injury</span><input type="date" style={input} value={form.dateOfInjury} onChange={(e) => set("dateOfInjury", e.target.value)} /></>)}
                 {field(<><span style={label}>DOS start</span><input type="date" style={input} value={form.dosStart} onChange={(e) => set("dosStart", e.target.value)} /></>)}
