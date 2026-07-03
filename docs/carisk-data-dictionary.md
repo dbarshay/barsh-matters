@@ -70,7 +70,7 @@ Columns: **Meaning** = the user's authoritative definition. **UI label** = what 
 | 34 | `ServiceLines` | 889/890, 16 distinct; `1`, `2`, `8` | **Ignore** | ✅N | ✅N | ✅N | — | — | — | raw_json only |
 | 35 | `CarrierName` | 889/890, 71 distinct; `New York Black Car Fund (NYBCF) [Electronic]` | **Insurer / carrier** (also the adversary in litigation) | ✅Y | ✅Y | ✅Y | Insurer/Carrier | link to carrier registry (`ReferenceEntity`) + canonical name into `insurer_name` | `insurer` (proposed) | **RESOLVE to carrier registry.** Strip `[Electronic]` suffix; exact/confident match auto-links; an unmatched value is flagged for the **Owner to add** (operators/imports never create registry entities — universal table-driven-data rule). Raw kept in raw_json. 71 raw strings → canonical. |
 | 36 | `StatusNotes` | 889/890, 771 distinct; payer message + embedded IDs/links | **Payer status message** (acceptance/rejection text; may embed payment info, IDs, and an HTML remittance link) | ✅Y | ⬜ | ⬜ | Status Notes (TBD) | `status_notes` (new) | (TBD) | **Import processing: STRIP HTML — remove anything between `<` and `>` — and store the cleaned text.** Cleaned text is the source for the Saved Incomplete rejection reason on the Carisk Management Report. **DEFERRED (with doc-integration workstream):** parsing payment fields, remittance URL / ClaimGUID / Remit token, and WCB/iHCFA IDs. UI/token disposition TBD. |
-| 37 | `totalCharges` | 889/890, 115 distinct; `127.41`, `87.8` | **Gross claim amount** | ✅Y | ✅Y | ✅Y | Gross Claim Amount | `claim_amount` (existing) | `claim_amount` (proposed) | Parse as money (`87.8`→`87.80`). Relationship to `balance_presuit` (opening balance) TBD. Surfacing all-three assumed pending confirm. |
+| 37 | `totalCharges` | 889/890, 115 distinct; `127.41`, `87.8` | **Gross claim amount** | ✅Y | ✅Y | ✅Y | Gross Claim Amount | `claim_amount` (existing) | `claim_amount` (proposed) | Parse as money (`87.8`→`87.80`). **At import, `balance_presuit` (opening outstanding balance) = this gross claim amount; the existing payment flow reduces it as payments post.** (balance_presuit is the matter "Balance" and the default lawsuit "amount sought".) Surfacing all-three assumed pending confirm. |
 | 38 | `SubmittedDate` | 888/890, 684 distinct; `2026-06-11 12:41:00` | **Date Carisk sent the billing to the insurer** = Date Bill Submitted | ✅Y | ✅Y | ✅Y | Date Bill Submitted | `date_bill_submitted` (new) | `date_bill_submitted` (proposed) | Store/display as date. Takes the "Date Bill Submitted" label (was tentatively on DateCreated). Confirmed: DateCreated ≤ SubmittedDate ≤ StatusDate (100%/99%). |
 | 39 | `UserName` | 886/890, 3 distinct; `Patel , Kajol` | **Carisk operator who processed the bill** | ✅Y | ✅N | ✅N | — (reportable) | `carisk_operator` (new) | — | Field only, reportable. Format `LAST, FIRST` (normalize display if ever shown). |
 | 40 | `filename` | 32/890, 9 distinct; `17700_P141_..._..X12` | **Internal Carisk number** | ✅N | ✅N | ✅N | — | — | — | **Ignore.** raw_json only. |
@@ -116,7 +116,8 @@ numbering (`BRL_{YYYY}{seq}`, batch-allocated).
 Each Carisk row routes by `Status` (identity key = `CIC #`, the bill-specific unique number):
 
 - **`Carrier Submission`** — insurer accepted the bill as complete → **create a BM matter**
-  (unless a matter for that `CIC #` already exists → duplicate, skip). If that `CIC #` is currently
+  (if a matter for that `CIC #` already exists → **REJECT the row with a prompt stating the reason**:
+  duplicate CIC # already exists as matter X; no create, no update). If that `CIC #` is currently
   on the Carisk Management Report (was previously Saved Incomplete), **remove it from the report and
   create the matter.**
 - **`Submitted`** — temporary "under review" state → **ignore entirely** (no matter, not on any
@@ -136,9 +137,20 @@ transparency, but the routing itself is fixed by the rules above.
 2. **Weekly email** — generate the Carisk Management Report and email it to a **specific user
    (not yet created)** at the **end of each week** (scheduled task).
 
+## Import batches — audit + reversibility (ALL spreadsheet imports: Carisk + Dow)
+- **Every import creates a batch record** storing the **FULL per-row outcome**: batch ID, source file,
+  who ran it, when, and each row's result — **created → matter ID · rejected + reason (e.g. duplicate
+  CIC#) · sent to Carisk Management Report · ignored** — plus the created matter IDs.
+- **UI:** display the **readable summary line by default** — e.g. `Batch #47, May-2026.xlsx, run by
+  Kajol 6/14: 850 created · 14 ignored · 11 to report · 15 rejected` — **expandable to the full
+  per-row record** on demand.
+- **Guarded undo (Owner/Admin):** a batch can be undone, but it **only removes matters UNTOUCHED since
+  import** — no documents filed, not aggregated into a lawsuit, not edited. Touched matters are left
+  and reported. Fully audited.
+
 ## Open cross-column questions (parked, revisit after the dictionary)
 1. ~~Claim identity / natural key for dedup~~ **RESOLVED (Carisk): `CIC #` is the bill-specific unique key. Enforce uniqueness; dedup/idempotency is keyed on CIC #. (Dow has no equivalent — still open for that source.)**
-2. ~~Re-import lifecycle~~ **RESOLVED (largely): routing by `Status` keyed on `CIC #` (see "Status-driven import routing"). Still to confirm: when a `Carrier Submission` arrives for a `CIC #` that is ALREADY a matter, do we skip silently, or update any changed fields on the existing matter?**
+2. ~~Re-import lifecycle~~ **RESOLVED: routing by `Status` keyed on `CIC #`. A `Carrier Submission` for a `CIC #` that is ALREADY a matter is REJECTED with a prompt stating the reason (duplicate; already matter X) — no create, no update.**
 3. ~~Row eligibility~~ **RESOLVED: only `Carrier Submission` creates matters; `Submitted` ignored; `Saved Incomplete` → Carisk Management Report.**
 4. ~~Carrier canonicalization~~ **RESOLVED: resolve `CarrierName` to a carrier registry (strip `[Electronic]`; exact match auto-links, else operator picks/creates).**
 5. Import batch auditability + reversibility.

@@ -80,22 +80,21 @@ hand-keyed single-matter creation + manual document handling.
       14) Their Pleadings · 15) Discovery · 16) Liens · 17) Misc.
     - Applies to ALL matters (any intake path), not just manual. Confirm ordering/naming.
 
-## Open questions — Manual creation (#3) is NOT complete; we paused at the folder structure
+## Status — Manual creation (#3)
 
-Still to spec:
-- **Complex folder structure** (pinned) — replaces the provisional flat 17-folder list.
-- **Registries / picklists** — how each controlled input works (patient, denial reason, provider,
-  insurer, service type, case type); which already exist vs. need building; add/edit governance.
-- **Patient registry** — is "patient" a reusable master (same injured person across matters) or
-  per-matter with autocomplete?
-- **Scan/upload module mechanics** — file upload, the drag-into-category UI, storing flat to Clio
-  + category as BM metadata, supported file types, multi-file handling.
-- **OCR for manual creation (candidate):** OCR the scanned/uploaded documents to **pre-fill the manual
-  matter-creation fields** (patient, claim/policy #, DOI, DOS, carrier, charges, etc.) for the operator
-  to VERIFY/correct — same review-required + confidence-highlight rules as the document OCR pre-fill.
-  Consider when speccing #3.
-- **Field formats/validation** on the manual form (dates, money, name normalization → same rules as
-  imports?).
-- **Case Type** — operator selects WC vs No-Fault at manual entry (confirm).
-- **Numbering** — confirm manual matters mint the next `BRL_{YYYY}{seq}` (assumed).
-- **Governance** — who may manually create matters.
+**Resolved:**
+- **Folder structure** → `docs/document-folder-structure.md` (authoritative; nested tree + title picklists).
+- **Registries/picklists** → universal Owner-managed rule (above); alias-based reference-entity
+  matching; **patient master** with fuzzy suggest-and-confirm (patient the sole auto-create exception).
+- **Scan/upload module** → ingest both (separate files + split combined scan); accepts PDF / images
+  (JPG/PNG/TIFF) / Office / .msg/.eml; drag-into-category; flat to Clio; **OCR pre-fills the
+  matter-creation form** with the unified confidence UI (yellow/green + message, confirm required).
+- **Field formats/validation** → same normalization rules as imports (dates→date-only, money→cents,
+  patient `First Last` proper case, carrier→registry).
+- **Case Type** → operator selects No-Fault / WC (editable toggle).
+- **Numbering** → manual matters mint the next `BRL_{YYYY}{seq}`, same as imports.
+
+**Remaining / deferred:**
+- **Governance** — who may manually create matters → **deferred to the RBAC rollout** (for now any
+  authenticated user).
+- Merge/un-merge tool for patients/entities (admin/owner) — build detail.
