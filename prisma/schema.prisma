@@ -17,6 +17,26 @@ model LawsuitSequenceCounter {
   @@unique([year, month], name: "year_month")
 }
 
+// Year-scoped counter for individual matter display numbers: BRL_{YYYY}{seq}, seq resets each
+// calendar year. Mirrors LawsuitSequenceCounter. Batch-allocated (increment by N) in lib/matterNumbering.ts.
+model MatterSequenceCounter {
+  id           Int      @id @default(autoincrement())
+  year         Int      @unique
+  lastSequence Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Global monotonic generator for the ClaimIndex.matter_id integer PK for LOCALLY-minted matters.
+// Singleton row (id = 1). The allocator keeps lastId above MAX(existing ClaimIndex.matter_id) so
+// new local ids never collide with legacy Clio-era matter ids. Batch-allocated.
+model MatterIdCounter {
+  id        Int      @id
+  lastId    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Lawsuit {
   id                          Int       @id @default(autoincrement())
   masterLawsuitId             String    @unique
@@ -101,6 +121,23 @@ model ClaimIndex {
   provider_name          String?
   treating_provider      String?
 
+  // --- Import fields (Carisk / Dow data dictionaries). Dates stored as strings per table convention. ---
+  cic_number                 String? @unique // Carisk bill-unique key (hard dedup); null for non-Carisk
+  case_type                  String? // "Workers Compensation" | "No-Fault"
+  status_notes               String? // cleaned payer status message (HTML stripped)
+  status_date                String? // most recent status update
+  date_bill_submitted        String? // date Carisk sent billing to insurer (SubmittedDate)
+  provider_tin               String? // provider Tax ID / EIN, normalized XX-XXXXXXX
+  treating_physician_npi     String?
+  treating_physician_license String?
+  place_of_service_address   String?
+  place_of_service_address2  String?
+  place_of_service_city      String?
+  place_of_service_state     String?
+  place_of_service_zip       String?
+  carisk_operator            String?
+
+  @@index([case_type])
   @@index([claim_number_normalized])
   @@index([patient_name])
   @@index([provider_name])
