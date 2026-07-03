@@ -57,16 +57,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, created: 0, note: "No ready rows to commit.", reheld: 0, skipped: 0 });
   }
 
-  // Dow batch provider (single provider per batch).
-  const dowProviderIdByBatch = new Map<string, string>();
+  // Batch-level provider: Dow (always) and Other batches where the operator picked a fixed provider.
+  const batchProviderIdByBatch = new Map<string, string>();
   for (const r of ready) {
-    if (r.batch?.source === "dow") dowProviderIdByBatch.set(r.batchId, String(((r.batch?.details ?? {}) as any).providerEntityId || ""));
+    const det = (r.batch?.details ?? {}) as any;
+    if (r.batch?.source === "dow" || (r.batch?.source === "other" && det.fixedProvider)) {
+      batchProviderIdByBatch.set(r.batchId, String(det.providerEntityId || ""));
+    }
   }
-  const dowProviderIds = Array.from(new Set([...dowProviderIdByBatch.values()].filter(Boolean)));
-  const dowProviders = dowProviderIds.length
-    ? await prisma.referenceEntity.findMany({ where: { id: { in: dowProviderIds }, type: "provider_client" }, select: { id: true, displayName: true } })
+  const batchProviderIds = Array.from(new Set([...batchProviderIdByBatch.values()].filter(Boolean)));
+  const batchProviders = batchProviderIds.length
+    ? await prisma.referenceEntity.findMany({ where: { id: { in: batchProviderIds }, type: "provider_client" }, select: { id: true, displayName: true } })
     : [];
-  const dowProviderById = new Map(dowProviders.map((p) => [p.id, p]));
+  const batchProviderById = new Map(batchProviders.map((p) => [p.id, p]));
 
   const canonicalTinCache = new Map<string, string>(); // providerEntityId -> normalized canonical TIN
 
@@ -92,25 +95,26 @@ export async function POST(request: Request) {
     const carrier = await resolveCarrier(String(staged.carrier_raw ?? ""));
     if (carrier.status !== "matched") { await rehold(r.id, HOLD_CARRIER_UNMATCHED, "Carrier still not in registry."); continue; }
 
-    // 2) Provider.
+    // 2) Provider: batch-level (Dow, or Other with a fixed provider) vs per-row resolve (Carisk, or
+    // Other without a fixed provider — resolve from the row's mapped provider name).
     let providerEntityId: string | null = null;
     let providerDisplayName: string | null = null;
-    if (source === "carisk") {
+    const batchPid = batchProviderIdByBatch.get(r.batchId) || "";
+    if (batchPid) {
+      const p = batchProviderById.get(batchPid);
+      if (!p) { skipped++; continue; }
+      providerEntityId = p.id;
+      providerDisplayName = p.displayName;
+    } else {
       const prov = await resolveProvider(String(staged.provider_raw ?? ""));
       if (prov.status !== "matched") { await rehold(r.id, HOLD_PROVIDER_UNMATCHED, "Provider still not in registry."); continue; }
       providerEntityId = (prov as any).entityId;
       providerDisplayName = (prov as any).displayName;
-    } else {
-      const pid = dowProviderIdByBatch.get(r.batchId) || "";
-      const p = pid ? dowProviderById.get(pid) : undefined;
-      if (!p) { skipped++; continue; }
-      providerEntityId = p.id;
-      providerDisplayName = p.displayName;
     }
 
-    // 3) Case type (Carisk unknown-ClaimType resolution).
+    // 3) Case type — unknown-value resolution (Carisk ClaimType / Other mapped case type).
     let caseTypeOverride: string | undefined;
-    if (source === "carisk" && staged.case_type_unknown) {
+    if ((source === "carisk" || source === "other") && (staged as any).case_type_unknown) {
       const chosen = String(res.caseType || "");
       if (!chosen) { await rehold(r.id, HOLD_CASE_TYPE_UNKNOWN, "Case type still unresolved."); continue; }
       caseTypeOverride = chosen;

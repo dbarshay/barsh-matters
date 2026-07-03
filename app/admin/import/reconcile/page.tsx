@@ -55,7 +55,7 @@ export default function ReconcilePage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   // Read the launching module from the URL AFTER mount (SSR renders the default) to avoid a hydration
   // mismatch on the "Back to … import" link.
-  const [backSource, setBackSource] = useState<"dow" | "carisk">("dow");
+  const [backSource, setBackSource] = useState<"dow" | "carisk" | "other">("dow");
 
   const load = useCallback(async () => {
     setBusy("load");
@@ -88,15 +88,16 @@ export default function ReconcilePage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("source") === "carisk") {
-      setBackSource("carisk");
+    if (typeof window !== "undefined") {
+      const src = new URLSearchParams(window.location.search).get("source");
+      if (src === "carisk" || src === "other") setBackSource(src);
     }
     void load();
     void loadRegistry("insurer_company");
     void loadRegistry("provider_client");
   }, [load, loadRegistry]);
 
-  const backHref = `/admin/import?source=${backSource}`;
+  const backHref = backSource === "other" ? "/admin/import/other/spreadsheet" : `/admin/import?source=${backSource}`;
 
   const rows: Row[] = data?.rows || [];
   const carrierGroups: { carrierRaw: string; count: number }[] = data?.carrierGroups || [];
@@ -150,7 +151,7 @@ export default function ReconcilePage() {
 
       <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={{ marginBottom: 12 }}>
-          <a href={backHref} style={{ color: MUTED, fontWeight: 800, textDecoration: "none" }}>← Back to {backSource === "carisk" ? "CARISK" : "DOW"} import</a>
+          <a href={backHref} style={{ color: MUTED, fontWeight: 800, textDecoration: "none" }}>← Back to {backSource === "carisk" ? "CARISK" : backSource === "other" ? "Other Spreadsheet" : "DOW"} import</a>
         </div>
 
         {error ? <div style={{ ...box, borderColor: "#fecaca", background: "#fef2f2", color: "#991b1b", fontWeight: 700 }}>{error}</div> : null}

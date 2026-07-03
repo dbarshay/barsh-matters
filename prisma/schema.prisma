@@ -39,9 +39,24 @@ model MatterIdCounter {
 
 // Import batch audit + reversibility (all spreadsheet imports). Full per-row record; UI shows a
 // summary line by default (drill-down to rows). Guarded undo removes only UNTOUCHED created matters.
+// Reusable column-mapping template for the generic "other spreadsheet" importer. `mapping` maps each
+// BM field -> source column header; `fixed` holds operator-picked single values (e.g. a provider or
+// case type applied to the whole file). Owner-managed; keyed by name.
+model ImportMapping {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  source    String   @default("other")
+  mapping   Json // { bmField: "Source Column Header", ... }
+  fixed     Json? // { providerEntityId?, caseType?, ... }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([source])
+}
+
 model ImportBatch {
   id            String   @id @default(cuid())
-  source        String // "dow" | "carisk" | "manual"
+  source        String // "dow" | "carisk" | "manual" | "other"
   sourceFile    String?
   actorName     String?
   actorEmail    String?

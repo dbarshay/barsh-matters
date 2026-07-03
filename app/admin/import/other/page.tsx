@@ -19,9 +19,15 @@ const cards = [
   },
   {
     label: "Other Spreadsheet",
-    href: "#",
-    description: "A generic spreadsheet importer for other formats — coming soon.",
+    href: "/admin/import/other/spreadsheet",
+    description: "Import a non-Dow/Carisk spreadsheet: map its columns to BM fields (auto-suggested), save the mapping, then preview, reconcile, and confirm.",
     icon: "📄",
+  },
+  {
+    label: "Document OCR",
+    href: "#",
+    description: "Scan a document (usually a bill / claim form) and attempt to extract a matter from it — coming soon.",
+    icon: "🖨️",
     comingSoon: true,
   },
 ];

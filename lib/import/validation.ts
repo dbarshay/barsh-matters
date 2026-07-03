@@ -29,10 +29,15 @@ export function missingStagedFields(staged: Record<string, unknown>, source: str
   };
 
   if (source === "carisk") need("cic_number", "CIC #");
-  need("claim_number_raw", "Claim # (insuredsID)");
+  // "other" allows Claim# OR Policy#; Dow/Carisk key on the claim number.
+  if (source === "other") {
+    if (blank(staged["claim_number_raw"]) && blank(staged["policy_number"])) missing.push({ key: "claim_number_raw", label: "Claim # or Policy #" });
+  } else {
+    need("claim_number_raw", "Claim # (insuredsID)");
+  }
   need("patient_name", "Patient name");
   need("carrier_raw", "Carrier");
-  if (source === "carisk") need("provider_raw", "Provider (FacilityName)");
+  if (source === "carisk") need("provider_raw", "Provider (FacilityName)"); // Other picks provider, so not row-required
   if (staged["claim_amount"] === null || staged["claim_amount"] === undefined) missing.push({ key: "claim_amount", label: "Charges" });
   need("dos_start", "Date(s) of service");
 
