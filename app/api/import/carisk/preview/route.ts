@@ -13,6 +13,7 @@ import {
 import { resolveCarrier, resolveProvider, type ReferenceResolution } from "@/lib/referenceResolution";
 import { resolvePatient, type PatientResolution } from "@/lib/patientResolution";
 import {
+  HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
   HOLD_PROVIDER_UNMATCHED,
   HOLD_CASE_TYPE_UNKNOWN,
@@ -87,7 +88,8 @@ export async function POST(request: Request) {
     if (s.cic_number) seenCic.add(s.cic_number);
 
     if (s.errors.length) {
-      outcome = "error";
+      outcome = "held";
+      holdReason = HOLD_MISSING_FIELD;
       reason = s.errors.join(" ");
     } else if (s.status === CARISK_STATUS_IGNORE) {
       outcome = "ignored";
@@ -146,6 +148,7 @@ export async function POST(request: Request) {
     total: previewRows.length,
     ready: previewRows.filter((r) => r.outcome === "ready").length,
     held: previewRows.filter((r) => r.outcome === "held").length,
+    heldMissing: heldOf(HOLD_MISSING_FIELD),
     heldCarrier: heldOf(HOLD_CARRIER_UNMATCHED),
     heldProvider: heldOf(HOLD_PROVIDER_UNMATCHED),
     heldCaseType: heldOf(HOLD_CASE_TYPE_UNKNOWN),

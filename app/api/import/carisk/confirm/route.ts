@@ -15,6 +15,7 @@ import { resolveCarrier, resolveProvider, type ReferenceResolution } from "@/lib
 import { resolvePatient } from "@/lib/patientResolution";
 import { createMattersFromStaged, type CreatableRow } from "@/lib/import/createMatters";
 import {
+  HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
   HOLD_PROVIDER_UNMATCHED,
   HOLD_CASE_TYPE_UNKNOWN,
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
     const dupInFile = s.cic_number ? seenCic.has(s.cic_number) : false;
     if (s.cic_number) seenCic.add(s.cic_number);
 
-    if (s.errors.length) { actions.push({ rowIndex, outcome: "error", reason: s.errors.join(" "), s }); continue; }
+    if (s.errors.length) { actions.push({ rowIndex, outcome: "held", holdReason: HOLD_MISSING_FIELD, reason: s.errors.join(" "), s }); continue; }
     if (s.status === CARISK_STATUS_IGNORE) { actions.push({ rowIndex, outcome: "ignored", reason: "Status 'Submitted'.", s }); continue; }
     if (s.status === CARISK_STATUS_REPORT) { actions.push({ rowIndex, outcome: "to_report", reason: "Status 'Saved Incomplete' — Carisk Management Report.", s }); continue; }
     if (s.status !== CARISK_STATUS_CREATE) { actions.push({ rowIndex, outcome: "error", reason: `Unrecognized Status: "${s.status || "(blank)"}".`, s }); continue; }
@@ -166,6 +167,7 @@ export async function POST(request: Request) {
     ignored: actions.filter((a) => a.outcome === "ignored").length,
     toReport: actions.filter((a) => a.outcome === "to_report").length,
     held: held.length,
+    heldMissing: held.filter((a) => a.holdReason === HOLD_MISSING_FIELD).length,
     heldCarrier: held.filter((a) => a.holdReason === HOLD_CARRIER_UNMATCHED).length,
     heldProvider: held.filter((a) => a.holdReason === HOLD_PROVIDER_UNMATCHED).length,
     heldCaseType: held.filter((a) => a.holdReason === HOLD_CASE_TYPE_UNKNOWN).length,
@@ -188,6 +190,7 @@ export async function POST(request: Request) {
       reportCount: counts.toReport,
       details: {
         held: counts.held,
+        heldMissing: counts.heldMissing,
         heldUnmatchedCarrier: counts.heldCarrier,
         heldProvider: counts.heldProvider,
         heldCaseType: counts.heldCaseType,

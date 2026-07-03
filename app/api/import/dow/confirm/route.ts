@@ -7,6 +7,7 @@ import { resolveCarrier, type ReferenceResolution } from "@/lib/referenceResolut
 import { resolvePatient } from "@/lib/patientResolution";
 import { createMattersFromStaged, type CreatableRow } from "@/lib/import/createMatters";
 import {
+  HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
   HOLD_PATIENT_AMBIGUOUS,
   HOLD_DATA_QUALITY,
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
   const patientStage: { rowIndex: number; s: (typeof staged)[number]; carrierEntityId: string }[] = [];
 
   staged.forEach((s, rowIndex) => {
-    if (s.errors.length) return void actions.push({ rowIndex, outcome: "error", reason: s.errors.join(" "), s });
+    if (s.errors.length) return void actions.push({ rowIndex, outcome: "held", holdReason: HOLD_MISSING_FIELD, reason: s.errors.join(" "), s });
     if (s.fingerprint && existingFps.has(s.fingerprint)) return void actions.push({ rowIndex, outcome: "duplicate", reason: "Matches an existing matter (fingerprint).", s });
     if (s.fingerprint && seen.has(s.fingerprint)) return void actions.push({ rowIndex, outcome: "duplicate", reason: "Duplicate within this file.", s });
     if (s.fingerprint) seen.add(s.fingerprint);
@@ -151,6 +152,7 @@ export async function POST(request: Request) {
     duplicates: actions.filter((a) => a.outcome === "duplicate").length,
     errors: actions.filter((a) => a.outcome === "error").length,
     held: actions.filter((a) => a.outcome === "held").length,
+    heldMissing: actions.filter((a) => a.holdReason === HOLD_MISSING_FIELD).length,
     heldCarrier: actions.filter((a) => a.holdReason === HOLD_CARRIER_UNMATCHED).length,
     heldPatient: actions.filter((a) => a.holdReason === HOLD_PATIENT_AMBIGUOUS).length,
     heldDataQuality: actions.filter((a) => a.holdReason === HOLD_DATA_QUALITY).length,

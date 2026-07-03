@@ -5,10 +5,12 @@ import { resolveCarrier, resolveProvider } from "@/lib/referenceResolution";
 import { resolvePatient } from "@/lib/patientResolution";
 import { createMattersFromStaged, type CreatableRow, type StagedForCreate } from "@/lib/import/createMatters";
 import { cariskExtraFields, normalizeTin, type StagedCariskMatter } from "@/lib/import/cariskAdapter";
+import { missingStagedFields } from "@/lib/import/validation";
 import {
   REVIEW_READY,
   REVIEW_OPEN,
   REVIEW_COMMITTED,
+  HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
   HOLD_PROVIDER_UNMATCHED,
   HOLD_CASE_TYPE_UNKNOWN,
@@ -81,6 +83,10 @@ export async function POST(request: Request) {
     const source = r.batch?.source ?? "dow";
     const staged = (r.staged ?? {}) as StagedForCreate & Partial<StagedCariskMatter> & { carrier_raw?: string; patient_name: string };
     const res = (r.resolution ?? {}) as any;
+
+    // 0) Required fields must all be present (missing_field rows are patched via resolve-missing).
+    const stillMissing = missingStagedFields(staged as Record<string, unknown>, source);
+    if (stillMissing.length) { await rehold(r.id, HOLD_MISSING_FIELD, `Still missing: ${stillMissing.map((m) => m.label).join(", ")}.`); continue; }
 
     // 1) Carrier must resolve.
     const carrier = await resolveCarrier(String(staged.carrier_raw ?? ""));

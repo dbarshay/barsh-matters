@@ -5,7 +5,7 @@ import { parseSheetToObjects } from "@/lib/import/xlsxParse";
 import { mapDowRows, type StagedDowMatter } from "@/lib/import/dowAdapter";
 import { resolveCarrier, type ReferenceResolution } from "@/lib/referenceResolution";
 import { resolvePatient, type PatientResolution } from "@/lib/patientResolution";
-import { HOLD_CARRIER_UNMATCHED, HOLD_PATIENT_AMBIGUOUS, HOLD_DATA_QUALITY, dataQualityHold } from "@/lib/import/holdReasons";
+import { HOLD_MISSING_FIELD, HOLD_CARRIER_UNMATCHED, HOLD_PATIENT_AMBIGUOUS, HOLD_DATA_QUALITY, dataQualityHold } from "@/lib/import/holdReasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,11 +79,13 @@ export async function POST(request: Request) {
     const carrier = carrierMap.get(s.carrier_raw) ?? ({ status: "unmatched", normalizedTried: [] } as ReferenceResolution);
     const patient = patientMap.get(s.patient_name) ?? ({ status: "new" } as PatientResolution);
 
-    // Same order as confirm: error -> duplicate -> carrier -> patient -> data-quality -> ready.
+    // Same order as confirm: missing-field -> duplicate -> carrier -> patient -> data-quality -> ready.
     let outcome: PreviewRow["outcome"];
     let holdReason: string | null = null;
-    if (s.errors.length) outcome = "error";
-    else if (existingMatch) outcome = "duplicate_existing";
+    if (s.errors.length) {
+      outcome = "held";
+      holdReason = HOLD_MISSING_FIELD;
+    } else if (existingMatch) outcome = "duplicate_existing";
     else if (dupInFile) outcome = "duplicate_in_file";
     else if (carrier.status !== "matched") {
       outcome = "held";
@@ -115,6 +117,7 @@ export async function POST(request: Request) {
     total: previewRows.length,
     ready: previewRows.filter((r) => r.outcome === "ready").length,
     held: previewRows.filter((r) => r.outcome === "held").length,
+    heldMissing: previewRows.filter((r) => r.holdReason === HOLD_MISSING_FIELD).length,
     heldCarrier: previewRows.filter((r) => r.holdReason === HOLD_CARRIER_UNMATCHED).length,
     heldPatient: previewRows.filter((r) => r.holdReason === HOLD_PATIENT_AMBIGUOUS).length,
     heldDataQuality: previewRows.filter((r) => r.holdReason === HOLD_DATA_QUALITY).length,

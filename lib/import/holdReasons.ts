@@ -5,6 +5,7 @@
 //   patient_ambiguous -> link to an existing patient or create a new one
 //   data_quality       -> accept the flagged value or dismiss the row
 
+export const HOLD_MISSING_FIELD = "missing_field";
 export const HOLD_CARRIER_UNMATCHED = "carrier_unmatched";
 export const HOLD_PROVIDER_UNMATCHED = "provider_unmatched";
 export const HOLD_PATIENT_AMBIGUOUS = "patient_ambiguous";
@@ -13,6 +14,7 @@ export const HOLD_TIN_MISMATCH = "tin_mismatch";
 export const HOLD_DATA_QUALITY = "data_quality";
 
 export const HOLD_REASONS = [
+  HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
   HOLD_PROVIDER_UNMATCHED,
   HOLD_PATIENT_AMBIGUOUS,
@@ -23,6 +25,7 @@ export const HOLD_REASONS = [
 export type HoldReason = (typeof HOLD_REASONS)[number];
 
 export const HOLD_REASON_LABEL: Record<string, string> = {
+  [HOLD_MISSING_FIELD]: "Missing required field",
   [HOLD_CARRIER_UNMATCHED]: "Carrier not in registry",
   [HOLD_PROVIDER_UNMATCHED]: "Provider not in registry",
   [HOLD_PATIENT_AMBIGUOUS]: "Patient match ambiguous",

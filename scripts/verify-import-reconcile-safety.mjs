@@ -27,6 +27,19 @@ const commit = read("app/api/import/reconcile/commit/route.ts");
 const page = read("app/admin/import/reconcile/page.tsx");
 const pkg = read("package.json");
 
+const validation = read("lib/import/validation.ts");
+const resolveMissing = read("app/api/import/reconcile/resolve-missing/route.ts");
+
+// Missing-field: validation errors become a fixable hold (not a hard reject).
+must("hold reason missing_field", holdReasons, "missing_field");
+must("validator lists missing fields", validation, "missingStagedFields");
+must("dow confirm holds missing", read("app/api/import/dow/confirm/route.ts"), "HOLD_MISSING_FIELD");
+must("carisk confirm holds missing", read("app/api/import/carisk/confirm/route.ts"), "HOLD_MISSING_FIELD");
+must("resolve-missing flag-gated", resolveMissing, "isImportEnabled()");
+must("resolve-missing patches staged", resolveMissing, "staged[key]");
+must("resolve-missing re-validates", resolveMissing, "missingStagedFields(staged, source)");
+must("commit re-validates missing", commit, "missingStagedFields(staged");
+
 // Sub-reasons exist and are used by both classification paths.
 must("hold reasons defined", holdReasons, "carrier_unmatched");
 must("hold reasons defined", holdReasons, "patient_ambiguous");

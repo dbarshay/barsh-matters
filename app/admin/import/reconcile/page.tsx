@@ -94,6 +94,7 @@ export default function ReconcilePage() {
   const carrierGroups: { carrierRaw: string; count: number }[] = data?.carrierGroups || [];
   const providerGroups: { providerRaw: string; count: number }[] = data?.providerGroups || [];
   const caseTypeGroups: { caseTypeRaw: string; count: number }[] = data?.caseTypeGroups || [];
+  const missingRows = rows.filter((r) => r.holdReason === "missing_field" && r.reviewStatus === "open");
   const patientRows = rows.filter((r) => r.holdReason === "patient_ambiguous" && r.reviewStatus === "open");
   const caseTypeRowsByRaw = (raw: string) => rows.find((r) => r.holdReason === "case_type_unknown" && r.reviewStatus === "open" && r.caseTypeRaw === raw);
   const tinRows = rows.filter((r) => r.holdReason === "tin_mismatch" && r.reviewStatus === "open");
@@ -151,6 +152,7 @@ export default function ReconcilePage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontWeight: 900 }}>
               Queue — {rows.length} held ·{" "}
+              <span style={{ color: "#b45309" }}>{data?.byReason?.missing_field || 0} missing-field</span>,{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.carrier_unmatched || 0} carrier</span>,{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.provider_unmatched || 0} provider</span>,{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.case_type_unknown || 0} case-type</span>,{" "}
@@ -162,6 +164,27 @@ export default function ReconcilePage() {
             <button type="button" style={btn(MUTED, busy === "load")} disabled={busy === "load"} onClick={() => load()}>Refresh</button>
           </div>
         </div>
+
+        {/* MISSING FIELD holds — fill in the missing values */}
+        {missingRows.length ? (
+          <div style={box}>
+            <div style={{ fontWeight: 900, marginBottom: 4 }}>Missing required fields ({missingRows.length} rows)</div>
+            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Fill in the missing values for each row. When all required fields are present the row becomes Ready to Commit.</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr><th style={th}>Row</th><th style={th}>Patient</th><th style={th}>Claim #</th><th style={th}>What&apos;s missing</th><th style={th}></th></tr></thead>
+              <tbody>
+                {missingRows.map((r) => (
+                  <MissingFieldRow key={r.id} row={r} busy={busy}
+                    onSave={async (patch) => {
+                      const j = await post("/api/import/reconcile/resolve-missing", { rowId: r.id, patch }, "missing:" + r.id);
+                      if (j) { setMessage(j.ready ? "Row completed — ready to commit." : `Still missing: ${(j.stillMissing || []).map((m: any) => m.label).join(", ")}.`); await load(); }
+                    }}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
 
         {/* CARRIER holds — Owner-gated registry write */}
         <div style={box}>
@@ -365,6 +388,63 @@ function CarrierRow({ group, carriers, busy, noun = "insurer", onMap, onAddNew }
         <button type="button" style={btn("#16a34a", working || !newName.trim())} disabled={working || !newName.trim()} onClick={() => onAddNew(newName.trim())}>Add new</button>
       </td>
     </tr>
+  );
+}
+
+function MissingFieldRow({ row, busy, onSave }: {
+  row: Row;
+  busy: string;
+  onSave: (patch: Record<string, string>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [vals, setVals] = useState<Record<string, string>>({
+    cic_number: row.cic || "",
+    claim_number_raw: row.claim || "",
+    patient_name: row.patientName || "",
+    carrier_raw: row.carrierRaw || "",
+    provider_raw: row.providerRaw || "",
+    claim_amount: row.amount == null ? "" : String(row.amount),
+    dos_start: row.dosStart || "",
+    dos_end: row.dosEnd || "",
+  });
+  const working = busy === "missing:" + row.id;
+  const isCarisk = row.source === "carisk";
+  const fields: { key: string; label: string; carisk?: boolean }[] = [
+    { key: "cic_number", label: "CIC #", carisk: true },
+    { key: "claim_number_raw", label: "Claim # (insuredsID)" },
+    { key: "patient_name", label: "Patient name" },
+    { key: "carrier_raw", label: "Carrier" },
+    { key: "provider_raw", label: "Provider (FacilityName)", carisk: true },
+    { key: "claim_amount", label: "Charges" },
+    { key: "dos_start", label: "DOS start" },
+    { key: "dos_end", label: "DOS end" },
+  ];
+  const set = (k: string, v: string) => setVals((s) => ({ ...s, [k]: v }));
+  return (
+    <>
+      <tr style={{ borderTop: "1px solid #eef2f7" }}>
+        <td style={{ padding: 6 }}>{row.rowIndex + 1}</td>
+        <td>{row.patientName || <span style={{ color: "#dc2626" }}>(blank)</span>}</td>
+        <td>{row.claim || <span style={{ color: "#dc2626" }}>(blank)</span>}</td>
+        <td style={{ color: "#b45309" }}>{row.reason}</td>
+        <td><button type="button" style={btn(NAVY, working)} disabled={working} onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Fix"}</button></td>
+      </tr>
+      {open ? (
+        <tr>
+          <td colSpan={5} style={{ padding: "6px 6px 14px", background: "#f8fafc" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 8 }}>
+              {fields.filter((f) => !f.carisk || isCarisk).map((f) => (
+                <label key={f.key} style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
+                  <div style={{ marginBottom: 2 }}>{f.label}</div>
+                  <input value={vals[f.key]} onChange={(e) => set(f.key, e.target.value)} style={{ height: 30, minWidth: 150, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px" }} />
+                </label>
+              ))}
+            </div>
+            <button type="button" style={btn("#16a34a", working)} disabled={working} onClick={() => onSave(vals)}>Save fields</button>
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 

@@ -307,7 +307,7 @@ export default function DowImportPage() {
     : [];
 
   const columns: { key: string; label: string }[] = [
-    { key: "rowIndex", label: "#" },
+    { key: "rowIndex", label: "Row #" },
     { key: "patient", label: "Patient" },
     { key: "claim", label: "Claim #" },
     { key: "dos", label: "DOS" },
@@ -367,9 +367,6 @@ export default function DowImportPage() {
                 }}
               >
                 {source === "dow" ? "DOW IMPORT" : "CARISK IMPORT"}
-              </span>
-              <span style={{ fontSize: 13, color: MUTED, fontWeight: 700 }}>
-                {source === "dow" ? "provider spreadsheet" : "searchResults export"}
               </span>
             </div>
             <a
@@ -440,11 +437,11 @@ export default function DowImportPage() {
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap", color: MUTED, fontWeight: 700 }}>
               <span style={{ color: "#16a34a" }}>Ready: {s.ready}</span>
               {source === "carisk" ? (
-                <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, provider {s.heldProvider ?? 0}, case-type {s.heldCaseType ?? 0}, patient {s.heldPatient ?? 0}, TIN {s.heldTin ?? 0}, data {s.heldDataQuality ?? 0})</span>
+                <span style={{ color: "#dc2626" }}>Held: {s.held} (missing {s.heldMissing ?? 0}, carrier {s.heldCarrier ?? 0}, provider {s.heldProvider ?? 0}, case-type {s.heldCaseType ?? 0}, patient {s.heldPatient ?? 0}, TIN {s.heldTin ?? 0}, data {s.heldDataQuality ?? 0})</span>
               ) : (
-                <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, patient {s.heldPatient ?? 0}, data {s.heldDataQuality ?? 0})</span>
+                <span style={{ color: "#dc2626" }}>Held: {s.held} (missing {s.heldMissing ?? 0}, carrier {s.heldCarrier ?? 0}, patient {s.heldPatient ?? 0}, data {s.heldDataQuality ?? 0})</span>
               )}
-              <span style={{ color: "#dc2626" }}>Errors: {s.errors}</span>
+              {source === "carisk" ? <span style={{ color: "#dc2626" }}>Errors (bad Status): {s.errors}</span> : null}
               <span>Duplicates (existing): {s.duplicatesExisting}</span>
               <span>Duplicates (in file): {s.duplicatesInFile}</span>
               {source === "carisk" ? <span>Ignored (Submitted): {s.ignored ?? 0}</span> : null}
