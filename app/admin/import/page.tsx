@@ -598,7 +598,7 @@ export default function DowImportPage() {
                           {detailId === b.id ? "Hide" : busy === "detail:" + b.id ? "Loading…" : "Details"}
                         </button>
                         {b.status !== "undone" && (b.held || 0) > 0 ? (
-                          <a href={`/admin/import/reconcile?batchId=${b.id}&source=${b.source}`} style={{ ...btn("#dc2626"), height: 28, padding: "0 10px", fontSize: 12, marginRight: 8, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile Held Cases</a>
+                          <a href={`/admin/import/reconcile?batchId=${b.id}&source=${b.source}`} style={{ ...btn("#b45309"), height: 28, padding: "0 10px", fontSize: 12, marginRight: 8, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile Held Cases</a>
                         ) : null}
                         {b.status === "undone" ? (
                           <span style={{ color: MUTED }}>—</span>
@@ -624,7 +624,7 @@ export default function DowImportPage() {
                 {detail.batch.status === "undone" ? (
                   <span style={{ color: MUTED, fontSize: 13, fontWeight: 700 }}>Undone — reconcile unavailable</span>
                 ) : (
-                  <a href={`/admin/import/reconcile?batchId=${detailId}&source=${source}`} style={{ ...btn("#dc2626"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
+                  <a href={`/admin/import/reconcile?batchId=${detailId}&source=${source}`} style={{ ...btn("#b45309"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
                 )}
               </div>
               <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>
