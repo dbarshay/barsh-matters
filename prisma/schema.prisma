@@ -154,10 +154,12 @@ model ClaimIndex {
   place_of_service_state     String?
   place_of_service_zip       String?
   carisk_operator            String?
+  fingerprint                String? // Dow/manual dedup fingerprint (soft key) for cross-import matching
   patient_id                 String?
   patient                    Patient? @relation(fields: [patient_id], references: [id])
 
   @@index([case_type])
+  @@index([fingerprint])
   @@index([patient_id])
   @@index([claim_number_normalized])
   @@index([patient_name])
