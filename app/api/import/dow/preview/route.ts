@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 type PreviewRow = {
   rowIndex: number;
-  outcome: "ready" | "error" | "duplicate_existing" | "duplicate_in_file";
+  outcome: "ready" | "error" | "duplicate_existing" | "duplicate_in_file" | "held";
   errors: string[];
   fingerprint: string;
   staged: Omit<StagedDowMatter, "raw" | "errors" | "fingerprint">;
@@ -73,10 +73,13 @@ export async function POST(request: Request) {
     const dupInFile = s.fingerprint ? seenInFile.has(s.fingerprint) : false;
     if (s.fingerprint) seenInFile.add(s.fingerprint);
 
+    const carrier = carrierMap.get(s.carrier_raw) ?? ({ status: "unmatched", normalizedTried: [] } as ReferenceResolution);
+
     let outcome: PreviewRow["outcome"];
     if (s.errors.length) outcome = "error";
     else if (existingMatch) outcome = "duplicate_existing";
     else if (dupInFile) outcome = "duplicate_in_file";
+    else if (carrier.status !== "matched") outcome = "held"; // carrier not in registry -> Owner must add
     else outcome = "ready";
 
     const { raw, errors, fingerprint, ...stagedVisible } = s;
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       errors,
       fingerprint,
       staged: stagedVisible,
-      carrier: carrierMap.get(s.carrier_raw) ?? { status: "unmatched", normalizedTried: [] },
+      carrier,
       patient: patientMap.get(s.patient_name) ?? { status: "new" },
       existingMatterId: existingMatch?.matter_id ?? null,
       existingDisplayNumber: existingMatch?.display_number ?? null,
@@ -96,6 +99,7 @@ export async function POST(request: Request) {
   const summary = {
     total: previewRows.length,
     ready: previewRows.filter((r) => r.outcome === "ready").length,
+    held: previewRows.filter((r) => r.outcome === "held").length,
     errors: previewRows.filter((r) => r.outcome === "error").length,
     duplicatesExisting: previewRows.filter((r) => r.outcome === "duplicate_existing").length,
     duplicatesInFile: previewRows.filter((r) => r.outcome === "duplicate_in_file").length,
