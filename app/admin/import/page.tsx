@@ -518,7 +518,7 @@ export default function DowImportPage() {
                       <td>{r.staged.claim_number_raw}</td>
                       <td>{r.staged.dos_start === r.staged.dos_end ? r.staged.dos_start : `${r.staged.dos_start} – ${r.staged.dos_end}`}</td>
                       <td>{r.staged.claim_amount == null ? "" : `$${r.staged.claim_amount.toFixed(2)}`}</td>
-                      <td style={{ color: r.carrier.status === "matched" ? "#16a34a" : "#b45309" }}>{r.carrier.status === "matched" ? r.carrier.displayName : "unmatched"}</td>
+                      <td style={{ color: r.carrier.status === "matched" ? "#16a34a" : "#dc2626" }}>{r.carrier.status === "matched" ? r.carrier.displayName : "unmatched"}</td>
                       <td>{r.patient.status}</td>
                       <td style={{ fontWeight: 800, color: r.outcome === "ready" ? "#16a34a" : r.outcome === "error" ? "#dc2626" : MUTED }}>
                         {r.outcome}{r.existingDisplayNumber ? ` (${r.existingDisplayNumber})` : ""}
@@ -598,7 +598,7 @@ export default function DowImportPage() {
                           {detailId === b.id ? "Hide" : busy === "detail:" + b.id ? "Loading…" : "Details"}
                         </button>
                         {b.status !== "undone" && (b.held || 0) > 0 ? (
-                          <a href={`/admin/import/reconcile?batchId=${b.id}&source=${b.source}`} style={{ ...btn("#b45309"), height: 28, padding: "0 10px", fontSize: 12, marginRight: 8, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile Held Cases</a>
+                          <a href={`/admin/import/reconcile?batchId=${b.id}&source=${b.source}`} style={{ ...btn("#dc2626"), height: 28, padding: "0 10px", fontSize: 12, marginRight: 8, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile Held Cases</a>
                         ) : null}
                         {b.status === "undone" ? (
                           <span style={{ color: MUTED }}>—</span>
@@ -624,7 +624,7 @@ export default function DowImportPage() {
                 {detail.batch.status === "undone" ? (
                   <span style={{ color: MUTED, fontSize: 13, fontWeight: 700 }}>Undone — reconcile unavailable</span>
                 ) : (
-                  <a href={`/admin/import/reconcile?batchId=${detailId}&source=${source}`} style={{ ...btn("#b45309"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
+                  <a href={`/admin/import/reconcile?batchId=${detailId}&source=${source}`} style={{ ...btn("#dc2626"), height: 30, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Reconcile this batch</a>
                 )}
               </div>
               <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>
@@ -686,7 +686,7 @@ export default function DowImportPage() {
                       .map((r) => (
                         <tr key={r.rowIndex} style={{ borderTop: "1px solid #eef2f7" }}>
                           <td style={{ padding: 6 }}>{r.rowIndex + 1}</td>
-                          <td style={{ fontWeight: 800, color: r.outcome === "created" ? "#16a34a" : r.outcome === "held" ? "#b45309" : r.outcome === "error" ? "#dc2626" : MUTED }}>{r.outcome}</td>
+                          <td style={{ fontWeight: 800, color: r.outcome === "created" ? "#16a34a" : r.outcome === "held" ? "#dc2626" : r.outcome === "error" ? "#dc2626" : MUTED }}>{r.outcome}</td>
                           <td>{r.displayNumber ? <a href={`/matter/${r.matterId}`} style={{ color: NAVY, fontWeight: 700 }}>{r.displayNumber}</a> : "—"}</td>
                           <td>{r.patientName || "—"}</td>
                           <td>{r.stage || "—"}</td>

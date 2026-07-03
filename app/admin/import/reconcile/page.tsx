@@ -160,19 +160,21 @@ export default function ReconcilePage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontWeight: 900 }}>
               Queue — {rows.length} held ·{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.missing_field || 0} missing-field</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.carrier_unmatched || 0} carrier</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.provider_unmatched || 0} provider</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.case_type_unknown || 0} case-type</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.patient_ambiguous || 0} patient</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.tin_mismatch || 0} TIN</span>,{" "}
-              <span style={{ color: "#b45309" }}>{data?.byReason?.data_quality || 0} data</span> ·{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.missing_field || 0} missing-field</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.carrier_unmatched || 0} carrier</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.provider_unmatched || 0} provider</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.case_type_unknown || 0} case-type</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.patient_ambiguous || 0} patient</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.tin_mismatch || 0} TIN</span>,{" "}
+              <span style={{ color: "#dc2626" }}>{data?.byReason?.data_quality || 0} data</span> ·{" "}
               <span style={{ color: "#166534" }}>{readyRows.length} ready</span>
             </div>
             <button type="button" style={btn(MUTED, busy === "load")} disabled={busy === "load"} onClick={() => load()}>Refresh</button>
           </div>
         </div>
 
+        {/* Hold categories, ordered by severity (row count desc) via CSS order. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
         {/* MISSING FIELD holds — fill in the missing values */}
         <Section title="Missing required fields" count={missingRows.length}>
           <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Fill in the missing values for each row. When all required fields are present the row becomes Ready to Commit.</div>
@@ -265,7 +267,7 @@ export default function ReconcilePage() {
                     <td style={{ padding: 6 }}>{r.patientName}</td>
                     <td>{r.providerRaw}</td>
                     <td>{r.providerTin}</td>
-                    <td style={{ color: "#b45309" }}>{r.reason}</td>
+                    <td style={{ color: "#dc2626" }}>{r.reason}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button type="button" style={{ ...btn("#16a34a", busy === "tin:" + r.id), marginRight: 8 }} disabled={busy === "tin:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-tin", { rowId: r.id, action: "accept" }, "tin:" + r.id); if (j) { setMessage("TIN accepted. Row ready."); await load(); } }}>Accept</button>
                       <button type="button" style={btn("#dc2626", busy === "tin:" + r.id)} disabled={busy === "tin:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-tin", { rowId: r.id, action: "dismiss" }, "tin:" + r.id); if (j) { setMessage("Row dismissed."); await load(); } }}>Dismiss</button>
@@ -307,7 +309,7 @@ export default function ReconcilePage() {
                     <td style={{ padding: 6 }}>{r.patientName}</td>
                     <td>{r.claim}</td>
                     <td>{money(r.amount)}</td>
-                    <td style={{ color: "#b45309" }}>{r.reason}</td>
+                    <td style={{ color: "#dc2626" }}>{r.reason}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button type="button" style={{ ...btn("#16a34a", busy === "data:" + r.id), marginRight: 8 }} disabled={busy === "data:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-data", { rowId: r.id, action: "accept" }, "data:" + r.id); if (j) { setMessage("Accepted. Row ready to commit."); await load(); } }}>Accept</button>
                       <button type="button" style={btn("#dc2626", busy === "data:" + r.id)} disabled={busy === "data:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-data", { rowId: r.id, action: "dismiss" }, "data:" + r.id); if (j) { setMessage("Dismissed."); await load(); } }}>Dismiss</button>
@@ -318,6 +320,7 @@ export default function ReconcilePage() {
             </table>
           )}
         </Section>
+        </div>
 
         {/* READY TO COMMIT */}
         <div style={{ ...box, borderColor: "#bbf7d0", background: "#f0fdf4" }}>
@@ -357,15 +360,16 @@ export default function ReconcilePage() {
 
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  // Severity order: more rows -> smaller `order` -> rendered first. Empty categories sink to the bottom.
   return (
-    <div style={box}>
+    <div style={{ ...box, order: -count, marginBottom: 0 }}>
       <div
         onClick={() => setOpen((o) => !o)}
         style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: 8 }}
       >
         <span style={{ color: MUTED, fontWeight: 900, width: 14 }}>{open ? "▾" : "▸"}</span>
         <span style={{ fontWeight: 900 }}>{title}</span>
-        <span style={{ fontWeight: 800, color: count > 0 ? "#b45309" : MUTED }}>({count} {count === 1 ? "row" : "rows"})</span>
+        <span style={{ fontWeight: 800, color: count > 0 ? "#dc2626" : MUTED }}>({count} {count === 1 ? "row" : "rows"})</span>
       </div>
       {open ? <div style={{ marginTop: 12 }}>{children}</div> : null}
     </div>
@@ -444,7 +448,7 @@ function MissingFieldRow({ row, busy, onSave }: {
         <td style={{ padding: 6 }}>{row.rowIndex + 1}</td>
         <td>{row.patientName || <span style={{ color: "#dc2626" }}>(blank)</span>}</td>
         <td>{row.claim || <span style={{ color: "#dc2626" }}>(blank)</span>}</td>
-        <td style={{ color: "#b45309" }}>{row.reason}</td>
+        <td style={{ color: "#dc2626" }}>{row.reason}</td>
         <td><button type="button" style={btn(NAVY, working)} disabled={working} onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Fix"}</button></td>
       </tr>
       {open ? (
