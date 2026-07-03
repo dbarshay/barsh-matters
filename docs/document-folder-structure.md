@@ -42,6 +42,10 @@ View Documents
   from the actual saved filename** (BM shows the friendly title regardless of how the file is stored).
 - The stored file is a **Clio-supported document type**, so the document stays **callable and savable**
   from Clio (Clio = the file store; BM owns the title/label + folder placement as metadata).
+- **OCR pre-fill (ANY dropped document):** on drop, OCR/extract from the document to **pre-fill the
+  chosen title's prompt fields** (dates, descriptions, amounts, outcomes, etc.) for the user to
+  **VERIFY/correct**. **Never auto-commit** — review required (especially for money); accuracy
+  depends on document format/scan quality.
 - ⇒ Need, per terminal folder: **the allowed title list**.
 
 ### Terminal folders (each needs an allowed-title list) — 17
@@ -53,13 +57,134 @@ Litigation: **Pleadings / Receipts**, **Discovery**, **Motions**, **Stipulations
 **Workers' Comp** (itself terminal — documents only).
 
 ## Template-generated (merge/save) documents auto-file to a designated folder
-- Documents BM **merges/saves from a template** are **auto-tagged to a designated terminal folder** in
-  this tree (they do NOT require a manual drag-drop / title pick).
-- The **target folder is designated per-template, at template-creation time** → add a **"target
-  folder"** setting to `DocumentTemplate` (and likely the resulting **title** too — either a fixed
-  title or one of that folder's allowed titles).
-- So every document on a matter — whether **manually uploaded** (drag→title picklist) or
-  **template-generated** (auto-filed) — lands in a folder with a controlled title.
+- Documents BM **merges/saves from a template** are **auto-filed** into a folder (no manual drag-drop).
+- **Target folder:** the template designates a **default** target folder (add a **"target folder"**
+  setting to `DocumentTemplate`). It is **changeable at finalize** — the user can redirect to another
+  folder; doing so swaps the available titles to that folder's list.
+- **Title at finalize:** the user **picks from the target folder's allowed-title list**. If the
+  template has a **preset title that matches one of that folder's allowed titles, it defaults to
+  that** (pre-selected). → `DocumentTemplate` also stores an optional preset title.
+- So every document on a matter — **manually uploaded** (drag→title picklist) or **template-generated**
+  (auto-filed) — lands in a folder with a controlled title.
+
+## Attach documents to a finalized template merge
+- On **finalizing a template merge**, prompt: **"Do you want to attach any documents?"** Yes / No.
+- **Yes** → a **document picker** listing the **existing documents already on the matter** (from the
+  folder tree). (Picker source = existing matter documents; no new upload at this step.)
+- User **selects and orders** the attachments (user-defined sequence, e.g., exhibits after the main
+  document).
+- **User chooses each time** what "attach" produces:
+  - **Combine into one PDF** — finalized document + ordered attachments merged into a single PDF, OR
+  - **Keep separate but linked** — each file stays separate, grouped/associated with the finalized doc.
+- TBD: how the combined/linked result is **titled & filed** (target folder + title) — likely the
+  template's target folder + a title.
+
+## Document search / visibility UX
+Goal: when a user looks for a document, it must be **visually obvious what the matter has**, so no
+time is wasted clicking through empty folders. **All of the following (decided):**
+- **Count badges per folder** — each folder shows its document count (e.g. `Bills (3)`).
+- **Flat searchable list of all documents** on the matter (index view alongside the folder tree).
+- **Title search box** — filters documents by title across every folder.
+- **Highlight folders that contain documents**; **empty folders are greyed out but stay visible**
+  (so the full structure is always discoverable).
+
+## Document-driven deadlines (adopted, enhancement #1)
+On drop into certain folders, prompt **"Do you want to create a deadline?"** (opt-in). If Yes → create
+a tickler/deadline (user sets it) — ties to BM's existing tickler system. Deadline is **manual/opt-in**
+(not auto-calculated from the document date unless we later specify per-title rules).
+
+Folders that **DO** prompt:
+- **Arbitration** — all documents (Correspondence / AR1, Awards)
+- **Claim Documents → Miscellaneous**
+- **Claim Documents → Verification → Requests**
+- **Claim Documents → Verification → Responses**
+- **Litigation → Judgments**
+- **Litigation → Motions**
+- **Litigation → Stipulations**
+- **Litigation → Discovery**
+- **Litigation → Other Filings**
+- **Litigation → Court Correspondence**
+- **Workers' Comp**
+
+Folders that do **NOT** prompt: Claim Documents → Bills, Reports, Denials, Payments;
+Litigation → Pleadings / Receipts.
+
+## Adopted enhancements
+1. **Document audit trail** — log every add / move / retitle / delete (who + when + source) on the
+   existing AuditLog. Chain-of-custody for the legal file.
+2. **Move / re-file documents** — a document can be moved to another folder later; on move the user
+   re-picks a title valid for the new folder (audited).
+3. **Delete policy (tiered):**
+   - Regular/BPO users: **cannot delete**.
+   - **Admin: soft-delete only** — archives (hidden, recoverable) + audit.
+   - **Owner (dbarshay) can ALSO hard-delete** — permanent, audited. (Only the Owner role.)
+4. **Server-side title enforcement** — allowed-title picklists enforced on the server (not just UI),
+   so no uncontrolled title can be injected via a bug or direct API call.
+5. **Full-text OCR search** — index OCR'd document text so search can match **content**, with a
+   user-selectable **search mode: Title (default) · Content · Both**.
+6. **Bulk categorize on scan** — during intake scanning, assign folder + title to many documents at
+   once (BPO throughput).
+7. **Inline preview + timeline** — quick preview in View Documents + chronological view by entered
+   date, **only if preview renders/streams from Clio and does NOT duplicate files into BM (non-Clio)
+   storage** (no storage bloat). If streaming from Clio isn't feasible without local caching, limit.
+
+_Deferred (not now):_ **Missing-document checklist** per case type/stage — revisit later.
+
+## Adopted enhancements (round 2)
+- **#2 Auto-suggested attachments on finalize** — each template can define its **usual attachments**
+  (by folder + title, e.g. latest AOB / Denial / Bills). At finalize, the attach picker **surfaces
+  them as SUGGESTIONS (never required)** — the user can accept, deselect, or add others. Nothing is
+  forced.
+
+- **#3 Documents callable into templates** — a template can reference a filed document by
+  **folder + title** to (a) merge its **structured fields** (e.g. Denial date, Award amounts) and/or
+  (b) **embed the document** itself. Makes the "callable" promise concrete.
+
+- **#4 Exhibit labeling on combine** — when combining attachments into one PDF for **Litigation and
+  Arbitration** documents: label exhibits **numerically (1, 2, 3…)**, each preceded by a **separate
+  exhibit cover/label page** ("Exhibit 1", etc.) before the actual document. **Per attachment, ask
+  the user: "labeled exhibit" or "just attached"** (plain, no cover page). Not applied to other
+  branches. (No Bates numbering.)
+
+- **#5 Duplicate-file detection (content hash)** — on add, hash the file; **only an EXACT
+  byte-for-byte duplicate** already on the matter triggers a **warning** (user may proceed or cancel).
+  **Never flag "substantially similar" files** — exact match only. Complements title-based `(#)`
+  handling (that's labels; this is the actual file).
+
+- **#6 Native matter email (REPLACES the maildrop-address idea)** — the old Clio maildrop is dead;
+  instead, **email is fully integrated into the matter UI**. **No visible maildrop address.**
+  - **Outbound:** compose/send a matter-relevant email **from the matter UI** (via Graph, from the
+    firm mailbox). The sent email is recorded in the matter's existing **"View Emails"** area.
+  - **Attach documents to outgoing email:** the compose dialog includes a **document picker** to
+    attach the matter's filed documents (from the folder tree) — for **both new emails and replies**.
+  - **Attachments (template-based):** stored **as part of the email** (visible when the email is
+    viewed) **AND** filed into the **applicable document folder** in the tree.
+  - **Inbound replies:** the recipient's replies come back to the firm mailbox; BM (existing **Graph
+    thread-sync**) matches them to the originating matter by **conversation thread / Message-ID**
+    (In-Reply-To / References) and shows them in the same matter's View Emails — **no maildrop address
+    needed**, matching is by thread.
+  - **Email backend = Outlook / Microsoft 365 (unchanged).** Outlook stays the mail server; BM
+    integrates via **Graph** (send + receive/thread-sync). BM does NOT become a mail server / replace
+    Outlook.
+  - **UX mimics Outlook** (familiar, not a replacement). A **"Send Email" button** in the matter UI
+    opens the compose dialog; sending is matter-scoped.
+  - **Net-new inbound tagging (confidence-tiered):** when the matter is **obvious → auto-tag with no
+    user action**; when **unsure → show suggestion(s)** the user can **accept or reassign** to another
+    matter. (Reuse `app/api/graph/thread-sync` + `local-thread-preview`.)
+  - **Core requirement:** both incoming and outgoing emails are always **tagged to the relevant matter
+    in BM** (the goal that replaces the maildrop address). Confirm which firm mailbox BM sends
+    from / monitors.
+
+- **#7 Case-type-aware folder relevance** — folders irrelevant to a matter's case type
+  (No-Fault / WC / Arbitration) are **greyed but still visible** (never hidden/blocked). **Case type
+  remains a user-editable toggle** on the matter; changing it re-computes which folders are greyed.
+  **Greying never buries content:** a folder is greyed only when it is BOTH case-type-irrelevant AND
+  **empty**. **Any folder that contains a document stays fully available** even if the case type later
+  changes to one where it would otherwise be greyed. (Define the folder↔case-type mapping at build.)
+
+- **#8 OCR confidence highlighting** — **every OCR-prefilled field requires user confirmation** (never
+  auto-commit). Color-coded by extraction confidence: **low = yellow highlight + message**,
+  **high = green highlight + message**, so the user knows exactly what to verify.
 
 ## Allowed titles per terminal folder (collected folder-by-folder)
 Each folder: its controlled title picklist, and whether it also offers a **freehand "Other"** entry
@@ -93,7 +218,16 @@ per title below.
 - Claim Documents → Payments: title = `Payment` → prompt to pick a category —
   **Principal / Interest** OR **Attorney's Fee / Filing** — and enter **an amount for both**
   components of the chosen category (Principal + Interest, or Attorney's Fee + Filing). Amounts are
-  structured money data. (Freehand "Other": no.)
+  structured money data (**metadata only — not posted to the ledger**). (Freehand "Other": no.)
+    - **Payment-posting integration:** the **payment-posting modal** includes a **drop zone**; a
+      payment document dropped there is **auto-filed into this Payments folder**, tagged with the
+      **payment type being posted** (Principal/Interest or Attorney's Fee/Filing) — type inherited
+      from the posting, no separate title prompt. (The ledger posting remains the financial source of
+      truth; the filed document is the reference copy.)
+    - **Payment-modal OCR pre-fill** (instance of the system-wide OCR pre-fill above): dropping a
+      payment doc in the modal can OCR/extract payment data (amounts, type, date, check #) to
+      **pre-fill the modal fields for VERIFY/correct** before posting — never auto-post. Scope:
+      **firm-received payments only** (that's all we post); no Carisk pre-fill needed.
 - Claim Documents → Miscellaneous: titles = `Police Report`, `Other` (**freehand** — user types a
   custom title). **Freehand "Other": YES.**
 - Litigation → Pleadings / Receipts: titles = `Complaint`, `Answer`, `Affidavit of Service`,
@@ -120,13 +254,19 @@ per title below.
    Claim Documents→Miscellaneous, Litigation→Stipulations, Litigation→Other Filings, Workers' Comp.
    Document *type/format* = whatever Clio supports (not restricted per folder); only the **title** is
    controlled.
-2. Confirm **label formats** for the prompt-composed titles (Correspondence, Court Correspondence,
-   Awards, Requests/Responses, Payments) — exact display string.
-3. Which folders are the **intake-scan targets** (bulk manual scanning) — likely Claim Documents
-   subfolders + Workers' Comp; confirm, and whether bulk scan uses the same drop→title-picklist.
-4. Behavior if a title is already used on the matter (allow duplicates? one per title?).
-5. **Structured data capture** — Awards amounts (principal/interest/fees/costs), Payments
-   (P/I or AF/Filing amounts), and outcomes: store as queryable fields (reporting), not just labels.
+2. **Label formats** for prompt-composed titles — proposed inline per folder (e.g.,
+   `Correspondence — {date} — {description}`); finalize exact display strings at build.
+3. ✅ **Intake-scan targets — DECIDED (assumed, confirm):** bulk scanning uses the **same tree + same
+   drag→title-picklist** as any document; no separate scan-only folders.
+4. ✅ **Duplicate titles — DECIDED.** Allowed when the entered prompt values differ (labels are
+   naturally distinct). When the composed label would be **identical** (same prompt values, or a
+   no-prompt title), the UI **appends a `(2)`, `(3)`, … counter** to disambiguate.
+5. ✅ **Structured data capture — DECIDED.** Award outcome + amounts (principal/interest/fees/costs),
+   Payment amounts (P/I or AF/Filing), and dated fields are stored as **queryable structured fields**
+   (power reporting: arbitration win rate, award totals, payment totals) — not just baked into labels.
+   **Payment-document amounts are METADATA ONLY** — captured for reference/reporting, **NOT posted to
+   the financial ledger / balance** (real payment posting stays in the existing settlement flow; no
+   double-counting).
 6. `DocumentTemplate` gets a **target-folder** setting (per template) for auto-filed merged docs.
 
 _Resolved: Stips = Stipulations. Arbitration subfolder = "Correspondence / AR1" (AR1 = A-R-1).
