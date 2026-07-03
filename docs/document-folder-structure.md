@@ -211,6 +211,26 @@ restrictions** (view/edit) — defer to the RBAC rollout (delete tiering still a
   auto-commit). Color-coded by extraction confidence: **low = yellow highlight + message**,
   **high = green highlight + message**, so the user knows exactly what to verify.
 
+## Adopted enhancements (round 3)
+- **Bulk / batch generate + send** — run a template across many matters at once.
+  - **Selection:** from **search/filter results** OR **manual multi-select** (both).
+  - **Preview then confirm:** the run shows what will be generated/filed/emailed; the user confirms
+    **before anything is created or any email sends** (matches the import preview philosophy).
+  - **Scope:** always **generate + file** to the target folder; **emailing is optional** per run.
+- **Closed-matter document rules** —
+  - When a matter/lawsuit is **closed**, its documents are **view-only** (no new filing) unless it is
+    **reopened** or an **admin** overrides.
+  - **Finalized/served documents are immutable** — you **supersede with a new version**, never
+    silently edit or retitle a finalized document (keeps the record trustworthy).
+- **Notifications** — alert the **responsible user** on relevant events (new email tagged to their
+  matter, new document tagged, document-driven deadline created — events refinable).
+  - Default channel: **in-app.**
+  - **Owner controls:** the Owner can **disable notifications**, or **add other means** of
+    notification for a user (e.g., email / SMS) — per-user, Owner-configurable.
+- **Draft + schedule-send email** — Outlook-style: **save drafts** to finish later, and **schedule a
+  send** for a future time. (Scheduled sends still apply the sender-identity + subject-tag rules.)
+- _Skipped/parked:_ **Email → auto Proof of Mailing/Service** (may add later).
+
 ## Allowed titles per terminal folder (collected folder-by-folder)
 Each folder: its controlled title picklist, and whether it also offers a **freehand "Other"** entry
 (user types a custom title). Freehand is **off by default** — only where the user says so.
