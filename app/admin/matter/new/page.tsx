@@ -33,9 +33,37 @@ export default function ManualMatterPage() {
     denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "",
     grossClaimAmount: "", treatingPhysicianId: "",
   });
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: string, v: string) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setMissing((m) => {
+      if (!m.size) return m;
+      const n = new Set(m);
+      n.delete(k);
+      if (k === "claimNumber" || k === "policyNumber") { n.delete("claimNumber"); n.delete("policyNumber"); }
+      return n;
+    });
+  };
+
+  // Required-field check (matches the server): all required except the Claim#/Policy# alternation.
+  function findMissing(): Set<string> {
+    const m = new Set<string>();
+    if (!form.claimNumber.trim() && !form.policyNumber.trim()) { m.add("claimNumber"); m.add("policyNumber"); }
+    if (!form.patientName.trim()) m.add("patientName");
+    if (!form.providerEntityId) m.add("providerEntityId");
+    if (!form.insurerEntityId) m.add("insurerEntityId");
+    if (!form.denialReasonId) m.add("denialReasonId");
+    if (!form.serviceTypeId) m.add("serviceTypeId");
+    if (!form.treatingPhysicianId) m.add("treatingPhysicianId");
+    if (!form.caseType) m.add("caseType");
+    if (!form.dateOfInjury) m.add("dateOfInjury");
+    if (!form.dosStart) m.add("dosStart");
+    if (!form.grossClaimAmount.trim()) m.add("grossClaimAmount");
+    return m;
+  }
 
   const [patientId, setPatientId] = useState("");
+  const [carried, setCarried] = useState<Record<string, string>>({}); // carried-over values of the highlighted fields
+  const [missing, setMissing] = useState<Set<string>>(new Set()); // required fields flagged red on submit
   const [candidates, setCandidates] = useState<{ id: string; name: string }[]>([]);
   const [patientSuggestions, setPatientSuggestions] = useState<{ id: string; name: string; dol?: string }[]>([]);
   const [duplicate, setDuplicate] = useState<any>(null);
@@ -66,8 +94,10 @@ export default function ManualMatterPage() {
       const r = await fetch(`/api/import/manual/patient-defaults?patientId=${c.id}`, { cache: "no-store" });
       const j = await r.json();
       if (j?.ok && j.found) {
-        setForm((f) => ({ ...f, ...j.defaults, patientName: c.name, dosStart: "", dosEnd: "", grossClaimAmount: "" }));
-        setInfo(`Linked ${c.name} — pre-filled from matter ${j.fromMatter}. Locked fields are read-only; highlighted fields carried over but are editable; enter this bill's date(s) of service and amount.`);
+        const d = j.defaults || {};
+        setForm((f) => ({ ...f, ...d, patientName: c.name, dosStart: "", dosEnd: "", grossClaimAmount: "" }));
+        setCarried({ treatingPhysicianId: d.treatingPhysicianId || "", providerEntityId: d.providerEntityId || "", serviceTypeId: d.serviceTypeId || "", denialReasonId: d.denialReasonId || "", caseType: d.caseType || "" });
+        setInfo(`Linked ${c.name} — pre-filled from matter ${j.fromMatter}. Locked fields are read-only; highlighted fields carried over but are editable (they turn blue if you change them); enter this bill's date(s) of service and amount.`);
       } else {
         setForm((f) => ({ ...f, patientName: c.name }));
         setInfo(`Linked ${c.name} (no prior matter to pre-fill from).`);
@@ -91,6 +121,7 @@ export default function ManualMatterPage() {
     const pid = done?.patientId || patientId;
     // Keep carry-over fields (locked identity + pre-filled editable); clear only what MUST be re-entered.
     setForm((f) => ({ ...f, dosStart: "", dosEnd: "", grossClaimAmount: "" }));
+    setCarried({ treatingPhysicianId: form.treatingPhysicianId, providerEntityId: form.providerEntityId, serviceTypeId: form.serviceTypeId, denialReasonId: form.denialReasonId, caseType: form.caseType });
     setPatientId(pid || "");
     setDone(null);
     setError(""); setDuplicate(null); setCandidates([]);
@@ -99,6 +130,7 @@ export default function ManualMatterPage() {
 
   function unlinkPatient() {
     setPatientId("");
+    setCarried({});
     setInfo("");
     setForm((f) => ({ ...f, patientName: "" }));
   }
@@ -121,6 +153,9 @@ export default function ManualMatterPage() {
   }, [loadOpts]);
 
   async function submit(opts?: { override?: boolean; createNewPatient?: boolean; usePatientId?: string }) {
+    const miss = findMissing();
+    if (miss.size) { setMissing(miss); setError("Complete the fields outlined in red."); return; }
+    setMissing(new Set());
     setBusy(true);
     setError("");
     setCandidates([]);
@@ -146,12 +181,21 @@ export default function ManualMatterPage() {
 
   function resetForm() {
     setForm({ claimNumber: "", policyNumber: "", patientName: "", providerEntityId: "", insurerEntityId: "", denialReasonId: "", serviceTypeId: "", caseType: "No-Fault", dateOfInjury: "", dosStart: "", dosEnd: "", grossClaimAmount: "", treatingPhysicianId: "" });
-    setPatientId(""); setCandidates([]); setPatientSuggestions([]); setDuplicate(null); setError(""); setInfo(""); setDone(null);
+    setPatientId(""); setCarried({}); setCandidates([]); setPatientSuggestions([]); setDuplicate(null); setError(""); setInfo(""); setDone(null);
   }
 
   const locked = !!patientId; // linked to / carried over from an existing patient
   const roBox: React.CSSProperties = { ...input, display: "flex", alignItems: "center", background: "#eef2f7", color: NAVY, fontWeight: 700, cursor: "not-allowed" };
-  const hl: React.CSSProperties = locked ? { ...input, background: "#fffbeb", borderColor: "#fcd34d" } : input; // pre-filled but editable
+  const hl: React.CSSProperties = { ...input, background: "#fffbeb", border: "1px solid #fcd34d" }; // pre-filled, unchanged
+  const changedStyle: React.CSSProperties = { ...input, background: "#eef2f7", border: "1px solid #93c5fd" }; // pre-filled, edited
+  // Highlighted-field style: yellow while it matches the carried-over value, blue once the operator edits it.
+  const hlFor = (key: string): React.CSSProperties => {
+    if (!locked) return input;
+    return String((form as any)[key] || "") !== String(carried[key] || "") ? changedStyle : hl;
+  };
+  // Overlay a red outline on a required field flagged empty at submit. Use the full `border` shorthand
+  // (not borderColor) so it reliably replaces the base border regardless of the underlying style.
+  const req = (key: string, style: React.CSSProperties): React.CSSProperties => (missing.has(key) ? { ...style, border: "2px solid #dc2626", background: "#fef2f2" } : style);
   const nameOf = (id: string, opts: Opt[]) => opts.find((o) => o.id === id)?.displayName || "—";
   const mdy = (iso: string) => { const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[2]}/${m[3]}/${m[1]}` : iso; };
 
@@ -208,8 +252,9 @@ export default function ManualMatterPage() {
               <div style={{ fontWeight: 900, marginBottom: 12 }}>Matter details — all fields required (Claim # or Policy # — at least one)</div>
               {locked ? (
                 <div style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
-                  <span style={{ background: "#eef2f7", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Locked</span> = read-only (patient/claim identity) ·{" "}
-                  <span style={{ background: "#fffbeb", border: "1px solid #fcd34d", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Highlighted</span> = carried over, editable ·{" "}
+                  <span style={{ background: "#eef2f7", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Locked</span> = read-only ·{" "}
+                  <span style={{ background: "#fffbeb", border: "1px solid #fcd34d", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Carried over</span> = editable ·{" "}
+                  <span style={{ background: "#eef2f7", border: "1px solid #93c5fd", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Edited</span> = you changed it ·{" "}
                   <button type="button" onClick={unlinkPatient} style={{ border: "none", background: "transparent", color: "#dc2626", fontWeight: 800, cursor: "pointer", textDecoration: "underline", padding: 0 }}>Unlink patient</button>
                 </div>
               ) : null}
@@ -221,7 +266,7 @@ export default function ManualMatterPage() {
                       <>
                         <span style={label}>Patient (First Last)</span>
                         <div style={{ position: "relative" }}>
-                          <input style={input} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); setInfo(""); }} placeholder="Type to search existing patients…" />
+                          <input style={req("patientName", input)} value={form.patientName} onChange={(e) => { set("patientName", e.target.value); setPatientId(""); setInfo(""); }} placeholder="Type to search existing patients…" />
                           {patientSuggestions.length ? (
                             <div style={{ position: "absolute", zIndex: 5, top: 40, left: 0, right: 0, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 8px 20px rgba(15,23,42,0.12)", maxHeight: 200, overflowY: "auto" }}>
                               {patientSuggestions.map((c) => (
@@ -238,25 +283,29 @@ export default function ManualMatterPage() {
                     )}
 
                 {/* Locked identity fields */}
-                {locked ? roField("Claim Number", form.claimNumber) : field(<><span style={label}>Claim Number</span><input style={input} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
-                {locked ? roField("Policy Number", form.policyNumber) : field(<><span style={label}>Policy Number</span><input style={input} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
-                {locked ? roField("Insurer / Carrier", nameOf(form.insurerEntityId, insurers)) : field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…")}</>)}
-                {locked ? roField("Date of Injury", form.dateOfInjury ? mdy(form.dateOfInjury) : "") : field(<><span style={label}>Date of Injury</span><input type="date" style={input} value={form.dateOfInjury} onChange={(e) => set("dateOfInjury", e.target.value)} /></>)}
+                {locked ? roField("Claim Number", form.claimNumber) : field(<><span style={label}>Claim Number</span><input style={req("claimNumber", input)} value={form.claimNumber} onChange={(e) => set("claimNumber", e.target.value)} /></>)}
+                {locked ? roField("Policy Number", form.policyNumber) : field(<><span style={label}>Policy Number</span><input style={req("policyNumber", input)} value={form.policyNumber} onChange={(e) => set("policyNumber", e.target.value)} /></>)}
+                {locked ? roField("Insurer / Carrier", nameOf(form.insurerEntityId, insurers)) : field(<><span style={label}>Insurer / Carrier</span>{sel(form.insurerEntityId, (v) => set("insurerEntityId", v), insurers, "Select insurer…", req("insurerEntityId", input))}</>)}
+                {locked ? roField("Date of Injury", form.dateOfInjury ? mdy(form.dateOfInjury) : "") : field(<><span style={label}>Date of Injury</span><input type="date" style={req("dateOfInjury", input)} value={form.dateOfInjury} onChange={(e) => set("dateOfInjury", e.target.value)} /></>)}
 
-                {/* Pre-filled editable (highlighted when carried) */}
-                {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…", hl)}</>)}
-                {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…", hl)}</>)}
-                {field(<><span style={label}>Service Type</span>{sel(form.serviceTypeId, (v) => set("serviceTypeId", v), services, "Select service type…", hl)}</>)}
-                {field(<><span style={label}>Denial Reason</span>{sel(form.denialReasonId, (v) => set("denialReasonId", v), denials, "Select denial reason…", hl)}</>)}
-                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={hl}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select></>)}
+                {/* Pre-filled editable (highlighted when carried; turns blue once edited) */}
+                {field(<><span style={label}>Treating Physician</span>{sel(form.treatingPhysicianId, (v) => set("treatingPhysicianId", v), physicians, "Select treating physician…", req("treatingPhysicianId", hlFor("treatingPhysicianId")))}</>)}
+                {field(<><span style={label}>Provider / Client</span>{sel(form.providerEntityId, (v) => set("providerEntityId", v), providers, "Select provider…", req("providerEntityId", hlFor("providerEntityId")))}</>)}
+                {field(<><span style={label}>Service Type</span>{sel(form.serviceTypeId, (v) => set("serviceTypeId", v), services, "Select service type…", req("serviceTypeId", hlFor("serviceTypeId")))}</>)}
+                {field(<><span style={label}>Denial Reason</span>{sel(form.denialReasonId, (v) => set("denialReasonId", v), denials, "Select denial reason…", req("denialReasonId", hlFor("denialReasonId")))}</>)}
+                {field(<><span style={label}>Case Type</span><select value={form.caseType} onChange={(e) => set("caseType", e.target.value)} style={hlFor("caseType")}><option>No-Fault</option><option>Workers Compensation</option><option>Lien</option></select></>)}
 
                 {/* Always entered per bill */}
-                {field(<><span style={label}>Gross Claim Amount</span><input style={input} value={form.grossClaimAmount} onChange={(e) => set("grossClaimAmount", e.target.value)} placeholder="0.00" /></>)}
-                {field(<><span style={label}>DOS start</span><input type="date" style={input} value={form.dosStart} onChange={(e) => set("dosStart", e.target.value)} /></>)}
+                {field(<><span style={label}>Gross Claim Amount</span><input style={req("grossClaimAmount", input)} value={form.grossClaimAmount} onChange={(e) => set("grossClaimAmount", e.target.value)} placeholder="0.00" /></>)}
+                {field(<><span style={label}>DOS start</span><input type="date" style={req("dosStart", input)} value={form.dosStart} onChange={(e) => set("dosStart", e.target.value)} /></>)}
                 {field(<><span style={label}>DOS end (blank = same as start)</span><input type="date" style={input} value={form.dosEnd} onChange={(e) => set("dosEnd", e.target.value)} /></>)}
               </div>
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
                 <button type="button" style={btn("#16a34a", busy)} disabled={busy} onClick={() => void submit()}>{busy ? "Creating…" : "Create matter"}</button>
+                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                  <button type="button" style={btn(MUTED, busy)} disabled={busy} onClick={resetForm}>Clear all fields</button>
+                  <button type="button" style={btn("#dc2626", busy)} disabled={busy} onClick={() => { window.location.href = "/admin/import/other"; }}>Cancel</button>
+                </div>
               </div>
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #dbe4f0", fontSize: 12, color: MUTED }}>
                 Patient predictions come from the patient master. A patient only exists once it's on a matter.{" "}
