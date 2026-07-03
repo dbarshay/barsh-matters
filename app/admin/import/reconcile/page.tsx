@@ -53,6 +53,9 @@ export default function ReconcilePage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  // Read the launching module from the URL AFTER mount (SSR renders the default) to avoid a hydration
+  // mismatch on the "Back to … import" link.
+  const [backSource, setBackSource] = useState<"dow" | "carisk">("dow");
 
   const load = useCallback(async () => {
     setBusy("load");
@@ -85,13 +88,14 @@ export default function ReconcilePage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("source") === "carisk") {
+      setBackSource("carisk");
+    }
     void load();
     void loadRegistry("insurer_company");
     void loadRegistry("provider_client");
   }, [load, loadRegistry]);
 
-  const backSource =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("source") === "carisk" ? "carisk" : "dow";
   const backHref = `/admin/import?source=${backSource}`;
 
   const rows: Row[] = data?.rows || [];
