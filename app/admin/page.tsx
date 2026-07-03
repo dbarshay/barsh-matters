@@ -77,21 +77,21 @@ const adminCards = [
     icon: "Permissions",
   },
   {
-    label: "Import Dow Matters",
+    label: "Import DOW Matters",
     href: "/admin/import?source=dow",
     description:
       "Import matters from a Dow provider spreadsheet: upload, preview read-only, confirm, reconcile holds, and undo. Flag-gated.",
     icon: "📥",
   },
   {
-    label: "Import Carisk Matters",
+    label: "Import CARISK Matters",
     href: "/admin/import?source=carisk",
     description:
       "Import matters from a Carisk export: Status routing, CIC# dedup, per-row provider/case-type, reconcile holds, and undo. Flag-gated.",
     icon: "📥",
   },
   {
-    label: "Import Others",
+    label: "Import OTHERS",
     href: "/admin/import",
     description:
       "Additional import sources — coming soon.",

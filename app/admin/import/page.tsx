@@ -190,24 +190,6 @@ export default function DowImportPage() {
     void loadBatches(initial);
   }, []);
 
-  async function seedTest(remove: boolean) {
-    setBusy("seed");
-    setError("");
-    try {
-      const r = await fetch("/api/import/dev-seed-references", { method: remove ? "DELETE" : "POST" });
-      const j = await r.json();
-      if (!j.ok) setError(j.error || "Seed failed.");
-      else {
-        await loadProviders();
-        window.alert(remove ? `Removed ${j.removed} seeded entities.` : `Seeded ${j.seededCarriers} carriers + provider.`);
-      }
-    } catch (e: any) {
-      setError(e?.message || "Seed failed.");
-    } finally {
-      setBusy("");
-    }
-  }
-
   function ingestFile(file?: File | null) {
     setPreview(null);
     setConfirmResult(null);
@@ -447,11 +429,6 @@ export default function DowImportPage() {
             <button type="button" style={btn(NAVY, !fileBase64 || busy === "preview")} disabled={!fileBase64 || busy === "preview"} onClick={runPreview}>
               {busy === "preview" ? "Previewing…" : "Preview (read-only)"}
             </button>
-          </div>
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #dbe4f0", fontSize: 13, color: MUTED }}>
-            <strong>Test data:</strong>{" "}
-            <button type="button" style={{ ...btn(MUTED, busy === "seed"), height: 32, padding: "0 12px" }} disabled={busy === "seed"} onClick={() => seedTest(false)}>Seed carriers + provider</button>{" "}
-            <button type="button" style={{ ...btn("#dc2626", busy === "seed"), height: 32, padding: "0 12px" }} disabled={busy === "seed"} onClick={() => seedTest(true)}>Remove test seed</button>
           </div>
         </div>
 
