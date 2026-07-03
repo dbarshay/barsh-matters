@@ -499,7 +499,7 @@ function PatientRow({ row, busy, onLink, onNew }: {
   onNew: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [candidates, setCandidates] = useState<{ id: string; name: string; kind?: string }[]>([]);
+  const [candidates, setCandidates] = useState<{ id: string; name: string; kind?: string; dol?: string }[]>([]);
   const [loaded, setLoaded] = useState(false);
   const working = busy === "patient:" + row.id;
 
@@ -534,7 +534,7 @@ function PatientRow({ row, busy, onLink, onNew }: {
             {candidates.length === 0 ? <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>No close existing patients found.</div> : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                 {candidates.map((c) => (
-                  <button key={c.id} type="button" style={{ ...btn("#0369a1", working), height: 30 }} disabled={working} onClick={() => onLink(c.id)}>Link → {c.name}</button>
+                  <button key={c.id} type="button" style={{ ...btn("#0369a1", working), height: 30 }} disabled={working} onClick={() => onLink(c.id)}>Link → {c.name} · D/L: {c.dol || "—"}</button>
                 ))}
               </div>
             )}

@@ -37,7 +37,7 @@ export default function ManualMatterPage() {
 
   const [patientId, setPatientId] = useState("");
   const [candidates, setCandidates] = useState<{ id: string; name: string }[]>([]);
-  const [patientSuggestions, setPatientSuggestions] = useState<{ id: string; name: string }[]>([]);
+  const [patientSuggestions, setPatientSuggestions] = useState<{ id: string; name: string; dol?: string }[]>([]);
   const [duplicate, setDuplicate] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -205,7 +205,9 @@ export default function ManualMatterPage() {
                         <div style={{ position: "absolute", zIndex: 5, top: 40, left: 0, right: 0, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 8px 20px rgba(15,23,42,0.12)", maxHeight: 200, overflowY: "auto" }}>
                           {patientSuggestions.map((c) => (
                             <div key={c.id} onClick={() => void linkPatient(c)} style={{ padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #eef2f7", fontSize: 13 }}>
-                              {c.name} <span style={{ color: MUTED }}>· use & pre-fill</span>
+                              <span style={{ fontWeight: 700 }}>{c.name}</span>
+                              {" "}<span style={{ color: c.dol ? "#00346e" : MUTED }}>· D/L: {c.dol || "—"}</span>
+                              {" "}<span style={{ color: MUTED }}>· use &amp; pre-fill</span>
                             </div>
                           ))}
                         </div>
