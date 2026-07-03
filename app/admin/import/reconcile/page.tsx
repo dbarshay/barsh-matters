@@ -25,7 +25,11 @@ type Row = {
   providerName: string | null;
   patientName: string;
   carrierRaw: string;
+  providerRaw: string;
+  caseTypeRaw: string;
+  providerTin: string;
   claim: string;
+  cic: string;
   dosStart: string;
   dosEnd: string;
   amount: number | null;
@@ -44,6 +48,7 @@ const dos = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
 export default function ReconcilePage() {
   const [data, setData] = useState<any>(null);
   const [carriers, setCarriers] = useState<{ id: string; displayName: string }[]>([]);
+  const [providers, setProviders] = useState<{ id: string; displayName: string }[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -66,12 +71,14 @@ export default function ReconcilePage() {
     }
   }, []);
 
-  const loadCarriers = useCallback(async () => {
+  const loadRegistry = useCallback(async (type: "insurer_company" | "provider_client") => {
     try {
-      const r = await fetch("/api/reference-data/options?type=insurer_company", { cache: "no-store" });
+      const r = await fetch(`/api/reference-data/options?type=${type}`, { cache: "no-store" });
       const j = await r.json().catch(() => ({}));
       const rows = j?.options || j?.rows || j?.entities || [];
-      setCarriers(rows.map((o: any) => ({ id: o.id, displayName: o.displayName || o.label || o.id })));
+      const mapped = rows.map((o: any) => ({ id: o.id, displayName: o.displayName || o.label || o.id }));
+      if (type === "insurer_company") setCarriers(mapped);
+      else setProviders(mapped);
     } catch {
       /* optional */
     }
@@ -79,12 +86,17 @@ export default function ReconcilePage() {
 
   useEffect(() => {
     void load();
-    void loadCarriers();
-  }, [load, loadCarriers]);
+    void loadRegistry("insurer_company");
+    void loadRegistry("provider_client");
+  }, [load, loadRegistry]);
 
   const rows: Row[] = data?.rows || [];
   const carrierGroups: { carrierRaw: string; count: number }[] = data?.carrierGroups || [];
+  const providerGroups: { providerRaw: string; count: number }[] = data?.providerGroups || [];
+  const caseTypeGroups: { caseTypeRaw: string; count: number }[] = data?.caseTypeGroups || [];
   const patientRows = rows.filter((r) => r.holdReason === "patient_ambiguous" && r.reviewStatus === "open");
+  const caseTypeRowsByRaw = (raw: string) => rows.find((r) => r.holdReason === "case_type_unknown" && r.reviewStatus === "open" && r.caseTypeRaw === raw);
+  const tinRows = rows.filter((r) => r.holdReason === "tin_mismatch" && r.reviewStatus === "open");
   const dataRows = rows.filter((r) => r.holdReason === "data_quality" && r.reviewStatus === "open");
   const readyRows = rows.filter((r) => r.reviewStatus === "ready");
 
@@ -140,7 +152,10 @@ export default function ReconcilePage() {
             <div style={{ fontWeight: 900 }}>
               Queue — {rows.length} held ·{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.carrier_unmatched || 0} carrier</span>,{" "}
+              <span style={{ color: "#b45309" }}>{data?.byReason?.provider_unmatched || 0} provider</span>,{" "}
+              <span style={{ color: "#b45309" }}>{data?.byReason?.case_type_unknown || 0} case-type</span>,{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.patient_ambiguous || 0} patient</span>,{" "}
+              <span style={{ color: "#b45309" }}>{data?.byReason?.tin_mismatch || 0} TIN</span>,{" "}
               <span style={{ color: "#b45309" }}>{data?.byReason?.data_quality || 0} data</span> ·{" "}
               <span style={{ color: "#166534" }}>{readyRows.length} ready</span>
             </div>
@@ -159,13 +174,82 @@ export default function ReconcilePage() {
                 {carrierGroups.map((g) => (
                   <CarrierRow key={g.carrierRaw} group={g} carriers={carriers} busy={busy}
                     onMap={async (entityId) => { const j = await post("/api/import/reconcile/resolve-carrier", { carrierRaw: g.carrierRaw, entityId }, "carrier:" + g.carrierRaw); if (j) { setMessage(`Mapped "${g.carrierRaw}" → ${j.entity.displayName}. ${j.readied} row(s) ready.`); await load(); } }}
-                    onAddNew={async (name) => { const j = await post("/api/import/reconcile/resolve-carrier", { carrierRaw: g.carrierRaw, newDisplayName: name }, "carrier:" + g.carrierRaw); if (j) { setMessage(`Added carrier "${j.entity.displayName}". ${j.readied} row(s) ready.`); await loadCarriers(); await load(); } }}
+                    onAddNew={async (name) => { const j = await post("/api/import/reconcile/resolve-carrier", { carrierRaw: g.carrierRaw, newDisplayName: name }, "carrier:" + g.carrierRaw); if (j) { setMessage(`Added carrier "${j.entity.displayName}". ${j.readied} row(s) ready.`); await loadRegistry("insurer_company"); await load(); } }}
                   />
                 ))}
               </tbody>
             </table>
           )}
         </div>
+
+        {/* PROVIDER holds — Owner-gated registry write (Carisk resolves provider from the sheet) */}
+        {providerGroups.length ? (
+          <div style={box}>
+            <div style={{ fontWeight: 900, marginBottom: 4 }}>Provider not in registry ({providerGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
+            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>For each raw provider: <strong>Assign Alias</strong> to an approved provider, or <strong>Add new</strong> provider. Owner-gated; applies to all future imports.</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr><th style={th}>Raw provider</th><th style={th}>Rows</th><th style={th}>Assign Alias (to approved provider)</th><th style={th}>or Add new provider</th></tr></thead>
+              <tbody>
+                {providerGroups.map((g) => (
+                  <CarrierRow key={g.providerRaw} group={{ carrierRaw: g.providerRaw, count: g.count }} carriers={providers} busy={busy} noun="provider"
+                    onMap={async (entityId) => { const j = await post("/api/import/reconcile/resolve-provider", { providerRaw: g.providerRaw, entityId }, "carrier:" + g.providerRaw); if (j) { setMessage(`Aliased "${g.providerRaw}" → ${j.entity.displayName}. ${j.readied} row(s) ready.`); await load(); } }}
+                    onAddNew={async (name) => { const j = await post("/api/import/reconcile/resolve-provider", { providerRaw: g.providerRaw, newDisplayName: name }, "carrier:" + g.providerRaw); if (j) { setMessage(`Added provider "${j.entity.displayName}". ${j.readied} row(s) ready.`); await loadRegistry("provider_client"); await load(); } }}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {/* CASE-TYPE holds — map unknown ClaimType */}
+        {caseTypeGroups.length ? (
+          <div style={box}>
+            <div style={{ fontWeight: 900, marginBottom: 4 }}>Unknown case type / ClaimType ({caseTypeGroups.reduce((a, c) => a + c.count, 0)} rows)</div>
+            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Map each unrecognized ClaimType to a case type. Applies to all rows with that ClaimType.</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr><th style={th}>Raw ClaimType</th><th style={th}>Rows</th><th style={th}>Set case type</th></tr></thead>
+              <tbody>
+                {caseTypeGroups.map((g) => {
+                  const row = caseTypeRowsByRaw(g.caseTypeRaw);
+                  return (
+                    <CaseTypeRow key={g.caseTypeRaw} group={g} busy={busy}
+                      onSet={async (caseType) => {
+                        if (!row) return;
+                        const j = await post("/api/import/reconcile/resolve-casetype", { rowId: row.id, caseType }, "casetype:" + g.caseTypeRaw);
+                        if (j) { setMessage(`Mapped ClaimType "${g.caseTypeRaw}" → ${caseType}. ${j.appliedTo} row(s) ready.`); await load(); }
+                      }}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {/* TIN mismatch holds */}
+        {tinRows.length ? (
+          <div style={box}>
+            <div style={{ fontWeight: 900, marginBottom: 4 }}>Provider TIN mismatch ({tinRows.length} rows)</div>
+            <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>The row&apos;s TIN differs from the provider&apos;s registry TIN. Accept the row&apos;s TIN (import) or dismiss the row.</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr><th style={th}>Patient</th><th style={th}>Provider</th><th style={th}>Row TIN</th><th style={th}>Detail</th><th style={th}>Action</th></tr></thead>
+              <tbody>
+                {tinRows.map((r) => (
+                  <tr key={r.id} style={{ borderTop: "1px solid #eef2f7" }}>
+                    <td style={{ padding: 6 }}>{r.patientName}</td>
+                    <td>{r.providerRaw}</td>
+                    <td>{r.providerTin}</td>
+                    <td style={{ color: "#b45309" }}>{r.reason}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <button type="button" style={{ ...btn("#16a34a", busy === "tin:" + r.id), marginRight: 8 }} disabled={busy === "tin:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-tin", { rowId: r.id, action: "accept" }, "tin:" + r.id); if (j) { setMessage("TIN accepted. Row ready."); await load(); } }}>Accept</button>
+                      <button type="button" style={btn("#dc2626", busy === "tin:" + r.id)} disabled={busy === "tin:" + r.id} onClick={async () => { const j = await post("/api/import/reconcile/resolve-tin", { rowId: r.id, action: "dismiss" }, "tin:" + r.id); if (j) { setMessage("Row dismissed."); await load(); } }}>Dismiss</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
 
         {/* PATIENT holds */}
         <div style={box}>
@@ -247,10 +331,11 @@ export default function ReconcilePage() {
   );
 }
 
-function CarrierRow({ group, carriers, busy, onMap, onAddNew }: {
+function CarrierRow({ group, carriers, busy, noun = "insurer", onMap, onAddNew }: {
   group: { carrierRaw: string; count: number };
   carriers: { id: string; displayName: string }[];
   busy: string;
+  noun?: string;
   onMap: (entityId: string) => void;
   onAddNew: (name: string) => void;
 }) {
@@ -260,7 +345,7 @@ function CarrierRow({ group, carriers, busy, onMap, onAddNew }: {
   const selectedName = carriers.find((c) => c.id === entityId)?.displayName || "";
   function assignAlias() {
     if (!entityId) return;
-    if (window.confirm(`Save "${group.carrierRaw}" as an alias of approved insurer "${selectedName}"?\n\nThis applies to all ${group.count} held row(s) and every future import.`)) {
+    if (window.confirm(`Save "${group.carrierRaw}" as an alias of approved ${noun} "${selectedName}"?\n\nThis applies to all ${group.count} held row(s) and every future import.`)) {
       onMap(entityId);
     }
   }
@@ -270,7 +355,7 @@ function CarrierRow({ group, carriers, busy, onMap, onAddNew }: {
       <td>{group.count}</td>
       <td>
         <select value={entityId} onChange={(e) => setEntityId(e.target.value)} style={{ height: 32, minWidth: 240, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px", marginRight: 6 }}>
-          <option value="">Select approved insurer…</option>
+          <option value="">Select approved {noun}…</option>
           {carriers.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}
         </select>
         <button type="button" style={btn(NAVY, working || !entityId)} disabled={working || !entityId} onClick={assignAlias}>Assign Alias</button>
@@ -278,6 +363,28 @@ function CarrierRow({ group, carriers, busy, onMap, onAddNew }: {
       <td>
         <input value={newName} onChange={(e) => setNewName(e.target.value)} style={{ height: 32, minWidth: 200, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px", marginRight: 6 }} />
         <button type="button" style={btn("#16a34a", working || !newName.trim())} disabled={working || !newName.trim()} onClick={() => onAddNew(newName.trim())}>Add new</button>
+      </td>
+    </tr>
+  );
+}
+
+function CaseTypeRow({ group, busy, onSet }: {
+  group: { caseTypeRaw: string; count: number };
+  busy: string;
+  onSet: (caseType: string) => void;
+}) {
+  const [choice, setChoice] = useState("Workers Compensation");
+  const working = busy === "casetype:" + group.caseTypeRaw;
+  return (
+    <tr style={{ borderTop: "1px solid #eef2f7" }}>
+      <td style={{ padding: 6, fontWeight: 600 }}>{group.caseTypeRaw || "(blank)"}</td>
+      <td>{group.count}</td>
+      <td>
+        <select value={choice} onChange={(e) => setChoice(e.target.value)} style={{ height: 32, minWidth: 220, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 8px", marginRight: 6 }}>
+          <option>Workers Compensation</option>
+          <option>No-Fault</option>
+        </select>
+        <button type="button" style={btn(NAVY, working)} disabled={working} onClick={() => onSet(choice)}>Set case type</button>
       </td>
     </tr>
   );

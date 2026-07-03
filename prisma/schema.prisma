@@ -632,6 +632,10 @@ model ProviderClientInfo {
   owner               String?
   providerGroup       String?
 
+  // Canonical provider Tax ID / EIN (normalized XX-XXXXXXX). One per provider (integrity rule).
+  // Owner-populated; when set, imports flag any row whose FacilityFedID differs (tin_mismatch hold).
+  tin String?
+
   retainerNFPrincipal    String?
   retainerNFInterest     String?
   retainerWCPrincipal    String?

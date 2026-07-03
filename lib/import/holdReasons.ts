@@ -6,15 +6,28 @@
 //   data_quality       -> accept the flagged value or dismiss the row
 
 export const HOLD_CARRIER_UNMATCHED = "carrier_unmatched";
+export const HOLD_PROVIDER_UNMATCHED = "provider_unmatched";
 export const HOLD_PATIENT_AMBIGUOUS = "patient_ambiguous";
+export const HOLD_CASE_TYPE_UNKNOWN = "case_type_unknown";
+export const HOLD_TIN_MISMATCH = "tin_mismatch";
 export const HOLD_DATA_QUALITY = "data_quality";
 
-export const HOLD_REASONS = [HOLD_CARRIER_UNMATCHED, HOLD_PATIENT_AMBIGUOUS, HOLD_DATA_QUALITY] as const;
+export const HOLD_REASONS = [
+  HOLD_CARRIER_UNMATCHED,
+  HOLD_PROVIDER_UNMATCHED,
+  HOLD_PATIENT_AMBIGUOUS,
+  HOLD_CASE_TYPE_UNKNOWN,
+  HOLD_TIN_MISMATCH,
+  HOLD_DATA_QUALITY,
+] as const;
 export type HoldReason = (typeof HOLD_REASONS)[number];
 
 export const HOLD_REASON_LABEL: Record<string, string> = {
   [HOLD_CARRIER_UNMATCHED]: "Carrier not in registry",
+  [HOLD_PROVIDER_UNMATCHED]: "Provider not in registry",
   [HOLD_PATIENT_AMBIGUOUS]: "Patient match ambiguous",
+  [HOLD_CASE_TYPE_UNKNOWN]: "Unknown case type (ClaimType)",
+  [HOLD_TIN_MISMATCH]: "Provider TIN mismatch",
   [HOLD_DATA_QUALITY]: "Data quality",
 };
 

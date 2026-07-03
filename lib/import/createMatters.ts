@@ -28,13 +28,20 @@ export type CreatableRow = {
   staged: StagedForCreate;
   carrierEntityId: string | null; // resolved carrier entity (null allowed but normally set)
   patientId: string | null; // null => create a NEW patient from staged.patient_name
+  // Per-row provider (Carisk resolves provider from the sheet). Falls back to the fn-level provider
+  // (Dow, where the operator picks one provider for the whole import).
+  providerEntityId?: string | null;
+  providerDisplayName?: string | null;
+  // Source-specific ClaimIndex columns (e.g. Carisk cic_number, status, place_of_service_*). Merged
+  // last, so a source can override defaults where it needs to.
+  extra?: Record<string, unknown>;
 };
 
 export type CreatedResult = { key: string | number; matterId: number; displayNumber: string; patientId: string | null }[];
 
 export async function createMattersFromStaged(
   rows: CreatableRow[],
-  provider: { id: string; displayName: string }
+  provider?: { id: string; displayName: string }
 ): Promise<CreatedResult> {
   if (!rows.length) return [];
 
@@ -56,6 +63,7 @@ export async function createMattersFromStaged(
 
   const nums = await allocateMatterNumbers(rows.length);
   const resolvedPatientId = (r: CreatableRow) => r.patientId ?? patientIdByName.get(r.staged.patient_name) ?? null;
+  const providerNameFor = (r: CreatableRow) => r.providerDisplayName ?? provider?.displayName ?? null;
 
   const data = rows.map((r, i) => ({
     matter_id: nums.matterIds[i],
@@ -64,8 +72,8 @@ export async function createMattersFromStaged(
     patient_name: r.staged.patient_name,
     patient_id: resolvedPatientId(r),
     insurer_name: r.carrierEntityId ? carrierNameById.get(r.carrierEntityId) ?? null : null,
-    client_name: provider.displayName,
-    provider_name: provider.displayName,
+    client_name: providerNameFor(r),
+    provider_name: providerNameFor(r),
     case_type: r.staged.case_type,
     service_type: r.staged.service_type,
     date_of_loss: r.staged.date_of_loss,
@@ -77,9 +85,12 @@ export async function createMattersFromStaged(
     final_status: "Open",
     matter_stage_name: BARSH_IMPORT_DEFAULT_MATTER_STATUS,
     raw_json: JSON.stringify(r.staged.raw ?? {}),
+    ...(r.extra ?? {}), // source-specific columns (Carisk), merged last
   }));
 
-  await prisma.claimIndex.createMany({ data });
+  // `extra` carries source-specific typed columns; cast past the strict createMany input shape.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await prisma.claimIndex.createMany({ data: data as any });
 
   return rows.map((r, i) => ({
     key: r.key,

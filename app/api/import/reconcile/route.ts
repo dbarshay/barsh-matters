@@ -66,7 +66,11 @@ export async function GET(request: Request) {
       providerName: details.providerName ?? null,
       patientName: s.patient_name ?? "",
       carrierRaw: s.carrier_raw ?? "",
+      providerRaw: s.provider_raw ?? "",
+      caseTypeRaw: s.case_type_raw ?? "",
+      providerTin: s.provider_tin ?? "",
       claim: s.claim_number_raw ?? "",
+      cic: s.cic_number ?? "",
       dosStart: s.dos_start ?? "",
       dosEnd: s.dos_end ?? "",
       amount: typeof s.claim_amount === "number" ? s.claim_amount : null,
@@ -80,22 +84,27 @@ export async function GET(request: Request) {
     if (r.reviewStatus) byStatus[r.reviewStatus] = (byStatus[r.reviewStatus] ?? 0) + 1;
   }
 
-  // Distinct unmatched carriers (for the carrier dialog) with counts.
+  // Distinct unmatched carriers / providers / unknown case-types (for their dialogs) with counts.
   const carrierGroups: Record<string, number> = {};
+  const providerGroups: Record<string, number> = {};
+  const caseTypeGroups: Record<string, number> = {};
   for (const r of shaped) {
-    if (r.holdReason === "carrier_unmatched" && r.reviewStatus === REVIEW_OPEN && r.carrierRaw) {
-      carrierGroups[r.carrierRaw] = (carrierGroups[r.carrierRaw] ?? 0) + 1;
-    }
+    if (r.reviewStatus !== REVIEW_OPEN) continue;
+    if (r.holdReason === "carrier_unmatched" && r.carrierRaw) carrierGroups[r.carrierRaw] = (carrierGroups[r.carrierRaw] ?? 0) + 1;
+    if (r.holdReason === "provider_unmatched" && r.providerRaw) providerGroups[r.providerRaw] = (providerGroups[r.providerRaw] ?? 0) + 1;
+    if (r.holdReason === "case_type_unknown" && r.caseTypeRaw) caseTypeGroups[r.caseTypeRaw] = (caseTypeGroups[r.caseTypeRaw] ?? 0) + 1;
   }
+  const toGroups = (m: Record<string, number>, key: string) =>
+    Object.entries(m).map(([k, count]) => ({ [key]: k, count })).sort((a, b) => (b.count as number) - (a.count as number));
 
   return NextResponse.json({
     ok: true,
     count: shaped.length,
     byReason,
     byStatus,
-    carrierGroups: Object.entries(carrierGroups)
-      .map(([carrierRaw, count]) => ({ carrierRaw, count }))
-      .sort((a, b) => b.count - a.count),
+    carrierGroups: toGroups(carrierGroups, "carrierRaw"),
+    providerGroups: toGroups(providerGroups, "providerRaw"),
+    caseTypeGroups: toGroups(caseTypeGroups, "caseTypeRaw"),
     rows: shaped,
   });
 }

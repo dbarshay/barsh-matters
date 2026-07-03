@@ -64,6 +64,7 @@ export default function DowImportPage() {
   const [detailSortDir, setDetailSortDir] = useState<1 | -1>(1);
   const [batchSortKey, setBatchSortKey] = useState("createdAt");
   const [batchSortDir, setBatchSortDir] = useState<1 | -1>(-1); // newest first by default
+  const [source, setSource] = useState<"dow" | "carisk">("dow");
   const [dragging, setDragging] = useState(false);
 
   function toggleBatchSort(key: string) {
@@ -231,7 +232,7 @@ export default function DowImportPage() {
     setConfirmResult(null);
     setUndoResult(null);
     try {
-      const r = await fetch("/api/import/dow/preview", {
+      const r = await fetch(`/api/import/${source}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fileBase64 }),
@@ -247,15 +248,18 @@ export default function DowImportPage() {
   }
 
   async function runConfirm() {
-    if (!fileBase64 || !providerId) return;
+    if (!fileBase64) return;
+    if (source === "dow" && !providerId) return;
     if (!window.confirm("Create matters for all 'ready' rows? You can undo this import afterward.")) return;
     setBusy("confirm");
     setError("");
     try {
-      const r = await fetch("/api/import/dow/confirm", {
+      const payload: Record<string, unknown> = { fileBase64, sourceFile: fileName };
+      if (source === "dow") payload.providerEntityId = providerId;
+      const r = await fetch(`/api/import/${source}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileBase64, providerEntityId: providerId, sourceFile: fileName }),
+        body: JSON.stringify(payload),
       });
       const j = await r.json();
       if (!j.ok) setError(j.error || "Confirm failed.");
@@ -348,7 +352,24 @@ export default function DowImportPage() {
 
       <div style={{ width: "100%", maxWidth: "100%", margin: 0, boxSizing: "border-box" }}>
         <div style={box}>
-          <div style={{ fontWeight: 900, marginBottom: 8 }}>1. Upload provider sheet (.xlsx)</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {(["dow", "carisk"] as const).map((src) => {
+              const on = source === src;
+              return (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => { setSource(src); setPreview(null); setConfirmResult(null); setUndoResult(null); setError(""); }}
+                  style={{ height: 34, padding: "0 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, cursor: "pointer", border: `1px solid ${on ? NAVY : "#cbd5e1"}`, background: on ? NAVY : "#fff", color: on ? "#fff" : MUTED }}
+                >
+                  {src === "dow" ? "Dow (provider sheet)" : "Carisk (searchResults)"}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>
+            1. Upload {source === "dow" ? "Dow provider sheet" : "Carisk export"} (.xlsx)
+          </div>
           <div
             onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
             onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
@@ -413,23 +434,37 @@ export default function DowImportPage() {
             <div style={{ fontWeight: 900, marginBottom: 8 }}>2. Preview — {s.total} rows</div>
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap", color: MUTED, fontWeight: 700 }}>
               <span style={{ color: "#16a34a" }}>Ready: {s.ready}</span>
-              <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, patient {s.heldPatient ?? 0}, data {s.heldDataQuality ?? 0})</span>
+              {source === "carisk" ? (
+                <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, provider {s.heldProvider ?? 0}, case-type {s.heldCaseType ?? 0}, patient {s.heldPatient ?? 0}, TIN {s.heldTin ?? 0}, data {s.heldDataQuality ?? 0})</span>
+              ) : (
+                <span style={{ color: "#dc2626" }}>Held: {s.held} (carrier {s.heldCarrier ?? 0}, patient {s.heldPatient ?? 0}, data {s.heldDataQuality ?? 0})</span>
+              )}
               <span style={{ color: "#dc2626" }}>Errors: {s.errors}</span>
               <span>Duplicates (existing): {s.duplicatesExisting}</span>
               <span>Duplicates (in file): {s.duplicatesInFile}</span>
-              <span>New patients: {s.newPatients}</span>
+              {source === "carisk" ? <span>Ignored (Submitted): {s.ignored ?? 0}</span> : null}
+              {source === "carisk" ? <span>To report (Saved Incomplete): {s.toReport ?? 0}</span> : null}
+              {source === "dow" ? <span>New patients: {s.newPatients}</span> : null}
             </div>
 
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontWeight: 900, marginBottom: 6 }}>3. Provider (applies to every row) — Case Type = No-Fault</div>
-              <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ height: 38, minWidth: 340, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 10px" }}>
-                <option value="">Select provider…</option>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>{p.displayName}</option>
-                ))}
-              </select>
+              {source === "dow" ? (
+                <>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>3. Provider (applies to every row) — Case Type = No-Fault</div>
+                  <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ height: 38, minWidth: 340, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 10px" }}>
+                    <option value="">Select provider…</option>
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>{p.displayName}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <div style={{ fontWeight: 700, marginBottom: 6, color: MUTED }}>
+                  Provider &amp; case type come from each Carisk row (FacilityName / ClaimType) — resolved per row.
+                </div>
+              )}
               <div style={{ marginTop: 12 }}>
-                <button type="button" style={btn("#16a34a", !providerId || busy === "confirm" || !!confirmResult)} disabled={!providerId || busy === "confirm" || !!confirmResult} onClick={runConfirm}>
+                <button type="button" style={btn("#16a34a", (source === "dow" && !providerId) || busy === "confirm" || !!confirmResult)} disabled={(source === "dow" && !providerId) || busy === "confirm" || !!confirmResult} onClick={runConfirm}>
                   {confirmResult ? "Imported ✓" : busy === "confirm" ? "Creating…" : `Confirm — create ${s.ready} matters`}
                 </button>
                 {confirmResult ? (

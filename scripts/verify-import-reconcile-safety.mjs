@@ -52,7 +52,7 @@ must("carrier resolve creates alias", carrier, "referenceAlias");
 must("carrier resolve can add entity", carrier, "referenceEntity.upsert");
 
 // Commit safety invariants: re-resolve carrier, never auto-create ambiguous patient, use shared creator.
-must("commit re-resolves carrier", commit, "resolveCarrier(carrierRaw)");
+must("commit re-resolves carrier", commit, "resolveCarrier(String(staged.carrier_raw");
 must("commit re-holds ambiguous patient", commit, "HOLD_PATIENT_AMBIGUOUS");
 must("commit re-checks data quality", commit, "dataQualityHold(staged)");
 must("commit uses shared creator", commit, "createMattersFromStaged");
