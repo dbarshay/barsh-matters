@@ -30,10 +30,9 @@ hand-keyed single-matter creation + manual document handling.
   - **Category = BM metadata**, not a Clio folder. In the **Clio repository, documents are stored
     FLAT under the matter's folder** (`…/BRL_YYYYNNNNN/` for individual, or the lawsuit-number folder)
     — **NO category subfolders** beneath the matter-number folder.
-  - **PINNED — folder structure to be redesigned.** The 17 folders below are a provisional FLAT
-    list; user wants a **more complex (nested) folder structure**. Revisit before building the
-    categorization module. (Clio stays flat under the matter folder regardless; the complexity is the
-    BM-side organization.)
+  - **SUPERSEDED → see `docs/document-folder-structure.md`** for the authoritative nested folder tree
+    (4 masters, subfolders, all 17 terminal folders with title picklists, prompts, freehand flags).
+    The flat list below is historical. (Clio stays flat under the matter folder; the tree is BM-side.)
   - **Document-folder taxonomy (17, provisional) — BM-wide, category = metadata (flat in Clio):**
     - _Intake-scan targets_ (scanning step drops here): 1) Bill (CMS-1500) · 2) Medical Records ·
       3) Denial / EOB / EOR · 4) Assignment of Benefits · 5) Verification Requests ·

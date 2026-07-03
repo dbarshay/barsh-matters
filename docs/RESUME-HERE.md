@@ -9,12 +9,18 @@ we're speccing fully before writing any code, in a column-by-column Q&A.
 ## Read these (authoritative design docs)
 - `docs/carisk-data-dictionary.md` — **Carisk** path (clearinghouse export) — ✅ DONE (41 cols)
 - `docs/dow-data-dictionary.md` — **Dow / provider sheet** path — ✅ DONE (8 cols)
-- `docs/manual-creation-intake.md` — **Manual creation (#3)** — 🚧 IN PROGRESS (paused at folders)
+- `docs/manual-creation-intake.md` — **Manual creation (#3)** — 🚧 IN PROGRESS
+- `docs/document-folder-structure.md` — **Document folders + title picklists** — ✅ tree + all 17
+  terminal-folder title lists defined (a few refinements open: label formats, intake-scan targets,
+  structured-data capture, `DocumentTemplate` target-folder)
 - `docs/agent-orientation.md` — project rules + import summary (section "Matter Import module")
 
 ## Where we stopped
-Manual path **#3**, at the **document-folder structure**. You said to pin it because you want a
-**complex (nested) folder structure** to replace the provisional flat 17-folder list.
+The **document-folder structure is designed** — `docs/document-folder-structure.md` (4 master folders,
+nested subfolders, all 17 terminal folders with title picklists, prompts, freehand flags). Remaining
+folder refinements: exact label formats, which folders are intake-scan targets, storing structured
+fields (award amounts/outcomes, payment splits) as queryable data, and a per-template **target
+folder** on `DocumentTemplate`. Manual path #3 still has its other open items.
 
 ## Starting a fresh session (e.g., from your home machine)
 1. Open a new Cowork session with the **`clio-lawsuit-aggregator` folder connected**.
@@ -23,11 +29,11 @@ Manual path **#3**, at the **document-folder structure**. You said to pin it bec
 3. **Re-attach the two sample spreadsheets ONLY IF we need to inspect raw data** (e.g., more column
    work): `searchResults (3).xlsx` (Carisk) and `May 2026.xlsx` (Dow). These are **not in the repo on
    purpose** — they contain patient PHI. Keep your own copies; drag them into the chat when needed.
-   (Not needed for the folder-structure design, which is the immediate next step.)
+   (Not needed for the folder refinements or the remaining manual-path items.)
 
-## To resume the immediate next step, tell Claude:
-> "Continue the matter-import design. Resume manual-creation path #3 at the document-folder
-> structure — I want to design the complex nested folder structure."
+## To resume, tell Claude:
+> "Continue the matter-import design. The document-folder structure is done — pick up the remaining
+> manual-path #3 items, or the folder refinements, from the design docs."
 
 ## Next up — manual path #3 remaining (from `manual-creation-intake.md` › Open questions)
 1. **Complex document-folder structure** (the pinned item)
