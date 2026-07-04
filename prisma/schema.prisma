@@ -1191,3 +1191,43 @@ model AdminUserPermissionOverride {
   @@index([action])
 }
 
+// Persisted OCR extraction result (from lib/ocr). Provider-agnostic and format-agnostic:
+// stores full text + generic key/value pairs + tables, with NO assumption about document
+// layout (a bill may be HCFA-1500, UB-04, a letterhead invoice, an itemized statement, etc.).
+// Consumed by both intake paths (import-intake matter creation) and matter-document filing;
+// `text` powers future content search (document-folder-structure.md enhancement #5).
+model OcrExtraction {
+  id String @id @default(cuid())
+
+  // Source linkage — forward-compatible; the folder/document models are not built yet.
+  sourceType          String  @default("adhoc") // import_intake | matter_document | payment_modal | adhoc
+  matterId            Int?
+  matterDisplayNumber String?
+  clioDocumentId      String? // set once the underlying file is finalized/stored in Clio
+
+  // File identity (sha256 enables dedupe / idempotency / linking to the stored file)
+  fileName    String?
+  contentType String?
+  byteSize    Int?
+  fileHash    String
+
+  // Extraction result (matches the OcrExtractionResult shape in lib/ocr/types.ts)
+  provider       String // azure-document-intelligence | stub | future vendors
+  model          String // prebuilt-layout | prebuilt-read | future prebuilt/custom models
+  mode           String // read | layout
+  pageCount      Int    @default(0)
+  meanConfidence Float?
+  text           String // full OCR text (PHI) — Neon is HIPAA-covered under the DB BAA
+  keyValues      Json // OcrKeyValue[]
+  tables         Json? // OcrTable[] (optional; can be large)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([matterId])
+  @@index([matterDisplayNumber])
+  @@index([fileHash])
+  @@index([sourceType])
+  @@index([clioDocumentId])
+}
+

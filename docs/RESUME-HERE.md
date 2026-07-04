@@ -91,9 +91,28 @@ npx prisma generate
   Run e.g. `npm run verify:other-import-safety`. Import proofs: `dow-import-*`, `carisk-import-safety`,
   `manual-create-safety`, `other-import-safety`, `import-reconcile-safety`.
 
+## OCR engine — foundation BUILT (2026-07-04)
+The shared, provider-agnostic OCR engine is built and proven against live Azure. It is the single
+extraction layer BOTH consumers use (import-intake matter creation AND matter-document filing).
+- Code: `lib/ocr/` — `extractDocument(input, mode)` returns `{ text, keyValues, tables, meanConfidence }`.
+  Provider interface + **Azure Document Intelligence** adapter (REST, no SDK; `prebuilt-read` for cheap
+  bulk text, `prebuilt-layout` + `features=keyValuePairs` for structured pre-fill) + offline `stub`.
+  Format-AGNOSTIC on purpose (bills are HCFA-1500 / UB-04 / letterhead / itemized — no fixed template).
+- Provider = Azure (Microsoft BAA auto-covers it). Env in `.env.local`: `AZURE_DOCINTEL_ENDPOINT`,
+  `AZURE_DOCINTEL_KEY` (resource `barsh-matters-docintel`, East US, Standard S0). Optional `OCR_PROVIDER=stub`.
+- Persistence: `OcrExtraction` table (migration `20260704193929_add_ocr_extraction`). Server-only writer
+  `persistExtraction` in `lib/ocr/persist.ts`; DB-free row builder in `lib/ocr/persistData.ts`.
+- Smoke test: `npx tsx scripts/ocr-smoke-test.ts <file> [read|layout] [--save]`.
+- Cost model at scale: run cheap `read` on everything (full-text search); run `layout` only on doc
+  types needing structured pre-fill. Azure Layout ($10/1k) is ~3-5x cheaper than Google/AWS for forms.
+- STILL TO BUILD: per-consumer **field-mapping profiles** (map generic keyValues/tables/text -> matter
+  fields SEMANTICALLY, not by form position); the **VERIFY UI** with confidence highlighting (yellow=low,
+  green=high, never auto-commit); wiring into the import-intake path and the (unbuilt) folder-drop path;
+  later, per-format prebuilt/custom models + full-text content search over `OcrExtraction.text`.
+
 ## What's left (not built)
-- **Document OCR module** — scan a bill/claim form, OCR-extract, drag-into-category, Clio-flat storage.
-  Big workstream; see `docs/document-folder-structure.md` for the folder taxonomy.
+- **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,
+  and the drag-into-folder flow. See `docs/document-folder-structure.md` for the folder taxonomy.
 - **Carisk Management Report** — the persistent "Saved Incomplete" tracker (keyed by CIC#) + weekly
   scheduled email. Currently those rows are just routed to a `to_report` outcome and counted.
 - **RBAC activation** — the Owner/operator gating is designed; import writes are gated by the flag +
