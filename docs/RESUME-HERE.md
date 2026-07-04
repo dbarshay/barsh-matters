@@ -80,12 +80,12 @@ npx prisma generate
 - The agent's Linux sandbox **cannot run git or reach Neon**, and `npx prisma generate` fails there
   (engine download blocked). **You (the user) run all git + prisma commands** on your Mac; the results
   propagate to the shared `node_modules` mount the sandbox sees.
-- Migration history is now clean (single `0_init` baseline, 2026-07-04). The old broken migration is
-  gone, so shadow replay is no longer poisoned. BUT `migrate dev`/`migrate diff --from-migrations`
-  still need a `datasource.shadowDatabaseUrl` in `prisma.config.ts` because **Neon won't auto-create a
-  shadow DB**. Until that's wired, change schema with `db push` then, if you want a tracked migration,
-  generate one with `prisma migrate diff --from-config-datasource --to-schema` and `migrate resolve
-  --applied`. To validate no drift anytime: `prisma migrate diff --from-config-datasource --to-schema
+- Migration history is now clean (single `0_init` baseline, 2026-07-04) and `migrate dev` works on
+  Neon. `prisma.config.ts` reads an optional `SHADOW_DATABASE_URL` (env, in `.env.local`, git-ignored)
+  pointing at a dedicated throwaway Neon branch named `shadow` — needed because **Neon won't
+  auto-create a shadow DB**. Each machine that wants `migrate dev` must set its own `SHADOW_DATABASE_URL`
+  (use the branch's DIRECT/unpooled connection string). Without it, schema work falls back to `db push`.
+  To validate no drift anytime: `prisma migrate diff --from-config-datasource --to-schema
   prisma/schema.prisma --exit-code` (0 = clean).
 - Verifiers are **source-grep `.mjs` proofs** registered in `package.json` (no runtime TS test runner).
   Run e.g. `npm run verify:other-import-safety`. Import proofs: `dow-import-*`, `carisk-import-safety`,
@@ -98,8 +98,6 @@ npx prisma generate
   scheduled email. Currently those rows are just routed to a `to_report` outcome and counted.
 - **RBAC activation** — the Owner/operator gating is designed; import writes are gated by the flag +
   (for registry writes) the admin cookie. Wire real roles in.
-- **(Optional) shadow DB for `migrate dev`** — add a `shadowDatabaseUrl` (throwaway Neon branch/DB) so
-  `migrate dev` runs on Neon. Not required; `db push` + baseline diff already covers schema changes.
 
 ## Authoritative design docs
 - `docs/dow-data-dictionary.md` · `docs/carisk-data-dictionary.md` · `docs/manual-creation-intake.md`
