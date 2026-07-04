@@ -38,6 +38,14 @@ if (!databaseUrl) {
   throw new Error("No database URL found for Prisma.");
 }
 
+// Optional shadow database used by `prisma migrate dev` / `migrate diff --from-migrations`.
+// Neon cannot auto-create a shadow DB, so point this at a dedicated empty Neon branch/database
+// (use its DIRECT / unpooled connection string). Prisma fully resets the shadow DB on every run,
+// so it must be a throwaway — never your real data. Left unset, schema work uses `db push` instead.
+const shadowDatabaseUrl =
+  process.env.SHADOW_DATABASE_URL_UNPOOLED ||
+  process.env.SHADOW_DATABASE_URL;
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -45,5 +53,6 @@ export default defineConfig({
   },
   datasource: {
     url: databaseUrl,
+    ...(shadowDatabaseUrl ? { shadowDatabaseUrl } : {}),
   },
 });
