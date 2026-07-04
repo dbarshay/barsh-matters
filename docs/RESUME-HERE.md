@@ -57,20 +57,21 @@ the UI shows a disabled message). **Clio = document storage only** — imports n
   never auto-links on a fuzzy name; new patients auto-create; a patient never persists without a matter
   (undo + `/api/admin/patients/cleanup-orphans` enforce this).
 
-## ⚠️ Pending on any machine that pulls latest
-There is an **un-pushed schema change**: `ImportMapping` (saved column-mapping templates) and
-`ProviderClientInfo.tin`. After `git pull`, run:
+## Migration history was baselined (2026-07-04)
+The whole `prisma/migrations` folder was squashed to a single `0_init` baseline that reproduces the
+current schema exactly (verified: live Neon DB vs `schema.prisma` = "No difference detected"). This
+removed a broken backfill migration and folded in all the old `db push`-only drift (`ImportMapping`,
+`MatterLocalField`, `ProviderClientInfo.tin`). `_prisma_migrations` was reset to the single applied
+baseline. After a `git pull` on any machine, just:
 ```
-npx prisma db push        # applies ImportMapping + tin to Neon (additive, safe)
-npx prisma generate       # regenerates the client
-npx tsc --noEmit          # should be 0 errors once generated
+npx prisma generate
 ```
-(Neon is shared, so a push from any machine covers the DB; every machine still needs `generate`.)
+(Neon is shared, so the DB already matches; every machine only needs to regenerate the client.)
 
 ## Home-machine setup (fresh clone or pull)
 1. Connect the **`clio-lawsuit-aggregator` folder** in Cowork.
 2. `git pull origin main`
-3. `npm install` (if needed) → `npx prisma generate` → `npx prisma db push` (see above)
+3. `npm install` (if needed) → `npx prisma generate` (schema is baselined; no `db push` needed)
 4. `.env.local` must have **`BARSH_IMPORT_ENABLED=1`** to use imports, plus the (rotated) DB/Graph/
    Twilio/admin secrets. Never paste `.env*` into a chat — use `grep VAR .env.local`.
 5. `npm run dev` → hard-refresh.
@@ -79,9 +80,13 @@ npx tsc --noEmit          # should be 0 errors once generated
 - The agent's Linux sandbox **cannot run git or reach Neon**, and `npx prisma generate` fails there
   (engine download blocked). **You (the user) run all git + prisma commands** on your Mac; the results
   propagate to the shared `node_modules` mount the sandbox sees.
-- Use **`npx prisma db push`**, NOT `prisma migrate dev` — a pre-existing broken migration
-  (`20260515105500_add_claimindex_treating_provider`) breaks shadow-DB replay. (Migration-history
-  repair is a separate deferred task.)
+- Migration history is now clean (single `0_init` baseline, 2026-07-04). The old broken migration is
+  gone, so shadow replay is no longer poisoned. BUT `migrate dev`/`migrate diff --from-migrations`
+  still need a `datasource.shadowDatabaseUrl` in `prisma.config.ts` because **Neon won't auto-create a
+  shadow DB**. Until that's wired, change schema with `db push` then, if you want a tracked migration,
+  generate one with `prisma migrate diff --from-config-datasource --to-schema` and `migrate resolve
+  --applied`. To validate no drift anytime: `prisma migrate diff --from-config-datasource --to-schema
+  prisma/schema.prisma --exit-code` (0 = clean).
 - Verifiers are **source-grep `.mjs` proofs** registered in `package.json` (no runtime TS test runner).
   Run e.g. `npm run verify:other-import-safety`. Import proofs: `dow-import-*`, `carisk-import-safety`,
   `manual-create-safety`, `other-import-safety`, `import-reconcile-safety`.
@@ -93,7 +98,8 @@ npx tsc --noEmit          # should be 0 errors once generated
   scheduled email. Currently those rows are just routed to a `to_report` outcome and counted.
 - **RBAC activation** — the Owner/operator gating is designed; import writes are gated by the flag +
   (for registry writes) the admin cookie. Wire real roles in.
-- **Migration-history repair** — reconcile the drift created by using `db push`.
+- **(Optional) shadow DB for `migrate dev`** — add a `shadowDatabaseUrl` (throwaway Neon branch/DB) so
+  `migrate dev` runs on Neon. Not required; `db push` + baseline diff already covers schema changes.
 
 ## Authoritative design docs
 - `docs/dow-data-dictionary.md` · `docs/carisk-data-dictionary.md` · `docs/manual-creation-intake.md`

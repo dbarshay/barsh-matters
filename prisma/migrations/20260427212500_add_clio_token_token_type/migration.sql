@@ -1,2 +1,0 @@
-ALTER TABLE "ClioToken"
-ADD COLUMN IF NOT EXISTS "tokenType" TEXT NOT NULL DEFAULT 'bearer';
