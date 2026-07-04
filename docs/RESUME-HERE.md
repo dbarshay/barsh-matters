@@ -1,14 +1,16 @@
-# RESUME HERE — Matter Import (build handoff)
+# RESUME HERE — Barsh Matters (build handoff)
 
 > ## ⚠️ BEFORE GO-LIVE — HIPAA + security (do not skip)
 > The app will hold **PHI** (right now only fictitious test data). Before real patient data lands:
 > - **Signed BAAs across the stack:** Neon (DB — enable HIPAA org-level, Scale plan), Vercel (hosting),
->   Microsoft 365 (native email), Clio (documents), and the future OCR provider.
+>   Microsoft 365 (native email), Clio (documents), and OCR = **Azure AI Document Intelligence**
+>   (auto-covered under the Microsoft HIPAA BAA via Product Terms — confirm scope, no separate contract).
 > - **Access controls:** turn on RBAC (currently designed, not enforced), audit logging, encryption at
 >   rest/in transit, breach plan, enforce 2FA.
-> - **Rotate ALL credentials** before go-live — Neon password, Vercel env, Microsoft Graph client
->   secret, Clio tokens/secret/webhook, Twilio auth token, 2FA break-glass, admin password/session
->   token, any dev API keys. Remove test/break-glass creds.
+> - **Rotate ALL credentials** before go-live — Neon password, `SHADOW_DATABASE_URL`, Vercel env,
+>   Microsoft Graph client secret, **Azure Document Intelligence key**, Clio tokens/secret/webhook,
+>   Twilio auth token, 2FA break-glass, admin password/session token, any dev API keys. Remove
+>   test/break-glass creds.
 > - **⚠️ One-time cleanup:** a full `.env.local` was pasted into a chat during development, so those
 >   specific secrets must be treated as compromised and **rotated now**, not just at go-live.
 
@@ -37,7 +39,9 @@ the UI shows a disabled message). **Clio = document storage only** — imports n
      values + conflict guard) → save/load **named mapping templates** → preview → confirm. Provider
      is always an operator **pick** (never parsed); case type is pick-one or map-a-column. Adapter:
      `lib/import/otherAdapter.ts`.
-   - **Document OCR** — coming soon (scan a bill/claim form). NOT built yet.
+   - **Document OCR** — shared extraction **engine is BUILT** (see "OCR engine" section below);
+     the import-intake *consumer* (field-mapping profile + verify UI that creates a matter from a
+     scanned bill/claim form) is NOT wired yet.
 
 ### Shared pipeline (all sources)
 - **Preview (read-only) → Confirm (write) → guarded Undo.** Each import records a full per-row
@@ -68,13 +72,31 @@ npx prisma generate
 ```
 (Neon is shared, so the DB already matches; every machine only needs to regenerate the client.)
 
-## Home-machine setup (fresh clone or pull)
-1. Connect the **`clio-lawsuit-aggregator` folder** in Cowork.
-2. `git pull origin main`
-3. `npm install` (if needed) → `npx prisma generate` (schema is baselined; no `db push` needed)
-4. `.env.local` must have **`BARSH_IMPORT_ENABLED=1`** to use imports, plus the (rotated) DB/Graph/
-   Twilio/admin secrets. Never paste `.env*` into a chat — use `grep VAR .env.local`.
+## Setting up on a DIFFERENT / new machine (read this first when picking up elsewhere)
+The **GitHub remote was renamed to `barsh-matters`** (2026-07-04). The local folder + npm package are
+still named `clio-lawsuit-aggregator` (legacy, cosmetic). Node **v24**, `tsx` is a dev dep.
+
+1. **Repo** — clone `git@github.com:dbarshay/barsh-matters.git` (or if the folder already exists,
+   `git remote set-url origin git@github.com:dbarshay/barsh-matters.git` then `git pull origin main`).
+   In Cowork, connect the project folder.
+2. `npm install`
+3. `npx prisma generate` — schema is baselined; **no `db push` / no migrate needed** (Neon is shared and
+   already matches). Verify no drift: `npx prisma migrate diff --from-config-datasource --to-schema
+   prisma/schema.prisma --exit-code` (0 = clean).
+4. **Recreate `.env.local` — it is git-ignored, so a new machine has NONE of these.** Transfer the
+   values securely (password manager / secure copy from another machine); **never paste `.env*` into a
+   chat**. Required keys:
+   - **Database (Neon):** `DATABASE_URL` and/or `POSTGRES_DATABASE_URL_UNPOOLED` / `POSTGRES_URL_NON_POOLING`
+   - **Shadow DB (only if you want `migrate dev` on this machine):** `SHADOW_DATABASE_URL` = the `shadow`
+     Neon branch's DIRECT/unpooled connection string. Optional; without it, use `db push` for schema work.
+   - **OCR (Azure):** `AZURE_DOCINTEL_ENDPOINT`, `AZURE_DOCINTEL_KEY` (resource `barsh-matters-docintel`,
+     East US, Standard S0). Optional: `AZURE_DOCINTEL_API_VERSION`, `OCR_PROVIDER=stub` to force offline stub.
+   - **Imports:** `BARSH_IMPORT_ENABLED=1`
+   - **Microsoft Graph** (email), **Clio** (tokens/secret/webhook), **Twilio**, **admin** secrets — same
+     as the other machine. `grep -o '^[A-Z_]*=' .env.local` on the source machine lists the key names.
 5. `npm run dev` → hard-refresh.
+6. Sanity-check OCR wiring: `npx tsx scripts/ocr-smoke-test.ts <some.pdf> layout` (add `--save` to also
+   write an `OcrExtraction` row). Readiness should print `"ready":true,"provider":"azure"`.
 
 ## Sandbox / workflow notes (for the agent)
 - The agent's Linux sandbox **cannot run git or reach Neon**, and `npx prisma generate` fails there
@@ -128,5 +150,9 @@ inspection is needed. Keep your own copies.
 
 ## To resume, tell Claude:
 > "Read `docs/RESUME-HERE.md`, then continue. The import module (Dow, Carisk, Manual, Other
-> Spreadsheet) is built and flag-gated. Pick up [Document OCR | Carisk Management Report | RBAC | your
-> next item]."
+> Spreadsheet) is built and flag-gated, and the shared **OCR extraction engine** (`lib/ocr/`, Azure
+> Document Intelligence) is built and proven. Pick up [OCR field-mapping profile + verify UI |
+> Carisk Management Report | RBAC | your next item]."
+
+_Last updated 2026-07-04: added the OCR engine foundation; baselined migrations + wired shadow DB for
+`migrate dev`; remote renamed to `barsh-matters`._
