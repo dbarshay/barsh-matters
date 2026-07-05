@@ -1,0 +1,102 @@
+// Label synonyms per intake field. Ordered most-specific-first; the matcher takes the first
+// key/value whose label matches. Kept format-agnostic — draws from HCFA-1500 box labels, UB-04,
+// and common provider-invoice wording. Tune these as real bill formats are tested.
+//
+// NOTE on patient vs insured: on many no-fault bills the patient IS the insured, but we prefer the
+// explicit "patient" labels for patientName and keep "insured" labels for the insurer/policy fields.
+
+export const FIELD_SYNONYMS: Record<string, string[]> = {
+  patientName: [
+    "patient's name",
+    "patient name",
+    "name of patient",
+    "pt name",
+    "patient",
+  ],
+  providerName: [
+    "billing provider",
+    "rendering provider",
+    "provider name",
+    "facility name",
+    "provider of service",
+    "supplier",
+    "physician name",
+    "billed by",
+    "provider",
+  ],
+  insurerName: [
+    "insurance plan name or program name",
+    "insurance plan name",
+    "insurance company",
+    "name of insurer",
+    "insurer",
+    "insurance carrier",
+    "carrier",
+    "payer",
+    "plan name",
+    "insurance",
+  ],
+  claimNumber: [
+    "claim number",
+    "claim no",
+    "claim #",
+    "claim id",
+    "insurer claim number",
+    "file number",
+    "claim",
+  ],
+  policyNumber: [
+    // Ordered specific-first. Bare "id number" was removed — it matched the provider's
+    // "FEDERAL TAX ID. NUMBER" (box 25 TIN), which is NOT the patient's policy number.
+    "insured's policy group or feca number",
+    "policy group or feca number",
+    "insured's id number",
+    "insured's i d number",
+    "policy number",
+    "policy no",
+    "policy #",
+    "member id",
+    "subscriber id",
+    "certificate number",
+    "feca number",
+  ],
+  dateOfLoss: [
+    "date of loss",
+    "date of accident",
+    "accident date",
+    "date of current illness injury or pregnancy",
+    "date of current illness",
+    "onset date",
+    "injury date",
+    "dol",
+  ],
+  // DOS is usually a From/To pair; these match single-cell labels. Table scanning covers the grid.
+  dosStart: [
+    "date of service from",
+    "service date from",
+    "dates of service from",
+    "date of service",
+    "service date",
+    "dos from",
+    "from",
+  ],
+  dosEnd: [
+    "date of service to",
+    "service date to",
+    "dates of service to",
+    "dos to",
+    "to",
+  ],
+  claimAmount: [
+    "total charge",
+    "total charges",
+    "balance due",
+    "amount due",
+    "total amount",
+    "total due",
+    "charges",
+    "billed amount",
+    "amount billed",
+    "total",
+  ],
+};

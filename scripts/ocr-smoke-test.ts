@@ -38,16 +38,19 @@ function guessContentType(file: string): string {
 async function main() {
   const args = process.argv.slice(2);
   const save = args.includes("--save");
+  const doMap = args.includes("--map");
   const positional = args.filter((a) => !a.startsWith("--"));
   const [filePath, modeArg] = positional;
   if (!filePath) {
-    console.error("Usage: npx tsx scripts/ocr-smoke-test.ts <path-to-file> [read|layout] [--save]");
+    console.error(
+      "Usage: npx tsx scripts/ocr-smoke-test.ts <path-to-file> [read|layout] [--map] [--save]",
+    );
     process.exit(1);
   }
   const mode = modeArg === "read" ? "read" : "layout";
 
   // Imported after env load; config reads process.env at call time regardless.
-  // This barrel is DB-free, so it imports cleanly in a plain script (no server-only guard).
+  // These barrels are DB-free, so they import cleanly in a plain script (no server-only guard).
   const { extractDocument, getOcrReadiness, getOcrProvider } = await import("@/lib/ocr");
 
   const readiness = getOcrReadiness();
@@ -80,6 +83,19 @@ async function main() {
   console.log("tables       :", result.tables.length);
   console.log("\n--- text preview (first 800 chars) ---");
   console.log(result.text.slice(0, 800));
+
+  if (doMap) {
+    const { mapBillToIntakeFields } = await import("@/lib/ocr/mapping");
+    const mapped = mapBillToIntakeFields(result);
+    console.log("\n=== MAPPED INTAKE FIELDS (operator verifies; case type = operator pick) ===");
+    for (const [field, mf] of Object.entries(mapped)) {
+      const conf = mf.confidence == null ? "n/a" : mf.confidence.toFixed(2);
+      const flag = mf.value == null ? "  (missing)" : mf.confidence != null && mf.confidence < 0.5 ? "  ⚠ low" : "";
+      console.log(
+        `   ${field.padEnd(13)} = ${String(mf.value ?? "—").padEnd(24)} conf ${conf}  [${mf.source ?? "-"}]${flag}`,
+      );
+    }
+  }
 
   if (save) {
     // Persist via a direct pg-adapter PrismaClient (mirrors lib/prisma.ts) so we avoid the
