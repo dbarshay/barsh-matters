@@ -142,10 +142,33 @@ extraction layer BOTH consumers use (import-intake matter creation AND matter-do
   - `ocr-samples/` is git-ignored (PHI). The cache lets mapping be tuned without the original forms.
 - STILL TO BUILD: the **VERIFY UI** (upload → OCR → prefilled form with confidence highlighting
   yellow<0.5/green≥0.5/red=missing → operator corrects, picks case type, resolves provider/insurer →
-  create matter); wiring into the import-intake path; the (unbuilt) folder-drop consumer; later,
+  create matter); wiring into the import-intake path; the folder-drop consumer (Phase 4 below); later,
   per-format prebuilt/custom models + full-text content search over `OcrExtraction.text`.
   OPEN DECISION: verify-UI submit path = direct `createMatters` vs route through the import
   preview/reconcile pipeline (reuse carrier/patient resolution + dedupe). Not yet decided.
+
+## Document Folder Structure feature — Phases 1–2 BUILT (2026-07-05)
+Big workstream from `docs/document-folder-structure.md`. Clio stays the FLAT file vault; BM owns the
+nested tree as metadata (invariant — never create Clio subfolders). Phased build:
+- **Phase 1 DONE — foundation.** `lib/documents/folderTaxonomy.ts`: the fixed tree in code (4 branches,
+  17 terminal folders, 47 controlled titles) with per-title prompt fields + label templates, freehand
+  flags, deadline-prompt flags, matter-vs-lawsuit level, case-type relevance, and helpers
+  (`getFolder`, `isTitleAllowed`, `composeTitleLabel`, `folderAppliesToCaseType`). `FiledDocument`
+  model (migration `20260705174345_add_filed_document`) = BM metadata pointing at a `clioDocumentId`
+  (folderKey/titleKey/titleLabel/fields/level/fileHash/sourceType/status). Verifier:
+  `npx tsx scripts/verify-folder-taxonomy.ts`.
+- **Phase 2 DONE — read-only tree.** `GET /api/documents/filed?matterId=&level=` +
+  `components/documents/FolderTree.tsx` (rolled-up count badges, case-type greying of empty+irrelevant
+  folders, expand/collapse, flat searchable list, decoupled title labels). Viewer:
+  `/admin/documents/tree?matterId=999&level=matter&caseType=no_fault`. Seed test rows:
+  `npx tsx scripts/seed-test-filed-document.ts <matterId> [folderKey] [titleKey]`.
+- **Phase 3 NEXT — filing action (write).** Assign a Clio doc → folder → title picklist → structured
+  prompts → compose label (+ `(2)` dup-label suffix) → **server-side title enforcement** (`isTitleAllowed`)
+  + AuditLog entry + exact-duplicate (fileHash) warning → write `FiledDocument`. Then Phase 4 = OCR
+  prefill on drop (the 2nd OCR consumer); Phase 5+ = deadlines, move/refile, tiered delete, exhibit
+  combine, content search. Not started.
+- NOTE: Phase 2 viewer is a standalone page; wiring the tree into the matter page's View Documents
+  popup (`app/matter/[id]/page.tsx`) is a small follow-up.
 
 ## What's left (not built)
 - **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,
