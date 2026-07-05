@@ -170,9 +170,19 @@ nested tree as metadata (invariant — never create Clio subfolders). Phased bui
   → form pre-set to that folder, captures filename). Headless test: `npx tsx scripts/test-file-document.ts`
   (16 checks, all pass, self-cleaning). NOTE: real Clio upload isn't wired yet, so `clioDocumentId` is a
   placeholder from the form/drop — Phase 4 (or the upload integration) supplies the real id.
-- **Phase 4 NEXT — OCR prefill on filing** (the 2nd OCR consumer): on drop, run the engine on the
-  bytes → suggest folder/title + prefill the title's prompt fields (confidence-highlighted) → operator
-  verifies. Then Phase 5+ = deadlines, move/refile, tiered delete, exhibit combine, content search.
+- **Phase 4 DONE — OCR prefill on filing** (the 2nd OCR consumer). Pure logic (tested,
+  `npx tsx scripts/test-ocr-prefill.ts`, 11 checks): `lib/ocr/mapping/classify.ts` `suggestFolderTitle`
+  (keyword → folder/title) + `lib/ocr/mapping/titleFields.ts` `mapOcrToTitleFields` (per-title prompt
+  prefill w/ confidence). Wiring: `POST /api/documents/ocr-prefill` (OCR bytes → persist OcrExtraction
+  → classify → prefill) + drag-drop on a folder runs it and pre-fills `FileDocumentForm` with
+  confidence highlighting (green≥50%/amber<50%). `FiledDocument.ocrExtractionId`+`fileHash` link the OCR
+  row. Then Phase 5+ = deadlines, move/refile, tiered delete, exhibit combine, content search.
+- **Upload Docs module — NEXT (task).** Global header button in `BarshHeader` (near Create Lawsuits /
+  Print Queue): upload file → OCR → pick/confirm the matter (reuse `claim-index/search`; OCR suggests
+  by patient/claim#) → folder/title (OCR-prefilled) → **real Clio upload** via
+  `uploadBufferToClioMatterDocuments` (single-master storage path — guarded; reuse finalize folder
+  resolution) → write `FiledDocument` + backfill `OcrExtraction.clioDocumentId` by fileHash. NOTE: this
+  is where the placeholder `clioDocumentId` becomes a real Clio id.
 - NOTE: Phase 2/3 UI lives on the standalone viewer `/admin/documents/tree`; wiring the tree + filing
   into the matter page's View Documents popup (`app/matter/[id]/page.tsx`) is a follow-up. Also still
   pending: real file upload → Clio → set `clioDocumentId` + backfill onto the OCR row by fileHash.
