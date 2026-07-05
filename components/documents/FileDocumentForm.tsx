@@ -35,16 +35,25 @@ export default function FileDocumentForm({
   level = "matter",
   onFiled,
   presetFolderKey,
+  presetTitleKey,
   presetFileName,
   presetContentType,
+  presetFields,
+  presetOcrExtractionId,
+  presetFileHash,
 }: {
   matterId: number;
   level?: MatterLevel | "all";
   onFiled?: () => void;
   /** Pre-select this folder (e.g. from a drag-drop onto a folder). */
   presetFolderKey?: string;
+  presetTitleKey?: string;
   presetFileName?: string;
   presetContentType?: string;
+  /** OCR-prefilled prompt values keyed by field, with per-field confidence for highlighting. */
+  presetFields?: Record<string, { value: string; confidence: number | null }>;
+  presetOcrExtractionId?: string;
+  presetFileHash?: string;
 }) {
   const folders = useMemo(
     () => listTerminalFolders().filter((f) => level === "all" || f.level === level),
@@ -62,9 +71,21 @@ export default function FileDocumentForm({
     return opts;
   }, [folderKey]);
 
-  const [titleKey, setTitleKey] = useState(titleOptions[0]?.key ?? "");
+  const initialTitle =
+    presetTitleKey && titleOptions.some((t) => t.key === presetTitleKey)
+      ? presetTitleKey
+      : titleOptions[0]?.key ?? "";
+  const [titleKey, setTitleKey] = useState(initialTitle);
   const [freehandTitle, setFreehandTitle] = useState("");
-  const [fields, setFields] = useState<Record<string, string>>({});
+  const [fields, setFields] = useState<Record<string, string>>(
+    presetFields
+      ? Object.fromEntries(Object.entries(presetFields).map(([k, v]) => [k, v.value]))
+      : {},
+  );
+  // Per-field OCR confidence (for highlighting the prefilled values).
+  const prefillConf: Record<string, number | null> = presetFields
+    ? Object.fromEntries(Object.entries(presetFields).map(([k, v]) => [k, v.confidence]))
+    : {};
   const [clioDocumentId, setClioDocumentId] = useState(
     `TEST-${Math.random().toString(16).slice(2, 10)}`,
   );
@@ -105,6 +126,8 @@ export default function FileDocumentForm({
           fields,
           fileName: presetFileName,
           contentType: presetContentType,
+          fileHash: presetFileHash,
+          ocrExtractionId: presetOcrExtractionId,
           sourceType: "scan",
           confirmDuplicate,
         }),
@@ -141,7 +164,10 @@ export default function FileDocumentForm({
       <strong style={{ color: NAVY, fontSize: 14 }}>File a document</strong>
       {presetFileName && (
         <div style={{ marginTop: 6, fontSize: 12, color: "#137333" }}>
-          Dropped file: <strong>{presetFileName}</strong> — pick a title and file it.
+          Dropped file: <strong>{presetFileName}</strong>
+          {presetFields
+            ? " — OCR pre-filled the fields below. Verify highlighted values (green = high confidence, amber = low)."
+            : " — pick a title and file it."}
         </div>
       )}
 
@@ -174,36 +200,50 @@ export default function FileDocumentForm({
         </div>
       )}
 
-      {visiblePrompts.map((p) => (
-        <div key={p.key} style={rowStyle}>
-          <label style={labelStyle}>
-            {p.label}
-            {p.required ? " *" : ""}
-          </label>
-          {p.type === "select" ? (
-            <select
-              value={fields[p.key] ?? ""}
-              onChange={(e) => setFields((f) => ({ ...f, [p.key]: e.target.value }))}
-              style={inputStyle}
-            >
-              <option value="">— select —</option>
-              {(p.options ?? []).map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              value={fields[p.key] ?? ""}
-              onChange={(e) => setFields((f) => ({ ...f, [p.key]: e.target.value }))}
-              placeholder={p.type === "date" ? "MM/DD/YYYY" : p.type === "money" ? "0.00" : ""}
-              inputMode={p.type === "money" ? "decimal" : undefined}
-              style={inputStyle}
-            />
-          )}
-        </div>
-      ))}
+      {visiblePrompts.map((p) => {
+        const conf = prefillConf[p.key];
+        const highlight: React.CSSProperties =
+          conf == null
+            ? {}
+            : conf >= 0.5
+              ? { borderColor: "#137333", background: "#eefaf0" }
+              : { borderColor: "#b8860b", background: "#fdf6e3" };
+        return (
+          <div key={p.key} style={rowStyle}>
+            <label style={labelStyle}>
+              {p.label}
+              {p.required ? " *" : ""}
+              {conf != null && (
+                <span style={{ marginLeft: 6, color: conf >= 0.5 ? "#137333" : "#b8860b", fontSize: 11 }}>
+                  OCR {Math.round(conf * 100)}%
+                </span>
+              )}
+            </label>
+            {p.type === "select" ? (
+              <select
+                value={fields[p.key] ?? ""}
+                onChange={(e) => setFields((f) => ({ ...f, [p.key]: e.target.value }))}
+                style={{ ...inputStyle, ...highlight }}
+              >
+                <option value="">— select —</option>
+                {(p.options ?? []).map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={fields[p.key] ?? ""}
+                onChange={(e) => setFields((f) => ({ ...f, [p.key]: e.target.value }))}
+                placeholder={p.type === "date" ? "MM/DD/YYYY" : p.type === "money" ? "0.00" : ""}
+                inputMode={p.type === "money" ? "decimal" : undefined}
+                style={{ ...inputStyle, ...highlight }}
+              />
+            )}
+          </div>
+        );
+      })}
 
       <div style={rowStyle}>
         <label style={labelStyle}>Clio document id (placeholder until upload flow is wired)</label>

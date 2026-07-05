@@ -24,15 +24,64 @@ function Inner() {
 
   const [reloadKey, setReloadKey] = useState(0);
   const [formKey, setFormKey] = useState(0);
-  const [drop, setDrop] = useState<{ folderKey: string; fileName?: string; contentType?: string } | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [drop, setDrop] = useState<{
+    folderKey: string;
+    titleKey?: string;
+    fileName?: string;
+    contentType?: string;
+    prefill?: Record<string, { value: string; confidence: number | null }>;
+    ocrExtractionId?: string;
+    fileHash?: string;
+  } | null>(null);
   const idNum = Number(matterId);
   const valid = Number.isFinite(idNum) && idNum > 0;
   const formLevel: MatterLevel = level === "lawsuit" ? "lawsuit" : "matter";
 
-  function handleDrop(folderKey: string, files: File[]) {
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = String(r.result);
+        resolve(s.slice(s.indexOf(",") + 1));
+      };
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function handleDrop(folderKey: string, files: File[]) {
     const f = files[0];
-    setDrop({ folderKey, fileName: f?.name, contentType: f?.type || undefined });
-    setFormKey((k) => k + 1); // remount the form so it re-inits on the dropped folder
+    if (!f) return;
+    // Show the folder immediately, then run OCR to prefill.
+    setDrop({ folderKey, fileName: f.name, contentType: f.type || undefined });
+    setFormKey((k) => k + 1);
+    setOcrBusy(true);
+    try {
+      const base64 = await fileToBase64(f);
+      const res = await fetch("/api/documents/ocr-prefill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, contentType: f.type, fileName: f.name, folderKey, matterId: idNum }),
+      });
+      const j = await res.json();
+      if (j?.ok) {
+        setDrop({
+          folderKey: j.folderKey || folderKey,
+          titleKey: j.titleKey || undefined,
+          fileName: f.name,
+          contentType: f.type || undefined,
+          prefill: j.prefill,
+          ocrExtractionId: j.ocrExtractionId,
+          fileHash: j.fileHash,
+        });
+        setFormKey((k) => k + 1); // remount form with OCR prefill
+      }
+    } catch {
+      // Leave the folder pre-selected; operator fills manually.
+    } finally {
+      setOcrBusy(false);
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -71,14 +120,22 @@ function Inner() {
           </select>
         </div>
 
+        {valid && ocrBusy && (
+          <div style={{ marginBottom: 10, fontSize: 13, color: NAVY }}>Running OCR on the dropped file…</div>
+        )}
+
         {valid && (
           <FileDocumentForm
             key={formKey}
             matterId={idNum}
             level={formLevel}
             presetFolderKey={drop?.folderKey}
+            presetTitleKey={drop?.titleKey}
             presetFileName={drop?.fileName}
             presetContentType={drop?.contentType}
+            presetFields={drop?.prefill}
+            presetOcrExtractionId={drop?.ocrExtractionId}
+            presetFileHash={drop?.fileHash}
             onFiled={() => setReloadKey((k) => k + 1)}
           />
         )}

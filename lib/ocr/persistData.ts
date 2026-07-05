@@ -5,7 +5,15 @@
 import crypto from "crypto";
 import type { OcrExtractionResult, OcrExtractMode, OcrInput } from "@/lib/ocr/types";
 
-export type OcrSourceType = "import_intake" | "matter_document" | "payment_modal" | "adhoc";
+export type OcrSourceType =
+  | "import_intake"
+  | "matter_document"
+  | "payment_modal"
+  | "scan"
+  | "upload"
+  | "email_attachment"
+  | "template"
+  | "adhoc";
 
 export type BuildExtractionArgs = {
   input: OcrInput;

@@ -3,6 +3,10 @@
 
 export * from "@/lib/ocr/mapping/types";
 export { mapBillToIntakeFields } from "@/lib/ocr/mapping/intakeProfile";
+export { mapOcrToTitleFields } from "@/lib/ocr/mapping/titleFields";
+export type { PrefilledField, TitleFieldPrefill } from "@/lib/ocr/mapping/titleFields";
+export { suggestFolderTitle } from "@/lib/ocr/mapping/classify";
+export type { FolderTitleSuggestion } from "@/lib/ocr/mapping/classify";
 export {
   normalizeLabel,
   labelMatchesAny,
