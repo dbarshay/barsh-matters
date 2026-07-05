@@ -152,6 +152,11 @@ extraction layer BOTH consumers use (import-intake matter creation AND matter-do
   and the drag-into-folder flow. See `docs/document-folder-structure.md` for the folder taxonomy.
 - **Carisk Management Report** — the persistent "Saved Incomplete" tracker (keyed by CIC#) + weekly
   scheduled email. Currently those rows are just routed to a `to_report` outcome and counted.
+- **Native matter email (Outlook / Microsoft Graph)** — doc-folder spec #6. Send/receive email from
+  the matter UI via Graph (Outlook stays the mail server), threaded to the matter (Message-ID/In-Reply-To
+  + `[BRL_…]` subject tag), attach filed docs, replace the maildrop. Builds on existing `lib/graph/*`
+  (`create-draft`, thread-sync). Inbound attachments feed the same folder-filing + OCR pipeline
+  (`OcrExtraction.sourceType = email_attachment`). Large; its own workstream.
 - **RBAC activation** — the Owner/operator gating is designed; import writes are gated by the flag +
   (for registry writes) the admin cookie. Wire real roles in.
 

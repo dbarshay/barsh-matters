@@ -1231,3 +1231,47 @@ model OcrExtraction {
   @@index([clioDocumentId])
 }
 
+// A document FILED into the BM folder tree. BM-side metadata ONLY — the actual file lives flat in
+// Clio (referenced by clioDocumentId); BM never creates Clio subfolders (see
+// docs/document-folder-structure.md invariant). folderKey/titleKey are validated against the code
+// taxonomy in lib/documents/folderTaxonomy.ts (server-side enforcement). One row per filing.
+model FiledDocument {
+  id String @id @default(cuid())
+
+  // Matter linkage. `level` mirrors the folder's level: matter-level (Claim Documents, Workers' Comp)
+  // rows sit on the individual BRL_ matter; lawsuit-level (Arbitration, Litigation) on the lawsuit file.
+  matterId            Int
+  matterDisplayNumber String?
+  level               String // "matter" | "lawsuit"
+
+  // The stored file in Clio (the vault). BM points at it; it never duplicates the bytes.
+  clioDocumentId String
+  fileName       String?
+  contentType    String?
+  fileHash       String? // sha256 of the bytes — links to OcrExtraction + exact-duplicate detection
+
+  // BM organization (validated against the taxonomy; freehand only where the folder allows it).
+  folderKey     String // e.g. "claim_documents.bills"
+  titleKey      String // taxonomy title key, or FREEHAND_TITLE_KEY ("__freehand_other__")
+  titleLabel    String // composed display label (may include prompt values + a (2)/(3) suffix)
+  freehandTitle String? // operator-typed title when titleKey is the freehand sentinel
+  fields        Json? // structured prompt values (dates, amounts, outcome, payment category, ...)
+
+  // Provenance — where the document came IN from (source-agnostic filing pipeline).
+  sourceType      String  @default("upload") // upload | email_attachment | template | scan
+  ocrExtractionId String? // OCR record if the fields were OCR-prefilled (links by fileHash pre-Clio)
+
+  // Lifecycle. Soft-delete = archived (admin); hard delete is Owner-only (handled in the delete path).
+  status      String   @default("active") // active | archived
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([matterId])
+  @@index([matterDisplayNumber])
+  @@index([folderKey])
+  @@index([clioDocumentId])
+  @@index([fileHash])
+  @@index([status])
+}
+
