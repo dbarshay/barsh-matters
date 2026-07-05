@@ -9,7 +9,7 @@
 
 import fs from "fs";
 import path from "path";
-import type { OcrExtractionResult } from "@/lib/ocr/types";
+import type { OcrExtractionResult, OcrTable } from "@/lib/ocr/types";
 import type { IntakeMappingResult } from "@/lib/ocr/mapping/types";
 
 const SAMPLES_DIR = path.join(process.cwd(), "ocr-samples");
@@ -32,6 +32,25 @@ function flag(value: unknown, conf: number | null): string {
   if (value == null || value === "") return "❌ missing";
   if (conf != null && conf < 0.5) return "⚠️ low";
   return "✅";
+}
+
+/** Render an OCR table as a markdown grid (first row treated as header). Spans ignored. */
+function renderTable(t: OcrTable): string[] {
+  if (t.rowCount === 0 || t.columnCount === 0) return [];
+  const grid: string[][] = Array.from({ length: t.rowCount }, () =>
+    Array.from({ length: t.columnCount }, () => ""),
+  );
+  for (const c of t.cells) {
+    if (c.rowIndex < t.rowCount && c.columnIndex < t.columnCount) {
+      grid[c.rowIndex][c.columnIndex] = (c.content || "")
+        .replace(/\s+/g, " ")
+        .replace(/\|/g, "\\|")
+        .trim();
+    }
+  }
+  const out: string[] = [`| ${grid[0].join(" | ")} |`, `| ${grid[0].map(() => "---").join(" | ")} |`];
+  for (let r = 1; r < t.rowCount; r++) out.push(`| ${grid[r].join(" | ")} |`);
+  return out;
 }
 
 async function main() {
@@ -92,6 +111,19 @@ async function main() {
     lines.push(``);
     lines.push(labels.map((l) => `- \`${l}\``).join("\n"));
     lines.push(``);
+    lines.push(`</details>`);
+    lines.push(``);
+
+    // Tables — where billed amounts + dates of service usually live. Surfaced so the
+    // amount/DOS table fallbacks in the mapping profile can be tuned per format.
+    lines.push(`<details><summary>Tables (${rec.result.tables.length})</summary>`);
+    lines.push(``);
+    rec.result.tables.forEach((t, i) => {
+      lines.push(`**Table ${i + 1}** — ${t.rowCount}×${t.columnCount}`);
+      lines.push(``);
+      lines.push(...renderTable(t));
+      lines.push(``);
+    });
     lines.push(`</details>`);
     lines.push(``);
   }
