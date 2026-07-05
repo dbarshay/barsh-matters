@@ -162,13 +162,20 @@ nested tree as metadata (invariant — never create Clio subfolders). Phased bui
   folders, expand/collapse, flat searchable list, decoupled title labels). Viewer:
   `/admin/documents/tree?matterId=999&level=matter&caseType=no_fault`. Seed test rows:
   `npx tsx scripts/seed-test-filed-document.ts <matterId> [folderKey] [titleKey]`.
-- **Phase 3 NEXT — filing action (write).** Assign a Clio doc → folder → title picklist → structured
-  prompts → compose label (+ `(2)` dup-label suffix) → **server-side title enforcement** (`isTitleAllowed`)
-  + AuditLog entry + exact-duplicate (fileHash) warning → write `FiledDocument`. Then Phase 4 = OCR
-  prefill on drop (the 2nd OCR consumer); Phase 5+ = deadlines, move/refile, tiered delete, exhibit
-  combine, content search. Not started.
-- NOTE: Phase 2 viewer is a standalone page; wiring the tree into the matter page's View Documents
-  popup (`app/matter/[id]/page.tsx`) is a small follow-up.
+- **Phase 3 DONE — filing action (write).** `POST /api/documents/filed` → thin handler over
+  `lib/documents/fileDocument.ts` (testable core): server-side title enforcement (`isTitleAllowed`),
+  required-prompt + freehand validation, `(2)/(3)` label dedup, exact-duplicate (fileHash) warning
+  (409 unless `confirmDuplicate`), AuditLog `document.filed` entry. UI: `FileDocumentForm` (folder →
+  title picklist → dynamic prompts → freehand) + **drag-and-drop** (drop a file onto a terminal folder
+  → form pre-set to that folder, captures filename). Headless test: `npx tsx scripts/test-file-document.ts`
+  (16 checks, all pass, self-cleaning). NOTE: real Clio upload isn't wired yet, so `clioDocumentId` is a
+  placeholder from the form/drop — Phase 4 (or the upload integration) supplies the real id.
+- **Phase 4 NEXT — OCR prefill on filing** (the 2nd OCR consumer): on drop, run the engine on the
+  bytes → suggest folder/title + prefill the title's prompt fields (confidence-highlighted) → operator
+  verifies. Then Phase 5+ = deadlines, move/refile, tiered delete, exhibit combine, content search.
+- NOTE: Phase 2/3 UI lives on the standalone viewer `/admin/documents/tree`; wiring the tree + filing
+  into the matter page's View Documents popup (`app/matter/[id]/page.tsx`) is a follow-up. Also still
+  pending: real file upload → Clio → set `clioDocumentId` + backfill onto the OCR row by fileHash.
 
 ## What's left (not built)
 - **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,

@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 
 import BarshHeader from "@/app/components/BarshHeader";
 import FolderTree from "@/components/documents/FolderTree";
+import FileDocumentForm from "@/components/documents/FileDocumentForm";
 import type { CaseType, MatterLevel } from "@/lib/documents/folderTaxonomy";
 
 const NAVY = "#00346e";
@@ -21,8 +22,18 @@ function Inner() {
   const [level, setLevel] = useState<MatterLevel | "all">((sp.get("level") as MatterLevel) || "matter");
   const [caseType, setCaseType] = useState<CaseType | "">((sp.get("caseType") as CaseType) || "");
 
+  const [reloadKey, setReloadKey] = useState(0);
+  const [formKey, setFormKey] = useState(0);
+  const [drop, setDrop] = useState<{ folderKey: string; fileName?: string; contentType?: string } | null>(null);
   const idNum = Number(matterId);
   const valid = Number.isFinite(idNum) && idNum > 0;
+  const formLevel: MatterLevel = level === "lawsuit" ? "lawsuit" : "matter";
+
+  function handleDrop(folderKey: string, files: File[]) {
+    const f = files[0];
+    setDrop({ folderKey, fileName: f?.name, contentType: f?.type || undefined });
+    setFormKey((k) => k + 1); // remount the form so it re-inits on the dropped folder
+  }
 
   const inputStyle: React.CSSProperties = {
     padding: "6px 10px",
@@ -60,9 +71,32 @@ function Inner() {
           </select>
         </div>
 
+        {valid && (
+          <FileDocumentForm
+            key={formKey}
+            matterId={idNum}
+            level={formLevel}
+            presetFolderKey={drop?.folderKey}
+            presetFileName={drop?.fileName}
+            presetContentType={drop?.contentType}
+            onFiled={() => setReloadKey((k) => k + 1)}
+          />
+        )}
+
         <div style={{ border: "1px solid #e3e9f0", borderRadius: 10, padding: 16, background: "#fff" }}>
           {valid ? (
-            <FolderTree matterId={idNum} level={level} caseType={caseType || null} />
+            <div>
+              <div style={{ fontSize: 12, color: "#8a97a8", marginBottom: 8 }}>
+                Tip: drag a file from your desktop onto a folder below to file it there.
+              </div>
+              <FolderTree
+                matterId={idNum}
+                level={level}
+                caseType={caseType || null}
+                reloadKey={reloadKey}
+                onDropToFolder={handleDrop}
+              />
+            </div>
           ) : (
             <div style={{ color: "#8a97a8", fontStyle: "italic" }}>Enter a matter id to load its tree.</div>
           )}

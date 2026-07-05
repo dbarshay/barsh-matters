@@ -36,6 +36,10 @@ type Props = {
   level?: MatterLevel | "all";
   /** When set, folders irrelevant to this case type AND empty are greyed (still visible). */
   caseType?: CaseType | null;
+  /** Bump to force a refetch (e.g. after a filing action). */
+  reloadKey?: number;
+  /** Drop a file onto a terminal folder → caller opens the filing form pre-set to that folder. */
+  onDropToFolder?: (folderKey: string, files: File[]) => void;
 };
 
 /** All descendant terminal folder keys of a folder (or itself if terminal). */
@@ -44,7 +48,13 @@ function terminalKeysUnder(f: FolderSpec): string[] {
   return (f.children ?? []).flatMap(terminalKeysUnder);
 }
 
-export default function FolderTree({ matterId, level = "all", caseType = null }: Props) {
+export default function FolderTree({
+  matterId,
+  level = "all",
+  caseType = null,
+  reloadKey = 0,
+  onDropToFolder,
+}: Props) {
   const [docs, setDocs] = useState<FiledDoc[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flat, setFlat] = useState(false);
@@ -68,7 +78,7 @@ export default function FolderTree({ matterId, level = "all", caseType = null }:
     return () => {
       alive = false;
     };
-  }, [matterId, level]);
+  }, [matterId, level, reloadKey]);
 
   const branches = useMemo(
     () => FOLDER_TAXONOMY.filter((b) => level === "all" || b.level === level),
@@ -128,6 +138,7 @@ export default function FolderTree({ matterId, level = "all", caseType = null }:
               byFolder={byFolder}
               countFor={countFor}
               caseType={caseType}
+              onDropToFolder={onDropToFolder}
             />
           ))}
         </div>
@@ -142,32 +153,53 @@ function FolderNode({
   byFolder,
   countFor,
   caseType,
+  onDropToFolder,
 }: {
   folder: FolderSpec;
   depth: number;
   byFolder: Map<string, FiledDoc[]>;
   countFor: (f: FolderSpec) => number;
   caseType: CaseType | null;
+  onDropToFolder?: (folderKey: string, files: File[]) => void;
 }) {
   const count = countFor(folder);
   const irrelevant = caseType != null && !folderAppliesToCaseType(folder.key, caseType);
   const greyed = irrelevant && count === 0; // grey only when irrelevant AND empty (never hide)
   const [open, setOpen] = useState(count > 0 || depth === 0);
+  const [dragOver, setDragOver] = useState(false);
 
   const hasChildren = !!(folder.children && folder.children.length);
   const docsHere = folder.terminal ? byFolder.get(folder.key) ?? [] : [];
+  // Only terminal folders are drop targets (you file INTO a leaf folder).
+  const droppable = folder.terminal && !!onDropToFolder;
 
   return (
     <div style={{ marginLeft: depth * 16, opacity: greyed ? 0.45 : 1 }}>
       <div
         onClick={() => setOpen((v) => !v)}
+        onDragOver={droppable ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
+        onDragLeave={droppable ? () => setDragOver(false) : undefined}
+        onDrop={
+          droppable
+            ? (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) onDropToFolder!(folder.key, files);
+              }
+            : undefined
+        }
+        title={droppable ? "Drop a file here to file it into this folder" : undefined}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 6,
-          padding: "3px 0",
+          padding: "3px 6px",
           cursor: "pointer",
           userSelect: "none",
+          borderRadius: 6,
+          outline: dragOver ? `2px dashed ${NAVY}` : "none",
+          background: dragOver ? "#eaf1fb" : "transparent",
         }}
       >
         <span style={{ width: 12, color: MUTED, fontSize: 11 }}>{open ? "▾" : "▸"}</span>
@@ -204,6 +236,7 @@ function FolderNode({
                 byFolder={byFolder}
                 countFor={countFor}
                 caseType={caseType}
+                onDropToFolder={onDropToFolder}
               />
             ))}
           {folder.terminal &&
