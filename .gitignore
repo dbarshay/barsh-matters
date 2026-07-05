@@ -61,3 +61,6 @@ templates/docx/incoming/
 # scratch/output dirs from phased work (broadened to catch all)
 .tmp-*/
 .tmp-*
+
+# OCR sample corpus + cached extractions + review reports (PHI — never commit)
+ocr-samples/

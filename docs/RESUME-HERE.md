@@ -124,13 +124,28 @@ extraction layer BOTH consumers use (import-intake matter creation AND matter-do
   `AZURE_DOCINTEL_KEY` (resource `barsh-matters-docintel`, East US, Standard S0). Optional `OCR_PROVIDER=stub`.
 - Persistence: `OcrExtraction` table (migration `20260704193929_add_ocr_extraction`). Server-only writer
   `persistExtraction` in `lib/ocr/persist.ts`; DB-free row builder in `lib/ocr/persistData.ts`.
-- Smoke test: `npx tsx scripts/ocr-smoke-test.ts <file> [read|layout] [--save]`.
+- Smoke test: `npx tsx scripts/ocr-smoke-test.ts <file> [read|layout] [--map] [--save]`.
 - Cost model at scale: run cheap `read` on everything (full-text search); run `layout` only on doc
   types needing structured pre-fill. Azure Layout ($10/1k) is ~3-5x cheaper than Google/AWS for forms.
-- STILL TO BUILD: per-consumer **field-mapping profiles** (map generic keyValues/tables/text -> matter
-  fields SEMANTICALLY, not by form position); the **VERIFY UI** with confidence highlighting (yellow=low,
-  green=high, never auto-commit); wiring into the import-intake path and the (unbuilt) folder-drop path;
-  later, per-format prebuilt/custom models + full-text content search over `OcrExtraction.text`.
+- **Intake field-mapping profile BUILT** (`lib/ocr/mapping/`): `mapBillToIntakeFields(result)` →
+  patientName, providerName, insurerName, claimNumber, policyNumber, dateOfLoss, dosStart, dosEnd,
+  claimAmount — each with value+confidence+source. Semantic (synonym labels in `synonyms.ts` +
+  date/amount normalize + table/regex fallbacks), format-agnostic. `caseType` is NOT mapped (operator
+  picks). Verified on a real HCFA: patient / DOS from-to / total charge all correct.
+- **Seeding + review harness (for tuning across bill formats):**
+  - Stage 1 (office, has forms + Azure): drop bills in `ocr-samples/inbox/`, run
+    `npx tsx scripts/ocr-seed.ts` → OCRs once, caches raw extractions to `ocr-samples/cache/<hash>.json`
+    (idempotent by file bytes; `--force` to redo).
+  - Stage 2 (anywhere, no Azure): `npx tsx scripts/ocr-review.ts` → maps the cache, writes
+    `ocr-samples/review.md` (per-file fields+confidence+captured labels, hit-rate summary). Iterate
+    `synonyms.ts` and re-review offline — no re-OCR needed.
+  - `ocr-samples/` is git-ignored (PHI). The cache lets mapping be tuned without the original forms.
+- STILL TO BUILD: the **VERIFY UI** (upload → OCR → prefilled form with confidence highlighting
+  yellow<0.5/green≥0.5/red=missing → operator corrects, picks case type, resolves provider/insurer →
+  create matter); wiring into the import-intake path; the (unbuilt) folder-drop consumer; later,
+  per-format prebuilt/custom models + full-text content search over `OcrExtraction.text`.
+  OPEN DECISION: verify-UI submit path = direct `createMatters` vs route through the import
+  preview/reconcile pipeline (reuse carrier/patient resolution + dedupe). Not yet decided.
 
 ## What's left (not built)
 - **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,
