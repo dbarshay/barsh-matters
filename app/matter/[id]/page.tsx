@@ -13,6 +13,7 @@ import BarshHeader from "@/app/components/BarshHeader";
 import BarshModal from "@/app/components/BarshModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
+import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
 
 function num(v: any) {
   const n = Number(v);
@@ -671,6 +672,8 @@ const activeGroupKey =
   const [matterSelectedViewDocumentId, setMatterSelectedViewDocumentId] = useState("");
   // Bump to force the View Documents folder tree to refetch.
   const [matterFiledDocsReloadKey, setMatterFiledDocsReloadKey] = useState(0);
+  // A file dropped onto a folder in the tree, awaiting title selection + filing.
+  const [matterDroppedFile, setMatterDroppedFile] = useState<{ folderKey: string; file: File } | null>(null);
   const [emailDeliveryPopupOpen, setEmailDeliveryPopupOpen] = useState(false);
   const [emailDeliveryContext, setEmailDeliveryContext] = useState<any>(null);
   const [emailDeliveryTo, setEmailDeliveryTo] = useState("");
@@ -957,6 +960,16 @@ const activeGroupKey =
           <div style={{ padding: 20, display: "grid", gap: 14, maxHeight: "calc(88vh - 154px)", overflowY: "auto" }}>
             {/* BM folder tree: documents organized by folder/title (Clio stays a flat vault). */}
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", padding: 14 }}>
+              {matterDroppedFile && (filedTreeMatterId > 0 || filedTreeDisplayNumber) && (
+                <DropFileFilingForm
+                  matterId={filedTreeMatterId}
+                  matterDisplayNumber={filedTreeDisplayNumber}
+                  folderKey={matterDroppedFile.folderKey}
+                  file={matterDroppedFile.file}
+                  onDone={() => { setMatterDroppedFile(null); setMatterFiledDocsReloadKey((k) => k + 1); }}
+                  onCancel={() => setMatterDroppedFile(null)}
+                />
+              )}
               {filedTreeMatterId > 0 || filedTreeDisplayNumber ? (
                 <FolderTree
                   matterId={filedTreeMatterId}
@@ -965,6 +978,7 @@ const activeGroupKey =
                   reloadKey={matterFiledDocsReloadKey}
                   onOpenDoc={openFiledTreeDocument}
                   onRemoveDoc={removeFiledTreeDocument}
+                  onDropToFolder={(folderKey, files) => { if (files[0]) setMatterDroppedFile({ folderKey, file: files[0] }); }}
                 />
               ) : (
                 <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>
