@@ -6,6 +6,7 @@ import { resolvePatient } from "@/lib/patientResolution";
 import { createMattersFromStaged, type CreatableRow, type StagedForCreate } from "@/lib/import/createMatters";
 import { cariskExtraFields, normalizeTin, type StagedCariskMatter } from "@/lib/import/cariskAdapter";
 import { missingStagedFields } from "@/lib/import/validation";
+import { removeCicsFromReport } from "@/lib/import/cariskManagementReport";
 import {
   REVIEW_READY,
   REVIEW_OPEN,
@@ -180,6 +181,9 @@ export async function POST(request: Request) {
     for (const [batchId, n] of createdPerBatch) {
       await prisma.importBatch.update({ where: { id: batchId }, data: { createdCount: { increment: n } } });
     }
+    // A committed Carisk row graduates its CIC# off the Management Report (it's now a matter).
+    const cics = creatables.map((c) => String(((c.create.staged as any) || {}).cic_number || "")).filter(Boolean);
+    if (cics.length) await removeCicsFromReport(cics);
   }
 
   return NextResponse.json({

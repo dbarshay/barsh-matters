@@ -11,6 +11,10 @@
     {
       "path": "/api/graph/maildrop-discovery",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/import/carisk/report/send",
+      "schedule": "0 12 * * 5"
     }
   ]
 }

@@ -562,9 +562,14 @@ export default function DowImportPage() {
         <div style={box}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontWeight: 900 }}>Existing {source === "dow" ? "Dow" : "Carisk"} imports</div>
-            <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>
-              Refresh
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              {source === "carisk" ? (
+                <a href="/admin/import/carisk/report" style={{ ...btn("#5b21b6"), height: 32, padding: "0 12px", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Management Report</a>
+              ) : null}
+              <button type="button" style={{ ...btn(MUTED, busy === "batches"), height: 32, padding: "0 12px" }} disabled={busy === "batches"} onClick={() => { setBusy("batches"); void loadBatches().finally(() => setBusy("")); }}>
+                Refresh
+              </button>
+            </div>
           </div>
           {batches.length === 0 ? (
             <div style={{ color: MUTED }}>No imports yet.</div>

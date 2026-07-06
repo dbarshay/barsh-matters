@@ -54,6 +54,32 @@ model ImportMapping {
   @@index([source])
 }
 
+// Carisk Management Report: persistent tracker of open "Saved Incomplete" bills, keyed by CIC#. A row
+// is added/kept while the bill keeps arriving as Saved Incomplete; it is marked `removed` (graduated)
+// when the same CIC# later arrives as a Carrier Submission (creating a matter). Weekly email digests
+// the `open` rows.
+model CariskManagementReportItem {
+  id              String   @id @default(cuid())
+  cicNumber       String   @unique
+  patientName     String?
+  providerName    String? // raw FacilityName
+  carrierName     String? // raw CarrierName
+  dosStart        String?
+  dosEnd          String?
+  claimAmount     Float?
+  statusDate      String?
+  rejectionDetail String? // HTML-stripped StatusNotes
+  status          String   @default("open") // open | removed
+  firstSeen       DateTime @default(now())
+  lastSeen        DateTime @default(now())
+  lastBatchId     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([lastSeen])
+}
+
 model ImportBatch {
   id            String   @id @default(cuid())
   source        String // "dow" | "carisk" | "manual" | "other"

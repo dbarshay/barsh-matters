@@ -184,6 +184,7 @@
     "verify:carisk-import-safety": "node scripts/verify-carisk-import-safety.mjs",
     "verify:manual-create-safety": "node scripts/verify-manual-create-safety.mjs",
     "verify:other-import-safety": "node scripts/verify-other-import-safety.mjs",
+    "verify:carisk-report-safety": "node scripts/verify-carisk-report-safety.mjs",
     "verify:local-document-packet-safety": "node scripts/verify-local-document-packet-safety.mjs",
     "verify:local-first-payment-safety": "node scripts/verify-local-first-payment-safety.mjs",
     "verify:local-first-settlement-preview-safety": "node scripts/verify-local-first-settlement-preview-safety.mjs",

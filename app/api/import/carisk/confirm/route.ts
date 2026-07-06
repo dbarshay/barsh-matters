@@ -14,6 +14,7 @@ import {
 import { resolveCarrier, resolveProvider, type ReferenceResolution } from "@/lib/referenceResolution";
 import { resolvePatient } from "@/lib/patientResolution";
 import { createMattersFromStaged, type CreatableRow } from "@/lib/import/createMatters";
+import { upsertSavedIncomplete, removeCicsFromReport } from "@/lib/import/cariskManagementReport";
 import {
   HOLD_MISSING_FIELD,
   HOLD_CARRIER_UNMATCHED,
@@ -214,6 +215,17 @@ export async function POST(request: Request) {
       fingerprint: a.s.cic_number || a.s.fingerprint || null,
     })),
   });
+
+  // Carisk Management Report: park "Saved Incomplete" bills; graduate CIC#s that just became matters.
+  const savedIncomplete = actions
+    .filter((a) => a.outcome === "to_report" && a.s.cic_number)
+    .map((a) => ({
+      cicNumber: a.s.cic_number, patientName: a.s.patient_name, providerName: a.s.provider_raw,
+      carrierName: a.s.carrier_raw, dosStart: a.s.dos_start, dosEnd: a.s.dos_end, claimAmount: a.s.claim_amount,
+      statusDate: a.s.status_date, rejectionDetail: a.s.status_notes, batchId: batch.id,
+    }));
+  await upsertSavedIncomplete(savedIncomplete);
+  await removeCicsFromReport(actions.filter((a) => a.outcome === "created" && a.s.cic_number).map((a) => a.s.cic_number));
 
   return NextResponse.json({
     ok: true,
