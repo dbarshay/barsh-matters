@@ -9,6 +9,7 @@ import { uploadBufferToClioMatterDocuments } from "@/lib/clioDocumentUpload";
 import { fileDocument } from "@/lib/documents/fileDocument";
 import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
 import { adminSessionIdentityDiagnostics } from "@/lib/adminAuth";
+import { recordFilingFeedback } from "@/lib/ocr/learning";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,15 @@ export async function POST(req: NextRequest) {
     body?.fields && typeof body.fields === "object" ? (body.fields as Record<string, unknown>) : {};
   const ocrExtractionId = body?.ocrExtractionId ? String(body.ocrExtractionId) : null;
   const confirmDuplicate = body?.confirmDuplicate === true;
+  // Learning signals: what the classifier suggested + the matched entities, so we can record the
+  // suggestion-vs-choice and build per-provider/carrier memory. All optional (best-effort).
+  const suggestedFolderKey = body?.suggestedFolderKey ? String(body.suggestedFolderKey) : null;
+  const suggestedTitleKey = body?.suggestedTitleKey ? String(body.suggestedTitleKey) : null;
+  const suggestedConfidence =
+    typeof body?.suggestedConfidence === "number" ? body.suggestedConfidence : null;
+  const learnProviderName = body?.providerName ? String(body.providerName) : null;
+  const learnInsurerName = body?.insurerName ? String(body.insurerName) : null;
+  const caseType = body?.caseType ? String(body.caseType) : null;
 
   if (!Number.isFinite(matterId) || matterId <= 0) {
     return NextResponse.json({ ok: false, error: "A valid matter is required." }, { status: 400 });
@@ -188,6 +198,28 @@ export async function POST(req: NextRequest) {
       },
       { status: (filed as any)?.status || 500 },
     );
+  }
+
+  // Learning: record the classifier suggestion vs the operator's final pick and fold it into the
+  // per-provider/carrier memory. Best-effort — never affects the filing result.
+  try {
+    await recordFilingFeedback(prisma, {
+      matterId,
+      fileName,
+      fileHash,
+      ocrExtractionId,
+      suggestedFolderKey,
+      suggestedTitleKey,
+      suggestedConfidence,
+      chosenFolderKey: folderKey,
+      chosenTitleKey: titleKey,
+      caseType,
+      providerName: learnProviderName,
+      insurerName: learnInsurerName,
+      createdById: identity?.email || identity?.userId || null,
+    } as any);
+  } catch {
+    // non-fatal
   }
 
   // Backfill the OCR extraction row with the real Clio document id (by id, else by fileHash).

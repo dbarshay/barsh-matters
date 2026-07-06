@@ -1304,3 +1304,69 @@ model FiledDocument {
   @@index([status])
 }
 
+// ---------------------------------------------------------------------------------------------------
+// OCR human-in-the-loop LEARNING (deterministic, auditable — no ML on PHI).
+//
+// Every filing records what the classifier SUGGESTED vs what the operator CHOSE. The rollup table
+// aggregates the operator's choices per business entity (provider / carrier) so future uploads from a
+// recognized sender can be biased toward the historically-correct folder/title. We store only
+// business-entity keys (provider/insurer names) + folder/title — never patient identity — so the
+// learning store stays PHI-light.
+// ---------------------------------------------------------------------------------------------------
+
+// One row per filing: the suggestion, the operator's final pick, and whether it was a correction.
+model OcrFilingFeedback {
+  id String @id @default(cuid())
+
+  matterId        Int?
+  masterLawsuitId String?
+  fileName        String?
+  fileHash        String?
+  ocrExtractionId String?
+
+  // What the classifier proposed (may be null when it had no confident suggestion).
+  suggestedFolderKey  String?
+  suggestedTitleKey   String?
+  suggestedConfidence Float?
+
+  // What the operator actually filed it as.
+  chosenFolderKey String
+  chosenTitleKey  String
+  caseType        String? // no_fault | wc | arbitration (operator-selected)
+
+  // Normalized business-entity keys the document matched (for the memory rollup). NOT patient PHI.
+  providerKey String?
+  insurerKey  String?
+
+  wasCorrected Boolean @default(false) // chosen != suggested
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([providerKey])
+  @@index([insurerKey])
+  @@index([chosenFolderKey])
+  @@index([wasCorrected])
+  @@index([createdAt])
+}
+
+// Incremental rollup: per (entity, caseType) how often the operator filed to a given folder/title.
+// getLearnedSuggestion reads the dominant (highest-count) row for a matched entity. Upserted on each
+// filing so it improves continuously without any batch job.
+model OcrEntityDefault {
+  id String @id @default(cuid())
+
+  entityType String // "provider" | "insurer"
+  entityKey  String // normalized provider/insurer name
+  caseType   String @default("") // "" = any; else no_fault | wc | arbitration
+
+  folderKey String
+  titleKey  String
+
+  count      Int      @default(1)
+  lastSeenAt DateTime @default(now())
+
+  @@unique([entityType, entityKey, caseType, folderKey, titleKey])
+  @@index([entityType, entityKey])
+}
+

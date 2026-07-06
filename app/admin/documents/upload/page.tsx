@@ -72,6 +72,12 @@ export default function UploadDocsPage() {
   const [suggested, setSuggested] = useState<{ folderKey?: string; titleKey?: string } | null>(null);
   const [prefill, setPrefill] = useState<Prefill>({});
   const [dragOver, setDragOver] = useState(false);
+  // Learning signals captured at file-pick (sent on commit to build per-entity memory). Kept even if
+  // the operator later overrides the folder, so we record the true suggestion-vs-choice.
+  const [pickSuggestion, setPickSuggestion] = useState<{ folderKey?: string; titleKey?: string; confidence?: number } | null>(null);
+  const [ocrProvider, setOcrProvider] = useState<string | null>(null);
+  const [ocrInsurer, setOcrInsurer] = useState<string | null>(null);
+  const [learnedNote, setLearnedNote] = useState<string | null>(null);
 
   // Step 2 — matter
   const [q, setQ] = useState("");
@@ -133,8 +139,12 @@ export default function UploadDocsPage() {
       if (j?.ok) {
         setOcrExtractionId(j.ocrExtractionId ?? null);
         setOcrMeanConf(typeof j.meanConfidence === "number" ? j.meanConfidence : null);
+        setLearnedNote(j.learnedNote || null);
+        setOcrProvider(j.identity?.providerName || null);
+        setOcrInsurer(j.identity?.insurerName || null);
         const sFolder = j.suggestion?.folderKey || j.folderKey || "";
         const sTitle = j.suggestion?.titleKey || j.titleKey || "";
+        setPickSuggestion(sFolder ? { folderKey: sFolder, titleKey: sTitle || undefined, confidence: j.suggestion?.confidence } : null);
         if (sFolder && getFolder(sFolder)?.terminal) {
           // Keep the original classifier output as the suggestion; route the shown folder by case type.
           setSuggested({ folderKey: sFolder, titleKey: sTitle || undefined });
@@ -248,6 +258,14 @@ export default function UploadDocsPage() {
           base64,
           ocrExtractionId,
           confirmDuplicate,
+          // Learning signals: the suggestion shown + matched entities + case type, so the app can
+          // record suggestion-vs-choice and build per-provider/carrier memory.
+          suggestedFolderKey: pickSuggestion?.folderKey ?? null,
+          suggestedTitleKey: pickSuggestion?.titleKey ?? null,
+          suggestedConfidence: pickSuggestion?.confidence ?? null,
+          providerName: ocrProvider,
+          insurerName: ocrInsurer,
+          caseType,
         }),
       });
       const j = await res.json().catch(() => null);
@@ -264,6 +282,10 @@ export default function UploadDocsPage() {
         setPrefill({});
         setFields({});
         setFreehandTitle("");
+        setPickSuggestion(null);
+        setOcrProvider(null);
+        setOcrInsurer(null);
+        setLearnedNote(null);
       } else if (j?.duplicate) {
         setNeedsDupConfirm(true);
         setMsg({ kind: "warn", text: j.error || "This file is already filed on this matter." });
@@ -371,6 +393,10 @@ export default function UploadDocsPage() {
                   setOcrExtractionId(null);
                   setPrefill({});
                   setMsg(null);
+                  setPickSuggestion(null);
+                  setOcrProvider(null);
+                  setOcrInsurer(null);
+                  setLearnedNote(null);
                 }}
                 style={{ ...btn("#64748b"), marginTop: 4 }}
               >
@@ -383,6 +409,11 @@ export default function UploadDocsPage() {
             <div style={{ marginTop: 10, fontSize: 12, color: "#137333" }}>
               OCR complete{ocrMeanConf != null ? ` (mean confidence ${Math.round(ocrMeanConf * 100)}%)` : ""}.
               {suggested?.folderKey ? " Suggested folder/title pre-selected below." : " No confident folder suggestion — pick one below."} Highlighted fields are OCR-filled — verify them.
+            </div>
+          )}
+          {!ocrBusy && learnedNote && (
+            <div style={{ marginTop: 6, fontSize: 12, color: "#00346e", fontWeight: 700 }}>
+              ⓘ {learnedNote}
             </div>
           )}
         </div>

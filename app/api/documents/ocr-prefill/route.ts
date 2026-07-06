@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractDocument } from "@/lib/ocr";
 import { persistExtraction } from "@/lib/ocr/persist";
 import { suggestFolderTitle, mapOcrToTitleFields, mapBillToIntakeFields } from "@/lib/ocr/mapping";
-import { getFolder } from "@/lib/documents/folderTaxonomy";
+import { getFolder, findTitle } from "@/lib/documents/folderTaxonomy";
+import { getLearnedSuggestion } from "@/lib/ocr/learning";
+import { prisma } from "@/lib/prisma";
 
 // OCR-prefill for the filing flow (Phase 4b). Runs the engine on inbound bytes (BEFORE Clio),
 // persists the extraction, classifies a suggested folder/title, and prefills that title's fields.
@@ -42,7 +44,40 @@ export async function POST(req: NextRequest) {
     matterId: Number.isFinite(matterId) && matterId > 0 ? matterId : null,
   });
 
-  const suggestion = suggestFolderTitle(result);
+  const classifierSuggestion = suggestFolderTitle(result);
+
+  // Identity read off the document (needed both for entity memory and matter auto-suggest).
+  const intake = mapBillToIntakeFields(result);
+
+  // Learned memory: if this document's provider/carrier has a dominant historical filing, prefer it
+  // over the keyword classifier. Case type isn't known yet (matter not picked), so use agnostic memory.
+  let learned: Awaited<ReturnType<typeof getLearnedSuggestion>> = null;
+  try {
+    learned = await getLearnedSuggestion(prisma, {
+      providerName: intake.providerName.value,
+      insurerName: intake.insurerName.value,
+      caseType: null,
+    });
+  } catch {
+    learned = null;
+  }
+  // Only trust learned memory that still resolves to a valid terminal folder/title.
+  const learnedValid =
+    learned && getFolder(learned.folderKey)?.terminal && findTitle(learned.folderKey, learned.titleKey)
+      ? learned
+      : null;
+
+  const suggestion = learnedValid
+    ? {
+        folderKey: learnedValid.folderKey,
+        titleKey: learnedValid.titleKey,
+        confidence: 0.85,
+        matched: `learned:${learnedValid.entityType}(${learnedValid.count})`,
+      }
+    : classifierSuggestion;
+  const learnedNote = learnedValid
+    ? `Pre-selected from ${learnedValid.count} prior filing${learnedValid.count === 1 ? "" : "s"} for this ${learnedValid.entityType === "provider" ? "provider" : "carrier"}.`
+    : null;
 
   // Resolve the folder/title to prefill: an explicit folder (drop target) wins; otherwise the
   // classifier's suggestion. Title = explicit → matching suggestion → the folder's first title.
@@ -57,13 +92,13 @@ export async function POST(req: NextRequest) {
 
   const prefill = folderKey && titleKey ? mapOcrToTitleFields(result, folderKey, titleKey) : {};
 
-  // Identity fields (patient/claim/etc.) for matter auto-suggestion in the Upload Docs flow.
-  const intake = mapBillToIntakeFields(result);
+  // Identity fields (patient/claim/etc.) for matter auto-suggestion + entity memory in the flow.
   const identity = {
     patientName: intake.patientName.value || null,
     claimNumber: intake.claimNumber.value || null,
     policyNumber: intake.policyNumber.value || null,
     insurerName: intake.insurerName.value || null,
+    providerName: intake.providerName.value || null,
     dateOfLoss: intake.dateOfLoss.value || null,
   };
 
@@ -73,6 +108,11 @@ export async function POST(req: NextRequest) {
     fileHash: row.fileHash,
     meanConfidence: result.meanConfidence,
     suggestion,
+    classifierSuggestion,
+    learned: learnedValid
+      ? { folderKey: learnedValid.folderKey, titleKey: learnedValid.titleKey, count: learnedValid.count, entityType: learnedValid.entityType }
+      : null,
+    learnedNote,
     folderKey: folderKey ?? null,
     titleKey: titleKey ?? null,
     prefill,

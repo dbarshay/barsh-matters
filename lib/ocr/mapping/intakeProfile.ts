@@ -42,13 +42,11 @@ const EXCLUDES: Record<string, string[]> = {
   providerName: ["referring", "referred by", "ordering", "primary care"],
   // Carrier/insurer — not the employer (WC) and not the patient's own relationship-to-insured note.
   insurerName: ["employer", "relationship to insured"],
-  // Carrier CLAIM number — not our internal file #, the court index #, an invoice/account/TIN/NPI, or the policy/group #.
-  claimNumber: [
-    "our file", "your file", "file no", "file number", "index", "invoice", "account",
-    "npi", "tax", "policy", "group", "member", "subscriber", "certificate",
-  ],
-  // Policy/member number — not the claim #, TIN, NPI, our file #, or court index #.
-  policyNumber: ["claim", "tax", "npi", "our file", "your file", "index", "invoice", "account"],
+  // Carrier CLAIM number — not OUR internal file #, the court index #, an invoice #, or the provider's
+  // TIN/NPI. (We only exclude the possessive "our/your file" — a bare carrier "File No." IS the claim.)
+  claimNumber: ["our file", "your file", "index no", "index number", "invoice", "npi", "tax id", "federal tax"],
+  // Policy/member number — not the claim #, TIN/NPI, our file #, or court index #.
+  policyNumber: ["claim", "tax id", "federal tax", "npi", "our file", "your file", "index no", "index number"],
   // Date of loss/accident — not DOB, statement/print/signature/bill date.
   dateOfLoss: ["birth", "dob", "statement", "printed", "print date", "signature", "signed", "bill date", "date of bill", "today"],
 };
