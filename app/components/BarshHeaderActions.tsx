@@ -67,6 +67,16 @@ export default function BarshHeaderActions({ onAdministratorClick }: BarshHeader
         <span>Print Queue</span>
       </a>
 
+      <a
+        href="/admin/documents/upload"
+        title="Upload a document to a matter (OCR-assisted, filed to Clio)."
+        style={baseActionStyle}
+        data-barsh-header-upload-docs-link="true"
+      >
+        <span aria-hidden="true">📤</span>
+        <span>Upload Docs</span>
+      </a>
+
       <a href="/court-calendar" title="Open Court Calendar." style={baseActionStyle} data-barsh-court-calendar-header-link="true">
         <span>Court Calendar</span>
       </a>
