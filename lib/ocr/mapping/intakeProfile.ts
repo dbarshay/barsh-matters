@@ -281,6 +281,14 @@ function scanCarrierBySuffix(text: string): string | null {
   return null;
 }
 
+// A billing PRACTICE/entity (not an individual physician). The firm wants provider = the practice, so
+// bare person names ("Michael Jurkowich", "Bruce Berns DC") are rejected — only names carrying a
+// business-entity marker qualify.
+const ENTITY_RE = /\b(inc|llc|pllc|p\.?c\.?|medical|equipment|radiology|chiropractic|associates|physical\s+therapy|diagnostic|imaging|rehab|orthopedic|surgical|acupuncture|wellness|clinic|dme|group|laborator|pharmacy|supply|hospital|center|neurology|anesthesia|medicine)\b/i;
+function isPracticeName(v: string): boolean {
+  return ENTITY_RE.test(v);
+}
+
 /**
  * Provider from the document letterhead (top lines) — used on scripts/reports where the practice
  * name isn't in a labeled field. Requires a business-entity keyword and skips carrier/firm lines.
@@ -289,7 +297,7 @@ function scanLetterheadProvider(text: string): string | null {
   const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
   for (const l of lines.slice(0, 6)) {
     if (l.length < 5 || l.length > 60 || !/[A-Za-z]/.test(l)) continue;
-    if (!/\b(inc|l\.?l\.?c|p\.?l\.?l\.?c|p\.?c|medical|equipment|radiology|chiropractic|associates|physical therapy|diagnostic|imaging|rehab|orthopedic|surgical|acupuncture|wellness|clinic|dpt)\b/i.test(l)) continue;
+    if (!isPracticeName(l)) continue;
     if (/patient|insurance|indemnity|mutual|casualty|assurance|mvaic|barshay|attorney|law offices|no-fault/i.test(l)) continue;
     return cleanProviderName(l.replace(/[.,;:]+$/, "").trim());
   }
@@ -329,7 +337,12 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
       }
     : emptyField<string>();
   let providerName = stringField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
-  if (providerName.value) providerName = { ...providerName, value: cleanProviderName(providerName.value) };
+  if (providerName.value) {
+    const cleaned = cleanProviderName(providerName.value);
+    // Keep only practice/entity names; a bare individual ("Michael Jurkowich") falls through to the
+    // caption/letterhead fallbacks (which yield the practice) or stays blank.
+    providerName = isPracticeName(cleaned) ? { ...providerName, value: cleaned } : emptyField<string>();
+  }
 
   // Carrier/insurer — reject a date/PO-box the kv pairing grabbed, then fall back to a text scan of
   // the "Carrier:" / "Insurance Plan Name" line, then to any carrier-suffix name in the text.
@@ -412,8 +425,18 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
     }
   }
 
-  // Date of loss — key/value only, no DOB, no future date.
-  const dateOfLoss = dateFieldKvOnly(result, FIELD_SYNONYMS.dateOfLoss, EXCLUDES.dateOfLoss, disallowDates);
+  // Date of loss — key/value first; else the accident date stated in a report narrative ("...motor
+  // vehicle accident on 12/23/23"). No DOB, no future date.
+  let dateOfLoss = dateFieldKvOnly(result, FIELD_SYNONYMS.dateOfLoss, EXCLUDES.dateOfLoss, disallowDates);
+  if (!dateOfLoss.value) {
+    const m = result.text.match(/(?:accident|injur(?:y|ed)|date of loss|d\.?o\.?a\.?|d\.?o\.?i\.?)[^.\d]{0,15}?(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/i);
+    if (m) {
+      const nd = normalizeDate(m[1]);
+      if (nd && !disallowDates.has(nd) && isPlausiblePastDate(nd)) {
+        dateOfLoss = { value: nd, confidence: 0.35, source: "text-scan", rawText: m[0] };
+      }
+    }
+  }
 
   // DOS start/end — key/value first, else min/max of service-table dates (lower confidence).
   const dosDisallow = new Set<string>(disallowDates);

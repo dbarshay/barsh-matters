@@ -82,6 +82,8 @@ export const FIELD_SYNONYMS: Record<string, string[]> = {
     "dates of service from",
     "date of service",
     "service date",
+    "visit date",
+    "visit",
     "dos from",
     "from",
   ],
