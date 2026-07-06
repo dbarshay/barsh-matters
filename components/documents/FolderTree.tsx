@@ -286,10 +286,10 @@ function FolderNode({
                     {onRemoveDoc && (
                       <button
                         onClick={() => onRemoveDoc(d)}
-                        title="Remove from tree (archives the BM filing; does not touch Clio)"
+                        title="Delete from folder tree"
                         style={{ marginLeft: "auto", border: "none", background: "transparent", color: "#b00020", cursor: "pointer", fontSize: 12, fontWeight: 800 }}
                       >
-                        Remove
+                        Delete
                       </button>
                     )}
                   </div>
