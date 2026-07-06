@@ -102,6 +102,30 @@ function practiceField(
   return emptyField<string>();
 }
 
+/**
+ * Insurer finder that PREFERS a valid carrier value: scans every insurer label and returns the first
+ * value that survives cleanInsurerName (skipping a PO-box/label-continuation an earlier label carried),
+ * so we don't stop on a rejectable value when a later label holds the real carrier ("GEICO INSURANCE
+ * COMPANY").
+ */
+function insurerField(
+  result: OcrExtractionResult,
+  synonyms: string[],
+  excludes: string[],
+): MappedField<string> {
+  for (const syn of synonyms) {
+    for (const kv of result.keyValues) {
+      if (!isUsableValue(kv.value)) continue;
+      if (!labelMatchesWithExcludes(kv.key, [syn], excludes)) continue;
+      const cleaned = cleanInsurerName(cleanValue(kv.value));
+      if (cleaned) {
+        return { value: cleaned, confidence: kv.confidence, source: `kv:"${kv.key}"`, rawText: kv.value };
+      }
+    }
+  }
+  return emptyField<string>();
+}
+
 /** A plain labeled string field (with optional sibling-exclusions). */
 function stringField(
   result: OcrExtractionResult,
@@ -384,11 +408,7 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
 
   // Carrier/insurer — reject a date/PO-box the kv pairing grabbed, then fall back to a text scan of
   // the "Carrier:" / "Insurance Plan Name" line, then to any carrier-suffix name in the text.
-  let insurerName = stringField(result, FIELD_SYNONYMS.insurerName, EXCLUDES.insurerName);
-  if (insurerName.value) {
-    const cleaned = cleanInsurerName(insurerName.value);
-    insurerName = cleaned ? { ...insurerName, value: cleaned } : emptyField<string>();
-  }
+  let insurerName = insurerField(result, FIELD_SYNONYMS.insurerName, EXCLUDES.insurerName);
   if (!insurerName.value) {
     const scanned = scanLabeledText(result.text, [
       "carrier", "insurance plan name or program name", "name of insurer", "name and address of insurer",
