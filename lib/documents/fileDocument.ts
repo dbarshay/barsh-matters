@@ -12,7 +12,9 @@ import {
 } from "@/lib/documents/folderTaxonomy";
 
 export type FileDocumentInput = {
-  matterId: number;
+  /** Exactly one of matterId (individual matter) or masterLawsuitId (lawsuit file) must be set. */
+  matterId?: number | null;
+  masterLawsuitId?: string | null;
   clioDocumentId: string;
   folderKey: string;
   titleKey: string;
@@ -44,7 +46,9 @@ const fail = (status: number, error: string, extra?: Record<string, unknown>): F
 /** `db` is a PrismaClient (or a client with filedDocument/auditLog/$transaction). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fileDocument(db: any, input: FileDocumentInput): Promise<FileDocumentResult> {
-  const matterId = Number(input.matterId);
+  const matterIdNum = Number(input.matterId);
+  const matterId = Number.isFinite(matterIdNum) && matterIdNum > 0 ? matterIdNum : null;
+  const masterLawsuitId = input.masterLawsuitId == null ? null : String(input.masterLawsuitId).trim() || null;
   const clioDocumentId = String(input.clioDocumentId ?? "").trim();
   const folderKey = String(input.folderKey ?? "").trim();
   const titleKey = String(input.titleKey ?? "").trim();
@@ -53,8 +57,11 @@ export async function fileDocument(db: any, input: FileDocumentInput): Promise<F
   const fileHash = input.fileHash == null ? null : String(input.fileHash).trim() || null;
   const confirmDuplicate = input.confirmDuplicate === true;
 
-  if (!Number.isFinite(matterId) || matterId <= 0) return fail(400, "matterId (positive integer) required.");
+  if (!matterId && !masterLawsuitId) return fail(400, "matterId or masterLawsuitId required.");
   if (!clioDocumentId) return fail(400, "clioDocumentId required.");
+
+  // Scope duplicate + sibling-label lookups to the filing target (matter or lawsuit).
+  const targetScope: Record<string, unknown> = matterId ? { matterId } : { masterLawsuitId };
 
   const folder = getFolder(folderKey);
   if (!folder || !folder.terminal) return fail(400, `Unknown terminal folder "${folderKey}".`);
@@ -78,18 +85,18 @@ export async function fileDocument(db: any, input: FileDocumentInput): Promise<F
   // Exact-duplicate bytes already filed on this matter → warn unless confirmed.
   if (fileHash) {
     const dup = await db.filedDocument.findFirst({
-      where: { matterId, fileHash, status: "active" },
+      where: { ...targetScope, fileHash, status: "active" },
       select: { id: true, titleLabel: true, folderKey: true },
     });
     if (dup && !confirmDuplicate) {
-      return fail(409, "An identical file is already filed on this matter.", { duplicate: true, existing: dup });
+      return fail(409, "An identical file is already filed here.", { duplicate: true, existing: dup });
     }
   }
 
   // Compose the label, disambiguating with (2)/(3)… if it collides in this folder.
   const base = composeTitleLabel(folderKey, titleKey, fields, freehandTitle);
   const siblings = await db.filedDocument.findMany({
-    where: { matterId, folderKey, status: "active" },
+    where: { ...targetScope, folderKey, status: "active" },
     select: { titleLabel: true },
   });
   const existingLabels = new Set(siblings.map((s: { titleLabel: string }) => s.titleLabel));
@@ -111,6 +118,7 @@ export async function fileDocument(db: any, input: FileDocumentInput): Promise<F
     const doc = await tx.filedDocument.create({
       data: {
         matterId,
+        masterLawsuitId,
         matterDisplayNumber,
         level,
         clioDocumentId,
@@ -131,9 +139,9 @@ export async function fileDocument(db: any, input: FileDocumentInput): Promise<F
         action: "document.filed",
         entityType: "FiledDocument",
         summary: `Filed "${titleLabel}" into ${folder.name}`,
-        matterId,
+        ...(matterId ? { matterId } : {}),
         matterDisplayNumber,
-        details: { folderKey, titleKey, titleLabel, clioDocumentId, sourceType, level },
+        details: { folderKey, titleKey, titleLabel, clioDocumentId, sourceType, level, masterLawsuitId },
         workflow: "documents",
         sourcePage: "documents-folder-tree",
         actorName: input.actorName ?? null,

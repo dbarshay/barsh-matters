@@ -1264,9 +1264,11 @@ model OcrExtraction {
 model FiledDocument {
   id String @id @default(cuid())
 
-  // Matter linkage. `level` mirrors the folder's level: matter-level (Claim Documents, Workers' Comp)
-  // rows sit on the individual BRL_ matter; lawsuit-level (Arbitration, Litigation) on the lawsuit file.
-  matterId            Int
+  // Filing target. `level` mirrors the folder's level. Matter-level rows sit on an individual BRL_
+  // matter (matterId set); lawsuit-level rows sit on the lawsuit file (masterLawsuitId set). Exactly
+  // one of matterId / masterLawsuitId is set per row.
+  matterId            Int?
+  masterLawsuitId     String?
   matterDisplayNumber String?
   level               String // "matter" | "lawsuit"
 
@@ -1294,6 +1296,7 @@ model FiledDocument {
   updatedAt   DateTime @updatedAt
 
   @@index([matterId])
+  @@index([masterLawsuitId])
   @@index([matterDisplayNumber])
   @@index([folderKey])
   @@index([clioDocumentId])

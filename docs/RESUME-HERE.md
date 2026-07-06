@@ -237,7 +237,30 @@ Live document filing into the BM folder tree, from three sources, all reusing th
   routes are disabled 410 stubs. NOTE: residual settlement *functions/state* on the matter page are now
   unreachable dead code — small follow-up sweep, no impact.
 
-## NEXT: lawsuit-level document tree + auto-file (design agreed 2026-07-06)
+## Lawsuit-level document tree — BUILT (2026-07-06); needs `db push` + `generate`
+- **Schema**: `FiledDocument.matterId` is now `Int?`, added `masterLawsuitId String?` + index. Exactly one
+  of matterId / masterLawsuitId is set per row. **Run `npx prisma db push && npx prisma generate`** —
+  until then tsc shows one stale-client error (`masterLawsuitId does not exist in FiledDocumentSelect`).
+- **Core**: `lib/documents/fileDocument.ts` accepts `masterLawsuitId` (matter OR lawsuit); dedup +
+  label-collision scoped to the target; audit `matterId` only when present.
+- **Filed API**: `GET /api/documents/filed` also accepts `masterLawsuitId`; returns matterId /
+  matterDisplayNumber / masterLawsuitId on each row.
+- **UI**: `FolderTree` gained a `masterLawsuitId` prop. New `components/documents/LawsuitDocuments.tsx`
+  = the lawsuit's own tree (level "lawsuit") PLUS a folder per **child matter** (from
+  `/api/claim-index/by-master`) that expands to that matter's tree — reachable without leaving the
+  lawsuit. Wired into the matters page master **View Lawsuit Documents** popup (open + Delete filed rows).
+
+## STILL TODO (task 118): finalize/upload lawsuit-mode auto-file + placeholders
+- **finalize lawsuit mode**: the auto-file block in `app/api/documents/finalize/route.ts` currently runs
+  only for `uploadTargetMode === "direct-matter"` (files by matterId). Generalize it so lawsuit finalize
+  files by `masterLawsuitId` (level "lawsuit"), with the same "block until template mapped" rule.
+- **placeholder docs** (bill-schedule, packet-summary, summons-complaint): not DocumentTemplate rows, so
+  add a small code map (placeholderKey → folderKey/titleKey), and auto-file them in finalize (always
+  "mapped" via the code default).
+- **Upload Docs / drag-drop for lawsuits**: optional — let the operator upload/drop directly onto the
+  lawsuit tree (`/api/documents/upload` accepts masterLawsuitId).
+
+## Superseded design note (2026-07-06)
 A lawsuit gets its own BM number and its own Clio folder (single-master storage already creates folders
 for both `individual_matter` and `lawsuit` target kinds). Finalized docs should auto-file to whatever
 entity they were generated from (matter OR lawsuit). To do:

@@ -34,6 +34,8 @@ type Props = {
   matterId: number;
   /** Optional BRL display number; matched alongside matterId so the list resolves either way. */
   matterDisplayNumber?: string | null;
+  /** When set, the tree lists documents filed at the lawsuit level (instead of a matter). */
+  masterLawsuitId?: string | null;
   /** "matter" shows Claim Documents + Workers' Comp; "lawsuit" shows Arbitration + Litigation. */
   level?: MatterLevel | "all";
   /** When set, folders irrelevant to this case type AND empty are greyed (still visible). */
@@ -57,6 +59,7 @@ function terminalKeysUnder(f: FolderSpec): string[] {
 export default function FolderTree({
   matterId,
   matterDisplayNumber = null,
+  masterLawsuitId = null,
   level = "all",
   caseType = null,
   reloadKey = 0,
@@ -74,8 +77,11 @@ export default function FolderTree({
     setDocs(null);
     setError(null);
     const url =
-      `/api/documents/filed?matterId=${encodeURIComponent(matterId)}` +
-      (matterDisplayNumber ? `&matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}` : "") +
+      `/api/documents/filed?` +
+      (masterLawsuitId
+        ? `masterLawsuitId=${encodeURIComponent(masterLawsuitId)}`
+        : `matterId=${encodeURIComponent(matterId)}` +
+          (matterDisplayNumber ? `&matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}` : "")) +
       (level !== "all" ? `&level=${level}` : "");
     fetch(url, { cache: "no-store" })
       .then((r) => r.json())
@@ -88,7 +94,7 @@ export default function FolderTree({
     return () => {
       alive = false;
     };
-  }, [matterId, matterDisplayNumber, level, reloadKey]);
+  }, [matterId, matterDisplayNumber, masterLawsuitId, level, reloadKey]);
 
   const branches = useMemo(
     () => FOLDER_TAXONOMY.filter((b) => level === "all" || b.level === level),

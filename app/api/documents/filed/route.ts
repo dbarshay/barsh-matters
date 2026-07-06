@@ -15,12 +15,13 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const matterId = Number(sp.get("matterId"));
   const matterDisplayNumber = (sp.get("matterDisplayNumber") || "").trim();
+  const masterLawsuitId = (sp.get("masterLawsuitId") || "").trim();
   const level = sp.get("level");
 
   const hasMatterId = Number.isFinite(matterId) && matterId > 0;
-  if (!hasMatterId && !matterDisplayNumber) {
+  if (!hasMatterId && !matterDisplayNumber && !masterLawsuitId) {
     return NextResponse.json(
-      { ok: false, error: "matterId (positive integer) or matterDisplayNumber required" },
+      { ok: false, error: "matterId, matterDisplayNumber, or masterLawsuitId required" },
       { status: 400 },
     );
   }
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
   const or: any[] = [];
   if (hasMatterId) or.push({ matterId });
   if (matterDisplayNumber) or.push({ matterDisplayNumber });
+  if (masterLawsuitId) or.push({ masterLawsuitId });
 
   const where: any = { status: "active", OR: or };
   if (level === "matter" || level === "lawsuit") where.level = level;
@@ -37,6 +39,9 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      matterId: true,
+      matterDisplayNumber: true,
+      masterLawsuitId: true,
       folderKey: true,
       titleKey: true,
       titleLabel: true,

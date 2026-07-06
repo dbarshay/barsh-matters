@@ -7,6 +7,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import { bmConfirm, bmAlert, bmPrompt } from "@/app/components/BmDialogHost";
+import LawsuitDocuments from "@/components/documents/LawsuitDocuments";
+import { type FiledDoc } from "@/components/documents/FolderTree";
 import BarshHeader from "@/app/components/BarshHeader";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
@@ -1302,6 +1304,7 @@ export default function FilteredMattersPage() {
   const [masterClioDocumentsLoading, setMasterClioDocumentsLoading] = useState(false);
   const [masterClioDocumentsResult, setMasterClioDocumentsResult] = useState<any>(null);
   const [masterViewDocumentsPopupOpen, setMasterViewDocumentsPopupOpen] = useState(false);
+  const [masterFiledReloadKey, setMasterFiledReloadKey] = useState(0);
   const [masterSelectedViewDocumentId, setMasterSelectedViewDocumentId] = useState("");
 
   const [masterDocumentDataPreview, setMasterDocumentDataPreview] = useState<any>(null);
@@ -1458,11 +1461,36 @@ export default function FilteredMattersPage() {
     setMasterSelectedViewDocumentId("");
   }
 
+  function openMasterFiledTreeDocument(doc: FiledDoc): void {
+    const id = clean((doc as any)?.clioDocumentId);
+    if (!id) return;
+    const displayName = clean((doc as any)?.fileName) || clean((doc as any)?.titleLabel) || "Document";
+    const params = new URLSearchParams();
+    params.set("documentId", id);
+    params.set("filename", displayName);
+    params.set("mode", displayName.toLowerCase().endsWith(".eml") ? "email-pdf" : "inline");
+    window.open("/api/documents/clio-document-open?" + params.toString(), "_blank", "noopener,noreferrer");
+  }
+
+  async function removeMasterFiledTreeDocument(doc: FiledDoc): Promise<void> {
+    if (!(doc as any)?.id) return;
+    if (!(await bmConfirm(`Delete "${(doc as any).titleLabel}"?`))) return;
+    try {
+      const res = await fetch(`/api/documents/filed?id=${encodeURIComponent((doc as any).id)}`, { method: "DELETE" });
+      const j = await res.json().catch(() => null);
+      if (j?.ok) setMasterFiledReloadKey((k) => k + 1);
+      else void bmAlert(j?.error || "Could not delete the document.");
+    } catch {
+      void bmAlert("Delete request failed.");
+    }
+  }
+
   function renderMasterViewDocumentsPopup() {
     if (masterViewDocumentsPopupOpen === false) return null;
 
     const docs = masterClioDocumentsArray();
     const selectedDoc = selectedMasterViewDocument();
+    const masterLawsuitIdForTree = currentMasterLawsuitIdForDocumentPreview();
 
     return (
       <div
@@ -1500,6 +1528,22 @@ export default function FilteredMattersPage() {
           </div>
 
           <div style={{ padding: 20, display: "grid", gap: 14, maxHeight: "calc(88vh - 154px)", overflowY: "auto" }}>
+            {/* BM folder tree: the lawsuit's own documents + a folder per child matter. */}
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", padding: 14 }}>
+              {masterLawsuitIdForTree ? (
+                <LawsuitDocuments
+                  masterLawsuitId={masterLawsuitIdForTree}
+                  reloadKey={masterFiledReloadKey}
+                  onOpenDoc={openMasterFiledTreeDocument}
+                  onRemoveDoc={removeMasterFiledTreeDocument}
+                />
+              ) : (
+                <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>
+                  Could not resolve this lawsuit for the document tree.
+                </div>
+              )}
+            </div>
+
             {masterClioDocumentsResult?.ok === false && (
               <div style={{ padding: 12, border: "1px solid #fecaca", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontWeight: 850 }}>
                 {masterDocumentPreviewText(masterClioDocumentsResult.error) || "Could not load Clio documents."}
