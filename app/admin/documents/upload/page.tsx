@@ -71,6 +71,8 @@ export default function UploadDocsPage() {
   const [hits, setHits] = useState<MatterHit[]>([]);
   const [searchMsg, setSearchMsg] = useState<string>("");
   const [matter, setMatter] = useState<MatterHit | null>(null);
+  // Identity read off the document by OCR (used to auto-suggest the matter).
+  const [ocrIdentity, setOcrIdentity] = useState<{ patientName?: string | null; claimNumber?: string | null } | null>(null);
 
   // Step 3 — folder/title/fields
   const folders = useMemo(() => listTerminalFolders(), []);
@@ -133,6 +135,16 @@ export default function UploadDocsPage() {
             Object.fromEntries(Object.entries(j.prefill as Prefill).map(([k, v]) => [k, v.value])),
           );
         }
+        // Auto-suggest the matter from what OCR read off the document (patient, else claim #).
+        const identity = j.identity || null;
+        setOcrIdentity(identity);
+        if (!matter) {
+          const autoQuery = (identity?.patientName || identity?.claimNumber || "").trim();
+          if (autoQuery.length >= 2) {
+            setQ(autoQuery);
+            void runSearch(autoQuery);
+          }
+        }
       }
     } catch {
       // OCR failure is non-fatal; operator fills manually.
@@ -141,8 +153,8 @@ export default function UploadDocsPage() {
     }
   }
 
-  async function runSearch() {
-    const query = q.trim();
+  async function runSearch(queryOverride?: string) {
+    const query = (queryOverride ?? q).trim();
     if (query.length < 2) {
       setSearchMsg("Enter at least 2 characters (matter number, patient name, or claim #).");
       return;
@@ -341,6 +353,12 @@ export default function UploadDocsPage() {
           <div style={{ fontWeight: 900, color: NAVY, marginBottom: 10 }}>
             <span style={stepNum}>2</span>Pick the matter
           </div>
+          {!matter && (ocrIdentity?.patientName || ocrIdentity?.claimNumber) && (
+            <div style={{ marginBottom: 8, fontSize: 12, color: "#137333" }}>
+              Read from the document:{ocrIdentity?.patientName ? ` patient "${ocrIdentity.patientName}"` : ""}
+              {ocrIdentity?.claimNumber ? `${ocrIdentity?.patientName ? "," : ""} claim ${ocrIdentity.claimNumber}` : ""} — matches below (confirm the right one).
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8 }}>
             <input
               value={q}

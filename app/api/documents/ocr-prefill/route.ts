@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { extractDocument } from "@/lib/ocr";
 import { persistExtraction } from "@/lib/ocr/persist";
-import { suggestFolderTitle, mapOcrToTitleFields } from "@/lib/ocr/mapping";
+import { suggestFolderTitle, mapOcrToTitleFields, mapBillToIntakeFields } from "@/lib/ocr/mapping";
 import { getFolder } from "@/lib/documents/folderTaxonomy";
 
 // OCR-prefill for the filing flow (Phase 4b). Runs the engine on inbound bytes (BEFORE Clio),
@@ -57,6 +57,16 @@ export async function POST(req: NextRequest) {
 
   const prefill = folderKey && titleKey ? mapOcrToTitleFields(result, folderKey, titleKey) : {};
 
+  // Identity fields (patient/claim/etc.) for matter auto-suggestion in the Upload Docs flow.
+  const intake = mapBillToIntakeFields(result);
+  const identity = {
+    patientName: intake.patientName.value || null,
+    claimNumber: intake.claimNumber.value || null,
+    policyNumber: intake.policyNumber.value || null,
+    insurerName: intake.insurerName.value || null,
+    dateOfLoss: intake.dateOfLoss.value || null,
+  };
+
   return NextResponse.json({
     ok: true,
     ocrExtractionId: row.id,
@@ -66,5 +76,6 @@ export async function POST(req: NextRequest) {
     folderKey: folderKey ?? null,
     titleKey: titleKey ?? null,
     prefill,
+    identity,
   });
 }
