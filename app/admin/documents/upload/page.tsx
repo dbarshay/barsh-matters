@@ -330,7 +330,7 @@ export default function UploadDocsPage() {
           {ocrBusy && <div style={{ marginTop: 10, fontSize: 12, color: "#5a6b80" }}>Reading document (OCR)…</div>}
           {!ocrBusy && ocrExtractionId && (
             <div style={{ marginTop: 10, fontSize: 12, color: "#137333" }}>
-              OCR complete{ocrMeanConf != null ? ` (mean confidence ${Math.round(ocrMeanConf)}%)` : ""}.
+              OCR complete{ocrMeanConf != null ? ` (mean confidence ${Math.round(ocrMeanConf * 100)}%)` : ""}.
               {suggested?.folderKey ? " Suggested folder/title pre-selected below." : " No confident folder suggestion — pick one below."} Highlighted fields are OCR-filled — verify them.
             </div>
           )}
