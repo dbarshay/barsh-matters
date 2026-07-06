@@ -14,6 +14,7 @@ import BarshModal from "@/app/components/BarshModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
 import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
   const n = Number(v);
@@ -562,6 +563,8 @@ function matterUrlWithWorkspaceTab(tab: MatterWorkspaceTab) {
 }
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  // Route legacy alert() through the BM-styled dialog (no native "localhost says" popups).
+  const alert = (message: React.ReactNode) => { void bmAlert({ message }); };
   const [matterId, setMatterId] = useState<string>("");
 
   useEffect(() => {
@@ -674,6 +677,10 @@ const activeGroupKey =
   const [matterFiledDocsReloadKey, setMatterFiledDocsReloadKey] = useState(0);
   // A file dropped onto a folder in the tree, awaiting title selection + filing.
   const [matterDroppedFile, setMatterDroppedFile] = useState<{ folderKey: string; file: File } | null>(null);
+  // Delete-from-tree confirmation (BM-styled modal, not a native confirm).
+  const [matterPendingDeleteDoc, setMatterPendingDeleteDoc] = useState<FiledDoc | null>(null);
+  const [matterDeleteBusy, setMatterDeleteBusy] = useState(false);
+  const [matterDeleteError, setMatterDeleteError] = useState<string | null>(null);
   const [emailDeliveryPopupOpen, setEmailDeliveryPopupOpen] = useState(false);
   const [emailDeliveryContext, setEmailDeliveryContext] = useState<any>(null);
   const [emailDeliveryTo, setEmailDeliveryTo] = useState("");
@@ -917,20 +924,31 @@ const activeGroupKey =
     window.open("/api/documents/clio-document-open?" + params.toString(), "_blank", "noopener,noreferrer");
   }
 
-  // Delete an entry from the BM tree.
-  async function removeFiledTreeDocument(doc: FiledDoc): Promise<void> {
+  // Delete an entry from the BM tree — opens a BM-styled confirm modal.
+  function removeFiledTreeDocument(doc: FiledDoc): void {
     if (!doc?.id) return;
-    if (!window.confirm(`Delete "${doc.titleLabel}" from this matter's folder tree?`)) return;
+    setMatterDeleteError(null);
+    setMatterPendingDeleteDoc(doc);
+  }
+
+  async function confirmDeleteFiledTreeDocument(): Promise<void> {
+    const doc = matterPendingDeleteDoc;
+    if (!doc?.id) return;
+    setMatterDeleteBusy(true);
+    setMatterDeleteError(null);
     try {
       const res = await fetch(`/api/documents/filed?id=${encodeURIComponent(doc.id)}`, { method: "DELETE" });
       const j = await res.json().catch(() => null);
       if (j?.ok) {
+        setMatterPendingDeleteDoc(null);
         setMatterFiledDocsReloadKey((k) => k + 1);
       } else {
-        window.alert(j?.error || "Could not remove the filing.");
+        setMatterDeleteError(j?.error || "Could not delete the document.");
       }
     } catch {
-      window.alert("Remove request failed.");
+      setMatterDeleteError("Delete request failed.");
+    } finally {
+      setMatterDeleteBusy(false);
     }
   }
 
@@ -1654,7 +1672,7 @@ const activeGroupKey =
       const fromPath = `${window.location.pathname}${window.location.search}`;
       window.location.href = `/login?from=${encodeURIComponent(fromPath || "/admin")}`;
     } catch (error: any) {
-      window.alert(error?.message || "Administrator session check failed.");
+      await bmAlert(error?.message || "Administrator session check failed.");
     }
   }
 
@@ -2780,7 +2798,7 @@ function openClaimAmountEditDialog() {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       [
         "Void this payment?",
         "",
@@ -3164,7 +3182,7 @@ function openClaimAmountEditDialog() {
   function handleReopenMatter() {
     void runAdministratorGate("Reopen Matter", async () => {
       if (!matter?.id || reopening) return;
-      if (!window.confirm("Reopen this matter? It will be marked Open. This is a local-only change; Clio is not affected.")) {
+      if (!(await bmConfirm("Reopen this matter? It will be marked Open."))) {
         return;
       }
       setReopening(true);
@@ -3937,7 +3955,7 @@ function openClaimAmountEditDialog() {
             ? "mark this document as skipped"
             : "return this document to queued status";
 
-    const confirmed = confirm(
+    const confirmed = await bmConfirm(
       `UPDATE PRINT QUEUE STATUS\n\n` +
         `Document: ${textValue(row?.documentLabel) || textValue(row?.documentKey) || "—"}\n` +
         `Filename: ${textValue(row?.filename) || "—"}\n\n` +
@@ -4057,7 +4075,7 @@ function openClaimAmountEditDialog() {
     }
 
     if (documentPreview?.action !== "finalize-preview" || !documentPreview?.ok) {
-      alert("Run Finalize Documents Preview successfully before uploading final documents to Barsh Matters Master Repository storage.");
+      alert("Run Finalize Documents Preview successfully before uploading final documents.");
       return;
     }
 
@@ -4082,7 +4100,7 @@ function openClaimAmountEditDialog() {
       .map((doc: any) => `- ${textValue(doc.label) || textValue(doc.key)}: ${textValue(doc.filename)}`)
       .join("\n");
 
-    const confirmed = confirm(
+    const confirmed = await bmConfirm(
       `FINALIZE AND UPLOAD TO CLIO\n\n` +
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
         `This will upload the following final document copy/copies to the direct bill matter Clio Documents tab:\n\n` +
@@ -4129,7 +4147,7 @@ function openClaimAmountEditDialog() {
       await loadPrintQueuePreview(masterLawsuitId);
 
       const uploadedCount = Array.isArray(json.uploaded) ? json.uploaded.length : 0;
-      alert(`Final upload complete.\n\nUploaded to Clio: ${uploadedCount} document(s).`);
+      alert(`Final upload complete.\n\nUploaded ${uploadedCount} document(s).`);
     } catch (err: any) {
       const result = {
         ok: false,
@@ -4617,7 +4635,7 @@ function openClaimAmountEditDialog() {
 
       if (!res.ok || !json?.ok) {
         if (!silent) {
-          alert(json?.error || "Could not load provider fee defaults from Clio.");
+          alert(json?.error || "Could not load provider fee defaults.");
         }
         return;
       }
@@ -4630,7 +4648,7 @@ function openClaimAmountEditDialog() {
           const missing = Array.isArray(json?.validation?.missingDefaults)
             ? json.validation.missingDefaults.join(", ")
             : "provider fee defaults";
-          alert(`No provider fee defaults are populated in Clio for this provider.  Missing: ${missing}.  You may enter the percentages manually.`);
+          alert(`No provider fee defaults are on file for this provider.  Missing: ${missing}.  You may enter the percentages manually.`);
         }
         return;
       }
@@ -4769,12 +4787,12 @@ function openClaimAmountEditDialog() {
     const masterLawsuitId = tabMasterLawsuitId;
 
     if (!masterLawsuitId) {
-      alert("No MASTER_LAWSUIT_ID found.  Generate or connect a lawsuit before validating settlement writeback.");
+      alert("No MASTER_LAWSUIT_ID found.  Generate or connect a lawsuit before validating the settlement.");
       return;
     }
 
     if (!settlementPreviewResult?.ok || !Array.isArray(settlementPreviewResult.rows)) {
-      alert("Run a successful settlement preview before validating Clio writeback readiness.");
+      alert("Run a successful settlement preview before validating the settlement.");
       return;
     }
 
@@ -4806,7 +4824,7 @@ function openClaimAmountEditDialog() {
           json?.error ||
             (blockingErrors.length > 0
               ? `Settlement writeback readiness blocked:\n\n${blockingErrors.join("\n")}`
-              : "Settlement writeback readiness validation failed.")
+              : "Settlement validation failed.")
         );
       }
     } catch (err: any) {
@@ -4814,7 +4832,7 @@ function openClaimAmountEditDialog() {
         ok: false,
         action: "settlement-writeback-preview",
         dryRun: true,
-        error: err?.message || "Settlement writeback readiness validation failed.",
+        error: err?.message || "Settlement validation failed.",
         safety: {
           noClioRecordsChanged: true,
           noDatabaseRecordsChanged: true,
@@ -4823,7 +4841,7 @@ function openClaimAmountEditDialog() {
           noPersistentFilesCreated: true,
         },
       });
-      alert(err?.message || "Settlement writeback readiness validation failed.");
+      alert(err?.message || "Settlement validation failed.");
     } finally {
       setSettlementWritebackPreviewLoading(false);
     }
@@ -4833,21 +4851,21 @@ function openClaimAmountEditDialog() {
     const masterLawsuitId = tabMasterLawsuitId;
 
     if (!masterLawsuitId) {
-      alert("No MASTER_LAWSUIT_ID found.  Generate or connect a lawsuit before saving settlement to Clio.");
+      alert("No MASTER_LAWSUIT_ID found.  Generate or connect a lawsuit before saving the settlement.");
       return;
     }
 
     if (!settlementPreviewResult?.ok || !Array.isArray(settlementPreviewResult.rows)) {
-      alert("Run a successful settlement preview before saving to Clio.");
+      alert("Run a successful settlement preview before saving the settlement.");
       return;
     }
 
     if (!settlementWritebackPreviewResult?.ok || !settlementWritebackPreviewResult?.validation?.canWriteIfConfirmed) {
-      alert("Validate Clio writeback readiness successfully before saving to Clio.");
+      await bmAlert("Validate settlement readiness successfully before saving.");
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       "This will write final settlement values to the child/bill matter(s) in Clio.\n\n" +
         "Continue?"
     );
@@ -4888,7 +4906,7 @@ function openClaimAmountEditDialog() {
         return;
       }
 
-      alert(`Settlement saved to Clio for ${num(json.count)} child/bill matter(s).`);
+      alert(`Settlement saved for ${num(json.count)} child/bill matter(s).`);
       setSettlementClosePreviewResult(null);
       await loadCurrentSettlementValues(masterLawsuitId);
       await loadSettlementHistory(masterLawsuitId);
@@ -5123,7 +5141,7 @@ function openClaimAmountEditDialog() {
     const context = await resolveMatterMaildropForDelivery(buildMatterFinalizedPdfDeliveryContext(selectedTemplate));
 
     if (!context.pdfUrl) {
-      alert("Finalize the document before preparing an email draft.  The email workflow requires a finalized PDF from this matter's Clio Documents tab.");
+      alert("Finalize the document before preparing an email draft. The email workflow requires a finalized PDF.");
       return;
     }
 
@@ -5231,7 +5249,7 @@ function openClaimAmountEditDialog() {
     const candidate = selectedFinalizedMatterDocumentCandidate(selectedTemplate);
 
     if (!candidate) {
-      alert("Finalize the document before printing.  Barsh Matters could not find a finalized Clio document from the latest finalization result.");
+      alert("Finalize the document before printing. No finalized document was found from the latest finalization result.");
       return;
     }
 
@@ -5240,7 +5258,7 @@ function openClaimAmountEditDialog() {
       : clioOpenPathForFinalizedMatterDocument(candidate, "download");
 
     if (!printableUrl) {
-      alert("Barsh Matters found a finalized document, but it could not build an openable Clio document URL.");
+      alert("A finalized document was found, but an openable document link could not be built.");
       return;
     }
 
@@ -5284,12 +5302,12 @@ function openClaimAmountEditDialog() {
       (directMatterDisplayNumber ? `DIRECT-${directMatterDisplayNumber}` : directMatterId ? `DIRECT-BRL${directMatterId}` : "");
 
     if (!context.pdfUrl || !candidate?.clioDocumentId) {
-      alert("Finalize the document before sending it to the print queue.  The queue workflow requires a finalized PDF from this matter's Clio Documents tab.");
+      alert("Finalize the document before sending it to the print queue. The queue requires a finalized PDF.");
       return;
     }
 
     if (!printQueueMatterId) {
-      alert("Barsh Matters could not identify the Clio direct matter ID needed for the print queue.");
+      alert("Could not identify the direct matter ID needed for the print queue.");
       return;
     }
 
@@ -5298,7 +5316,7 @@ function openClaimAmountEditDialog() {
       return;
     }
 
-    const confirmed = confirm(
+    const confirmed = await bmConfirm(
       "SEND FINALIZED DOCUMENT TO PRINT QUEUE\n\n" +
         "Matter: " + (directMatterDisplayNumber || directMatterId) + "\n" +
         "Document: " + (context.documentLabel || selectedTemplate?.label || "Selected finalized document") + "\n\n" +
@@ -5527,7 +5545,7 @@ function openClaimAmountEditDialog() {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       "Sync this Microsoft Graph thread to Barsh Matters local email records?"
     );
 
@@ -7556,11 +7574,11 @@ function openClaimAmountEditDialog() {
     }
 
     if (!settlementClosePreviewResult?.ok || !settlementClosePreviewResult?.validation?.canCloseIfConfirmed) {
-      alert("Run Preview Paid Settlement Close first.  Only preview-eligible child/bill matters can be closed.");
+      await bmAlert("Run Preview Paid Settlement Close first. Only preview-eligible child/bill matters can be closed.");
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       "Close Paid Settlements?\\n\\nUse this only after payment is confirmed. This will route through the guarded Close Lawsuit workflow, sync the Clio operational close status, mark the master lawsuit Closed with Close Reason = PAID (SETTLEMENT), and mark child matters Closed with Closed Reason = Closed Lawsuit."
     );
 
@@ -8125,8 +8143,8 @@ function openClaimAmountEditDialog() {
       label: "Writeback preview ready",
       done: settlementWritebackPreviewReady,
       detail: settlementWritebackPreviewReady
-        ? "Settlement writeback readiness has been previewed."
-        : "Run the writeback readiness preview before saving to Clio.",
+        ? "Settlement readiness has been previewed."
+        : "Run the readiness preview before saving the settlement.",
     },
     {
       label: "Settlement values written to Clio",
@@ -10820,6 +10838,27 @@ function openClaimAmountEditDialog() {
       )}
 
       {renderMatterViewDocumentsPopup()}
+
+      {matterPendingDeleteDoc && (
+        <BarshModal
+          open
+          title="Delete document"
+          onClose={() => { if (!matterDeleteBusy) setMatterPendingDeleteDoc(null); }}
+          onSubmit={() => void confirmDeleteFiledTreeDocument()}
+          submitLabel={matterDeleteBusy ? "Deleting…" : "Delete"}
+          submitDisabled={matterDeleteBusy}
+          closeLabel="Cancel"
+          initialWidth={440}
+          dataModalId="matter-filed-doc-delete-confirm"
+        >
+          <div style={{ padding: 4, fontSize: 14, color: "#1b2a3d" }}>
+            Delete <strong>{matterPendingDeleteDoc.titleLabel}</strong>?
+          </div>
+          {matterDeleteError && (
+            <div style={{ marginTop: 10, color: "#b00020", fontSize: 13, fontWeight: 700 }}>{matterDeleteError}</div>
+          )}
+        </BarshModal>
+      )}
       {renderMatterEmailDeliveryPopup()}
       {renderMatterDocumentActivityPopup()}
       {renderMatterDocumentGenerationPopup()}

@@ -215,7 +215,7 @@ export default function UploadDocsPage() {
       if (j?.ok) {
         setMsg({
           kind: "ok",
-          text: `Uploaded to Clio and filed as "${j.filed?.titleLabel}" on ${j.matterDisplayNumber} (Clio doc ${j.clioDocumentId}).`,
+          text: `Uploaded and filed as "${j.filed?.titleLabel}" on ${j.matterDisplayNumber}.`,
         });
         setNeedsDupConfirm(false);
         // Reset the file for a fresh upload; keep the matter selected for multi-file runs.
@@ -507,7 +507,7 @@ export default function UploadDocsPage() {
 
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
             <button onClick={() => void commit(needsDupConfirm)} disabled={!canCommit} style={{ ...btn(NAVY), opacity: canCommit ? 1 : 0.5, cursor: canCommit ? "pointer" : "default" }}>
-              {busy ? "Uploading…" : needsDupConfirm ? "Upload anyway" : "Upload to Clio & file"}
+              {busy ? "Uploading…" : needsDupConfirm ? "Upload anyway" : "Upload"}
             </button>
           </div>
 

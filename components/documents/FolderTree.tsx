@@ -275,7 +275,7 @@ function FolderNode({
                   >
                     <span
                       onClick={clickable ? () => onOpenDoc!(d) : undefined}
-                      title={clickable ? "Open in Clio" : undefined}
+                      title={clickable ? "Open document" : undefined}
                       style={{ cursor: clickable ? "pointer" : "default", color: clickable ? NAVY : "inherit" }}
                     >
                       📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
@@ -363,7 +363,7 @@ function FlatList({
           >
             <span
               onClick={clickable ? () => onOpenDoc!(d) : undefined}
-              title={clickable ? "Open in Clio" : undefined}
+              title={clickable ? "Open document" : undefined}
               style={{ cursor: clickable ? "pointer" : "default", color: clickable ? NAVY : "inherit" }}
             >
               📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>

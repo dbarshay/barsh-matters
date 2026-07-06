@@ -193,7 +193,7 @@ export default function DropFileFilingForm({
 
       <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
         <button onClick={() => void submit(needsDupConfirm)} disabled={!canSubmit} style={{ ...btn(NAVY), opacity: canSubmit ? 1 : 0.5, cursor: canSubmit ? "pointer" : "default" }}>
-          {busy ? "Uploading…" : needsDupConfirm ? "Upload anyway" : "Upload to Clio & file"}
+          {busy ? "Uploading…" : needsDupConfirm ? "Upload anyway" : "Upload"}
         </button>
         <button onClick={onCancel} disabled={busy} style={btn("#64748b")}>Cancel</button>
       </div>
