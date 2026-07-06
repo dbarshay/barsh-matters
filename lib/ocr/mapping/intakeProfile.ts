@@ -282,6 +282,21 @@ function scanCarrierBySuffix(text: string): string | null {
 }
 
 /**
+ * Provider from the document letterhead (top lines) — used on scripts/reports where the practice
+ * name isn't in a labeled field. Requires a business-entity keyword and skips carrier/firm lines.
+ */
+function scanLetterheadProvider(text: string): string | null {
+  const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  for (const l of lines.slice(0, 6)) {
+    if (l.length < 5 || l.length > 60 || !/[A-Za-z]/.test(l)) continue;
+    if (!/\b(inc|l\.?l\.?c|p\.?l\.?l\.?c|p\.?c|medical|equipment|radiology|chiropractic|associates|physical therapy|diagnostic|imaging|rehab|orthopedic|surgical|acupuncture|wellness|clinic|dpt)\b/i.test(l)) continue;
+    if (/patient|insurance|indemnity|mutual|casualty|assurance|mvaic|barshay|attorney|law offices|no-fault/i.test(l)) continue;
+    return cleanProviderName(l.replace(/[.,;:]+$/, "").trim());
+  }
+  return null;
+}
+
+/**
  * NY no-fault litigation caption: "PROVIDER a/a/o PATIENT, Plaintiff -against- CARRIER, Defendant".
  * "a/a/o" (also "aao", "as assignee of") gives us both the billing provider (plaintiff) and the
  * assignor patient on summonses, affidavits, motions, answers, and stipulations. Low confidence.
@@ -375,6 +390,11 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
     if (!providerName.value && cap.provider) {
       providerName = { value: cleanProviderName(cap.provider), confidence: 0.35, source: "caption", rawText: cap.provider };
     }
+  }
+  // Provider from letterhead (scripts/reports where the practice is the top line, not a labeled field).
+  if (!providerName.value) {
+    const lh = scanLetterheadProvider(result.text);
+    if (lh) providerName = { value: lh, confidence: 0.3, source: "letterhead", rawText: lh };
   }
 
   // Capture DOB to keep it out of the loss/service dates.

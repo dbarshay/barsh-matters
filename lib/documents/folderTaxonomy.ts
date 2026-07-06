@@ -155,7 +155,7 @@ const RAW_TAXONOMY: RawFolder[] = [
         terminal: true,
         allowFreehandOther: false,
         promptsDeadline: false,
-        titles: [staticTitle("prescription", "Prescription"), staticTitle("report", "Report")],
+        titles: [staticTitle("prescription", "Rx"), staticTitle("report", "Report")],
       },
       {
         segment: "denials",

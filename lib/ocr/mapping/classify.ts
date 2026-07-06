@@ -79,7 +79,7 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
 
   // --- Reports / medical records ---
   { keywords: ["soap note", "progress note", "office note", "operative report", "narrative report", "medical report", "range of motion", "initial evaluation", "re-evaluation", "mri of", "x-ray report", "history of present illness", "review of systems"], folderKey: "claim_documents.reports", titleKey: "report", confidence: 0.6 },
-  { keywords: ["prescription", "referral for", "please dispense", "diagnostic testing referral"], folderKey: "claim_documents.reports", titleKey: "prescription", confidence: 0.6 },
+  { keywords: ["prescription", "referral for", "please dispense", "diagnostic testing referral", "doctors written order", "doctor's written order", "written order", "orthosis prescribed", "orthosis", "durable medical equipment", "dispense as written"], folderKey: "claim_documents.reports", titleKey: "prescription", confidence: 0.6 },
 
   // --- Peer review / IME (LOW priority + tightened — "peer review" alone over-fires on letters) ---
   { keywords: ["peer review report", "peer reviewer", "independent medical examination", "ime report", "independent radiology review"], folderKey: "claim_documents.denials", titleKey: "peer_review_ime", confidence: 0.7 },
