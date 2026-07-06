@@ -49,11 +49,11 @@ const checks = [
       !/prisma\.[\s\S]*\.(create|update|upsert|delete|deleteMany|updateMany|createMany)\s*\(/.test(route),
   },
   {
-    label: "master lawsuit path requires explicit clioMasterMatterId mapping",
+    label: "master lawsuit path requires explicit repository storage mapping",
     pass:
       route.includes("clioMasterMatterId") &&
-      route.includes("No mapped Clio master matter ID exists") &&
-      route.includes("Refusing to list Clio documents without an explicit mapping"),
+      route.includes("No Barsh Matters repository storage target exists for this Lawsuit ID") &&
+      route.includes("Refusing to list documents without an explicit repository context"),
   },
   {
     label: "route returns later retrieval metadata",

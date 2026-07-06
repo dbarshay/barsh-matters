@@ -32,6 +32,8 @@ export type FiledDoc = {
 
 type Props = {
   matterId: number;
+  /** Optional BRL display number; matched alongside matterId so the list resolves either way. */
+  matterDisplayNumber?: string | null;
   /** "matter" shows Claim Documents + Workers' Comp; "lawsuit" shows Arbitration + Litigation. */
   level?: MatterLevel | "all";
   /** When set, folders irrelevant to this case type AND empty are greyed (still visible). */
@@ -40,6 +42,8 @@ type Props = {
   reloadKey?: number;
   /** Drop a file onto a terminal folder → caller opens the filing form pre-set to that folder. */
   onDropToFolder?: (folderKey: string, files: File[]) => void;
+  /** When set, filed documents become clickable and this opens them (e.g. in Clio). */
+  onOpenDoc?: (doc: FiledDoc) => void;
 };
 
 /** All descendant terminal folder keys of a folder (or itself if terminal). */
@@ -50,10 +54,12 @@ function terminalKeysUnder(f: FolderSpec): string[] {
 
 export default function FolderTree({
   matterId,
+  matterDisplayNumber = null,
   level = "all",
   caseType = null,
   reloadKey = 0,
   onDropToFolder,
+  onOpenDoc,
 }: Props) {
   const [docs, setDocs] = useState<FiledDoc[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +72,7 @@ export default function FolderTree({
     setError(null);
     const url =
       `/api/documents/filed?matterId=${encodeURIComponent(matterId)}` +
+      (matterDisplayNumber ? `&matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}` : "") +
       (level !== "all" ? `&level=${level}` : "");
     fetch(url, { cache: "no-store" })
       .then((r) => r.json())
@@ -78,7 +85,7 @@ export default function FolderTree({
     return () => {
       alive = false;
     };
-  }, [matterId, level, reloadKey]);
+  }, [matterId, matterDisplayNumber, level, reloadKey]);
 
   const branches = useMemo(
     () => FOLDER_TAXONOMY.filter((b) => level === "all" || b.level === level),
@@ -127,7 +134,7 @@ export default function FolderTree({
       </div>
 
       {flat ? (
-        <FlatList docs={docs} query={query} setQuery={setQuery} />
+        <FlatList docs={docs} query={query} setQuery={setQuery} onOpenDoc={onOpenDoc} />
       ) : (
         <div>
           {branches.map((b) => (
@@ -139,6 +146,7 @@ export default function FolderTree({
               countFor={countFor}
               caseType={caseType}
               onDropToFolder={onDropToFolder}
+              onOpenDoc={onOpenDoc}
             />
           ))}
         </div>
@@ -154,6 +162,7 @@ function FolderNode({
   countFor,
   caseType,
   onDropToFolder,
+  onOpenDoc,
 }: {
   folder: FolderSpec;
   depth: number;
@@ -161,6 +170,7 @@ function FolderNode({
   countFor: (f: FolderSpec) => number;
   caseType: CaseType | null;
   onDropToFolder?: (folderKey: string, files: File[]) => void;
+  onOpenDoc?: (doc: FiledDoc) => void;
 }) {
   const count = countFor(folder);
   const irrelevant = caseType != null && !folderAppliesToCaseType(folder.key, caseType);
@@ -237,21 +247,33 @@ function FolderNode({
                 countFor={countFor}
                 caseType={caseType}
                 onDropToFolder={onDropToFolder}
+                onOpenDoc={onOpenDoc}
               />
             ))}
           {folder.terminal &&
             (docsHere.length > 0 ? (
-              docsHere.map((d) => (
-                <div
-                  key={d.id}
-                  style={{ marginLeft: (depth + 1) * 16 + 18, padding: "2px 0", fontSize: 13 }}
-                >
-                  📄 {d.titleLabel}
-                  <span style={{ color: MUTED, fontSize: 11, marginLeft: 8 }}>
-                    {new Date(d.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))
+              docsHere.map((d) => {
+                const clickable = !!onOpenDoc;
+                return (
+                  <div
+                    key={d.id}
+                    onClick={clickable ? () => onOpenDoc!(d) : undefined}
+                    title={clickable ? "Open in Clio" : undefined}
+                    style={{
+                      marginLeft: (depth + 1) * 16 + 18,
+                      padding: "2px 0",
+                      fontSize: 13,
+                      cursor: clickable ? "pointer" : "default",
+                      color: clickable ? NAVY : "inherit",
+                    }}
+                  >
+                    📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
+                    <span style={{ color: MUTED, fontSize: 11, marginLeft: 8 }}>
+                      {new Date(d.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                );
+              })
             ) : (
               <div
                 style={{
@@ -275,14 +297,17 @@ function FlatList({
   docs,
   query,
   setQuery,
+  onOpenDoc,
 }: {
   docs: FiledDoc[];
   query: string;
   setQuery: (v: string) => void;
+  onOpenDoc?: (doc: FiledDoc) => void;
 }) {
   const filtered = docs.filter((d) =>
     query.trim() === "" ? true : d.titleLabel.toLowerCase().includes(query.trim().toLowerCase()),
   );
+  const clickable = !!onOpenDoc;
   return (
     <div>
       <input
@@ -302,8 +327,19 @@ function FlatList({
         <div style={{ color: MUTED, fontStyle: "italic", padding: 8 }}>No matching documents.</div>
       ) : (
         filtered.map((d) => (
-          <div key={d.id} style={{ padding: "3px 0", fontSize: 13, borderBottom: "1px solid #eef2f6" }}>
-            📄 {d.titleLabel}
+          <div
+            key={d.id}
+            onClick={clickable ? () => onOpenDoc!(d) : undefined}
+            title={clickable ? "Open in Clio" : undefined}
+            style={{
+              padding: "3px 0",
+              fontSize: 13,
+              borderBottom: "1px solid #eef2f6",
+              cursor: clickable ? "pointer" : "default",
+              color: clickable ? NAVY : "inherit",
+            }}
+          >
+            📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
             <span style={{ color: MUTED, fontSize: 11, marginLeft: 8 }}>{d.folderKey}</span>
           </div>
         ))

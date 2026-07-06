@@ -22,9 +22,8 @@ for (const token of [
   'data-barsh-direct-view-documents-footer-actions="true"',
   'justifyContent: "flex-end"',
   'Refresh Documents',
-  'Documents:',
-  'Selected Document',
-  'No documents are currently saved for this matter.',
+  // The popup body is now the BM folder tree (Clio stays a flat vault; tree is BM metadata).
+  'FolderTree',
 ]) {
   if (!region.includes(token)) failures.push("missing direct View Documents popup token: " + token);
 }

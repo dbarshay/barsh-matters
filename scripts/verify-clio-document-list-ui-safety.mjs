@@ -12,7 +12,8 @@ function check(label, ok) {
 }
 
 check("Direct Matter keeps Clio document state", direct.includes("matterClioDocumentsLoading") && direct.includes("matterClioDocumentsResult"));
-check("Direct Matter keeps read-only document loader", direct.includes("loadMatterClioDocuments") && direct.includes("/api/documents/clio-matter-documents?matterId="));
+check("Direct Matter keeps read-only document loader", direct.includes("loadMatterClioDocuments") && direct.includes("/api/documents/clio-matter-documents?"));
+check("Direct Matter View Documents renders the BM folder tree", direct.includes("FolderTree") && direct.includes("renderMatterViewDocumentsPopup"));
 check("Direct Matter keeps View Documents popup", direct.includes("matterViewDocumentsPopupOpen") && direct.includes("renderMatterViewDocumentsPopup"));
 check("Direct Matter keeps document generation popup separate", direct.includes("launchMatterDocumentGenerationDialog") && direct.includes("renderMatterDocumentGenerationPopup"));
 check("Master keeps Clio document state", master.includes("masterClioDocumentsLoading") && master.includes("masterClioDocumentsResult"));

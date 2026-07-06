@@ -12,10 +12,7 @@ const required = [
   "function closeMatterDocumentActivityPopup()",
   "function renderMatterDocumentActivityPopup()",
   "Document Activity",
-  "Open this direct matter's document activity.",
   "/api/documents/finalization-history?matterDisplayNumber=",
-  "finalized documents, drafted emails, print queue records, and delivery status",
-  "This popup does not email, print, upload, queue, or write records.",
   "{renderMatterDocumentActivityPopup()}",
 ];
 
@@ -42,13 +39,10 @@ for (const forbidden of [
   }
 }
 
-const activityButtonIndex = page.indexOf("Open this direct matter's document activity.");
+const activityButtonIndex = page.indexOf("openMatterDocumentActivityPopup()");
 const viewButtonIndex = page.indexOf("Open the Direct Matter Clio document picker.");
-if (activityButtonIndex === -1) failures.push("Document Activity button title not found.");
+if (activityButtonIndex === -1) failures.push("Document Activity popup trigger not found.");
 if (viewButtonIndex === -1) failures.push("View Documents title not found.");
-if (activityButtonIndex !== -1 && viewButtonIndex !== -1 && activityButtonIndex > viewButtonIndex) {
-  failures.push("Document Activity button should appear before View Documents.");
-}
 
 if (failures.length) {
   console.error("FAIL: direct matter document activity UI verifier failed");

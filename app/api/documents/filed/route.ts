@@ -7,17 +7,28 @@ import { fileDocument, type FileDocumentInput } from "@/lib/documents/fileDocume
 // The actual files live in Clio; these are BM metadata rows (folderKey/title/fields) pointing at
 // clioDocumentId. The tree UI groups these by folderKey against the code taxonomy.
 //
-//   GET /api/documents/filed?matterId=123[&level=matter|lawsuit]
+//   GET /api/documents/filed?matterId=123[&matterDisplayNumber=BRL_202600001][&level=matter|lawsuit]
+// Matches on matterId OR matterDisplayNumber (either is sufficient), so callers that only know the
+// BRL file number still resolve the same filed rows regardless of numeric-id ambiguity.
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const matterId = Number(sp.get("matterId"));
+  const matterDisplayNumber = (sp.get("matterDisplayNumber") || "").trim();
   const level = sp.get("level");
 
-  if (!Number.isFinite(matterId) || matterId <= 0) {
-    return NextResponse.json({ ok: false, error: "matterId (positive integer) required" }, { status: 400 });
+  const hasMatterId = Number.isFinite(matterId) && matterId > 0;
+  if (!hasMatterId && !matterDisplayNumber) {
+    return NextResponse.json(
+      { ok: false, error: "matterId (positive integer) or matterDisplayNumber required" },
+      { status: 400 },
+    );
   }
 
-  const where: { matterId: number; status: string; level?: string } = { matterId, status: "active" };
+  const or: any[] = [];
+  if (hasMatterId) or.push({ matterId });
+  if (matterDisplayNumber) or.push({ matterDisplayNumber });
+
+  const where: any = { status: "active", OR: or };
   if (level === "matter" || level === "lawsuit") where.level = level;
 
   const documents = await prisma.filedDocument.findMany({
@@ -39,7 +50,13 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ ok: true, matterId, count: documents.length, documents });
+  return NextResponse.json({
+    ok: true,
+    matterId: hasMatterId ? matterId : null,
+    matterDisplayNumber: matterDisplayNumber || null,
+    count: documents.length,
+    documents,
+  });
 }
 
 // File a document into a folder with a controlled title (Phase 3). All the enforcement/dedup/audit

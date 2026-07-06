@@ -12,13 +12,8 @@ if (!region) failures.push("could not isolate direct View Documents popup region
 for (const token of [
   'data-barsh-direct-view-documents-header-standard="true"',
   'data-barsh-direct-view-documents-footer-actions="true"',
-  "Selected Document",
-  "<strong>Filename:</strong>",
-  "<strong>Updated:</strong>",
-  "<strong>Type:</strong>",
-  "<strong>Size:</strong>",
-  "No documents are currently saved for this matter.",
-  "Select a document to view its stored Clio metadata.",
+  // Body is now the BM folder tree (documents organized by folder/title; Clio stays a flat vault).
+  "FolderTree",
 ]) {
   if (!region.includes(token)) failures.push("missing direct View Documents clean body token: " + token);
 }

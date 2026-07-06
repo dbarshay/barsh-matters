@@ -12,6 +12,7 @@ import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
 import BarshModal from "@/app/components/BarshModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
+import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
 
 function num(v: any) {
   const n = Number(v);
@@ -668,6 +669,8 @@ const activeGroupKey =
   const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
   const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
   const [matterSelectedViewDocumentId, setMatterSelectedViewDocumentId] = useState("");
+  // Bump to force the View Documents folder tree to refetch.
+  const [matterFiledDocsReloadKey, setMatterFiledDocsReloadKey] = useState(0);
   const [emailDeliveryPopupOpen, setEmailDeliveryPopupOpen] = useState(false);
   const [emailDeliveryContext, setEmailDeliveryContext] = useState<any>(null);
   const [emailDeliveryTo, setEmailDeliveryTo] = useState("");
@@ -894,11 +897,28 @@ const activeGroupKey =
     }
   }
 
+  // Open a document filed into the BM tree (clicked in the FolderTree) via the same Clio opener.
+  function openFiledTreeDocument(doc: FiledDoc): void {
+    const id = textValue(doc?.clioDocumentId);
+    if (!id) return;
+    const displayName = textValue(doc?.fileName) || textValue(doc?.titleLabel) || "Document";
+    const lower = displayName.toLowerCase();
+    const params = new URLSearchParams();
+    params.set("documentId", id);
+    params.set("filename", displayName);
+    if (lower.endsWith(".eml")) {
+      params.set("mode", "email-pdf");
+    } else {
+      params.set("mode", "inline");
+    }
+    window.open("/api/documents/clio-document-open?" + params.toString(), "_blank", "noopener,noreferrer");
+  }
+
   function renderMatterViewDocumentsPopup() {
     if (!matterViewDocumentsPopupOpen) return null;
 
-    const docs = matterClioDocumentsArray();
-    const selectedDocument = selectedMatterViewDocument();
+    const filedTreeMatterId = directMatterNumericIdForDocuments();
+    const filedTreeDisplayNumber = directMatterDisplayNumberForDocuments();
 
     return (
       <div
@@ -918,57 +938,27 @@ const activeGroupKey =
           </div>
 
           <div style={{ padding: 20, display: "grid", gap: 14, maxHeight: "calc(88vh - 154px)", overflowY: "auto" }}>
-            <div style={{ color: "#385a83", fontSize: 13, fontWeight: 900 }}>Documents: {docs.length}</div>
-            {matterClioDocumentsResult?.ok === false && (
-              <div style={{ padding: 12, border: "1px solid #fecaca", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontWeight: 850 }}>
-                {textValue(matterClioDocumentsResult.error) || "Could not load Clio documents."}
-              </div>
-            )}
-
-            {matterClioDocumentsLoading && (
-              <div style={{ padding: 12, border: "1px solid #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#385a83", fontWeight: 800 }}>Loading documents from Clio...</div>
-            )}
-
-            {matterClioDocumentsResult?.ok && docs.length === 0 && (
-              <div style={{ padding: 12, border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", color: "#385a83", fontWeight: 800 }}>No documents are currently saved for this matter.</div>
-            )}
-
-            {docs.length > 0 && (
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
-                {docs.map((doc: any) => {
-                  const id = textValue(doc.clioDocumentId);
-                  const displayName = matterViewDocumentListDisplayName(doc);
-                  const selected = Boolean(id) && id === matterSelectedViewDocumentId;
-                  return (
-                    <button key={id || textValue(doc.clioDocumentName)} type="button" title="Select and open document." onClick={() => openDirectMatterListedDocument(doc, id, displayName)} style={{ display: "block", width: "100%", textAlign: "left", border: 0, borderBottom: "1px solid #e5e7eb", background: selected ? "#eff6ff" : "#ffffff", color: "#00346e", padding: 12, cursor: id ? "pointer" : "not-allowed", opacity: id ? 1 : 0.6 }}>
-                      <div style={{ fontWeight: 950 }}>{displayName}</div>
-                      <div style={{ marginTop: 4, color: "#385a83", fontSize: 12, fontWeight: 700 }}>
-                        Uploaded/Saved: {formatMatterDocumentUploadedSavedDate(doc.updatedAt || doc.latestDocumentVersion?.updatedAt)}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#f8fafc", padding: 14 }}>
-              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 950, color: "#00346e" }}>Selected Document</h3>
-              {selectedDocument ? (
-                <div style={{ display: "grid", gap: 8, color: "#385a83", fontSize: 13, fontWeight: 800 }}>
-                  <div><strong>Filename:</strong> {matterViewDocumentListDisplayName(selectedDocument)}</div>
-                  <div><strong>Updated:</strong> {formatMatterDocumentUploadedSavedDate(selectedDocument.updatedAt || selectedDocument.latestDocumentVersion?.updatedAt)}</div>
-                  <div><strong>Type:</strong> {textValue(selectedDocument.latestDocumentVersion?.contentType || selectedDocument.contentType) || "—"}</div>
-                  <div><strong>Size:</strong> {textValue(selectedDocument.latestDocumentVersion?.size || selectedDocument.size) || "—"}</div>
-                </div>
+            {/* BM folder tree: documents organized by folder/title (Clio stays a flat vault). */}
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", padding: 14 }}>
+              {filedTreeMatterId > 0 || filedTreeDisplayNumber ? (
+                <FolderTree
+                  matterId={filedTreeMatterId}
+                  matterDisplayNumber={filedTreeDisplayNumber || null}
+                  level="matter"
+                  reloadKey={matterFiledDocsReloadKey}
+                  onOpenDoc={openFiledTreeDocument}
+                />
               ) : (
-                <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>Select a document to view its stored Clio metadata.</div>
+                <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>
+                  Could not resolve this matter for the document tree.
+                </div>
               )}
             </div>
           </div>
 
           <div data-barsh-direct-view-documents-footer-actions="true" style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
             <button type="button" onClick={closeMatterViewDocumentsPopup} style={{ minWidth: 96, height: 40, border: "1px solid #dc2626", borderRadius: 10, background: "#dc2626", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}>Close</button>
-            <button type="button" onClick={() => void loadMatterClioDocuments()} disabled={matterClioDocumentsLoading} style={{ minWidth: 138, height: 40, border: "1px solid #00346e", borderRadius: 10, background: matterClioDocumentsLoading ? "#dbeafe" : "#00346e", color: "#ffffff", fontWeight: 950, cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer" }}>{matterClioDocumentsLoading ? "Refreshing..." : "Refresh Documents"}</button>
+            <button type="button" onClick={() => { void loadMatterClioDocuments(); setMatterFiledDocsReloadKey((k) => k + 1); }} disabled={matterClioDocumentsLoading} style={{ minWidth: 138, height: 40, border: "1px solid #00346e", borderRadius: 10, background: matterClioDocumentsLoading ? "#dbeafe" : "#00346e", color: "#ffffff", fontWeight: 950, cursor: matterClioDocumentsLoading ? "not-allowed" : "pointer" }}>{matterClioDocumentsLoading ? "Refreshing..." : "Refresh Documents"}</button>
           </div>
         </div>
       </div>
