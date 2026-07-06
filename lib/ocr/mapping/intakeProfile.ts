@@ -322,7 +322,7 @@ function isPracticeName(v: string): boolean {
 function scanPracticeInText(text: string): string | null {
   const head = text.slice(0, 500);
   const m = head.match(
-    /\b([A-Z][A-Za-z&.,'\- ]{2,50}?(?:PLLC|LLC|P\.?C\.?|Inc\b|Chiropractic|Radiology|Physical Medicine|Physical Therapy|Medical (?:Care|Equipment|Group|Services|Supply)|Rehab(?:ilitation)?|Orthopedics?|Diagnostic|Imaging|Acupuncture|Wellness))\b/,
+    /\b([A-Za-z][A-Za-z&.,'\- ]{2,50}?(?:PLLC|LLC|P\.?C\.?|Inc\b|Chiropractic|Radiology|Physical Medicine|Physical Therapy|Medical (?:Care|Equipment|Group|Services|Supply)|Rehab(?:ilitation)?|Orthopedics?|Diagnostic|Imaging|Acupuncture|Wellness))\b/i,
   );
   if (m) {
     const v = cleanProviderName(m[1].replace(/[.,;:]+$/, "").trim());
