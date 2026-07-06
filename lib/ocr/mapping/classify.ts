@@ -58,7 +58,17 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
 
   // --- Billing letters (our cover/transmittal/resubmission letters to carriers → Bills) ---
   // ABOVE verification: these letters often say "additional verification" but are OUR enclosure letters.
-  { keywords: ["enclosed please find the enclosed bill", "enclosed please find our bill", "we are enclosing the bill", "we are resubmitting", "resubmission of", "please reconsider", "kindly remit", "enclosed is our billing"], folderKey: "claim_documents.bills", titleKey: "billing_letter", confidence: 0.55 },
+  { keywords: [
+    // BRL's own cover/transmittal letter template (unique phrasing so its legal boilerplate about
+    // "peer review report" / "additional verification" doesn't mis-route it to denials/verification).
+    "this office has been retained by the above-referenced provider",
+    "retained by the above-referenced provider concerning the attached claim",
+    "please direct all correspondence concerning this matter directly to our office",
+    "payable to the medical provider and sent to our office",
+    // Explicit enclosure / resubmission language.
+    "enclosed please find the enclosed bill", "enclosed please find our bill", "we are enclosing the bill",
+    "we are resubmitting", "resubmission of", "please reconsider", "kindly remit", "enclosed is our billing",
+  ], folderKey: "claim_documents.bills", titleKey: "billing_letter", confidence: 0.6 },
 
   // --- Verification requests / responses (carrier-side; below billing letters) ---
   { keywords: ["additional verification", "request for verification", "verification is requested", "delay of your claim", "verification request"], folderKey: "claim_documents.verification.requests", titleKey: "request_dated", confidence: 0.62 },

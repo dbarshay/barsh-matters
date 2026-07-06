@@ -68,8 +68,11 @@ export const FIELD_SYNONYMS: Record<string, string[]> = {
     "date of current illness",
     "onset date",
     "injury date",
+    "date of injury",
     "d.o.a.",
     "doa",
+    "d.o.i.",
+    "doi",
     "dol",
   ],
   // DOS is usually a From/To pair; these match single-cell labels. Table scanning covers the grid.

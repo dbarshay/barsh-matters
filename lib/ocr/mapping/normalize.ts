@@ -91,7 +91,16 @@ export function cleanPersonName(input: string): string {
   let v = input.replace(/\s+/g, " ").trim();
   const firstDigit = v.search(/\d/);
   if (firstDigit > 0) v = v.slice(0, firstDigit);
-  return v.replace(/[.,;:\s]+$/, "").trim();
+  v = v.replace(/[[\].,;:\s]+$/, "").trim(); // trailing brackets/punct ("EMMANUEL[" -> "EMMANUEL")
+  // OCR often duplicates a name across two columns ("STEFANIE PERKINS STEFANIE PERKINS").
+  const words = v.split(" ");
+  if (words.length >= 2 && words.length % 2 === 0) {
+    const half = words.length / 2;
+    if (words.slice(0, half).join(" ").toLowerCase() === words.slice(half).join(" ").toLowerCase()) {
+      v = words.slice(0, half).join(" ");
+    }
+  }
+  return v.trim();
 }
 
 /**
@@ -102,8 +111,13 @@ export function looksLikeIdentifier(input: string): boolean {
   const v = input.trim();
   if (v.length < 3 || v.length > 40) return false;
   if (!/\d/.test(v)) return false; // must have a digit
-  if (normalizeDate(v)) return false; // it's a date, not an ID
-  if (/^\$?\s?\d[\d,]*(?:\.\d{2})?$/.test(v)) return false; // it's a money amount
+  if (normalizeDate(v)) return false; // numeric date, not an ID
+  if (/^\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{2,4}$/i.test(v)) return false; // "21 Feb 2025"
+  // Money — only reject things that actually look like currency: a $ sign, or decimal cents. A pure
+  // digit string (0507279790101029, 74237694) is a CLAIM/POLICY number, NOT money.
+  if (/^\$/.test(v)) return false;
+  if (/^\d{1,3}(?:,\d{3})*\.\d{2}$/.test(v)) return false; // 1,234.56
+  if (/^\d+\.\d{2}$/.test(v)) return false; // 356.94
   return true;
 }
 

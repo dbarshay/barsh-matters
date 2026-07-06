@@ -36,10 +36,12 @@ const DOLLAR_RE = /\$\s?\d[\d,]*(?:\.\d{2})?/g;
 // that field even if it also matches a synonym. This is what keeps patient≠insured, billing≠referring
 // provider, carrier≠employer, and carrier-claim-# ≠ our-file-#/court-index-#/policy-#.
 const EXCLUDES: Record<string, string[]> = {
-  // Patient's name must not come from the insured/subscriber/guarantor slot (Box 4/etc.).
-  patientName: ["insured", "subscriber", "guarantor", "policyholder", "responsible party"],
-  // Billing/rendering provider — not the REFERRING provider (Box 17) or the supervising referrer.
-  providerName: ["referring", "referred by", "ordering", "primary care"],
+  // Patient's name must not come from the insured/subscriber/guarantor slot (Box 4/etc.), nor the
+  // "Patient Acct #"/"Patient Account #" field (an id, not a name).
+  patientName: ["insured", "subscriber", "guarantor", "policyholder", "responsible party", "acct", "account"],
+  // Billing/rendering provider — not the REFERRING provider (Box 17), not "Provider Type" (a category
+  // like POD), and not NPI/payor/adjuster/tax rows that also contain the word "provider".
+  providerName: ["referring", "referred by", "ordering", "primary care", "type", "npi", "payor", "adjuster", "tax"],
   // Carrier/insurer — not the employer (WC) and not the patient's own relationship-to-insured note.
   insurerName: ["employer", "relationship to insured"],
   // Carrier CLAIM number — not OUR internal file #, the court index #, an invoice #, or the provider's
@@ -103,7 +105,7 @@ function idField(
     for (const kv of result.keyValues) {
       if (!isUsableValue(kv.value)) continue;
       if (!labelMatchesWithExcludes(kv.key, [syn], excludes)) continue;
-      const v = cleanValue(kv.value);
+      const v = cleanIdValue(cleanValue(kv.value));
       if (!looksLikeIdentifier(v)) continue; // skip names, dates, dollar amounts in the ID slot
       return { value: v, confidence: kv.confidence, source: `kv:"${kv.key}"`, rawText: kv.value };
     }
@@ -189,6 +191,66 @@ function collectAmounts(result: OcrExtractionResult): { value: number; source: s
   return out;
 }
 
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Text fallback for identifiers (claim #) when key/value pairing fails — common on carrier EORs /
+ * denials whose two-column "Claim Number : 0507…" layout confuses the kv extractor even though the
+ * text is clean. Scans raw text for a label followed by an ID-shaped token.
+ */
+function scanLabeledIdentifier(text: string, labels: string[]): string | null {
+  for (const label of labels) {
+    const re = new RegExp(`${escapeRe(label)}\\s*[:#.]*\\s*([a-z0-9][a-z0-9-]{3,29})`, "i");
+    const m = text.match(re);
+    if (m && looksLikeIdentifier(m[1])) return m[1];
+  }
+  return null;
+}
+
+/** Text fallback for a labeled name (carrier), cut before any PO-box / street-address continuation. */
+function scanLabeledText(text: string, labels: string[]): string | null {
+  for (const label of labels) {
+    const re = new RegExp(`${escapeRe(label)}\\s*[:#]?\\s*([^\\n]{2,60})`, "i");
+    const m = text.match(re);
+    if (!m) continue;
+    let v = m[1].split(/\s+(?:p\.?\s*o\.?\s*box|po box)\b/i)[0];
+    v = v.replace(/\s+\d{1,6}\s+[A-Za-z].*$/, ""); // drop "1234 Main St …"
+    v = v.replace(/[.,;:]+$/, "").trim();
+    if (v.length >= 2 && /[a-z]/i.test(v) && !normalizeDate(v)) return v;
+  }
+  return null;
+}
+
+/**
+ * Clean a carrier/insurer value: drop the value entirely if it's really a form-label continuation
+ * ("...OR SELF-INSURER", "claim processor (Third Party Administrator)") or boilerplate sentence, and
+ * trim any trailing PO-box / street address so we keep just the carrier name. Returns null if nothing
+ * usable remains.
+ */
+function cleanInsurerName(input: string): string | null {
+  let s = input.replace(/\s+/g, " ").trim();
+  if (!s) return null;
+  // Form-label continuations / administrator rows — not a carrier name.
+  if (/^or\s+self|self-?insurer|claim processor|third party administrat/i.test(s)) return null;
+  // Boilerplate sentence fragments captured as a value.
+  if (/\b(please|opposed|assist|hereby|pursuant|enclosed|demand|retained)\b/i.test(s)) return null;
+  // Trim address tails.
+  s = s.split(/\s+(?:p\.?\s*o\.?\s*box|po box)\b/i)[0];
+  s = s.replace(/\s+\d{1,6}\s+[A-Za-z].*$/, ""); // "1234 Main St …"
+  s = s.replace(/[.,;:]+$/, "").trim();
+  if (s.length < 2 || !/[a-z]/i.test(s) || normalizeDate(s)) return null;
+  return s;
+}
+
+/** Strip a trailing person-name/word OCR appended to an id ("00019805 CALCANES RYAN" -> "00019805",
+ * "250392126 Dr" -> "250392126"). Only strips when the leading token carries the digits. */
+function cleanIdValue(v: string): string {
+  const m = v.match(/^(\S*\d\S*)\s+[A-Za-z].*$/);
+  return m ? m[1] : v;
+}
+
 export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappingResult {
   // Person / entity names — patient trimmed off any trailing address; siblings excluded.
   const patientHit = findKv(result, FIELD_SYNONYMS.patientName, EXCLUDES.patientName);
@@ -201,10 +263,29 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
       }
     : emptyField<string>();
   const providerName = stringField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
-  const insurerName = stringField(result, FIELD_SYNONYMS.insurerName, EXCLUDES.insurerName);
+
+  // Carrier/insurer — reject a date/PO-box the kv pairing grabbed, then fall back to a text scan of
+  // the "Carrier:" / "Insurance Plan Name" line (cut before the address).
+  let insurerName = stringField(result, FIELD_SYNONYMS.insurerName, EXCLUDES.insurerName);
+  if (insurerName.value) {
+    const cleaned = cleanInsurerName(insurerName.value);
+    insurerName = cleaned ? { ...insurerName, value: cleaned } : emptyField<string>();
+  }
+  if (!insurerName.value) {
+    const scanned = scanLabeledText(result.text, [
+      "carrier", "insurance plan name or program name", "name of insurer", "name and address of insurer",
+    ]);
+    const cleaned = scanned ? cleanInsurerName(scanned) : null;
+    if (cleaned) insurerName = { value: cleaned, confidence: 0.4, source: "text-scan", rawText: scanned! };
+  }
 
   // Identifiers — must look like an ID (has a digit, not a name/date/amount) and not name a sibling.
-  const claimNumber = idField(result, FIELD_SYNONYMS.claimNumber, EXCLUDES.claimNumber);
+  // Claim # gets a text-scan fallback for carrier EORs/denials where kv pairing mis-aligns.
+  let claimNumber = idField(result, FIELD_SYNONYMS.claimNumber, EXCLUDES.claimNumber);
+  if (!claimNumber.value) {
+    const scanned = scanLabeledIdentifier(result.text, ["claim number", "claim no", "claim #", "claim id"]);
+    if (scanned) claimNumber = { value: scanned, confidence: 0.4, source: "text-scan", rawText: scanned };
+  }
   const policyNumber = idField(result, FIELD_SYNONYMS.policyNumber, EXCLUDES.policyNumber);
 
   // Capture DOB to keep it out of the loss/service dates.
