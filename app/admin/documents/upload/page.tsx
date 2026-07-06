@@ -15,7 +15,15 @@ import {
   getFolder,
   findTitle,
   listTerminalFolders,
+  type CaseType,
 } from "@/lib/documents/folderTaxonomy";
+import { normalizeCaseType, resolveFolderForCaseType } from "@/lib/documents/caseTypeRouting";
+
+const CASE_TYPE_OPTIONS: { value: CaseType; label: string }[] = [
+  { value: "no_fault", label: "No-Fault" },
+  { value: "wc", label: "Workers' Comp" },
+  { value: "arbitration", label: "Arbitration" },
+];
 
 const NAVY = "#00346e";
 
@@ -80,6 +88,10 @@ export default function UploadDocsPage() {
   const [titleKey, setTitleKey] = useState("");
   const [freehandTitle, setFreehandTitle] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
+  // Case type drives WHICH folder a document type files into (e.g. a Bill on a Workers' Comp matter
+  // goes to the Workers' Comp folder, not Claim Documents). Defaults from the matter; operator can override.
+  const [caseType, setCaseType] = useState<CaseType | null>(null);
+  const [routedNote, setRoutedNote] = useState<string | null>(null);
 
   // Commit
   const [busy, setBusy] = useState(false);
@@ -124,10 +136,15 @@ export default function UploadDocsPage() {
         const sFolder = j.suggestion?.folderKey || j.folderKey || "";
         const sTitle = j.suggestion?.titleKey || j.titleKey || "";
         if (sFolder && getFolder(sFolder)?.terminal) {
-          setFolderKey(sFolder);
-          const allowed = findTitle(sFolder, sTitle) || sTitle === FREEHAND_TITLE_KEY;
-          setTitleKey(allowed ? sTitle : getFolder(sFolder)?.titles[0]?.key ?? "");
-          setSuggested({ folderKey: sFolder, titleKey: allowed ? sTitle : undefined });
+          // Keep the original classifier output as the suggestion; route the shown folder by case type.
+          setSuggested({ folderKey: sFolder, titleKey: sTitle || undefined });
+          const r = resolveFolderForCaseType(sFolder, sTitle, caseType);
+          setFolderKey(r.folderKey);
+          const allowed = findTitle(r.folderKey, r.titleKey) || r.titleKey === FREEHAND_TITLE_KEY;
+          setTitleKey(allowed ? r.titleKey : getFolder(r.folderKey)?.titles[0]?.key ?? "");
+          setRoutedNote(
+            r.remapped ? `Routed to ${folderPathLabel(r.folderKey)} based on Workers' Comp case type.` : null,
+          );
         }
         if (j.prefill && typeof j.prefill === "object") {
           setPrefill(j.prefill as Prefill);
@@ -186,6 +203,28 @@ export default function UploadDocsPage() {
     setFields({});
     setFreehandTitle("");
     setPrefill({});
+    // Operator took manual control of the folder — stop auto-routing from the OCR suggestion.
+    setSuggested(null);
+    setRoutedNote(null);
+  }
+
+  // Set the case type and re-route the OCR suggestion to the case-type-correct folder (WC → Workers'
+  // Comp). Re-derives from the original classifier suggestion so switching case type is reversible.
+  // No effect once the operator has manually picked a folder (suggested cleared).
+  function applyCaseType(ct: CaseType | null) {
+    setCaseType(ct);
+    if (!suggested?.folderKey) {
+      setRoutedNote(null);
+      return;
+    }
+    const r = resolveFolderForCaseType(suggested.folderKey, suggested.titleKey ?? "", ct);
+    setFolderKey(r.folderKey);
+    const allowed = findTitle(r.folderKey, r.titleKey) || r.titleKey === FREEHAND_TITLE_KEY;
+    setTitleKey(allowed ? r.titleKey : getFolder(r.folderKey)?.titles[0]?.key ?? "");
+    setFields({});
+    setRoutedNote(
+      r.remapped ? `Routed to ${folderPathLabel(r.folderKey)} based on Workers' Comp case type.` : null,
+    );
   }
 
   async function commit(confirmDuplicate = false) {
@@ -383,6 +422,7 @@ export default function UploadDocsPage() {
                     setMatter(h);
                     setHits([]);
                     setQ(h.displayNumber || "");
+                    applyCaseType(normalizeCaseType(h.caseType));
                   }}
                   style={{
                     display: "block",
@@ -429,6 +469,25 @@ export default function UploadDocsPage() {
           </div>
 
           <div style={{ marginBottom: 10 }}>
+            <label style={label}>Case type</label>
+            <select
+              value={caseType ?? ""}
+              onChange={(e) => applyCaseType((e.target.value || null) as CaseType | null)}
+              style={inputStyle}
+            >
+              <option value="">— select case type —</option>
+              {CASE_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <div style={{ fontSize: 11, color: "#5a6b80", marginTop: 3 }}>
+              Defaults from the matter. Workers' Comp routes bills, letters, and reports to the Workers' Comp folder.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
             <label style={label}>Folder</label>
             <select value={folderKey} onChange={(e) => changeFolder(e.target.value)} style={inputStyle}>
               <option value="">— select a folder —</option>
@@ -438,6 +497,9 @@ export default function UploadDocsPage() {
                 </option>
               ))}
             </select>
+            {routedNote && (
+              <div style={{ fontSize: 11, color: "#137333", marginTop: 3 }}>{routedNote}</div>
+            )}
           </div>
 
           {folderKey && (
