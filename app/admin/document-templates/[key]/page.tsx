@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import BarshHeader from "@/app/components/BarshHeader";
@@ -200,7 +201,7 @@ export default function AdminDocumentTemplateDetailPage() {
       return;
     }
 
-    const confirmed = window.confirm("Save the edited Word document back as the new active template version?\n\nMake sure you saved your edits in Word first. This creates a new DocumentTemplateVersion, preserves prior versions, and makes the edited DOCX current.");
+    const confirmed = await bmConfirm("Save the edited Word document back as the new active template version?\n\nMake sure you saved your edits in Word first. This creates a new DocumentTemplateVersion, preserves prior versions, and makes the edited DOCX current.");
     if (!confirmed) {
       setEditTemplateMessage("Save cancelled.");
       return;

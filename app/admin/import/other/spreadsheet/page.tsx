@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import React, { useCallback, useEffect, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -114,7 +115,7 @@ export default function OtherSpreadsheetPage() {
   }
 
   async function runConfirm() {
-    if (!window.confirm("Create matters for all 'ready' rows? You can undo afterward.")) return;
+    if (!await bmConfirm("Create matters for all 'ready' rows? You can undo afterward.")) return;
     setBusy("confirm"); setError("");
     const r = await fetch("/api/import/other/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBase64, mapping: bmMapping(), fixed: fixed(), sourceFile: fileName }) });
     const j = await r.json(); setBusy("");

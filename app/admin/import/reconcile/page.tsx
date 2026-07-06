@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import React, { useCallback, useEffect, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -136,7 +137,7 @@ export default function ReconcilePage() {
       setError("Select at least one ready row, or use Commit all ready.");
       return;
     }
-    if (!window.confirm(all ? "Commit ALL ready rows into matters?" : `Commit ${ids.length} selected row(s) into matters?`)) return;
+    if (!await bmConfirm(all ? "Commit ALL ready rows into matters?" : `Commit ${ids.length} selected row(s) into matters?`)) return;
     const j = await post("/api/import/reconcile/commit", all ? { all: true } : { rowIds: ids }, "commit");
     if (j) {
       setSelected({});
@@ -389,9 +390,9 @@ function CarrierRow({ group, carriers, busy, noun = "insurer", onMap, onAddNew }
   const [newName, setNewName] = useState(group.carrierRaw);
   const working = busy === "carrier:" + group.carrierRaw;
   const selectedName = carriers.find((c) => c.id === entityId)?.displayName || "";
-  function assignAlias() {
+  async function assignAlias() {
     if (!entityId) return;
-    if (window.confirm(`Save "${group.carrierRaw}" as an alias of approved ${noun} "${selectedName}"?\n\nThis applies to all ${group.count} held row(s) and every future import.`)) {
+    if (await bmConfirm(`Save "${group.carrierRaw}" as an alias of approved ${noun} "${selectedName}"?\n\nThis applies to all ${group.count} held row(s) and every future import.`)) {
       onMap(entityId);
     }
   }

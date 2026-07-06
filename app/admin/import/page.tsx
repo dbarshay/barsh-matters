@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import React, { useEffect, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -244,7 +245,7 @@ export default function DowImportPage() {
   async function runConfirm() {
     if (!fileBase64) return;
     if (source === "dow" && !providerId) return;
-    if (!window.confirm("Create matters for all 'ready' rows? You can undo this import afterward.")) return;
+    if (!await bmConfirm("Create matters for all 'ready' rows? You can undo this import afterward.")) return;
     setBusy("confirm");
     setError("");
     try {
@@ -279,7 +280,7 @@ export default function DowImportPage() {
 
   async function undoBatch(batchId: string) {
     if (!batchId) return;
-    if (!window.confirm("Undo this import? Removes only untouched matters it created.")) return;
+    if (!await bmConfirm("Undo this import? Removes only untouched matters it created.")) return;
     setBusy("undo:" + batchId);
     setError("");
     try {

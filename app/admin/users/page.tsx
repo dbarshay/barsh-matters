@@ -32,6 +32,7 @@ Signer Profile Phase 1 UI contract:
 
 "use client";
 
+import { bmConfirm, bmAlert, bmPrompt } from "@/app/components/BmDialogHost";
 import { useEffect, useMemo, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -694,7 +695,7 @@ export default function AdminUsersPlanningPage() {
 
 
   async function resetPasswordFromRow(user: any): Promise<void> {
-    const reason = window.prompt(`Reason for resetting password for ${user.email}`, "Administrator password reset");
+    const reason = await bmPrompt(`Reason for resetting password for ${user.email}`, "Administrator password reset");
     if (!reason) return;
     try {
       setAdminUsersRowBusy(true);
@@ -848,7 +849,7 @@ export default function AdminUsersPlanningPage() {
 
   async function lockUserFromRow(user: any): Promise<void> {
     const lockoutAction = user.status === "active" && !user.locked && !user.inactive ? "lock" : "unlock";
-    const reason = window.prompt(`Reason to ${lockoutAction} ${user.email}`, `Administrator ${lockoutAction} action`);
+    const reason = await bmPrompt(`Reason to ${lockoutAction} ${user.email}`, `Administrator ${lockoutAction} action`);
     if (!reason) return;
     try {
       setAdminUsersRowBusy(true);
@@ -863,7 +864,7 @@ export default function AdminUsersPlanningPage() {
   }
 
   async function signOutUserFromRow(user: any): Promise<void> {
-    if (!window.confirm(`Sign out ${user.email} and invalidate that session?`)) return;
+    if (!await bmConfirm(`Sign out ${user.email} and invalidate that session?`)) return;
     try {
       setAdminUsersRowBusy(true);
       await postAdminUsersAction("/api/auth/signout", { email: user.email, reason: "Administrator row sign out action" }, "Sign out user");
@@ -877,7 +878,7 @@ export default function AdminUsersPlanningPage() {
   }
 
   async function assignRoleFromRow(user: any): Promise<void> {
-    const roleKey = window.prompt(`Role to assign to ${user.email}`, "");
+    const roleKey = await bmPrompt(`Role to assign to ${user.email}`, "");
     if (!roleKey) return;
     try {
       setAdminUsersRowBusy(true);
@@ -893,7 +894,7 @@ export default function AdminUsersPlanningPage() {
 
   async function removeRoleFromRow(user: any): Promise<void> {
     const currentRoles = roleLabelForUser(user);
-    const roleKey = window.prompt(`Role to remove from ${user.email}`, currentRoles === "None" ? "" : currentRoles.split(",")[0].trim());
+    const roleKey = await bmPrompt(`Role to remove from ${user.email}`, currentRoles === "None" ? "" : currentRoles.split(",")[0].trim());
     if (!roleKey) return;
     try {
       setAdminUsersRowBusy(true);

@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import React, { useCallback, useEffect, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -108,11 +109,11 @@ export default function ManualMatterPage() {
   }
 
   async function cleanupOrphans() {
-    if (!window.confirm("Delete all patient records that have no matters?\n\nThis removes leftover patients (e.g. from undone test imports). Patients linked to a matter are untouched.")) return;
+    if (!await bmConfirm("Delete all patient records that have no matters?\n\nThis removes leftover patients (e.g. from undone test imports). Patients linked to a matter are untouched.")) return;
     try {
       const r = await fetch("/api/admin/patients/cleanup-orphans", { method: "POST" });
       const j = await r.json();
-      if (j.ok) { window.alert(`Removed ${j.removed} orphaned patient(s).`); setPatientSuggestions([]); }
+      if (j.ok) { void bmAlert(`Removed ${j.removed} orphaned patient(s).`); setPatientSuggestions([]); }
       else setError(j.error || "Cleanup failed.");
     } catch { setError("Cleanup failed."); }
   }

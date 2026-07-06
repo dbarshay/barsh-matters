@@ -6,6 +6,7 @@ import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
+import { bmConfirm, bmAlert, bmPrompt } from "@/app/components/BmDialogHost";
 import BarshHeader from "@/app/components/BarshHeader";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
@@ -475,6 +476,8 @@ function buildDirectMatterSingleMasterFinalizeDryRunPayload(
 }
 
 export default function FilteredMattersPage() {
+  // Route legacy alert() through the BM-styled dialog (no native "localhost says" popups).
+  const alert = (message: React.ReactNode) => { void bmAlert({ message }); };
   const [kind, setKind] = useState<FilterKind | "">("");
   const [workflowKind, setWorkflowKind] = useState<WorkflowKind>("");
   const [value, setValue] = useState("");
@@ -983,7 +986,7 @@ export default function FilteredMattersPage() {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       `Void receipt #${receiptId} for ${money(amount)} from ${expectedDisplayNumber || "this child matter"}?`
     );
     if (!confirmed) return;
@@ -1942,7 +1945,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
   async function voidMasterCostEntry(field: MasterCostField, entryIndex: number) {
     const masterLawsuitId = clean(value);
     if (!masterLawsuitId) {
-      window.alert("Cannot void cost entry because no Master Lawsuit ID is available.");
+      alert("Cannot void cost entry because no Master Lawsuit ID is available.");
       return;
     }
 
@@ -1951,7 +1954,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
 
     if (!target || target.voided) return;
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       `Void this ${money(masterCostRecordAmountNumber(target.amount))} cost entry from ${costEntryDateDisplay(target.date)}?`
     );
     if (!confirmed) return;
@@ -2028,7 +2031,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
 
       await loadMasterLawsuitMetadata();
     } catch (error: any) {
-      window.alert(error?.message || "Cost entry could not be voided.");
+      alert(error?.message || "Cost entry could not be voided.");
     }
   }
 
@@ -2201,9 +2204,9 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     if (!masterLawsuitId || masterReopening) return;
     void runAdministratorGate("Reopen Lawsuit", async () => {
       if (
-        !window.confirm(
-          "Reopen this lawsuit? Its child matters will also be reopened (marked Open). This is a local-only change; Clio is not affected."
-        )
+        !(await bmConfirm(
+          "Reopen this lawsuit? Its child matters will also be reopened (marked Open)."
+        ))
       ) {
         return;
       }
@@ -2410,7 +2413,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       const masterLawsuitId = clean(value);
 
       if (!masterLawsuitId) {
-        window.alert(`Cannot save ${label} because no Master Lawsuit ID is available.`);
+        alert(`Cannot save ${label} because no Master Lawsuit ID is available.`);
         return;
       }
 
@@ -2424,7 +2427,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       const json = await response.json().catch(() => null);
 
       if (!response.ok || !json?.ok) {
-        window.alert(json?.error || `${label} could not be saved locally.`);
+        alert(json?.error || `${label} could not be saved locally.`);
         return;
       }
 
@@ -2491,7 +2494,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
   async function persistMasterNotes(nextNotes: MasterNoteEntry[]): Promise<boolean> {
     const masterLawsuitId = clean(value);
     if (kind !== "master" || !masterLawsuitId) {
-      window.alert("Cannot save note because no Master Lawsuit ID is available.");
+      alert("Cannot save note because no Master Lawsuit ID is available.");
       return false;
     }
 
@@ -2522,7 +2525,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
 
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.ok) {
-      window.alert(json?.error || "Note could not be saved locally.");
+      alert(json?.error || "Note could not be saved locally.");
       return false;
     }
 
@@ -2607,7 +2610,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       const fromPath = `${window.location.pathname}${window.location.search}`;
       window.location.href = `/login?from=${encodeURIComponent(fromPath || "/admin")}`;
     } catch (error: any) {
-      window.alert(error?.message || "Administrator session check failed.");
+      alert(error?.message || "Administrator session check failed.");
     }
   }
 
@@ -3044,23 +3047,23 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
 
     const reason = options.skipReasonPrompt
       ? "Temporary no-password development void"
-      : window.prompt(
+      : await bmPrompt(
           "VOID SETTLEMENT\n\nThis will void the active local settlement record and restore the Record Settlement workflow.\n\nEnter a reason for voiding this settlement:"
         );
 
     if (reason === null) return;
     if (!options.skipReasonPrompt && !String(reason).trim()) {
-      window.alert("A void reason is required.");
+      alert("A void reason is required.");
       return;
     }
 
     if (!options.skipTypedConfirm) {
-      const typed = window.prompt(
+      const typed = await bmPrompt(
         "Confirm settlement void.\n\nType confirm to void this settlement."
       );
 
       if (String(typed || "").trim().toLowerCase() !== "confirm") {
-        window.alert("Settlement void cancelled.  Confirmation text did not match.");
+        alert("Settlement void cancelled.  Confirmation text did not match.");
         return;
       }
     }
@@ -4945,11 +4948,11 @@ function masterSettlementDateFiledValue(): string {
 
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.ok) {
-      window.alert(json?.error || "Direct matter repository finalization failed.");
+      alert(json?.error || "Direct matter repository finalization failed.");
       return { ok: false, responseStatus: response.status, payload, result: json };
     }
 
-    window.alert("Direct matter finalized to Barsh Matters Master Repository storage.");
+    alert("Direct matter finalized to Barsh Matters Master Repository storage.");
     return { ok: true, responseStatus: response.status, payload, result: json };
   }
 
@@ -6219,7 +6222,7 @@ function masterDocumentPreviewText(value: unknown): string {
       .map((doc: any) => `- ${masterDocumentPreviewText(doc?.label) || masterDocumentPreviewText(doc?.key)}: ${masterDocumentPreviewText(doc?.filename)}`)
       .join("\n");
 
-    const confirmed = confirm(
+    const confirmed = await bmConfirm(
       `FINALIZE AND UPLOAD MASTER/LAWSUIT DOCUMENTS TO CLIO\n\n` +
         `Target: ${targetDisplay}${targetMatterId ? ` / Matter ID ${targetMatterId}` : ""}\n\n` +
         `This will upload the following final document copy/copies to the Barsh Matters Master Repository document storage:\n\n` +
@@ -6768,7 +6771,7 @@ function masterDocumentPreviewText(value: unknown): string {
       return;
     }
 
-    const confirmed = confirm(
+    const confirmed = await bmConfirm(
       "SEND FINALIZED DOCUMENTS TO PRINT QUEUE\n\n" +
         "Lawsuit ID: " + masterLawsuitId + "\n" +
         "Document: " + (context.documentLabel || selectedTemplate?.label || "Selected finalized document(s)") + "\n\n" +
@@ -6973,7 +6976,7 @@ function masterDocumentPreviewText(value: unknown): string {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata."
     );
 

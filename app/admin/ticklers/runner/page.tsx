@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import BarshHeader from "@/app/components/BarshHeader";
@@ -170,7 +171,7 @@ export default function AdminTicklerRunnerPage() {
         return;
       }
 
-      const ok = window.confirm(
+      const ok = await bmConfirm(
         "Complete the exact previewed open tickler filter set?",
       );
       if (!ok) return;

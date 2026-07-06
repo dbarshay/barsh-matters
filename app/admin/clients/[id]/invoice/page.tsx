@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert, bmPrompt } from "@/app/components/BmDialogHost";
 import BarshHeader from "@/app/components/BarshHeader";
 import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import Link from "next/link";
@@ -483,7 +484,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
 
     const receiptLineCount = invoiceReceiptLineCount(invoice);
 
-    const confirmed = window.confirm(
+    const confirmed = await bmConfirm(
       [
         `Finalize invoice ${invoice?.invoiceNumber || invoiceId}?`,
         "",
@@ -528,7 +529,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     const invoiceId = invoice?.id;
     if (!id || !invoiceId) return;
 
-    const voidReason = window.prompt(
+    const voidReason = await bmPrompt(
       `Void invoice ${invoice?.invoiceNumber || invoiceId}? Enter the void reason. Receipt rows currently marked with this exact invoice ID will be released.`
     );
     if (!voidReason || !voidReason.trim()) return;

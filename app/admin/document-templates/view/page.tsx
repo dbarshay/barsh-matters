@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import { useEffect, useMemo, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -140,7 +141,7 @@ export default function ViewTemplatesPage() {
     const action = actionMap[actionLabel];
     if (!action) return;
 
-    const confirmed = window.confirm(actionLabel + " template “" + (template.label || template.key) + "”?\n\nProduction Ready makes this template active in the template repository.");
+    const confirmed = await bmConfirm(actionLabel + " template “" + (template.label || template.key) + "”?\n\nProduction Ready makes this template active in the template repository.");
     if (!confirmed) return;
 
     setBusyKey(template.key + ":" + action);

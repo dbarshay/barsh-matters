@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import BarshHeader from "@/app/components/BarshHeader";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -188,7 +189,7 @@ export default function ClientInvoiceHistoryPage() {
     const invoiceId = clean(invoice?.id);
     const invoiceNumber = clean(invoice?.invoiceNumber) || "this invoice";
     if (id.length === 0 || invoiceId.length === 0) return;
-    const confirmed = window.confirm(`Void ${invoiceNumber}? This will void the invoice record. Finalized invoice receipt marks will be released for future invoicing.`);
+    const confirmed = await bmConfirm(`Void ${invoiceNumber}? This will void the invoice record. Finalized invoice receipt marks will be released for future invoicing.`);
     if (confirmed === false) return;
     setActionBusyInvoiceId(invoiceId);
     setError("");

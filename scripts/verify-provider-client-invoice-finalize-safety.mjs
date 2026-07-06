@@ -56,7 +56,7 @@ mustNotMatch("route", route, /sendEmail|printQueue|generateDocument|finalizeDocu
 mustContain("invoice page", page, "finalizeInvoice");
 mustContain("invoice page", page, "/finalize");
 mustContain("invoice page", page, "confirmFinalizeInvoice: true");
-mustContain("invoice page", page, "window.confirm");
+mustContain("invoice page", page, "bmConfirm");
 mustContain("invoice page", page, "Invoice finalized.");
 mustContain("invoice page", page, "included receipt row");
 mustContain("invoice page", page, "marked with this invoice ID");

@@ -1,5 +1,6 @@
 "use client";
 
+import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import React, { useCallback, useEffect, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
 
@@ -31,7 +32,7 @@ export default function CariskReportPage() {
   useEffect(() => { void load(); }, [load]);
 
   async function sendNow() {
-    if (!window.confirm("Email the current Carisk Management Report now?")) return;
+    if (!await bmConfirm("Email the current Carisk Management Report now?")) return;
     setBusy("send"); setError(""); setFlash("");
     try {
       const r = await fetch("/api/import/carisk/report/send", { method: "POST" });
