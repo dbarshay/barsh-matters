@@ -914,10 +914,10 @@ const activeGroupKey =
     window.open("/api/documents/clio-document-open?" + params.toString(), "_blank", "noopener,noreferrer");
   }
 
-  // Remove an orphaned/misfiled entry from the BM tree (archives the filing; Clio is untouched).
+  // Delete an entry from the BM tree.
   async function removeFiledTreeDocument(doc: FiledDoc): Promise<void> {
     if (!doc?.id) return;
-    if (!window.confirm(`Remove "${doc.titleLabel}" from this matter's folder tree? (The Clio file, if any, is not affected.)`)) return;
+    if (!window.confirm(`Delete "${doc.titleLabel}" from this matter's folder tree?`)) return;
     try {
       const res = await fetch(`/api/documents/filed?id=${encodeURIComponent(doc.id)}`, { method: "DELETE" });
       const j = await res.json().catch(() => null);
