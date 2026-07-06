@@ -5,6 +5,7 @@ import { persistExtraction } from "@/lib/ocr/persist";
 import { suggestFolderTitle, mapOcrToTitleFields, mapBillToIntakeFields } from "@/lib/ocr/mapping";
 import { getFolder, findTitle } from "@/lib/documents/folderTaxonomy";
 import { getLearnedSuggestion } from "@/lib/ocr/learning";
+import { crossReferenceExtraction } from "@/lib/ocr/crossReference";
 import { prisma } from "@/lib/prisma";
 
 // OCR-prefill for the filing flow (Phase 4b). Runs the engine on inbound bytes (BEFORE Clio),
@@ -116,9 +117,22 @@ export async function POST(req: NextRequest) {
     dateOfLoss: intake.dateOfLoss.value || null,
   };
 
+  // Cross-reference the extracted values against the reference registry + matter index (read-only):
+  // normalizes provider/carrier/patient to canonical records and predicts the matter from strong keys.
+  const crossRef = await crossReferenceExtraction(prisma, {
+    patientName: identity.patientName,
+    providerName: identity.providerName,
+    insurerName: identity.insurerName,
+    claimNumber: identity.claimNumber,
+    policyNumber: identity.policyNumber,
+    indexNumber: identity.indexNumber,
+    bmFileNumber: identity.bmFileNumber,
+  }).catch(() => null);
+
   return NextResponse.json({
     ok: true,
     ocrExtractionId: row.id,
+    crossRef,
     fileHash: row.fileHash,
     meanConfidence: result.meanConfidence,
     suggestion,

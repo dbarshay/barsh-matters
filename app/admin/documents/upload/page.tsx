@@ -78,6 +78,7 @@ export default function UploadDocsPage() {
   const [ocrProvider, setOcrProvider] = useState<string | null>(null);
   const [ocrInsurer, setOcrInsurer] = useState<string | null>(null);
   const [learnedNote, setLearnedNote] = useState<string | null>(null);
+  const [predictedNote, setPredictedNote] = useState<string | null>(null);
 
   // Step 2 — matter
   const [q, setQ] = useState("");
@@ -125,6 +126,7 @@ export default function UploadDocsPage() {
     setOcrBusy(true);
     setOcrExtractionId(null);
     setSuggested(null);
+    setPredictedNote(null);
     setPrefill({});
     try {
       const b64 = await fileToBase64(f);
@@ -165,8 +167,27 @@ export default function UploadDocsPage() {
         // Auto-suggest the matter from what OCR read off the document (patient, else claim #).
         const identity = j.identity || null;
         setOcrIdentity(identity);
-        if (!matter) {
-          // Strongest predictor first: our file number (matches the matter display number), then claim #, then patient.
+        // Cross-reference: if a strong key (file/claim/index) predicted a single matter, auto-select it.
+        const predicted = j.crossRef?.predictedMatterId
+          ? (j.crossRef.matterCandidates || []).find((c: any) => c.matterId === j.crossRef.predictedMatterId)
+          : null;
+        if (!matter && predicted) {
+          const hit: MatterHit = {
+            matterId: predicted.matterId,
+            displayNumber: predicted.displayNumber,
+            patientName: predicted.patientName,
+            insurerName: predicted.insurerName,
+            providerName: predicted.providerName,
+            caseType: predicted.caseType,
+            dateOfLoss: null,
+            finalStatus: null,
+            stage: null,
+          };
+          setMatter(hit);
+          applyCaseType(normalizeCaseType(predicted.caseType));
+          setPredictedNote(`Auto-matched to ${predicted.displayNumber} by ${predicted.matchedOn}. Change if wrong.`);
+        } else if (!matter) {
+          // No confident prediction — pre-run a search on the strongest available key.
           const autoQuery = (identity?.bmFileNumber || identity?.claimNumber || identity?.patientName || "").trim();
           if (autoQuery.length >= 2) {
             setQ(autoQuery);
@@ -480,6 +501,9 @@ export default function UploadDocsPage() {
           )}
           {matter && (
             <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: "#eef4fb", border: "1px solid #cfe0f5" }}>
+              {predictedNote && (
+                <div style={{ fontSize: 12, color: "#137333", fontWeight: 700, marginBottom: 4 }}>✓ {predictedNote}</div>
+              )}
               <div style={{ fontSize: 12, color: "#5a6b80", marginBottom: 2 }}>Filing to:</div>
               <div style={{ fontWeight: 900, color: NAVY }}>{matter.displayNumber}</div>
               <div style={{ fontSize: 13 }}>
@@ -487,7 +511,7 @@ export default function UploadDocsPage() {
                 {matter.caseType || "no case type"}
                 {matter.dateOfLoss ? ` · D/L ${matter.dateOfLoss}` : ""}
               </div>
-              <button onClick={() => setMatter(null)} style={{ ...btn("#64748b"), marginTop: 8 }}>
+              <button onClick={() => { setMatter(null); setPredictedNote(null); }} style={{ ...btn("#64748b"), marginTop: 8 }}>
                 Change matter
               </button>
             </div>
