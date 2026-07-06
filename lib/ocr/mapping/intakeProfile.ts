@@ -281,10 +281,31 @@ function scanCarrierBySuffix(text: string): string | null {
   return null;
 }
 
+/**
+ * NY no-fault litigation caption: "PROVIDER a/a/o PATIENT, Plaintiff -against- CARRIER, Defendant".
+ * "a/a/o" (also "aao", "as assignee of") gives us both the billing provider (plaintiff) and the
+ * assignor patient on summonses, affidavits, motions, answers, and stipulations. Low confidence.
+ */
+function scanCaptionParties(text: string): { provider: string | null; patient: string | null } {
+  const pats = [
+    /([A-Z][A-Za-z0-9&.,'\- ]{2,60}?)\s+a\/?\s?a\/?\s?o\.?\s+([A-Z][A-Za-z.,'\- ]{2,40}?)\s*(?:,|\bplaintiff\b|-|\bv\.?\b|\bagainst\b)/i,
+    /([A-Z][A-Za-z0-9&.,'\- ]{2,60}?)\s+as\s+assignee\s+of\s+([A-Z][A-Za-z.,'\- ]{2,40}?)\s*(?:,|\bplaintiff\b|-|\bagainst\b)/i,
+  ];
+  for (const re of pats) {
+    const m = text.match(re);
+    if (m) {
+      const provider = m[1].replace(/\s+/g, " ").trim().replace(/[.,]+$/, "");
+      const patient = m[2].replace(/\s+/g, " ").trim().replace(/[.,]+$/, "");
+      return { provider: provider.length >= 3 ? provider : null, patient: patient.length >= 3 ? patient : null };
+    }
+  }
+  return { provider: null, patient: null };
+}
+
 export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappingResult {
   // Person / entity names — patient trimmed off any trailing address; siblings excluded.
   const patientHit = findKv(result, FIELD_SYNONYMS.patientName, EXCLUDES.patientName);
-  const patientName: MappedField<string> = patientHit
+  let patientName: MappedField<string> = patientHit
     ? {
         value: cleanPersonName(patientHit.value),
         confidence: patientHit.confidence,
@@ -323,6 +344,29 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
   }
   const policyNumber = idField(result, FIELD_SYNONYMS.policyNumber, EXCLUDES.policyNumber);
 
+  // Court Index Number — the reliable matter key on litigation documents (summons, motions, answers,
+  // stips, affidavits). Kept separate from the carrier claim number.
+  const indexNumber = ((): MappedField<string> => {
+    const m = result.text.match(/index\s*(?:no|number|#)\.?\s*:?\s*([A-Za-z0-9][A-Za-z0-9/\-]{3,25})/i);
+    if (m) {
+      const v = m[1].replace(/[.,;:]+$/, "");
+      if (/\d/.test(v)) return { value: v, confidence: 0.5, source: "text-scan", rawText: m[0] };
+    }
+    return emptyField<string>();
+  })();
+
+  // Litigation caption fallback: "PROVIDER a/a/o PATIENT ... -against- CARRIER". Fills patient/provider
+  // (and, via the carrier-suffix scan above, insurer) when they aren't in labeled fields.
+  if (!patientName.value || !providerName.value) {
+    const cap = scanCaptionParties(result.text);
+    if (!patientName.value && cap.patient) {
+      patientName = { value: cleanPersonName(cap.patient), confidence: 0.35, source: "caption", rawText: cap.patient };
+    }
+    if (!providerName.value && cap.provider) {
+      providerName = { value: cleanProviderName(cap.provider), confidence: 0.35, source: "caption", rawText: cap.provider };
+    }
+  }
+
   // Capture DOB to keep it out of the loss/service dates.
   const dob = findDob(result);
   const disallowDates = new Set<string>(dob ? [dob] : []);
@@ -335,34 +379,35 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
   if (dateOfLoss.value) dosDisallow.add(dateOfLoss.value); // don't reuse the DOL as a DOS
   let dosStart = dateFieldKvOnly(result, FIELD_SYNONYMS.dosStart, [], dosDisallow);
   let dosEnd = dateFieldKvOnly(result, FIELD_SYNONYMS.dosEnd, [], dosDisallow);
-  if (!dosStart.value || !dosEnd.value) {
+  if (dosStart.value && !dosEnd.value) {
+    // Only the "from" date is labeled — single service date; don't grab a later received/processed date.
+    dosEnd = { ...dosStart, source: `${dosStart.source} (single DOS)` };
+  } else if (!dosStart.value && dosEnd.value) {
+    dosStart = { ...dosEnd, source: `${dosEnd.source} (single DOS)` };
+  } else if (!dosStart.value && !dosEnd.value) {
+    // Neither labeled — fall back to the earliest/latest service-grid dates.
     const tableDates = collectTableDates(result, dosDisallow).sort((a, b) => toEpoch(a) - toEpoch(b));
     if (tableDates.length > 0) {
-      if (!dosStart.value) {
-        dosStart = { value: tableDates[0], confidence: FALLBACK_CONF, source: "table", rawText: tableDates[0] };
-      }
-      if (!dosEnd.value) {
-        const last = tableDates[tableDates.length - 1];
-        dosEnd = { value: last, confidence: FALLBACK_CONF, source: "table", rawText: last };
-      }
+      dosStart = { value: tableDates[0], confidence: FALLBACK_CONF, source: "table", rawText: tableDates[0] };
+      const last = tableDates[tableDates.length - 1];
+      dosEnd = { value: last, confidence: FALLBACK_CONF, source: "table", rawText: last };
     }
   }
 
-  // Claim (billed) amount — key/value first, else the largest dollar value seen (heuristic total).
+  // Claim (billed) amount = the TOTAL charge, which is the largest dollar figure on a bill. Take the
+  // labeled amount only when it's at least as large as the biggest dollar seen; otherwise a stray small
+  // cell (units, a "$3") was mis-paired, so prefer the max dollar (policy limits already excluded).
   let claimAmount: MappedField<number> = emptyField<number>();
   const amtHit = findKv(result, FIELD_SYNONYMS.claimAmount);
-  if (amtHit) {
-    const amt = parseAmount(amtHit.value);
-    if (amt != null) {
-      claimAmount = { value: amt, confidence: amtHit.confidence, source: `kv:"${amtHit.key}"`, rawText: amtHit.value };
-    }
-  }
-  if (claimAmount.value == null) {
-    const amounts = collectAmounts(result);
-    if (amounts.length > 0) {
-      const max = amounts.reduce((a, b) => (b.value > a.value ? b : a));
-      claimAmount = { value: max.value, confidence: FALLBACK_CONF, source: max.source, rawText: max.raw };
-    }
+  const kvAmt = amtHit ? parseAmount(amtHit.value) : null;
+  const amounts = collectAmounts(result);
+  const maxDollar = amounts.length ? amounts.reduce((a, b) => (b.value > a.value ? b : a)) : null;
+  if (kvAmt != null && (maxDollar == null || kvAmt >= maxDollar.value)) {
+    claimAmount = { value: kvAmt, confidence: amtHit!.confidence, source: `kv:"${amtHit!.key}"`, rawText: amtHit!.value };
+  } else if (maxDollar != null) {
+    claimAmount = { value: maxDollar.value, confidence: FALLBACK_CONF, source: maxDollar.source, rawText: maxDollar.raw };
+  } else if (kvAmt != null) {
+    claimAmount = { value: kvAmt, confidence: amtHit!.confidence, source: `kv:"${amtHit!.key}"`, rawText: amtHit!.value };
   }
 
   return {
@@ -371,6 +416,7 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
     insurerName,
     claimNumber,
     policyNumber,
+    indexNumber,
     dateOfLoss,
     dosStart,
     dosEnd,

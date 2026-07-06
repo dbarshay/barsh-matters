@@ -166,7 +166,8 @@ export default function UploadDocsPage() {
         const identity = j.identity || null;
         setOcrIdentity(identity);
         if (!matter) {
-          const autoQuery = (identity?.patientName || identity?.claimNumber || "").trim();
+          // Strongest predictor first: our file number (matches the matter display number), then claim #, then patient.
+          const autoQuery = (identity?.bmFileNumber || identity?.claimNumber || identity?.patientName || "").trim();
           if (autoQuery.length >= 2) {
             setQ(autoQuery);
             void runSearch(autoQuery);
