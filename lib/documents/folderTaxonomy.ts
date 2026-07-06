@@ -143,6 +143,7 @@ const RAW_TAXONOMY: RawFolder[] = [
         promptsDeadline: false,
         titles: [
           staticTitle("bill", "Bill"),
+          staticTitle("billing_letter", "Billing Letter"),
           staticTitle("aob", "AOB"),
           staticTitle("proof_of_mailing", "Proof of Mailing"),
           staticTitle("liens", "Liens"),
@@ -355,11 +356,21 @@ const RAW_TAXONOMY: RawFolder[] = [
     allowFreehandOther: true,
     promptsDeadline: true,
     titles: [
+      // WC-specific forms
       staticTitle("hp1", "HP-1"),
       staticTitle("hpj1", "HPJ-1"),
       staticTitle("c81", "C8.1"),
       staticTitle("c84", "C8.4"),
       staticTitle("rejections", "Rejections"),
+      // Same document types as Claim Documents, but for WC-case matters (flat, per case-type routing)
+      staticTitle("bill", "Bill"),
+      staticTitle("billing_letter", "Billing Letter"),
+      staticTitle("report", "Report"),
+      staticTitle("eob_eor", "EOB/EOR"),
+      staticTitle("proof_of_mailing", "Proof of Mailing"),
+      staticTitle("aob", "AOB"),
+      staticTitle("verification_request", "Verification Request"),
+      staticTitle("verification_response", "Verification Response"),
     ],
   },
 ];
