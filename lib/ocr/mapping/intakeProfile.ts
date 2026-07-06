@@ -232,6 +232,8 @@ function scanLabeledText(text: string, labels: string[]): string | null {
 function cleanInsurerName(input: string): string | null {
   let s = input.replace(/\s+/g, " ").trim();
   if (!s) return null;
+  // A bare PO box / address is not a carrier name.
+  if (/^p\.?\s*o\.?\s*box\b/i.test(s)) return null;
   // Form-label continuations / administrator rows — not a carrier name.
   if (/^or\s+self|self-?insurer|claim processor|third party administrat/i.test(s)) return null;
   // Boilerplate sentence fragments captured as a value.
@@ -251,6 +253,34 @@ function cleanIdValue(v: string): string {
   return m ? m[1] : v;
 }
 
+/**
+ * Clean a provider value: drop a leading phone number and cut off "C/O <our address>", license
+ * numbers, and "(100%)" ownership notes so we keep just the practice/provider name.
+ */
+function cleanProviderName(input: string): string {
+  let s = input.replace(/\s+/g, " ").trim();
+  s = s.replace(/^\(?\d[\d)\s.\-]{6,}\s+/, ""); // leading phone "(516 )665-2480 NAME"
+  s = s.split(/\s+c\/o\b/i)[0]; // "... C/O BRL"
+  s = s.split(/\s+license\b/i)[0]; // "... License# 1610601"
+  s = s.split(/\s*\(\d{1,3}\s*%\)/)[0]; // "... (100%)"
+  return s.replace(/[.,;:\s]+$/, "").trim();
+}
+
+/**
+ * Text fallback for a carrier whose name ends in a common insurance suffix ("INTEGON NATIONAL
+ * INSURANCE", "MERCURY INDEMNITY"). Skips no-fault-law boilerplate. Low confidence — operator verifies.
+ */
+function scanCarrierBySuffix(text: string): string | null {
+  const re = /([A-Z][A-Za-z&.\- ]{2,40}?(?:Insurance(?:\s+Company)?|Indemnity|Mutual|Casualty|Assurance))\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const c = m[1].replace(/\s+/g, " ").trim();
+    if (/\b(law|fault|department|coverage|plan)\b/i.test(c)) continue;
+    if (c.length >= 5) return c;
+  }
+  return null;
+}
+
 export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappingResult {
   // Person / entity names — patient trimmed off any trailing address; siblings excluded.
   const patientHit = findKv(result, FIELD_SYNONYMS.patientName, EXCLUDES.patientName);
@@ -262,10 +292,11 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
         rawText: patientHit.value,
       }
     : emptyField<string>();
-  const providerName = stringField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
+  let providerName = stringField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
+  if (providerName.value) providerName = { ...providerName, value: cleanProviderName(providerName.value) };
 
   // Carrier/insurer — reject a date/PO-box the kv pairing grabbed, then fall back to a text scan of
-  // the "Carrier:" / "Insurance Plan Name" line (cut before the address).
+  // the "Carrier:" / "Insurance Plan Name" line, then to any carrier-suffix name in the text.
   let insurerName = stringField(result, FIELD_SYNONYMS.insurerName, EXCLUDES.insurerName);
   if (insurerName.value) {
     const cleaned = cleanInsurerName(insurerName.value);
@@ -277,6 +308,10 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
     ]);
     const cleaned = scanned ? cleanInsurerName(scanned) : null;
     if (cleaned) insurerName = { value: cleaned, confidence: 0.4, source: "text-scan", rawText: scanned! };
+  }
+  if (!insurerName.value) {
+    const carrier = scanCarrierBySuffix(result.text);
+    if (carrier) insurerName = { value: carrier, confidence: 0.35, source: "text-carrier-suffix", rawText: carrier };
   }
 
   // Identifiers — must look like an ID (has a digit, not a name/date/amount) and not name a sibling.

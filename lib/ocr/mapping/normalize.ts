@@ -46,6 +46,21 @@ export function normalizeDate(input: string): string | null {
     }
     return fmt(m, d, y);
   }
+
+  // Month-name dates: "16 May 2025", "16-May-2025", "May 16, 2025".
+  const MONTHS: Record<string, number> = {
+    jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+  };
+  const dMonY = cleaned.match(/\b(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s,]+(\d{4})\b/);
+  if (dMonY) {
+    const mo = MONTHS[dMonY[2].slice(0, 3).toLowerCase()];
+    if (mo) return fmt(String(mo), dMonY[1], dMonY[3]);
+  }
+  const monDY = cleaned.match(/\b([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/);
+  if (monDY) {
+    const mo = MONTHS[monDY[1].slice(0, 3).toLowerCase()];
+    if (mo) return fmt(String(mo), monDY[2], monDY[3]);
+  }
   return null;
 
   function fmt(m: string, d: string, y: string): string | null {
