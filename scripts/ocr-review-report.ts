@@ -91,10 +91,33 @@ async function main() {
   }
 
   const lines: string[] = [];
-  lines.push(`# OCR Review Report (PHI-safe)`);
+  lines.push(`# OCR Review Report (cross-reference)`);
   lines.push(``);
-  lines.push(`${n} cached sample(s). No values or table contents — safe to share.`);
+  lines.push(`${n} cached sample(s). Per-file section below shows values for cross-referencing —`);
+  lines.push(`share selectively. Sections 1–3 (aggregate) are PHI-light (labels/counts only).`);
   lines.push(``);
+  lines.push(`## 0. Per file — classifier suggestion + identity fields + uncovered labels`);
+  lines.push(``);
+  for (const cf of cacheFiles) {
+    const rec = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, cf), "utf8")) as CacheRecord;
+    const mapped: any = mapBillToIntakeFields(rec.result);
+    const s = suggestFolderTitle(rec.result);
+    lines.push(`### ${rec.fileName}`);
+    lines.push(
+      s
+        ? `- **Classifier:** ${s.folderKey} / ${s.titleKey}  (conf ${s.confidence}, matched \`${(s as any).matched ?? "?"}\`)`
+        : `- **Classifier:** ⚠️ no suggestion`,
+    );
+    const idParts: string[] = [];
+    for (const k of INTAKE_FIELD_KEYS) {
+      const mf = mapped[k];
+      const v = mf?.value == null || mf.value === "" ? "—" : String(mf.value).slice(0, 40);
+      idParts.push(`${k}=${v}`);
+    }
+    lines.push(`- **Identity:** ${idParts.join(" · ")}`);
+    lines.push(``);
+  }
+
   lines.push(`## 1. Identity-field hit rate`);
   lines.push(``);
   lines.push(`| Field | Found | Low-conf | Hit rate |`);
