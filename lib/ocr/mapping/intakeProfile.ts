@@ -347,10 +347,20 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
   // Court Index Number — the reliable matter key on litigation documents (summons, motions, answers,
   // stips, affidavits). Kept separate from the carrier claim number.
   const indexNumber = ((): MappedField<string> => {
-    const m = result.text.match(/index\s*(?:no|number|#)\.?\s*:?\s*([A-Za-z0-9][A-Za-z0-9/\-]{3,25})/i);
+    const text = result.text;
+    // 1) Labeled: "Index No.: <value>".
+    let m = text.match(/index\s*(?:no|number|#)\.?\s*:?\s*([A-Za-z0-9][A-Za-z0-9/\-]{3,25})/i);
     if (m) {
       const v = m[1].replace(/[.,;:]+$/, "");
-      if (/\d/.test(v)) return { value: v, confidence: 0.5, source: "text-scan", rawText: m[0] };
+      if (/\d/.test(v) && !/^index/i.test(v)) return { value: v, confidence: 0.5, source: "text-scan", rawText: m[0] };
+    }
+    // 2) NY civil-court index format anywhere in the caption: "CV-738565-26/RI" (slash may be dropped by OCR).
+    m = text.match(/\bCV-\d{3,7}-\d{2}[\/ ]?[A-Za-z]{2}\b/i);
+    if (m) return { value: m[0].toUpperCase().replace(/\s/, "/"), confidence: 0.5, source: "format-scan", rawText: m[0] };
+    // 3) Plain "NNNNNN/YY(YY)" index — only when the word "index" appears (avoid matching fractions/dates).
+    if (/\bindex\b/i.test(text)) {
+      m = text.match(/\b(\d{4,7}\/\d{2,4})\b/);
+      if (m) return { value: m[1], confidence: 0.4, source: "format-scan", rawText: m[1] };
     }
     return emptyField<string>();
   })();
@@ -370,6 +380,13 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
   // Capture DOB to keep it out of the loss/service dates.
   const dob = findDob(result);
   const disallowDates = new Set<string>(dob ? [dob] : []);
+  // The NYSCEF e-filing stamp ("RECEIVED NYSCEF: 05/26/2026") is the FILING date on litigation docs —
+  // never a loss or service date. Keep it out of DOL/DOS.
+  const nyscef = result.text.match(/(?:received\s+nyscef|date\s+filed|e-?filed)\s*:?\s*([\d/\-]{6,10})/i);
+  if (nyscef) {
+    const nd = normalizeDate(nyscef[1]);
+    if (nd) disallowDates.add(nd);
+  }
 
   // Date of loss — key/value only, no DOB, no future date.
   const dateOfLoss = dateFieldKvOnly(result, FIELD_SYNONYMS.dateOfLoss, EXCLUDES.dateOfLoss, disallowDates);
