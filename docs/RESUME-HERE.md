@@ -187,11 +187,35 @@ nested tree as metadata (invariant — never create Clio subfolders). Phased bui
   into the matter page's View Documents popup (`app/matter/[id]/page.tsx`) is a follow-up. Also still
   pending: real file upload → Clio → set `clioDocumentId` + backfill onto the OCR row by fileHash.
 
+## Carisk Management Report — BUILT (2026-07-06)
+Persistent tracker for Carisk **"Saved Incomplete"** bills (insurer rejected as incomplete → never became
+a matter), keyed by **CIC#**, plus a **weekly email** every Friday.
+- **Model** `CariskManagementReportItem` (`cicNumber @unique`; patient/provider/carrier/DOS/charges/
+  status date/rejection detail; `status` open|removed; first/last seen). Needs `db push` + `generate`
+  (already applied to shared Neon).
+- **Persist lib** `lib/import/cariskManagementReport.ts`: `upsertSavedIncomplete()` parks rows,
+  `removeCicsFromReport()` graduates a CIC# off when it later becomes a matter, `listOpenReport()`.
+- **Wiring:** Carisk **confirm** parks every `to_report` row and graduates any CIC# it just created;
+  reconcile **commit** also graduates committed Carisk CIC#s. So a bill auto-drops off once the same
+  CIC# arrives as a Carrier Submission.
+- **View:** `/admin/import/carisk/report` (purple **Management Report** button in the Carisk import
+  "Existing imports" header). API `GET /api/import/carisk/report` (flag-gated).
+- **Email:** `lib/import/cariskReportEmail.ts` builds an HTML table + sends via Graph
+  (`POST /users/{mailbox}/sendMail`). Recipient(s) = `CARISK_REPORT_RECIPIENT` (comma-sep).
+  Send route `/api/import/carisk/report/send`: **GET** = cron (Bearer `CRON_SECRET` or
+  `CARISK_REPORT_CRON_SECRET`, fail-closed); **POST** = admin "Send report email now" button.
+- **Schedule:** `vercel.json` cron `0 12 * * 5` = **Fridays 8:00am EDT** (12:00 UTC; note no DST — fires
+  7:00am in winter EST). Fires only on Vercel.
+- **Env needed in Vercel (Production):** `CARISK_REPORT_RECIPIENT`, `MICROSOFT_GRAPH_*` (send needs them
+  in prod too), `CRON_SECRET` (shared with other crons). `BARSH_IMPORT_ENABLED=1` gates the whole thing.
+- **Test:** open the report page → **Send report email now** (POST, admin cookie, no cron secret needed);
+  sends even with 0 items ("No open items"). Verifier: `npm run verify:carisk-report-safety`.
+- To see real rows: run a Carisk import containing "Saved Incomplete" status rows and confirm it on a
+  deployment that has this feature (imports confirmed on older builds never parked anything).
+
 ## What's left (not built)
 - **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,
   and the drag-into-folder flow. See `docs/document-folder-structure.md` for the folder taxonomy.
-- **Carisk Management Report** — the persistent "Saved Incomplete" tracker (keyed by CIC#) + weekly
-  scheduled email. Currently those rows are just routed to a `to_report` outcome and counted.
 - **Native matter email (Outlook / Microsoft Graph)** — doc-folder spec #6. Send/receive email from
   the matter UI via Graph (Outlook stays the mail server), threaded to the matter (Message-ID/In-Reply-To
   + `[BRL_…]` subject tag), attach filed docs, replace the maildrop. Builds on existing `lib/graph/*`
@@ -214,5 +238,7 @@ inspection is needed. Keep your own copies.
 > Document Intelligence) is built and proven. Pick up [OCR field-mapping profile + verify UI |
 > Carisk Management Report | RBAC | your next item]."
 
+_Last updated 2026-07-06: Carisk Management Report built (Saved-Incomplete tracker keyed by CIC# +
+admin view + Friday 8am ET Graph email via Vercel Cron); email send verified end-to-end from local._
 _Last updated 2026-07-04: added the OCR engine foundation; baselined migrations + wired shadow DB for
 `migrate dev`; remote renamed to `barsh-matters`._
