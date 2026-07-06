@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     claimNumber: intake.claimNumber.value || null,
     policyNumber: intake.policyNumber.value || null,
     indexNumber: intake.indexNumber.value || null,
+    dateFiled: intake.dateFiled.value || null,
     insurerName: intake.insurerName.value || null,
     providerName: intake.providerName.value || null,
     dateOfLoss: intake.dateOfLoss.value || null,

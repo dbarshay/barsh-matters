@@ -23,6 +23,7 @@ export type IntakeMappingResult = {
   claimNumber: MappedField<string>;
   policyNumber: MappedField<string>;
   indexNumber: MappedField<string>;
+  dateFiled: MappedField<string>;
   dateOfLoss: MappedField<string>;
   dosStart: MappedField<string>;
   dosEnd: MappedField<string>;
@@ -38,6 +39,7 @@ export const INTAKE_FIELD_KEYS: IntakeFieldKey[] = [
   "claimNumber",
   "policyNumber",
   "indexNumber",
+  "dateFiled",
   "dateOfLoss",
   "dosStart",
   "dosEnd",

@@ -380,12 +380,16 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
   // Capture DOB to keep it out of the loss/service dates.
   const dob = findDob(result);
   const disallowDates = new Set<string>(dob ? [dob] : []);
-  // The NYSCEF e-filing stamp ("RECEIVED NYSCEF: 05/26/2026") is the FILING date on litigation docs —
-  // never a loss or service date. Keep it out of DOL/DOS.
+  // The NYSCEF e-filing stamp ("RECEIVED NYSCEF: 05/26/2026") is the litigation "Date Filed" — capture
+  // it as its own field AND keep it out of the loss/service dates.
+  let dateFiled: MappedField<string> = emptyField<string>();
   const nyscef = result.text.match(/(?:received\s+nyscef|date\s+filed|e-?filed)\s*:?\s*([\d/\-]{6,10})/i);
   if (nyscef) {
     const nd = normalizeDate(nyscef[1]);
-    if (nd) disallowDates.add(nd);
+    if (nd) {
+      disallowDates.add(nd);
+      dateFiled = { value: nd, confidence: 0.5, source: "text-scan", rawText: nyscef[0] };
+    }
   }
 
   // Date of loss — key/value only, no DOB, no future date.
@@ -434,6 +438,7 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
     claimNumber,
     policyNumber,
     indexNumber,
+    dateFiled,
     dateOfLoss,
     dosStart,
     dosEnd,
