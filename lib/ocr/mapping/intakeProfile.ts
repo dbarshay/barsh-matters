@@ -79,6 +79,29 @@ function findKv(result: OcrExtractionResult, synonyms: string[], excludes: strin
   return null;
 }
 
+/**
+ * Provider finder that PREFERS a practice/entity value: scans every provider label and returns the
+ * first value that is a practice name (skipping individual-physician values like "THOMAS KOLB" that
+ * an earlier label might carry), so we don't stop on an individual when a later label holds the practice.
+ */
+function practiceField(
+  result: OcrExtractionResult,
+  synonyms: string[],
+  excludes: string[],
+): MappedField<string> {
+  for (const syn of synonyms) {
+    for (const kv of result.keyValues) {
+      if (!isUsableValue(kv.value)) continue;
+      if (!labelMatchesWithExcludes(kv.key, [syn], excludes)) continue;
+      const v = cleanProviderName(cleanValue(kv.value));
+      if (isPracticeName(v)) {
+        return { value: v, confidence: kv.confidence, source: `kv:"${kv.key}"`, rawText: kv.value };
+      }
+    }
+  }
+  return emptyField<string>();
+}
+
 /** A plain labeled string field (with optional sibling-exclusions). */
 function stringField(
   result: OcrExtractionResult,
@@ -291,6 +314,23 @@ function isPracticeName(v: string): boolean {
 }
 
 /**
+ * Provider name from a text run ending in a practice-entity suffix, scanned across the document head.
+ * Catches the practice when it's embedded in a longer letterhead line (e.g. "Chart Notes …/… Priolo &
+ * Berns Chiropractic PLLC 3243 …") that the line-anchored letterhead scan skips.
+ */
+function scanPracticeInText(text: string): string | null {
+  const head = text.slice(0, 500);
+  const m = head.match(
+    /\b([A-Z][A-Za-z&.,'\- ]{2,50}?(?:PLLC|LLC|P\.?C\.?|Inc\b|Chiropractic|Radiology|Physical Medicine|Physical Therapy|Medical (?:Care|Equipment|Group|Services|Supply)|Rehab(?:ilitation)?|Orthopedics?|Diagnostic|Imaging|Acupuncture|Wellness))\b/,
+  );
+  if (m) {
+    const v = cleanProviderName(m[1].replace(/[.,;:]+$/, "").trim());
+    if (v.length >= 5 && !/patient|insurance|barshay|no-fault|attorney|law offices/i.test(v)) return v;
+  }
+  return null;
+}
+
+/**
  * Provider from the document letterhead (top lines) — used on scripts/reports where the practice
  * name isn't in a labeled field. Requires a business-entity keyword and skips carrier/firm lines.
  */
@@ -337,13 +377,9 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
         rawText: patientHit.value,
       }
     : emptyField<string>();
-  let providerName = stringField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
-  if (providerName.value) {
-    const cleaned = cleanProviderName(providerName.value);
-    // Keep only practice/entity names; a bare individual ("Michael Jurkowich") falls through to the
-    // caption/letterhead fallbacks (which yield the practice) or stays blank.
-    providerName = isPracticeName(cleaned) ? { ...providerName, value: cleaned } : emptyField<string>();
-  }
+  // Provider = the billing PRACTICE. Prefer a practice-shaped value across all provider labels (skip
+  // individual physicians), then fall back to the litigation caption, the letterhead, and a head-text scan.
+  let providerName = practiceField(result, FIELD_SYNONYMS.providerName, EXCLUDES.providerName);
 
   // Carrier/insurer — reject a date/PO-box the kv pairing grabbed, then fall back to a text scan of
   // the "Carrier:" / "Insurance Plan Name" line, then to any carrier-suffix name in the text.
@@ -405,10 +441,15 @@ export function mapBillToIntakeFields(result: OcrExtractionResult): IntakeMappin
       providerName = { value: cleanProviderName(cap.provider), confidence: 0.35, source: "caption", rawText: cap.provider };
     }
   }
-  // Provider from letterhead (scripts/reports where the practice is the top line, not a labeled field).
+  // Provider from letterhead (scripts/reports where the practice is the top line, not a labeled field),
+  // then from a practice-suffix name anywhere in the document head (embedded in a longer line).
   if (!providerName.value) {
     const lh = scanLetterheadProvider(result.text);
     if (lh) providerName = { value: lh, confidence: 0.3, source: "letterhead", rawText: lh };
+  }
+  if (!providerName.value) {
+    const p = scanPracticeInText(result.text);
+    if (p) providerName = { value: p, confidence: 0.3, source: "text-practice", rawText: p };
   }
 
   // Capture DOB to keep it out of the loss/service dates.
