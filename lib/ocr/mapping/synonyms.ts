@@ -10,6 +10,13 @@ export const FIELD_SYNONYMS: Record<string, string[]> = {
     "patient's name",
     "patient name",
     "name of patient",
+    "claimant name",           // WC EOR / denial forms
+    "eligible injured person",
+    "injured person",          // NF-10 box D ("D. INJURED PERSON")
+    "injured party",
+    "name of injured",
+    "assignor",
+    "claimant",
     "pt name",
     "patient",
   ],

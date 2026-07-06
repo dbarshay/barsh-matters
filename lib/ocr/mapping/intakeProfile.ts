@@ -275,7 +275,8 @@ function scanCarrierBySuffix(text: string): string | null {
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const c = m[1].replace(/\s+/g, " ").trim();
-    if (/\b(law|fault|department|coverage|plan)\b/i.test(c)) continue;
+    // Skip boilerplate phrases that merely end in "insurance" (postal/liability/etc.).
+    if (/\b(law|fault|department|coverage|plan|postal|mail|registered|liability|policy of|letter|necessity|during|ptnt|self|proof)\b/i.test(c)) continue;
     if (c.length >= 5) return c;
   }
   return null;
