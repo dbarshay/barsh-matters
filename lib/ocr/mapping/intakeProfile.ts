@@ -294,7 +294,8 @@ function cleanProviderName(input: string): string {
  * INSURANCE", "MERCURY INDEMNITY"). Skips no-fault-law boilerplate. Low confidence — operator verifies.
  */
 function scanCarrierBySuffix(text: string): string | null {
-  const re = /([A-Z][A-Za-z&.\- ]{2,40}?(?:Insurance(?:\s+Company)?|Indemnity|Mutual|Casualty|Assurance))\b/g;
+  // Case-insensitive so it matches ALL-CAPS form text ("INTEGON NATIONAL INSURANCE"), not just Title Case.
+  const re = /([A-Za-z][A-Za-z&.\- ]{2,40}?(?:Insurance(?:\s+Company)?|Indemnity|Mutual|Casualty|Assurance|Fire\s+&\s+Casualty))\b/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const c = m[1].replace(/\s+/g, " ").trim();
