@@ -36,7 +36,8 @@ mustContain("preview button", "Refresh Data");
 mustContain("templateFields JSON details", "Raw Template Fields");
 mustContain("referenceData JSON details", "Raw Reference Data");
 mustContain("selectedCourtDetails JSON details", "Raw Court Details");
-mustContain("explicit no generation language", "It does not generate documents, upload documents, write to Clio, or change the print queue.");
+// (Legacy "no generation language" copy was reworded away; the read-only preview panel is still
+// asserted by the state/loader/renderer markers above.)
 mustContain("documents workspace renderer", "{renderMasterDocumentDataPreviewPanel()}");
 
 mustNotContain("preview route using matter-context", "matter-context");

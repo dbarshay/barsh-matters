@@ -657,16 +657,18 @@ export async function POST(req: NextRequest) {
       documentsToUpload.push(document);
     }
 
-    // Auto-file enforcement (direct-matter finalize): every stored-DB template being finalized must be
-    // mapped to an approved folder/title. Block finalize until mapped; then each finalized PDF is filed
-    // into the BM folder tree automatically after upload (see the upload loop below).
+    // Auto-file enforcement: every stored-DB template being finalized must be mapped to an approved
+    // folder/title. Block finalize until mapped; then each finalized PDF is filed into the BM folder
+    // tree automatically after upload. Works for both direct-matter (files by matterId) and lawsuit
+    // (files by masterLawsuitId) finalize.
     const isDirectMatterFinalize = uploadTargetMode === "direct-matter";
     const templateFilingByKey = new Map<
       string,
       { folderKey: string; titleKey: string; freehandTitle: string | null; level: string }
     >();
     let bmMatterIdForFiling: number | null = null;
-    if (isDirectMatterFinalize) {
+    let bmLawsuitIdForFiling: string | null = null;
+    {
       const templateKeys = Array.from(
         new Set(documentsToUpload.map((d) => clean((d as any).templateKey)).filter(Boolean)),
       );
@@ -706,13 +708,17 @@ export async function POST(req: NextRequest) {
           );
         }
       }
-      // Resolve the BM matter id (ClaimIndex.matter_id) from the direct-matter BRL number for filing.
-      if (finalizedDocumentStorageIdentity && templateFilingByKey.size > 0) {
-        const ci = await prisma.claimIndex.findFirst({
-          where: { display_number: finalizedDocumentStorageIdentity },
-          select: { matter_id: true },
-        });
-        bmMatterIdForFiling = ci?.matter_id ?? null;
+      // Resolve the filing target: matter (from the direct-matter BRL number) or lawsuit.
+      if (templateFilingByKey.size > 0) {
+        if (isDirectMatterFinalize && finalizedDocumentStorageIdentity) {
+          const ci = await prisma.claimIndex.findFirst({
+            where: { display_number: finalizedDocumentStorageIdentity },
+            select: { matter_id: true },
+          });
+          bmMatterIdForFiling = ci?.matter_id ?? null;
+        } else if (!isDirectMatterFinalize && effectiveMasterLawsuitId) {
+          bmLawsuitIdForFiling = clean(effectiveMasterLawsuitId) || null;
+        }
       }
     }
 
@@ -873,13 +879,14 @@ export async function POST(req: NextRequest) {
         fullyUploaded: result.fullyUploaded,
       });
 
-      // Auto-file the finalized PDF into the template's mapped BM folder/title (direct-matter only).
+      // Auto-file the finalized PDF into the template's mapped BM folder/title (matter or lawsuit).
       const filingTemplateKey = clean((document as any).templateKey);
       const filing = filingTemplateKey ? templateFilingByKey.get(filingTemplateKey) : undefined;
-      if (filing && bmMatterIdForFiling) {
+      if (filing && (bmMatterIdForFiling || bmLawsuitIdForFiling)) {
         try {
           await fileDocument(prisma, {
-            matterId: bmMatterIdForFiling,
+            matterId: bmMatterIdForFiling ?? undefined,
+            masterLawsuitId: bmLawsuitIdForFiling ?? undefined,
             matterDisplayNumber: finalizedDocumentStorageIdentity,
             clioDocumentId: String(result.documentId),
             folderKey: filing.folderKey,

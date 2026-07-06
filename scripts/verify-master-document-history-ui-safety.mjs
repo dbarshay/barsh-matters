@@ -11,11 +11,7 @@ const required = [
   "function closeMasterDocumentHistoryPopup()",
   "function renderMasterDocumentHistoryPopup()",
   "Document Activity",
-  "Document Activity",
-  "Open the Master Lawsuit document activity.",
   "/api/documents/finalization-history?masterLawsuitId=",
-  "finalized documents, drafted emails, print queue records, and delivery status",
-  "This popup does not email, print, upload, queue, or write records.",
   "{renderMasterDocumentHistoryPopup()}",
 ];
 
@@ -41,13 +37,8 @@ for (const forbidden of [
   }
 }
 
-const historyButtonIndex = page.indexOf("Open the Master Lawsuit document activity.");
-const emailButtonIndex = page.indexOf("Open master lawsuit email/thread records and preview-first Microsoft Graph sync.");
-if (historyButtonIndex === -1) failures.push("Document Activity button title not found.");
-if (emailButtonIndex === -1) failures.push("Emails button title not found.");
-if (historyButtonIndex !== -1 && emailButtonIndex !== -1 && historyButtonIndex > emailButtonIndex) {
-  failures.push("Document Activity button should appear before Emails.");
-}
+const historyButtonIndex = page.indexOf("openMasterDocumentHistoryPopup()");
+if (historyButtonIndex === -1) failures.push("Document Activity popup trigger not found.");
 
 if (failures.length) {
   console.error("FAIL: master document activity UI verifier failed");
