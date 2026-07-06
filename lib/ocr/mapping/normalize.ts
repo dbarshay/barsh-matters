@@ -71,3 +71,51 @@ export function parseAmount(input: string): number | null {
 export function cleanValue(input: string): string {
   return input.replace(/\s+/g, " ").trim().replace(/[.,;:]+$/, "").trim();
 }
+
+/**
+ * True if the label matches any synonym but NONE of the exclude phrases. Lets a field claim
+ * "provider" while rejecting "referring provider", or "claim number" while rejecting "our file".
+ */
+export function labelMatchesWithExcludes(label: string, synonyms: string[], excludes: string[]): boolean {
+  if (!labelMatchesAny(label, synonyms)) return false;
+  if (excludes.length && labelMatchesAny(label, excludes)) return false;
+  return true;
+}
+
+/**
+ * Clean a person's name off an OCR value that often trails into the address. Names never contain
+ * digits, so truncate at the first digit ("SINGLETON ALNIESHA 1C JAMESTOWN" -> "SINGLETON ALNIESHA"),
+ * then drop stray trailing punctuation.
+ */
+export function cleanPersonName(input: string): string {
+  let v = input.replace(/\s+/g, " ").trim();
+  const firstDigit = v.search(/\d/);
+  if (firstDigit > 0) v = v.slice(0, firstDigit);
+  return v.replace(/[.,;:\s]+$/, "").trim();
+}
+
+/**
+ * A value that plausibly is an identifier (claim/policy number): contains at least one digit,
+ * isn't a date or a bare dollar amount, and fits ID length.
+ */
+export function looksLikeIdentifier(input: string): boolean {
+  const v = input.trim();
+  if (v.length < 3 || v.length > 40) return false;
+  if (!/\d/.test(v)) return false; // must have a digit
+  if (normalizeDate(v)) return false; // it's a date, not an ID
+  if (/^\$?\s?\d[\d,]*(?:\.\d{2})?$/.test(v)) return false; // it's a money amount
+  return true;
+}
+
+/** Epoch ms for an MM/DD/YYYY string (local). */
+export function mdyToEpoch(mdY: string): number {
+  const [m, d, y] = mdY.split("/").map((n) => parseInt(n, 10));
+  return new Date(y, m - 1, d).getTime();
+}
+
+/** A loss/service date must not be in the future (small clock-skew grace). */
+export function isPlausiblePastDate(mdY: string, graceDays = 1): boolean {
+  const t = mdyToEpoch(mdY);
+  if (!Number.isFinite(t)) return false;
+  return t <= Date.now() + graceDays * 86400000;
+}
