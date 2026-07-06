@@ -914,6 +914,23 @@ const activeGroupKey =
     window.open("/api/documents/clio-document-open?" + params.toString(), "_blank", "noopener,noreferrer");
   }
 
+  // Remove an orphaned/misfiled entry from the BM tree (archives the filing; Clio is untouched).
+  async function removeFiledTreeDocument(doc: FiledDoc): Promise<void> {
+    if (!doc?.id) return;
+    if (!window.confirm(`Remove "${doc.titleLabel}" from this matter's folder tree? (The Clio file, if any, is not affected.)`)) return;
+    try {
+      const res = await fetch(`/api/documents/filed?id=${encodeURIComponent(doc.id)}`, { method: "DELETE" });
+      const j = await res.json().catch(() => null);
+      if (j?.ok) {
+        setMatterFiledDocsReloadKey((k) => k + 1);
+      } else {
+        window.alert(j?.error || "Could not remove the filing.");
+      }
+    } catch {
+      window.alert("Remove request failed.");
+    }
+  }
+
   function renderMatterViewDocumentsPopup() {
     if (!matterViewDocumentsPopupOpen) return null;
 
@@ -947,6 +964,7 @@ const activeGroupKey =
                   level="matter"
                   reloadKey={matterFiledDocsReloadKey}
                   onOpenDoc={openFiledTreeDocument}
+                  onRemoveDoc={removeFiledTreeDocument}
                 />
               ) : (
                 <div style={{ color: "#385a83", fontSize: 13, fontWeight: 800 }}>

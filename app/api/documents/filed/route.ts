@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { fileDocument, type FileDocumentInput } from "@/lib/documents/fileDocument";
+import { isAdminRequestAuthorized, adminUnauthorizedJson } from "@/lib/adminAuth";
 
 // Read-only listing of documents FILED into the BM folder tree for a matter (Phase 2).
 // The actual files live in Clio; these are BM metadata rows (folderKey/title/fields) pointing at
@@ -76,4 +77,25 @@ export async function POST(req: NextRequest) {
     { ok: false, error: result.error, duplicate: result.duplicate, existing: result.existing },
     { status: result.status },
   );
+}
+
+// Remove a filing from the BM tree (archive, reversible). This does NOT touch Clio — it only
+// clears the BM metadata pointer, e.g. when the underlying Clio document was deleted and the tree
+// is left with an orphaned entry. Admin-gated.
+//   DELETE /api/documents/filed?id=<filedDocumentId>
+export async function DELETE(req: NextRequest) {
+  if (!isAdminRequestAuthorized(req)) return adminUnauthorizedJson();
+
+  const id = (req.nextUrl.searchParams.get("id") || "").trim();
+  if (!id) {
+    return NextResponse.json({ ok: false, error: "id required" }, { status: 400 });
+  }
+
+  const existing = await prisma.filedDocument.findUnique({ where: { id }, select: { id: true, titleLabel: true } });
+  if (!existing) {
+    return NextResponse.json({ ok: false, error: "Filing not found." }, { status: 404 });
+  }
+
+  await prisma.filedDocument.update({ where: { id }, data: { status: "archived" } });
+  return NextResponse.json({ ok: true, removed: { id, titleLabel: existing.titleLabel } });
 }

@@ -44,6 +44,8 @@ type Props = {
   onDropToFolder?: (folderKey: string, files: File[]) => void;
   /** When set, filed documents become clickable and this opens them (e.g. in Clio). */
   onOpenDoc?: (doc: FiledDoc) => void;
+  /** When set, each filed document shows a Remove control (archives the BM filing; Clio untouched). */
+  onRemoveDoc?: (doc: FiledDoc) => void;
 };
 
 /** All descendant terminal folder keys of a folder (or itself if terminal). */
@@ -60,6 +62,7 @@ export default function FolderTree({
   reloadKey = 0,
   onDropToFolder,
   onOpenDoc,
+  onRemoveDoc,
 }: Props) {
   const [docs, setDocs] = useState<FiledDoc[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +137,7 @@ export default function FolderTree({
       </div>
 
       {flat ? (
-        <FlatList docs={docs} query={query} setQuery={setQuery} onOpenDoc={onOpenDoc} />
+        <FlatList docs={docs} query={query} setQuery={setQuery} onOpenDoc={onOpenDoc} onRemoveDoc={onRemoveDoc} />
       ) : (
         <div>
           {branches.map((b) => (
@@ -147,6 +150,7 @@ export default function FolderTree({
               caseType={caseType}
               onDropToFolder={onDropToFolder}
               onOpenDoc={onOpenDoc}
+              onRemoveDoc={onRemoveDoc}
             />
           ))}
         </div>
@@ -163,6 +167,7 @@ function FolderNode({
   caseType,
   onDropToFolder,
   onOpenDoc,
+  onRemoveDoc,
 }: {
   folder: FolderSpec;
   depth: number;
@@ -171,6 +176,7 @@ function FolderNode({
   caseType: CaseType | null;
   onDropToFolder?: (folderKey: string, files: File[]) => void;
   onOpenDoc?: (doc: FiledDoc) => void;
+  onRemoveDoc?: (doc: FiledDoc) => void;
 }) {
   const count = countFor(folder);
   const irrelevant = caseType != null && !folderAppliesToCaseType(folder.key, caseType);
@@ -248,6 +254,7 @@ function FolderNode({
                 caseType={caseType}
                 onDropToFolder={onDropToFolder}
                 onOpenDoc={onOpenDoc}
+                onRemoveDoc={onRemoveDoc}
               />
             ))}
           {folder.terminal &&
@@ -257,20 +264,34 @@ function FolderNode({
                 return (
                   <div
                     key={d.id}
-                    onClick={clickable ? () => onOpenDoc!(d) : undefined}
-                    title={clickable ? "Open in Clio" : undefined}
                     style={{
                       marginLeft: (depth + 1) * 16 + 18,
                       padding: "2px 0",
                       fontSize: 13,
-                      cursor: clickable ? "pointer" : "default",
-                      color: clickable ? NAVY : "inherit",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
                     }}
                   >
-                    📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
-                    <span style={{ color: MUTED, fontSize: 11, marginLeft: 8 }}>
+                    <span
+                      onClick={clickable ? () => onOpenDoc!(d) : undefined}
+                      title={clickable ? "Open in Clio" : undefined}
+                      style={{ cursor: clickable ? "pointer" : "default", color: clickable ? NAVY : "inherit" }}
+                    >
+                      📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
+                    </span>
+                    <span style={{ color: MUTED, fontSize: 11 }}>
                       {new Date(d.createdAt).toLocaleDateString()}
                     </span>
+                    {onRemoveDoc && (
+                      <button
+                        onClick={() => onRemoveDoc(d)}
+                        title="Remove from tree (archives the BM filing; does not touch Clio)"
+                        style={{ marginLeft: "auto", border: "none", background: "transparent", color: "#b00020", cursor: "pointer", fontSize: 12, fontWeight: 800 }}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 );
               })
@@ -298,11 +319,13 @@ function FlatList({
   query,
   setQuery,
   onOpenDoc,
+  onRemoveDoc,
 }: {
   docs: FiledDoc[];
   query: string;
   setQuery: (v: string) => void;
   onOpenDoc?: (doc: FiledDoc) => void;
+  onRemoveDoc?: (doc: FiledDoc) => void;
 }) {
   const filtered = docs.filter((d) =>
     query.trim() === "" ? true : d.titleLabel.toLowerCase().includes(query.trim().toLowerCase()),
@@ -329,18 +352,32 @@ function FlatList({
         filtered.map((d) => (
           <div
             key={d.id}
-            onClick={clickable ? () => onOpenDoc!(d) : undefined}
-            title={clickable ? "Open in Clio" : undefined}
             style={{
               padding: "3px 0",
               fontSize: 13,
               borderBottom: "1px solid #eef2f6",
-              cursor: clickable ? "pointer" : "default",
-              color: clickable ? NAVY : "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
-            <span style={{ color: MUTED, fontSize: 11, marginLeft: 8 }}>{d.folderKey}</span>
+            <span
+              onClick={clickable ? () => onOpenDoc!(d) : undefined}
+              title={clickable ? "Open in Clio" : undefined}
+              style={{ cursor: clickable ? "pointer" : "default", color: clickable ? NAVY : "inherit" }}
+            >
+              📄 <span style={{ textDecoration: clickable ? "underline" : "none" }}>{d.titleLabel}</span>
+            </span>
+            <span style={{ color: MUTED, fontSize: 11 }}>{d.folderKey}</span>
+            {onRemoveDoc && (
+              <button
+                onClick={() => onRemoveDoc(d)}
+                title="Remove from tree (archives the BM filing; does not touch Clio)"
+                style={{ marginLeft: "auto", border: "none", background: "transparent", color: "#b00020", cursor: "pointer", fontSize: 12, fontWeight: 800 }}
+              >
+                Remove
+              </button>
+            )}
           </div>
         ))
       )}
