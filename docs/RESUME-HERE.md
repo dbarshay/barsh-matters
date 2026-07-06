@@ -213,9 +213,48 @@ a matter), keyed by **CIC#**, plus a **weekly email** every Friday.
 - To see real rows: run a Carisk import containing "Saved Incomplete" status rows and confirm it on a
   deployment that has this feature (imports confirmed on older builds never parked anything).
 
+## Document intake + tree + auto-file — BUILT (2026-07-06)
+Live document filing into the BM folder tree, from three sources, all reusing the shared
+`lib/documents/fileDocument.ts` core + guarded Clio upload (Clio = flat storage; BM owns the tree).
+- **Upload Docs** (`/admin/documents/upload`, header 📤 button, flag `BARSH_UPLOAD_DOCS_ENABLED=1`):
+  file → OCR prefill (Azure) → **matter auto-suggest** from patient/claim OCR + manual search
+  (`/api/documents/upload/matter-search`) → folder/title → guarded live Clio upload → `FiledDocument`.
+  API `POST /api/documents/upload` (dup pre-check before upload; backfills `OcrExtraction.clioDocumentId`).
+  Diagnostics: `/api/documents/upload/clio-check` (anchors), `/api/documents/ocr-check` (azure vs stub).
+- **Matter View Documents popup** now renders the **FolderTree** (open a filed doc → Clio opener;
+  **Delete** = archive the BM filing, BM-styled confirm). Filed API matches by matterId OR
+  `matterDisplayNumber`. **Drag-drop** a file onto a terminal folder → `DropFileFilingForm` (OCR + title
+  pick → upload). `components/documents/DropFileFilingForm.tsx`.
+- **Finalize auto-file** (`verify:finalize-autofile-safety`): each DocumentTemplate carries an
+  admin-set **Auto-file target** (folderKey/titleKey in metadata; `lib/documents/templateFiling.ts` +
+  Document Templates admin). Direct-matter finalize is **blocked (422) until mapped**, then the finalized
+  PDF auto-files into the mapped folder/title after upload. finalize-preview passes `templateKey`.
+- **BM-styled dialogs everywhere**: `app/components/BmDialogHost.tsx` (`bmConfirm/bmAlert/bmPrompt`),
+  mounted in root layout. Every native confirm/alert/prompt app-wide is converted (no "localhost says").
+- **Removed**: the dormant matter-page settlement section (~2,200-line gated JSX block;
+  `DIRECT_MATTER_SETTLEMENTS_ENABLED=false`). Settlement is lawsuit-screen-only (local-* routes on
+  `app/matters/page.tsx`); the legacy `/api/settlements/writeback*|provider-fee-defaults|current-values`
+  routes are disabled 410 stubs. NOTE: residual settlement *functions/state* on the matter page are now
+  unreachable dead code — small follow-up sweep, no impact.
+
+## NEXT: lawsuit-level document tree + auto-file (design agreed 2026-07-06)
+A lawsuit gets its own BM number and its own Clio folder (single-master storage already creates folders
+for both `individual_matter` and `lawsuit` target kinds). Finalized docs should auto-file to whatever
+entity they were generated from (matter OR lawsuit). To do:
+- **Schema**: `FiledDocument` — add `masterLawsuitId String?`, make `matterId` optional (or a level flag)
+  so a filing can be lawsuit-level. (User runs `db push` + `generate`.)
+- **Filed API**: query by `masterLawsuitId` (like the matterDisplayNumber match added for matters).
+- **Lawsuit doc tree**: add `FolderTree` to the **matters/lawsuit page** master View Documents popup,
+  keyed by the lawsuit. In the lawsuit tree, **each child matter appears as a folder** the user can open
+  without navigating into the individual matter (aggregate child `FiledDocument`s under a child-matter
+  node).
+- **finalize (lawsuit mode)** + Upload Docs/drag-drop: call `fileDocument` with `masterLawsuitId`.
+- **Placeholder docs** (bill-schedule, packet-summary, summons-complaint): code-level default folder/title
+  mapping (they aren't DocumentTemplate records).
+
 ## What's left (not built)
-- **Document OCR consumers/UI** — the engine exists (above); still need the mapping profiles, verify UI,
-  and the drag-into-folder flow. See `docs/document-folder-structure.md` for the folder taxonomy.
+- **Document OCR consumers/UI** — the engine exists (above); the intake verify UI is still open (Upload
+  Docs covers the operator-driven path). See `docs/document-folder-structure.md` for the folder taxonomy.
 - **Native matter email (Outlook / Microsoft Graph)** — doc-folder spec #6. Send/receive email from
   the matter UI via Graph (Outlook stays the mail server), threaded to the matter (Message-ID/In-Reply-To
   + `[BRL_…]` subject tag), attach filed docs, replace the maildrop. Builds on existing `lib/graph/*`
