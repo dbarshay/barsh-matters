@@ -4,6 +4,7 @@ import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import BarshHeader from "@/app/components/BarshHeader";
+import { FREEHAND_TITLE_KEY, getFolder, getAllowedTitles, listTerminalFolders } from "@/lib/documents/folderTaxonomy";
 
 type EditState = {
   label: string;
@@ -14,7 +15,20 @@ type EditState = {
   generationEndpoint: string;
   defaultSignerMode: string;
   defaultContactDisplayMode: string;
+  filedFolderKey: string;
+  filedTitleKey: string;
+  filedFreehandTitle: string;
 };
+
+function folderPathLabel(fkey: string): string {
+  const parts = fkey.split(".");
+  const names: string[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const f = getFolder(parts.slice(0, i + 1).join("."));
+    if (f) names.push(f.name);
+  }
+  return names.join(" › ");
+}
 
 function display(value: unknown, fallback = "—"): string {
   const text = String(value ?? "").trim();
@@ -85,6 +99,9 @@ function initialEditState(template: any): EditState {
     generationEndpoint: String(template?.generationEndpoint || ""),
     defaultSignerMode: String(metadata.defaultSignerMode || "signed_in_user"),
     defaultContactDisplayMode: String(metadata.defaultContactDisplayMode || "signer"),
+    filedFolderKey: String(metadata.filedFolderKey || ""),
+    filedTitleKey: String(metadata.filedTitleKey || ""),
+    filedFreehandTitle: String(metadata.filedFreehandTitle || ""),
   };
 }
 
@@ -345,6 +362,52 @@ export default function AdminDocumentTemplateDetailPage() {
                 <div>
                   <label style={labelStyle}>Description</label>
                   <input value={edit.description} onChange={(event) => updateEdit("description", event.target.value)} style={inputStyle} />
+                </div>
+
+                <div style={{ gridColumn: "1 / -1", borderTop: "1px solid #e5e7eb", paddingTop: 12, marginTop: 4 }}>
+                  <div style={{ fontWeight: 900, color: "#00346e", marginBottom: 8 }}>Auto-file target (required to finalize)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <label style={labelStyle}>Folder</label>
+                      <select
+                        value={edit.filedFolderKey}
+                        onChange={(event) => setEdit((c) => (c ? { ...c, filedFolderKey: event.target.value, filedTitleKey: "", filedFreehandTitle: "" } : c))}
+                        style={inputStyle}
+                      >
+                        <option value="">— not set —</option>
+                        {listTerminalFolders().map((f) => (
+                          <option key={f.key} value={f.key}>{folderPathLabel(f.key)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Title</label>
+                      <select
+                        value={edit.filedTitleKey}
+                        onChange={(event) => updateEdit("filedTitleKey", event.target.value)}
+                        style={inputStyle}
+                        disabled={!edit.filedFolderKey}
+                      >
+                        <option value="">— not set —</option>
+                        {edit.filedFolderKey &&
+                          getAllowedTitles(edit.filedFolderKey).map((t) => (
+                            <option key={t.key} value={t.key}>{t.label}</option>
+                          ))}
+                        {edit.filedFolderKey && getFolder(edit.filedFolderKey)?.allowFreehandOther && (
+                          <option value={FREEHAND_TITLE_KEY}>Other (freehand)</option>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                  {edit.filedTitleKey === FREEHAND_TITLE_KEY && (
+                    <div style={{ marginTop: 10 }}>
+                      <label style={labelStyle}>Custom title</label>
+                      <input value={edit.filedFreehandTitle} onChange={(event) => updateEdit("filedFreehandTitle", event.target.value)} style={inputStyle} placeholder="Type a title" />
+                    </div>
+                  )}
+                  <div style={{ marginTop: 6, fontSize: 12, color: "#5a6b80" }}>
+                    Documents generated from this template auto-file here when finalized. Finalize is blocked until this is set.
+                  </div>
                 </div>
               </div>
 

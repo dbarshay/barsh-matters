@@ -96,6 +96,7 @@ async function buildStoredDbDocxTemplateDocuments(baseName: string, canGenerate:
 
       return {
         key: template.key,
+        templateKey: template.key,
         label: template.label,
         filename: storedTemplateFilename(baseName, template),
         sourceEndpoint: `/api/documents/templates/stored-docx?versionId=${encodeURIComponent(currentVersion.id)}`,

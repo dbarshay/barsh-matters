@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateTemplateFilingTarget } from "@/lib/documents/templateFiling";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,10 +63,26 @@ export async function POST(req: NextRequest) {
     const defaultSignerMode = normalizeSignerMode(body?.defaultSignerMode);
     const defaultContactDisplayMode = normalizeContactMode(body?.defaultContactDisplayMode);
 
+    // Auto-file target: which approved folder/title the generated (finalized) document files into.
+    const filingValidation = validateTemplateFilingTarget({
+      folderKey: body?.filedFolderKey,
+      titleKey: body?.filedTitleKey,
+      freehandTitle: body?.filedFreehandTitle,
+    });
+    if (!filingValidation.ok) {
+      return NextResponse.json(
+        { ok: false, action: "document-template-update", error: filingValidation.error },
+        { status: 400 },
+      );
+    }
+
     const metadata = {
       ...priorMetadata,
       defaultSignerMode,
       defaultContactDisplayMode,
+      filedFolderKey: filingValidation.target.folderKey,
+      filedTitleKey: filingValidation.target.titleKey,
+      filedFreehandTitle: filingValidation.target.freehandTitle,
       selectedSignerRule:
         defaultSignerMode === "signed_in_user"
           ? "defaults to signed-in generating user; other eligible signers remain selectable"

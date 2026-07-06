@@ -12,6 +12,9 @@ import { resolveClioMatterFolderWithGuard } from "@/lib/clioFolderResolverExecut
 import { getClioStorageWriteGuard } from "@/lib/clioStorageWriteGuard";
 import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
 import { adminUnauthorizedJson, isAdminRequestAuthorized } from "@/lib/adminAuth";
+import { isTemplateFilingMapped, readTemplateFilingTarget } from "@/lib/documents/templateFiling";
+import { fileDocument } from "@/lib/documents/fileDocument";
+import { getFolder } from "@/lib/documents/folderTaxonomy";
 
 export const runtime = "nodejs";
 
@@ -654,6 +657,65 @@ export async function POST(req: NextRequest) {
       documentsToUpload.push(document);
     }
 
+    // Auto-file enforcement (direct-matter finalize): every stored-DB template being finalized must be
+    // mapped to an approved folder/title. Block finalize until mapped; then each finalized PDF is filed
+    // into the BM folder tree automatically after upload (see the upload loop below).
+    const isDirectMatterFinalize = uploadTargetMode === "direct-matter";
+    const templateFilingByKey = new Map<
+      string,
+      { folderKey: string; titleKey: string; freehandTitle: string | null; level: string }
+    >();
+    let bmMatterIdForFiling: number | null = null;
+    if (isDirectMatterFinalize) {
+      const templateKeys = Array.from(
+        new Set(documentsToUpload.map((d) => clean((d as any).templateKey)).filter(Boolean)),
+      );
+      if (templateKeys.length > 0) {
+        const templates = await prisma.documentTemplate.findMany({
+          where: { key: { in: templateKeys } },
+          select: { key: true, metadata: true },
+        });
+        const metaByKey = new Map(templates.map((t) => [t.key, t.metadata]));
+        const unmapped: string[] = [];
+        for (const d of documentsToUpload) {
+          const tk = clean((d as any).templateKey);
+          if (!tk) continue;
+          const meta = metaByKey.get(tk);
+          if (!isTemplateFilingMapped(meta)) {
+            unmapped.push(clean((d as any).label) || tk);
+            continue;
+          }
+          const target = readTemplateFilingTarget(meta);
+          templateFilingByKey.set(tk, {
+            folderKey: target.folderKey as string,
+            titleKey: target.titleKey as string,
+            freehandTitle: target.freehandTitle,
+            level: getFolder(target.folderKey as string)?.level || "matter",
+          });
+        }
+        if (unmapped.length > 0) {
+          return NextResponse.json(
+            {
+              ok: false,
+              action: "finalize-upload",
+              error: `Finalize is blocked until these templates are assigned an approved folder + title (Document Templates admin → "Auto-file target"): ${unmapped.join(", ")}.`,
+              unmappedTemplates: unmapped,
+              noUploadPerformed: true,
+            },
+            { status: 422 },
+          );
+        }
+      }
+      // Resolve the BM matter id (ClaimIndex.matter_id) from the direct-matter BRL number for filing.
+      if (finalizedDocumentStorageIdentity && templateFilingByKey.size > 0) {
+        const ci = await prisma.claimIndex.findFirst({
+          where: { display_number: finalizedDocumentStorageIdentity },
+          select: { matter_id: true },
+        });
+        bmMatterIdForFiling = ci?.matter_id ?? null;
+      }
+    }
+
     for (const document of plannedDocuments) {
       if (selectedDocuments.includes(document)) continue;
       skipped.push({
@@ -810,6 +872,29 @@ export async function POST(req: NextRequest) {
         clioDocumentVersionUuid: result.documentVersionUuid,
         fullyUploaded: result.fullyUploaded,
       });
+
+      // Auto-file the finalized PDF into the template's mapped BM folder/title (direct-matter only).
+      const filingTemplateKey = clean((document as any).templateKey);
+      const filing = filingTemplateKey ? templateFilingByKey.get(filingTemplateKey) : undefined;
+      if (filing && bmMatterIdForFiling) {
+        try {
+          await fileDocument(prisma, {
+            matterId: bmMatterIdForFiling,
+            matterDisplayNumber: finalizedDocumentStorageIdentity,
+            clioDocumentId: String(result.documentId),
+            folderKey: filing.folderKey,
+            titleKey: filing.titleKey,
+            freehandTitle: filing.freehandTitle,
+            level: filing.level,
+            fileName: finalPdfFilename,
+            contentType: PDF_CONTENT_TYPE,
+            sourceType: "template",
+            confirmDuplicate: true,
+          });
+        } catch {
+          // non-fatal: the Clio upload already succeeded; filing metadata can be added later
+        }
+      }
     }
 
     const finalizedAt = new Date().toISOString();
