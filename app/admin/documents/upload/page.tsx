@@ -79,6 +79,7 @@ export default function UploadDocsPage() {
   const [ocrInsurer, setOcrInsurer] = useState<string | null>(null);
   const [learnedNote, setLearnedNote] = useState<string | null>(null);
   const [predictedNote, setPredictedNote] = useState<string | null>(null);
+  const [confirmPopulateLit, setConfirmPopulateLit] = useState(false);
 
   // Step 2 — matter
   const [q, setQ] = useState("");
@@ -127,6 +128,7 @@ export default function UploadDocsPage() {
     setOcrExtractionId(null);
     setSuggested(null);
     setPredictedNote(null);
+    setConfirmPopulateLit(false);
     setPrefill({});
     try {
       const b64 = await fileToBase64(f);
@@ -288,9 +290,11 @@ export default function UploadDocsPage() {
           providerName: ocrProvider,
           insurerName: ocrInsurer,
           caseType,
-          // Litigation fields — server populates the lawsuit's Date Filed / Index Number only if blank.
+          // Litigation fields — server populates the lawsuit's Date Filed / Index Number only if blank,
+          // and ONLY when the operator checked the box below.
           indexNumber: (ocrIdentity as any)?.indexNumber ?? null,
           dateFiled: (ocrIdentity as any)?.dateFiled ?? null,
+          confirmPopulateLitigation: confirmPopulateLit,
         }),
       });
       const j = await res.json().catch(() => null);
@@ -311,6 +315,7 @@ export default function UploadDocsPage() {
         setOcrProvider(null);
         setOcrInsurer(null);
         setLearnedNote(null);
+        setConfirmPopulateLit(false);
       } else if (j?.duplicate) {
         setNeedsDupConfirm(true);
         setMsg({ kind: "warn", text: j.error || "This file is already filed on this matter." });
@@ -625,6 +630,23 @@ export default function UploadDocsPage() {
               </div>
             );
           })}
+
+          {matter && ((ocrIdentity as any)?.indexNumber || (ocrIdentity as any)?.dateFiled) && (
+            <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 4, marginBottom: 8, fontSize: 12, color: "#5a6b80", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={confirmPopulateLit}
+                onChange={(e) => setConfirmPopulateLit(e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                Update this lawsuit’s litigation fields from the document
+                {(ocrIdentity as any)?.indexNumber ? ` — Index No. ${(ocrIdentity as any).indexNumber}` : ""}
+                {(ocrIdentity as any)?.dateFiled ? `${(ocrIdentity as any)?.indexNumber ? "," : " —"} Date Filed ${(ocrIdentity as any).dateFiled}` : ""}
+                . Only fills fields that are currently blank; never overwrites.
+              </span>
+            </label>
+          )}
 
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
             <button onClick={() => void commit(needsDupConfirm)} disabled={!canCommit} style={{ ...btn(NAVY), opacity: canCommit ? 1 : 0.5, cursor: canCommit ? "pointer" : "default" }}>

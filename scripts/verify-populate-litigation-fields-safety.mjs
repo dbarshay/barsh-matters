@@ -25,18 +25,19 @@ check("lib/documents/populateLitigationFields.ts", [
   "populate-from-scan",
 ]);
 
-// 2. Upload commit invokes it best-effort AFTER filing.
+// 2. Upload commit invokes it ONLY when the operator confirmed, best-effort AFTER filing.
 check("app/api/documents/upload/route.ts", [
   "import { populateEmptyLawsuitLitigationFields }",
+  "const confirmPopulateLitigation = body?.confirmPopulateLitigation === true",
+  "if (confirmPopulateLitigation) {",
   "await populateEmptyLawsuitLitigationFields(prisma, {",
-  "indexNumber: litIndexNumber",
-  "dateFiled: litDateFiled",
 ]);
 
-// 3. Upload page sends the scan's index/date-filed.
+// 3. Upload page requires an operator checkbox and sends the confirm flag.
 check("app/admin/documents/upload/page.tsx", [
-  "indexNumber: (ocrIdentity as any)?.indexNumber",
-  "dateFiled: (ocrIdentity as any)?.dateFiled",
+  "confirmPopulateLit",
+  'type="checkbox"',
+  "confirmPopulateLitigation: confirmPopulateLit",
 ]);
 
 if (failed) process.exit(1);
