@@ -7059,23 +7059,6 @@ function masterDocumentPreviewText(value: unknown): string {
       return;
     }
 
-    if (!masterGraphThreadSyncPreviewResult || masterGraphThreadSyncPreviewResult.action !== "graph-thread-sync-preview") {
-      setMasterGraphThreadSyncResult({
-        ok: false,
-        error: "Run Preview Graph Updates before syncing this master thread to Barsh Matters.",
-      });
-      return;
-    }
-
-    const previewConversationId = clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId);
-    if (previewConversationId && previewConversationId !== conversationId) {
-      setMasterGraphThreadSyncResult({
-        ok: false,
-        error: "Preview Graph Updates must be run for this specific master thread before syncing it.",
-      });
-      return;
-    }
-
     const confirmed = await bmConfirm(
       "Sync this Microsoft Graph thread to this Master Lawsuit in Barsh Matters?\n\nThis will read Microsoft Graph and update local EmailThread / EmailMessage metadata."
     );
@@ -7229,31 +7212,6 @@ function masterDocumentPreviewText(value: unknown): string {
           </button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 8,
-            marginBottom: 14,
-          }}
-        >
-          <div style={masterWorkspaceCardStyle}>
-            <div style={masterWorkspaceCardLabelStyle}>Lawsuit ID</div>
-            <div style={masterWorkspaceCardTextStyle}>{masterId || "—"}</div>
-          </div>
-          <div style={masterWorkspaceCardStyle}>
-            <div style={masterWorkspaceCardLabelStyle}>Threads</div>
-            <div style={masterWorkspaceCardTextStyle}>{Number(counts.threads || 0)}</div>
-          </div>
-          <div style={masterWorkspaceCardStyle}>
-            <div style={masterWorkspaceCardLabelStyle}>Messages</div>
-            <div style={masterWorkspaceCardTextStyle}>{Number(counts.messages || 0)}</div>
-          </div>
-          <div style={masterWorkspaceCardStyle}>
-            <div style={masterWorkspaceCardLabelStyle}>Safety</div>
-            <div style={{ ...masterWorkspaceCardTextStyle, color: "#16a34a", fontWeight: 950 }}>Preview First</div>
-          </div>
-        </div>
 
         {masterEmailThreadPreviewResult && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 8, marginBottom: 14, fontSize: 12 }}>
@@ -7367,77 +7325,23 @@ function masterDocumentPreviewText(value: unknown): string {
                       <div style={{ marginTop: 4, fontSize: 12, color: colors.subtle, fontWeight: 750 }}>
                         {formatMasterEmailThreadTimestamp(thread.latestMessageAt)} · {messages.length} message{messages.length === 1 ? "" : "s"} · {clean(thread.clioMaildropLabel) || "No MailDrop label"}
                       </div>
-                      {anyMasterMessageOutlookLinkAvailable && (
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            marginTop: 7,
-                            padding: "3px 8px",
-                            border: "1px solid #0f766e",
-                            borderRadius: 999,
-                            background: "#ecfeff",
-                            color: "#0f766e",
-                            fontSize: 11,
-                            fontWeight: 950,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          Outlook link available
-                        </div>
-                      )}
                     </div>
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         type="button"
-                        onClick={() => previewMasterGraphThreadUpdates(clean(thread.conversationId))}
-                        disabled={!clean(thread.conversationId) || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading}
-                        title="Preview Microsoft Graph updates for this specific master thread without persisting changes."
-                        style={{
-                          fontSize: 12,
-                          padding: "5px 9px",
-                          border: "1px solid #0f766e",
-                          borderRadius: 999,
-                          background: masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "#f3f4f6" : "#ecfeff",
-                          color: "#0f766e",
-                          cursor: !clean(thread.conversationId) || masterGraphThreadSyncPreviewLoading || masterGraphThreadSyncLoading ? "not-allowed" : "pointer",
-                          whiteSpace: "nowrap",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {masterGraphThreadSyncPreviewLoading && masterGraphThreadSyncPreviewConversationId === clean(thread.conversationId) ? "Calculating..." : "Preview This Thread"}
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => syncMasterGraphThreadToBarshMatters(clean(thread.conversationId))}
-                        disabled={
-                          !clean(thread.conversationId) ||
-                          !masterGraphThreadSyncPreviewResult ||
-                          clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId) !== clean(thread.conversationId) ||
-                          masterGraphThreadSyncPreviewLoading ||
-                          masterGraphThreadSyncLoading
-                        }
-                        title="Run only after Preview This Thread."
+                        disabled={!clean(thread.conversationId) || masterGraphThreadSyncLoading}
+                        title="Sync this thread from Microsoft Graph into Barsh Matters."
                         style={{
                           fontSize: 12,
                           padding: "5px 9px",
                           border: "1px solid #7c3aed",
                           borderRadius: 999,
                           background:
-                            masterGraphThreadSyncLoading && masterGraphThreadSyncConversationId === clean(thread.conversationId)
-                              ? "#f3f4f6"
-                              : "#f5f3ff",
+                            masterGraphThreadSyncLoading && masterGraphThreadSyncConversationId === clean(thread.conversationId) ? "#f3f4f6" : "#f5f3ff",
                           color: "#6d28d9",
-                          cursor:
-                            !clean(thread.conversationId) ||
-                            !masterGraphThreadSyncPreviewResult ||
-                            clean(masterGraphThreadSyncPreviewResult?.query?.conversationId || masterGraphThreadSyncPreviewConversationId) !== clean(thread.conversationId) ||
-                            masterGraphThreadSyncPreviewLoading ||
-                            masterGraphThreadSyncLoading
-                              ? "not-allowed"
-                              : "pointer",
+                          cursor: !clean(thread.conversationId) || masterGraphThreadSyncLoading ? "not-allowed" : "pointer",
                           whiteSpace: "nowrap",
                           fontWeight: 800,
                         }}
@@ -7455,12 +7359,6 @@ function masterDocumentPreviewText(value: unknown): string {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, minWidth: 0 }}>
-                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Source</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink }}>{clean(thread.source) || "—"}</div></div>
-                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Direction</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink }}>{clean(thread.direction) || "—"}</div></div>
-                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Conversation ID</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: colors.ink, overflowWrap: "anywhere" }}>{clean(thread.conversationId) || "—"}</div></div>
-                    <div><div style={{ fontSize: 11, color: colors.subtle, fontWeight: 900, textTransform: "uppercase" }}>MailDrop Present</div><div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: thread.clioMaildropEmailPresent ? "#16a34a" : "#dc2626" }}>{thread.clioMaildropEmailPresent ? "Yes" : "No"}</div></div>
-                  </div>
 
                   {threadExpanded && (
                     <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 12, border: "1px solid #e5e7eb", background: "#f8fafc" }}>
