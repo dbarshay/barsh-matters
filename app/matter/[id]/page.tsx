@@ -9235,6 +9235,7 @@ function openClaimAmountEditDialog() {
               <div
                 className="barsh-direct-claim-info-status-layout"
                 style={{
+                  position: "relative",
                   display: "grid",
                   gridTemplateColumns: "minmax(0, 1fr) 340px",
                   gap: 14,
@@ -9242,6 +9243,12 @@ function openClaimAmountEditDialog() {
                   paddingTop: 12,
                 }}
               >
+                {/* Divider between Claim Info and Claim Status — drawn on the grid so it runs the full
+                    height (down past the Notes row), matching the lawsuit page. Sits in the column gap. */}
+                <div
+                  aria-hidden="true"
+                  style={{ position: "absolute", top: 12, bottom: 0, right: "calc(340px + 7px)", width: 1, background: "#94a3b8" }}
+                />
                 <div
                   className="barsh-direct-left-info-column"
                   style={{
@@ -9579,20 +9586,8 @@ function openClaimAmountEditDialog() {
                   alignSelf: "stretch",
                   alignContent: "start",
                   borderLeft: "none",
-                  height: 470,
                 }}
               >
-                <div
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    left: -7,
-                    top: 0,
-                    bottom: 0,
-                    width: 1,
-                    background: "#94a3b8",
-                  }}
-                />
                 <div
                   className="barsh-direct-section-title"
                   style={{
