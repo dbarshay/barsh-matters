@@ -92,7 +92,7 @@ export function extractMatterNumbers(text: string): string[] {
   return Array.from(new Set(out));
 }
 
-async function resolveContext(conversationId: string, matchText: string): Promise<any | null> {
+export async function resolveMatterContext(conversationId: string, matchText: string): Promise<any | null> {
   // 1) Reply into an existing matter/lawsuit thread — reuse its context.
   if (conversationId) {
     const thread = await prisma.emailThread.findFirst({
@@ -161,7 +161,7 @@ export async function processChangedMessage(input: { graphMessageId: string; cha
   if (!conversationId) return { ok: true, action: "skipped", reason: "no conversationId" };
 
   const matchText = [message.subject, message.bodyText, message.bodyHtml, message.bodyPreview].filter(Boolean).join("\n");
-  const context = await resolveContext(conversationId, matchText);
+  const context = await resolveMatterContext(conversationId, matchText);
   if (!context) return { ok: true, action: "skipped", reason: "not matter-related (no tracked conversation or matter number in subject/body)" };
 
   await persistGraphThreadSyncMessages({ mailboxUserId: mailbox, conversationId, messages: [message], context });

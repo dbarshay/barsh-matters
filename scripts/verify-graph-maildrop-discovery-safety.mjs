@@ -44,17 +44,18 @@ console.log("\n=== VERIFY ROUTE IS FAIL-CLOSED / CONFIRMED ===");
   "confirmMode",
 ].forEach((marker) => mustContain(routePath, route, marker));
 
-console.log("\n=== VERIFY ROUTE SCANS RECENT GRAPH MESSAGES AND MATCHES LOCAL MAILDROPS ===");
+console.log("\n=== VERIFY ROUTE SCANS EACH USER MAILBOX AND MATCHES MATTER NUMBERS (BRL_ / YYYY.MM.NNNNN) ===");
 [
-  "loadKnownMaildropAddresses",
+  "listActiveUserMailboxes",
+  "resolveMatterContext",
   "graphFetchJson",
   "graphRecentMessagesUrl",
   "receivedDateTime desc",
-  "allRecipientEmails",
-  "knownByEmail",
-  "matchedMaildropEmail",
-  "MailDrop discovery scans recent Microsoft Graph mailbox messages",
+  "matchesByConversation",
+  "matter number",
 ].forEach((marker) => mustContain(routePath, route, marker));
+// MailDrop-address matching is retired.
+["loadKnownMaildropAddresses", "knownByEmail", "matchedMaildropEmail"].forEach((marker) => mustNotContain(routePath, route, marker));
 
 
 console.log("\n=== VERIFY MAILDROP REGISTRY HELPER LOADS REGISTRY AND EMAIL THREAD FALLBACK ===");
@@ -68,14 +69,15 @@ console.log("\n=== VERIFY MAILDROP REGISTRY HELPER LOADS REGISTRY AND EMAIL THRE
 console.log("\n=== VERIFY PREVIEW MODE IS READ-ONLY ===");
 [
   'previewOnly: true',
-  "Preview-only per-user MailDrop discovery completed.",
+  "Preview-only matter-number discovery completed.",
   "databaseRecordsChanged: false",
 ].forEach((marker) => mustContain(routePath, route, marker));
 
 console.log("\n=== VERIFY SYNC MODE PERSISTS LOCAL EMAIL METADATA ONLY ===");
 [
   "persistGraphThreadSyncMessages",
-  'source: "graph_maildrop_discovery"',
+  'source: MAILDROP_DISCOVERY_SOURCE',
+  'const MAILDROP_DISCOVERY_SOURCE = "graph_maildrop_discovery"',
   "EmailThread, EmailMessage, EmailAttachment, EmailMatterLink, and EmailFilingLog",
   "clioRecordsChanged: false",
   "uploadsDocuments: false",
@@ -111,4 +113,4 @@ const routeSource = read(routePath);
 mustContain(routePath, routeSource, "createMaildropDiscoveryRunLog");
 mustContain(routePath, routeSource, "maildrop_discovery_run");
 mustContain(routePath, routeSource, "no_matches");
-mustContain(routePath, routeSource, "no_known_maildrops");
+mustContain(routePath, routeSource, "no_active_user_mailboxes");

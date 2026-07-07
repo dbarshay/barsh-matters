@@ -265,9 +265,11 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
     if (!cr.ok) return { ok: false, error: `Reply draft failed: ${cr.error}` };
     msg = cr.json || {};
     graphMessageId = msg.id;
-    subject = msg.subject || subject;
+    // Keep the real subject on the outgoing reply (composer's "Re: <original>"), with the matter tag
+    // re-applied — never reduce it to just the file number. Fall back to the reply draft's own subject.
+    subject = ensureMatterSubjectTag(String(input.subject || "").trim() || String(msg.subject || "").trim(), input.matterDisplayNumber);
     const quoted = msg?.body?.content || "";
-    const patchBody: any = { body: { contentType: "HTML", content: `${input.bodyHtml || ""}${quoted ? `<br><br>${quoted}` : ""}` } };
+    const patchBody: any = { subject, body: { contentType: "HTML", content: `${input.bodyHtml || ""}${quoted ? `<br><br>${quoted}` : ""}` } };
     if (to.length) patchBody.toRecipients = addressList(to);
     if (cc.length) patchBody.ccRecipients = addressList(cc);
     const patch = await graphFetchJson({

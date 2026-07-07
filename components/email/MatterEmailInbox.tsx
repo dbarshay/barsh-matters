@@ -8,7 +8,6 @@
 // Save Draft creates a real Outlook draft.
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { bmConfirm } from "@/app/components/BmDialogHost";
 import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 
@@ -68,6 +67,13 @@ function senderLabel(m: Msg): string {
 }
 function matterTag(m: Msg): string {
   return String(m.matterDisplayNumber || m.masterLawsuitId || "").trim();
+}
+// Reply subject = "Re: <original subject>" (don't stack multiple "Re:"). The matter tag is re-applied
+// server-side so the thread stays linked; here we just carry the real subject, not only the file number.
+function replySubject(m: Msg): string {
+  const s = String(m.subject || "").trim();
+  if (!s) return "Re:";
+  return /^re:/i.test(s) ? s : `Re: ${s}`;
 }
 function whenOf(m: Msg): number {
   const raw = m.receivedAt || m.sentAt;
@@ -139,6 +145,26 @@ export default function MatterEmailInbox({
     void load();
   }, [load]);
 
+  // Keyboard Delete/Backspace on a highlighted message → move it to Deleted Items (no confirmation).
+  // Ignored while composing/replying or while typing in a field.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (composing || reply || !selectedId) return;
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const el = e.target as HTMLElement | null;
+      const tag = (el?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || el?.isContentEditable) return;
+      const m = (messages || []).find((x) => x.id === selectedId);
+      if (m && !m.deletedLocal) {
+        e.preventDefault();
+        void deleteMessage(m);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, composing, reply, messages]);
+
   const counts = useMemo(() => {
     const c: Record<FolderKey, number> = { inbox: 0, sent: 0, drafts: 0, deleted: 0 };
     let inboxUnread = 0;
@@ -186,8 +212,8 @@ export default function MatterEmailInbox({
   }
 
   async function deleteMessage(m: Msg) {
-    const ok = await bmConfirm({ title: "Delete email", message: `Move this email (${senderLabel(m)}) to Deleted Items in Outlook?`, submitLabel: "Delete" });
-    if (!ok) return;
+    // No confirmation — delete is reversible (moves to Deleted Items in Outlook, mirrored to our Deleted
+    // Items folder). Triggered by the Delete button or the keyboard Delete/Backspace key.
     setBusy(true);
     try {
       const res = await fetch("/api/graph/matter-email/delete", {
@@ -365,6 +391,7 @@ export default function MatterEmailInbox({
                   replyToGraphMessageId={selected.graphMessageId}
                   initialTo={replyContext(reply.mode, selected).to}
                   initialCc={replyContext(reply.mode, selected).cc}
+                  initialSubject={replySubject(selected)}
                   onSent={() => { setReply(null); void load(); onChanged?.(); }}
                 />
               ) : (
