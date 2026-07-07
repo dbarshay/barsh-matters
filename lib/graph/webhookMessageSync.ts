@@ -102,7 +102,16 @@ async function resolveContext(conversationId: string, recipients: string[], subj
       select: { matterId: true, matterDisplayNumber: true, masterLawsuitId: true, clioMatterId: true, clioDisplayNumber: true, clioMaildropEmail: true, clioMaildropLabel: true },
     });
     if (byTag) return { source: "graph_webhook", ...byTag };
-    return { source: "graph_webhook", matterDisplayNumber: tag };
+    // Resolve the numeric matter id from the tag (ClaimIndex.display_number → matter_id) so per-matter
+    // badges and filters — which key on matterId — match, not just the firm-wide display-number view.
+    let matterId: number | null = null;
+    try {
+      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: tag }, select: { matter_id: true } });
+      matterId = typeof claim?.matter_id === "number" ? claim.matter_id : null;
+    } catch {
+      /* tag may be a lawsuit or unknown — display-number linkage still applies */
+    }
+    return { source: "graph_webhook", matterId, matterDisplayNumber: tag };
   }
   // 3) New inbound addressed to a known Clio MailDrop — associate to that matter/lawsuit.
   const recipSet = new Set(recipients.map((r) => r.toLowerCase()));
