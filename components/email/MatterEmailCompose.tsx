@@ -20,6 +20,7 @@ export default function MatterEmailCompose({
   onSent,
   replyToGraphMessageId,
   initialTo,
+  initialCc,
   initialSubject,
 }: {
   matterId?: number | null;
@@ -28,12 +29,13 @@ export default function MatterEmailCompose({
   onSent?: () => void;
   replyToGraphMessageId?: string | null;
   initialTo?: string | null;
+  initialCc?: string | null;
   initialSubject?: string | null;
 }) {
   const tag = (displayNumber || "").trim();
   const isReply = Boolean(replyToGraphMessageId);
   const [to, setTo] = useState(initialTo || "");
-  const [cc, setCc] = useState("");
+  const [cc, setCc] = useState(initialCc || "");
   const [subject, setSubject] = useState(initialSubject || (tag ? `[${tag}] ` : ""));
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);

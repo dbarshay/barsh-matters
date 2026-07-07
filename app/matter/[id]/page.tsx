@@ -16,6 +16,7 @@ import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
 import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
 import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
+import MatterEmailInbox from "@/components/email/MatterEmailInbox";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -7319,8 +7320,12 @@ function openClaimAmountEditDialog() {
           </div>
 
           <div style={{ padding: 20 }}>
-            {renderMatterEmailComposePanel()}
-            {renderMatterEmailThreadsPanel()}
+            <MatterEmailInbox
+              matterId={resolvedNumericMatterId()}
+              matterDisplayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
+              displayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
+              onChanged={() => { void refreshEmailUnread(); }}
+            />
           </div>
 
           <div
