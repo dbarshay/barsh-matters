@@ -11,7 +11,6 @@
 import { prisma } from "@/lib/prisma";
 import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
 import { persistGraphThreadSyncMessages } from "@/lib/graph/emailPersistence";
-import { loadKnownMaildropAddresses } from "@/lib/graph/maildropRegistry";
 import { isInboundAttachmentOcrEnabled } from "@/lib/graph/inboundOcrConfig";
 import { ingestInboundMessageAttachments } from "@/lib/graph/inboundAttachmentOcr";
 
@@ -76,15 +75,24 @@ export type ProcessResult = {
   error?: string;
 };
 
-// Only matter-related mail is ingested: a reply into a known thread, a known Clio MailDrop recipient,
-// or a subject carrying the matter/lawsuit file-number tag "[BRL_…]". Anything else is skipped (the
-// user's unrelated personal mail is never stored).
-function matterTagFromSubject(subject: string): string {
-  const m = /\[(BRL[_-][A-Za-z0-9_-]+)\]/i.exec(subject || "");
-  return m ? m[1].toUpperCase() : "";
+// Only matter-related mail is ingested: a reply into a known thread, or a matter/lawsuit file number
+// found ANYWHERE in the subject or body. Two accepted formats: the BM number "BRL_YYYYNNNNN" and the
+// dotted number "YYYY.MM.NNNNN". Anything with no match is skipped (personal mail is never stored).
+export function extractMatterNumbers(text: string): string[] {
+  const out: string[] = [];
+  const t = String(text || "");
+  // BRL_ form (brackets optional, separator optional): BRL_202600002 / [BRL-202600002] / BRL 202600002
+  const brl = /BRL[ _\-]?(\d{6,})/gi;
+  let m: RegExpExecArray | null;
+  while ((m = brl.exec(t))) out.push(`BRL_${m[1]}`);
+  // Dotted form: 2026.07.00002 (also tolerate - or / as separators, normalize to dots). The final group
+  // is 3+ digits so a plain calendar date like 2026.07.15 is not mistaken for a matter number.
+  const dotted = /\b(20\d{2})[.\-/](\d{2})[.\-/](\d{3,})\b/g;
+  while ((m = dotted.exec(t))) out.push(`${m[1]}.${m[2]}.${m[3]}`);
+  return Array.from(new Set(out));
 }
 
-async function resolveContext(conversationId: string, recipients: string[], subject: string): Promise<any | null> {
+async function resolveContext(conversationId: string, matchText: string): Promise<any | null> {
   // 1) Reply into an existing matter/lawsuit thread — reuse its context.
   if (conversationId) {
     const thread = await prisma.emailThread.findFirst({
@@ -93,45 +101,25 @@ async function resolveContext(conversationId: string, recipients: string[], subj
     });
     if (thread) return { source: "graph_webhook", ...thread };
   }
-  // 2) Subject carries a matter/lawsuit file-number tag [BRL_…] — associate by display number. Reuse an
-  //    existing thread's fuller context for that tag when available.
-  const tag = matterTagFromSubject(subject);
-  if (tag) {
+  // 2) A matter number appears anywhere in the subject or body — resolve it to a matter.
+  const tags = extractMatterNumbers(matchText);
+  if (tags.length) {
+    // Prefer a real matter record: ClaimIndex.display_number → numeric matter_id (so per-matter badges
+    // match, not just the firm-wide display-number view).
+    try {
+      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: { in: tags } }, select: { matter_id: true, display_number: true } });
+      if (claim) return { source: "graph_webhook", matterId: typeof claim.matter_id === "number" ? claim.matter_id : null, matterDisplayNumber: claim.display_number };
+    } catch {
+      /* fall through */
+    }
+    // Else reuse an existing thread that already carries one of these numbers.
     const byTag = await prisma.emailThread.findFirst({
-      where: { matterDisplayNumber: tag },
+      where: { matterDisplayNumber: { in: tags } },
       select: { matterId: true, matterDisplayNumber: true, masterLawsuitId: true, clioMatterId: true, clioDisplayNumber: true, clioMaildropEmail: true, clioMaildropLabel: true },
     });
     if (byTag) return { source: "graph_webhook", ...byTag };
-    // Resolve the numeric matter id from the tag (ClaimIndex.display_number → matter_id) so per-matter
-    // badges and filters — which key on matterId — match, not just the firm-wide display-number view.
-    let matterId: number | null = null;
-    try {
-      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: tag }, select: { matter_id: true } });
-      matterId = typeof claim?.matter_id === "number" ? claim.matter_id : null;
-    } catch {
-      /* tag may be a lawsuit or unknown — display-number linkage still applies */
-    }
-    return { source: "graph_webhook", matterId, matterDisplayNumber: tag };
-  }
-  // 3) New inbound addressed to a known Clio MailDrop — associate to that matter/lawsuit.
-  const recipSet = new Set(recipients.map((r) => r.toLowerCase()));
-  if (recipSet.size) {
-    const known = await loadKnownMaildropAddresses(200);
-    for (const rec of known as any[]) {
-      const email = clean(rec?.clioMaildropEmail).toLowerCase();
-      if (email && recipSet.has(email)) {
-        return {
-          source: "graph_webhook",
-          matterId: rec.matterId ?? null,
-          matterDisplayNumber: rec.matterDisplayNumber ?? null,
-          masterLawsuitId: rec.masterLawsuitId ?? null,
-          clioMatterId: rec.clioMatterId ?? null,
-          clioDisplayNumber: rec.clioDisplayNumber ?? null,
-          clioMaildropEmail: rec.clioMaildropEmail ?? null,
-          clioMaildropLabel: rec.clioMaildropLabel ?? null,
-        };
-      }
-    }
+    // A number was present but matches no matter record yet — still tag it so the firm-wide view surfaces it.
+    return { source: "graph_webhook", matterDisplayNumber: tags[0] };
   }
   return null;
 }
@@ -172,8 +160,9 @@ export async function processChangedMessage(input: { graphMessageId: string; cha
   const conversationId = message.conversationId;
   if (!conversationId) return { ok: true, action: "skipped", reason: "no conversationId" };
 
-  const context = await resolveContext(conversationId, allRecipientEmails(res.json || {}), message.subject);
-  if (!context) return { ok: true, action: "skipped", reason: "not matter-related (no tracked conversation, [BRL_] tag, or maildrop)" };
+  const matchText = [message.subject, message.bodyText, message.bodyHtml, message.bodyPreview].filter(Boolean).join("\n");
+  const context = await resolveContext(conversationId, matchText);
+  if (!context) return { ok: true, action: "skipped", reason: "not matter-related (no tracked conversation or matter number in subject/body)" };
 
   await persistGraphThreadSyncMessages({ mailboxUserId: mailbox, conversationId, messages: [message], context });
 
