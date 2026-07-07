@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
 import { getGraphAuthConfig, getGraphAuthReadiness } from "@/lib/graph/config";
 import { persistGraphThreadSyncMessages } from "@/lib/graph/emailPersistence";
+import { isInboundAttachmentOcrEnabled } from "@/lib/graph/inboundOcrConfig";
+import { ingestInboundMessageAttachments } from "@/lib/graph/inboundAttachmentOcr";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -300,11 +302,45 @@ async function runBackgroundThreadSync(req: NextRequest) {
     matterLinksCreated += Number(persisted?.matterLinksCreated || 0);
     filingLogsCreated += 1;
 
+    // Phase D — auto-stage inbound attachments into the OCR review queue during the background sync
+    // (flag-gated, best-effort, no Clio write; filing stays a per-document operator step). This is
+    // what makes the review queue populate automatically, without a manual thread sync.
+    let inboundAttachmentOcr: any = null;
+    if (isInboundAttachmentOcrEnabled()) {
+      try {
+        const inboundMessages = await prisma.emailMessage.findMany({
+          where: { conversationId, direction: "inbound", graphMessageId: { not: null } },
+          select: { id: true, graphMessageId: true, mailboxUserId: true, thread: { select: { matterId: true, masterLawsuitId: true, matterDisplayNumber: true } } },
+        });
+        let processed = 0;
+        let ocrPending = 0;
+        for (const m of inboundMessages) {
+          if (!m.graphMessageId) continue;
+          const r = await ingestInboundMessageAttachments(prisma, {
+            mailboxUserId: m.mailboxUserId || config.mailboxUserId,
+            graphMessageId: m.graphMessageId,
+            localMessageId: m.id,
+            context: {
+              matterId: m.thread?.matterId ?? null,
+              masterLawsuitId: m.thread?.masterLawsuitId ?? null,
+              matterDisplayNumber: m.thread?.matterDisplayNumber ?? null,
+            },
+          });
+          processed += r.processed;
+          ocrPending += r.ocrPending;
+        }
+        inboundAttachmentOcr = { processed, ocrPending };
+      } catch (err: any) {
+        inboundAttachmentOcr = { error: err?.message || "inbound attachment ocr failed" };
+      }
+    }
+
     results.push({
       conversationId,
       ok: true,
       graphMessages: messages.length,
       persisted,
+      inboundAttachmentOcr,
       nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
     });
   }

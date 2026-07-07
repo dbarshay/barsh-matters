@@ -604,6 +604,13 @@ export default function FilteredMattersPage() {
     } catch { /* non-fatal */ }
   }
   useEffect(() => { void refreshMasterEmailUnread(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  // Poll the unread-email count so the Emails badge auto-reflects newly synced inbound mail (the
+  // background cron syncs Graph every minute; this keeps the badge fresh without a page reload).
+  useEffect(() => {
+    const id = window.setInterval(() => { void refreshMasterEmailUnread(); }, 60_000);
+    return () => window.clearInterval(id);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
   const [masterPaymentsPanelOpen, setMasterPaymentsPanelOpen] = useState(false);
   const [masterCloseReason, setMasterCloseReason] = useState("");
   const [masterClosing, setMasterClosing] = useState(false);
@@ -7083,6 +7090,8 @@ function masterDocumentPreviewText(value: unknown): string {
 
       if (response.ok && json?.action === "graph-thread-sync" && json?.databaseRecordsChanged === true) {
         await loadMasterEmailThreadPreview();
+        // Newly synced inbound messages may be unread → refresh the Emails alert badge immediately.
+        void refreshMasterEmailUnread();
       }
     } catch (err: any) {
       setMasterGraphThreadSyncResult({

@@ -854,6 +854,14 @@ const activeGroupKey =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matter?.matterId, matter?.displayNumber]);
 
+  // Poll the unread-email count so the Emails badge reflects newly synced inbound mail automatically
+  // (the background cron syncs Graph every minute; this keeps the badge fresh without a page reload).
+  useEffect(() => {
+    const id = window.setInterval(() => { void refreshEmailUnread(); }, 60_000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matter?.matterId, matter?.displayNumber]);
+
   function directMatterNumericIdForDocuments(): number {
     const candidates = [
       matterId,
@@ -5720,6 +5728,8 @@ function openClaimAmountEditDialog() {
 
       if (response.ok && json?.action === "graph-thread-sync" && json?.databaseRecordsChanged === true) {
         await loadMatterEmailThreadPreview();
+        // Newly synced inbound messages may be unread → refresh the Emails alert badge immediately.
+        void refreshEmailUnread();
       }
     } catch (err: any) {
       setGraphThreadSyncResult({
