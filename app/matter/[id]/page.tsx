@@ -5609,7 +5609,7 @@ function openClaimAmountEditDialog() {
             replyToGraphMessageId={emailReply?.graphMessageId ?? null}
             initialTo={emailReply?.to ?? null}
             initialSubject={emailReply ? emailReply.subject : buildMatterEmailSubject()}
-            onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); }}
+            onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); setComposeOpen(false); }}
           />
         )}
 

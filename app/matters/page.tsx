@@ -1519,7 +1519,7 @@ export default function FilteredMattersPage() {
             <button type="button" onClick={() => setMasterEmailComposeOpen(false)} aria-label="Close" style={{ background: "transparent", border: "none", color: "#fff", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
           </div>
           <div style={{ background: "#fff", borderBottomLeftRadius: 6, borderBottomRightRadius: 6, padding: 12 }}>
-            <MatterEmailCompose masterLawsuitId={masterId} displayNumber={masterId} initialSubject={buildMasterEmailSubject()} onSent={() => { /* keep open for follow-up sends */ }} />
+            <MatterEmailCompose masterLawsuitId={masterId} displayNumber={masterId} initialSubject={buildMasterEmailSubject()} onSent={() => setMasterEmailComposeOpen(false)} />
           </div>
         </div>
       </div>
