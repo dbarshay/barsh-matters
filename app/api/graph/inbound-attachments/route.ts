@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
         name: true,
         contentType: true,
         sizeBytes: true,
+        graphAttachmentId: true,
         ocrSuggestion: true,
         ocrPredictedMatterId: true,
         createdAt: true,
@@ -65,7 +66,17 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-    return NextResponse.json({ ok: true, count: rows.length, attachments: rows });
+    // Collapse duplicate rows for the same physical Graph attachment (thread/message duplication can
+    // create more than one EmailAttachment per graphAttachmentId) so each file shows once. File/dismiss
+    // cascade to all copies, so acting on the shown row resolves the hidden duplicates too.
+    const seen = new Set<string>();
+    const deduped = rows.filter((r) => {
+      const key = String(r.graphAttachmentId || r.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return NextResponse.json({ ok: true, count: deduped.length, attachments: deduped });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Could not load inbound attachments." }, { status: 500 });
   }
@@ -121,6 +132,13 @@ export async function POST(req: NextRequest) {
       where: { id: attachmentId },
       data: { reviewStatus: "dismissed", reviewedAt: new Date(), reviewedBy: identity?.email || null },
     });
+    // Cascade to duplicate rows for the same physical Graph attachment so it doesn't reappear.
+    if (record.graphAttachmentId) {
+      await prisma.emailAttachment.updateMany({
+        where: { graphAttachmentId: record.graphAttachmentId, reviewStatus: "pending" },
+        data: { reviewStatus: "dismissed", reviewedAt: new Date(), reviewedBy: identity?.email || null },
+      });
+    }
     return NextResponse.json({ ok: true, dismissed: true });
   }
 
@@ -258,18 +276,24 @@ export async function POST(req: NextRequest) {
   }
 
   // Mark the attachment filed + link it to the filed document and the Clio doc.
-  await prisma.emailAttachment.update({
-    where: { id: attachmentId },
-    data: {
-      reviewStatus: "filed",
-      filedDocumentId: (filed as any).document?.id || null,
-      clioDocumentId,
-      clioDocumentName: fileName,
-      storageStatus: "clio_vault",
-      reviewedAt: new Date(),
-      reviewedBy: identity?.email || null,
-    },
-  });
+  const filedData = {
+    reviewStatus: "filed",
+    filedDocumentId: (filed as any).document?.id || null,
+    clioDocumentId,
+    clioDocumentName: fileName,
+    storageStatus: "clio_vault",
+    reviewedAt: new Date(),
+    reviewedBy: identity?.email || null,
+  };
+  await prisma.emailAttachment.update({ where: { id: attachmentId }, data: filedData });
+  // Cascade to duplicate rows for the same physical Graph attachment (thread/message duplication) so
+  // the same document can't be filed twice and the hidden copy doesn't reappear as pending.
+  if (record.graphAttachmentId) {
+    await prisma.emailAttachment.updateMany({
+      where: { graphAttachmentId: record.graphAttachmentId, reviewStatus: "pending", NOT: { id: attachmentId } },
+      data: filedData,
+    });
+  }
 
   // Backfill the OCR extraction row with the real Clio document id (best-effort).
   try {
