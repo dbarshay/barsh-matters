@@ -10827,15 +10827,23 @@ function masterDocumentPreviewText(value: unknown): string {
                 <div
                   data-barsh-master-actions-outer-section="true"
                   style={{
+                    position: "relative",
                     display: "grid",
                     gap: 8,
                     background: "transparent",
-                    padding: 0,
+                    padding: "0 0 0 20px",
                     border: "none",
                     borderRadius: 0,
                     boxShadow: "none",
+                    alignSelf: "stretch",
+                    alignContent: "start",
                   }}
                 >
+                  {/* Vertical divider separating the Lawsuit Status column from this Actions rail. */}
+                  <div
+                    aria-hidden="true"
+                    style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 1, background: "#94a3b8" }}
+                  />
                   <div
                     data-barsh-master-actions-section-heading="true"
                     style={{
@@ -10876,7 +10884,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         { key: "settlement", label: "Settlement", fill: "#00346e", soft: "#eff6ff", text: "#00346e" },
                         { key: "documents", label: "Documents", fill: "#8b5e3c", soft: "#f8efe7", text: "#7c4a22" },
                         { key: "court_dates", label: "Court Dates", fill: "#ea580c", soft: "#fff7ed", text: "#c2410c" },
-                        { key: "emails", label: "Emails", fill: "#0078d4", soft: "#eef6fc", text: "#0078d4" },
+                        { key: "emails", label: "Emails", fill: "#00346e", soft: "#eef4fb", text: "#00346e" },
                       ].map(({ key, label, fill, soft, text }) => (
                           <button
                             key={key}
@@ -10943,8 +10951,8 @@ function masterDocumentPreviewText(value: unknown): string {
 
                       {masterActionGroup === "emails" && (
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="emails">
-                          <button type="button" title="View this lawsuit's email threads." onClick={() => { setMasterEmailComposeOpen(false); setActiveMasterWorkspaceTab("email_threads"); void loadMasterEmailThreadPreview(); }} style={{ minHeight: 36, border: "1px solid #0078d4", borderRadius: 999, background: "#eef6fc", color: "#0078d4", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-emails-button="true">View Emails</button>
-                          <button type="button" title="Compose and send a new email from this lawsuit." onClick={() => setMasterEmailComposeOpen(true)} style={{ minHeight: 36, border: "1px solid #0078d4", borderRadius: 999, background: "#0078d4", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-send-email-button="true">Send Email</button>
+                          <button type="button" title="View this lawsuit's email threads." onClick={() => { setMasterEmailComposeOpen(false); setActiveMasterWorkspaceTab("email_threads"); void loadMasterEmailThreadPreview(); }} style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#eef4fb", color: "#00346e", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-emails-button="true">View Emails</button>
+                          <button type="button" title="Compose and send a new email from this lawsuit." onClick={() => setMasterEmailComposeOpen(true)} style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-send-email-button="true">Send Email</button>
                         </div>
                       )}
                     </div>
@@ -11184,7 +11192,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         fontWeight: 800,
                       }}
                     >
-                      <span>Payments Posted</span>
+                      <span>Payments</span>
                       <strong style={{ color: "#00346e", fontSize: 18 }}>{money(masterPaymentSummary.paymentsPosted)}</strong>
                     </div>
 

@@ -674,40 +674,97 @@ const activeGroupKey =
   const [composeOpen, setComposeOpen] = useState(false);
   // Reply (Phase B): when set, the compose panel is in reply mode threaded to that message.
   const [emailReply, setEmailReply] = useState<{ graphMessageId: string; to: string; subject: string } | null>(null);
-  // Individual-matter Notes (seeded from the Carisk import note; editable, stored on the matter).
-  const [matterNotes, setMatterNotes] = useState("");
+  // Individual-matter Notes — same multi-entry model as the lawsuit notes (Add Note / edit / delete,
+  // with author + timestamp). Seeded from the Carisk import note; stored on the matter as a JSON array.
+  type MatterNoteEntry = { id: string; note: string; timestamp: string; user: string; editedAt?: string };
+  function matterNoteUserName(): string { return "Dave"; }
+  function parseMatterNoteEntries(raw: string): MatterNoteEntry[] {
+    const text = String(raw ?? "").trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error("not an array");
+      return parsed
+        .map((entry: any, index: number) => ({
+          id: String(entry?.id || `${Date.now()}-${index}-note`),
+          note: String(entry?.note ?? "").trim(),
+          timestamp: String(entry?.timestamp || new Date().toLocaleString()),
+          user: String(entry?.user || matterNoteUserName()),
+          ...(entry?.editedAt ? { editedAt: String(entry.editedAt) } : {}),
+        }))
+        .filter((e: MatterNoteEntry) => e.note);
+    } catch {
+      // Legacy / Carisk single-string note → surface it as one entry so nothing is lost.
+      return [{ id: `${Date.now()}-legacy-note`, note: text, timestamp: new Date().toLocaleString(), user: matterNoteUserName() }];
+    }
+  }
+  const [matterNoteEntries, setMatterNoteEntries] = useState<MatterNoteEntry[]>([]);
   const [matterNotesSource, setMatterNotesSource] = useState<string>("");
-  const [matterNotesLoaded, setMatterNotesLoaded] = useState(false);
-  const [matterNotesSaving, setMatterNotesSaving] = useState(false);
-  const [matterNotesMsg, setMatterNotesMsg] = useState<string>("");
+  const [matterNoteSaving, setMatterNoteSaving] = useState(false);
+  const [matterNoteDialogOpen, setMatterNoteDialogOpen] = useState(false);
+  const [matterNoteDraft, setMatterNoteDraft] = useState("");
+  const [matterNoteEditingId, setMatterNoteEditingId] = useState<string | null>(null);
+
   async function loadMatterNotes() {
     const mid = resolvedNumericMatterId();
     if (!mid) return;
     try {
       const res = await fetch(`/api/matters/notes?matterId=${mid}`);
       const j = await res.json().catch(() => ({}));
-      if (j?.ok) { setMatterNotes(j.notes || ""); setMatterNotesSource(j.source || ""); setMatterNotesLoaded(true); }
+      if (j?.ok) { setMatterNoteEntries(parseMatterNoteEntries(j.notes || "")); setMatterNotesSource(j.source || ""); }
     } catch { /* non-fatal */ }
   }
-  async function saveMatterNotes() {
+  async function persistMatterNoteEntries(nextEntries: MatterNoteEntry[]): Promise<boolean> {
     const mid = resolvedNumericMatterId();
-    if (!mid) return;
-    setMatterNotesSaving(true);
-    setMatterNotesMsg("");
+    if (!mid) { alert("Cannot save note because no local matter ID is available."); return false; }
     try {
       const res = await fetch("/api/matters/notes", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matterId: mid, matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId), notes: matterNotes }),
+        body: JSON.stringify({ matterId: mid, matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId), notes: JSON.stringify(nextEntries) }),
       });
       const j = await res.json().catch(() => ({}));
-      if (j?.ok) { setMatterNotesSource("local"); setMatterNotesMsg("Saved."); }
-      else setMatterNotesMsg(j?.error || "Save failed.");
+      if (!res.ok || !j?.ok) { alert(j?.error || "Note could not be saved."); return false; }
+      setMatterNotesSource("local");
+      return true;
     } catch (err: any) {
-      setMatterNotesMsg(err?.message || "Save request failed.");
-    } finally {
-      setMatterNotesSaving(false);
+      alert(err?.message || "Note save request failed.");
+      return false;
     }
+  }
+  function openMatterNoteDialog(entry?: { id: string; note: string }) {
+    setMatterNoteEditingId(entry?.id || null);
+    setMatterNoteDraft(entry?.note || "");
+    setMatterNoteDialogOpen(true);
+  }
+  function closeMatterNoteDialog() {
+    setMatterNoteDialogOpen(false);
+    setMatterNoteDraft("");
+    setMatterNoteEditingId(null);
+  }
+  async function saveMatterNote() {
+    const note = String(matterNoteDraft ?? "").trim();
+    if (!note) return;
+    setMatterNoteSaving(true);
+    try {
+      const nextEntries: MatterNoteEntry[] = matterNoteEditingId
+        ? matterNoteEntries.map((e) => e.id === matterNoteEditingId ? { ...e, note, editedAt: new Date().toLocaleString(), user: e.user || matterNoteUserName() } : e)
+        : [{ id: `${Date.now()}-note`, note, timestamp: new Date().toLocaleString(), user: matterNoteUserName() }, ...matterNoteEntries];
+      const ok = await persistMatterNoteEntries(nextEntries);
+      if (!ok) return;
+      setMatterNoteEntries(nextEntries);
+      closeMatterNoteDialog();
+    } finally {
+      setMatterNoteSaving(false);
+    }
+  }
+  async function requestDeleteMatterNote(entry: { id: string; note: string }) {
+    const ok = await bmConfirm({ title: "Delete note", message: "Delete this note? This cannot be undone.", submitLabel: "Delete" });
+    if (!ok) return;
+    const nextEntries = matterNoteEntries.filter((e) => e.id !== entry.id);
+    const saved = await persistMatterNoteEntries(nextEntries);
+    if (!saved) return;
+    setMatterNoteEntries(nextEntries);
   }
   // Unread incoming email count → alert badge on the Emails action button.
   const [emailUnread, setEmailUnread] = useState(0);
@@ -9579,14 +9636,19 @@ function openClaimAmountEditDialog() {
                   >
                     <span>Final Status</span>
                   </div>
-                  <div className="barsh-direct-summary-value">
-                    {(() => {
-                      const rawFinalStatus = textValue(matter?.finalStatus || matter?.final_status).toLowerCase();
-                      if (rawFinalStatus === "closed") return "Closed";
-                      if (rawFinalStatus === "open") return "Open";
-                      return textValue(matter?.closeReason || matter?.close_reason) ? "Closed" : "Open";
-                    })()}
-                  </div>
+                  {(() => {
+                    const rawFinalStatus = textValue(matter?.finalStatus || matter?.final_status).toLowerCase();
+                    const isClosed = rawFinalStatus === "closed"
+                      ? true
+                      : rawFinalStatus === "open"
+                        ? false
+                        : !!textValue(matter?.closeReason || matter?.close_reason);
+                    return (
+                      <div className="barsh-direct-summary-value" style={{ color: isClosed ? "#991b1b" : "#166534", fontWeight: 900 }}>
+                        {isClosed ? "Closed" : "Open"}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="barsh-direct-summary-card">
@@ -9601,42 +9663,144 @@ function openClaimAmountEditDialog() {
                   </div>
                 </div>              </div>
 
-                <div data-barsh-direct-matter-notes-section="true" style={{ gridColumn: "1 / -1", marginTop: 12, textAlign: "left" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e" }}>Notes</span>
-                    {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, color: "#5a6b80" }}>From Carisk import</span>}
+                <div data-barsh-direct-matter-notes-section="true" style={{ gridColumn: "1 / 2", marginTop: 12, textAlign: "left" }}>
+                  <div
+                    className="barsh-direct-section-title"
+                    style={{ color: "#385a83", fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", margin: "0 0 6px", padding: "0 4px", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}
+                  >
+                    <span>Notes</span>
+                    {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, fontWeight: 800, color: "#5a6b80", textTransform: "none", letterSpacing: 0 }}>From Carisk import</span>}
                   </div>
-                  <textarea
-                    value={matterNotes}
-                    onChange={(e) => { setMatterNotes(e.target.value); setMatterNotesMsg(""); }}
-                    rows={4}
-                    placeholder="Add notes for this matter"
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #cdd6e0", borderRadius: 8, fontSize: 13, resize: "vertical", boxSizing: "border-box" }}
-                  />
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
-                    <button type="button" onClick={() => void saveMatterNotes()} disabled={matterNotesSaving || !matterNotesLoaded}
-                      style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontWeight: 800, fontSize: 12, cursor: matterNotesSaving ? "default" : "pointer", opacity: matterNotesSaving || !matterNotesLoaded ? 0.6 : 1 }}>
-                      {matterNotesSaving ? "Saving…" : "Save Notes"}
-                    </button>
-                    {matterNotesMsg && <span style={{ fontSize: 12, color: matterNotesMsg === "Saved." ? "#137333" : "#b00020" }}>{matterNotesMsg}</span>}
+                  <div style={{ display: "grid", gap: 5, border: "1px solid rgba(203, 213, 225, 0.58)", borderRadius: 14, background: "#ffffff", padding: 14, boxShadow: "0 6px 16px rgba(15, 23, 42, 0.055)", alignContent: "start" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                      <strong style={{ fontSize: 15, lineHeight: 1.35, color: "#00346e" }}>
+                        {matterNoteEntries.length ? `${matterNoteEntries.length} note${matterNoteEntries.length === 1 ? "" : "s"}` : "No notes entered yet."}
+                      </strong>
+                      <button
+                        type="button"
+                        onClick={() => openMatterNoteDialog()}
+                        title="Add a note to this matter."
+                        style={{ width: "fit-content", border: "1px solid #00346e", borderRadius: 999, background: "#eff6ff", color: "#00346e", fontSize: 12, fontWeight: 950, padding: "7px 13px", cursor: "pointer" }}
+                      >
+                        Add Note
+                      </button>
+                    </div>
+
+                    {matterNoteEntries.length > 0 && (
+                      <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+                        {matterNoteEntries.map((entry) => (
+                          <div
+                            key={entry.id}
+                            style={{ display: "grid", gap: 6, padding: "9px 11px", border: "1px solid #dbe4f0", borderRadius: 12, background: "#ffffff" }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                              <div style={{ fontSize: 13, fontWeight: 850, color: "#00346e", whiteSpace: "pre-wrap" }}>{entry.note}</div>
+                              <div style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => openMatterNoteDialog(entry)}
+                                  title="Edit note"
+                                  aria-label="Edit note"
+                                  style={{ width: 30, height: 30, border: "1px solid #cbd5e1", borderRadius: 999, background: "#ffffff", color: "#00346e", cursor: "pointer", fontSize: 14, fontWeight: 950, lineHeight: 1 }}
+                                >
+                                  ✎
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void requestDeleteMatterNote(entry)}
+                                  title="Delete note"
+                                  aria-label="Delete note"
+                                  style={{ width: 30, height: 30, border: "1px solid #fecaca", borderRadius: 999, background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontSize: 14, fontWeight: 950, lineHeight: 1 }}
+                                >
+                                  🗑
+                                </button>
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#385a83" }}>
+                              By {entry.user || matterNoteUserName()} · {entry.timestamp}
+                              {entry.editedAt ? ` · Edited ${entry.editedAt}` : ""}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {matterNoteDialogOpen && (
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={matterNoteEditingId ? "Edit Note" : "Add Note"}
+                    onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterNoteDialog(); } }}
+                    tabIndex={-1}
+                    style={{ position: "fixed", inset: 0, zIndex: 50000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden", background: "rgba(15, 23, 42, 0.58)" }}
+                  >
+                    <div
+                      onClick={(event) => event.stopPropagation()}
+                      style={{ width: "min(720px, 94vw)", maxHeight: "88vh", overflow: "hidden", border: "1px solid #00346e", borderRadius: 18, background: "#ffffff", boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)", display: "flex", flexDirection: "column" }}
+                    >
+                      <div style={{ padding: "16px 20px", background: "#00346e", color: "#ffffff", textAlign: "center", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#ffffff" }}>{matterNoteEditingId ? "Edit Note" : "Add Note"}</h2>
+                      </div>
+                      <form onSubmit={(event) => { event.preventDefault(); void saveMatterNote(); }} style={{ display: "contents" }}>
+                        <div style={{ padding: 20, display: "grid", gap: 14, overflowY: "auto", background: "#ffffff" }}>
+                          <label style={{ display: "grid", gap: 7, fontSize: 12, fontWeight: 950, color: "#00346e", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Note
+                            <textarea
+                              value={matterNoteDraft}
+                              onChange={(event) => setMatterNoteDraft(event.target.value)}
+                              onKeyDown={(event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); void saveMatterNote(); } }}
+                              placeholder="Type note here..."
+                              autoFocus
+                              style={{ width: "100%", minHeight: 160, border: "1px solid #cbd5e1", borderRadius: 12, padding: "11px 12px", background: "#ffffff", color: "#00346e", fontSize: 15, fontWeight: 750, lineHeight: 1.4, outline: "none", resize: "vertical", textTransform: "none", letterSpacing: 0 }}
+                            />
+                          </label>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                          <button
+                            type="button"
+                            onClick={closeMatterNoteDialog}
+                            style={{ minWidth: 110, height: 40, border: "1px solid #dc2626", borderRadius: 10, background: "#dc2626", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={!matterNoteDraft.trim() || matterNoteSaving}
+                            style={{ minWidth: 128, height: 40, border: "1px solid #15803d", borderRadius: 10, background: matterNoteDraft.trim() && !matterNoteSaving ? "#16a34a" : "#bbf7d0", color: matterNoteDraft.trim() && !matterNoteSaving ? "#ffffff" : "#166534", fontWeight: 950, cursor: matterNoteDraft.trim() && !matterNoteSaving ? "pointer" : "not-allowed" }}
+                          >
+                            {matterNoteSaving ? "Saving…" : matterNoteEditingId ? "Save Changes" : "Save Note"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div
                 className="barsh-direct-financial-bubble"
                 data-barsh-direct-actions-outer-section="true"
                 style={{
+                  position: "relative",
                   marginTop: 12,
                   display: "grid",
                   gap: 8,
                   background: "transparent",
-                  padding: 0,
+                  padding: "0 0 0 20px",
                   border: "none",
                   borderRadius: 0,
                   boxShadow: "none",
+                  alignSelf: "stretch",
+                  alignContent: "start",
                 }}
               >
+                {/* Vertical divider separating the left info stack (incl. Notes) from this right rail. */}
+                <div
+                  aria-hidden="true"
+                  style={{ position: "absolute", left: 0, top: -12, bottom: 0, width: 1, background: "#94a3b8" }}
+                />
                 <div
                   data-barsh-direct-actions-section-heading="true"
                   style={{
