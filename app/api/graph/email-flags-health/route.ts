@@ -59,9 +59,9 @@ export async function GET(req: NextRequest) {
     const messages = threadIds.length
       ? await prisma.emailMessage.findMany({
           where: { threadId: { in: threadIds } },
-          select: { direction: true, isSent: true, isRead: true, subject: true, receivedAt: true, hasAttachments: true },
+          select: { direction: true, isSent: true, isRead: true, fromEmail: true, subject: true, receivedAt: true, hasAttachments: true },
           orderBy: { receivedAt: "desc" },
-          take: 20,
+          take: 25,
         })
       : [];
     const inbound = messages.filter((m) => m.direction === "inbound");
@@ -70,6 +70,13 @@ export async function GET(req: NextRequest) {
       messages: messages.length,
       inboundMessages: inbound.length,
       unreadInbound: inbound.filter((m) => m.isRead !== true).length,
+      dbMessages: messages.map((m) => ({
+        direction: m.direction,
+        fromEmail: m.fromEmail,
+        isRead: m.isRead,
+        hasAttachments: m.hasAttachments,
+        receivedAt: m.receivedAt,
+      })),
     };
 
     if (live) {

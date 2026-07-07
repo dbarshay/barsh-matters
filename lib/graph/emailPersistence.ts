@@ -384,6 +384,11 @@ function graphMessageDirection(message: PersistGraphThreadSyncMessage, mailboxUs
   const fromEmail = graphFromEmail(message.from).toLowerCase();
   const mailbox = clean(mailboxUserPrincipalName).toLowerCase();
   if (fromEmail && mailbox && fromEmail === mailbox) return "outbound";
+  // Exchange returns the mailbox's OWN messages (its sent copies) with an X.500 legacy DN
+  // (e.g. "/o=exchangelabs/ou=.../cn=...") instead of the SMTP address, so the equality check above
+  // misses them and they'd be mislabeled "inbound". Any sender that isn't a real SMTP address (no
+  // "@") is the mailbox itself → outbound. Genuine external senders always have an "@" address.
+  if (fromEmail && !fromEmail.includes("@")) return "outbound";
   return "inbound";
 }
 
