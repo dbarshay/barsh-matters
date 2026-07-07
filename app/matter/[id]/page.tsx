@@ -5696,23 +5696,6 @@ function openClaimAmountEditDialog() {
       return;
     }
 
-    if (!graphThreadSyncPreviewResult || graphThreadSyncPreviewResult.action !== "graph-thread-sync-preview") {
-      setGraphThreadSyncResult({
-        ok: false,
-        error: "Run Preview Graph Updates before syncing this thread to Barsh Matters.",
-      });
-      return;
-    }
-
-    const previewConversationId = textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId);
-    if (previewConversationId && previewConversationId !== conversationId) {
-      setGraphThreadSyncResult({
-        ok: false,
-        error: "Preview Graph Updates must be run for this specific thread before syncing it.",
-      });
-      return;
-    }
-
     const confirmed = await bmConfirm(
       "Sync this Microsoft Graph thread to Barsh Matters local email records?"
     );
@@ -5799,25 +5782,6 @@ function openClaimAmountEditDialog() {
               {emailThreadPreviewLoading ? "Loading..." : "Refresh Emails"}
             </button>
 
-          <button
-            type="button"
-            onClick={openStartLawsuitModalFromMatter}
-            disabled={submitting || matterIsClosedForPayment() || alreadyAggregated}
-            title={alreadyAggregated ? "This matter is already assigned to a lawsuit." : "Create a lawsuit from this individual matter."}
-            style={{
-              border: "1px solid #00346e",
-              background: alreadyAggregated ? "#e2e8f0" : "#eff6ff",
-              color: alreadyAggregated ? "#385a83" : "#00346e",
-              borderRadius: 999,
-              padding: "8px 12px",
-              fontWeight: 950,
-              cursor: submitting || matterIsClosedForPayment() || alreadyAggregated ? "not-allowed" : "pointer",
-              minHeight: 36,
-            }}
-          >
-            Start Lawsuit
-          </button>
-
             <button
               type="button"
               hidden
@@ -5890,44 +5854,6 @@ function openClaimAmountEditDialog() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 10,
-            marginTop: 14,
-            marginBottom: 14,
-          }}
-        >
-          <div style={bmStatCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Matter</div>
-            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
-              {displayNumber || "—"}
-            </div>
-          </div>
-
-          <div style={bmStatCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Threads</div>
-            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
-              {num(counts.threads)}
-            </div>
-          </div>
-
-          <div style={bmStatCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Messages</div>
-            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: bmColors.ink }}>
-              {num(counts.messages)}
-            </div>
-          </div>
-
-          <div style={bmStatCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: bmColors.subtle, textTransform: "uppercase" }}>Last Checked</div>
-            <div style={{ marginTop: 4, fontSize: 13, fontWeight: 900, color: emailThreadLastCheckedColor() }}>
-              {emailThreadLastCheckedAt ? formatEmailThreadTimestamp(emailThreadLastCheckedAt) : "—"}
-            </div>
-          </div>
-
-        </div>
 
         
 
@@ -6008,77 +5934,23 @@ function openClaimAmountEditDialog() {
                       <div style={{ marginTop: 4, fontSize: 12, color: bmColors.subtle, fontWeight: 750 }}>
                         {formatEmailThreadTimestamp(thread.latestMessageAt)} · {messages.length} message{messages.length === 1 ? "" : "s"} · {textValue(thread.clioMaildropLabel) || "No MailDrop label"}
                       </div>
-                      {anyMessageOutlookLinkAvailable && (
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            marginTop: 7,
-                            padding: "3px 8px",
-                            border: "1px solid #0f766e",
-                            borderRadius: 999,
-                            background: "#ecfeff",
-                            color: "#0f766e",
-                            fontSize: 11,
-                            fontWeight: 950,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          Outlook link available
-                        </div>
-                      )}
                     </div>
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         type="button"
-                        onClick={() => previewGraphThreadUpdates(textValue(thread.conversationId))}
-                        disabled={!textValue(thread.conversationId) || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
-                        title="Preview Microsoft Graph updates for this specific thread."
-                        style={{
-                          fontSize: 12,
-                          padding: "5px 9px",
-                          border: "1px solid #0f766e",
-                          borderRadius: 999,
-                          background: graphThreadSyncPreviewLoading && graphThreadSyncPreviewConversationId === textValue(thread.conversationId) ? "#f3f4f6" : "#ecfeff",
-                          color: "#0f766e",
-                          cursor: !textValue(thread.conversationId) || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
-                          whiteSpace: "nowrap",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {graphThreadSyncPreviewLoading && graphThreadSyncPreviewConversationId === textValue(thread.conversationId) ? "Previewing..." : "Preview This Thread"}
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => syncGraphThreadToBarshMatters(textValue(thread.conversationId))}
-                        disabled={
-                          !textValue(thread.conversationId) ||
-                          !graphThreadSyncPreviewResult ||
-                          textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId) !== textValue(thread.conversationId) ||
-                          graphThreadSyncPreviewLoading ||
-                          graphThreadSyncLoading
-                        }
-                        title="Run only after Preview This Thread."
+                        disabled={!textValue(thread.conversationId) || graphThreadSyncLoading}
+                        title="Sync this thread from Microsoft Graph into Barsh Matters."
                         style={{
                           fontSize: 12,
                           padding: "5px 9px",
                           border: "1px solid #7c3aed",
                           borderRadius: 999,
                           background:
-                            graphThreadSyncLoading && graphThreadSyncConversationId === textValue(thread.conversationId)
-                              ? "#f3f4f6"
-                              : "#f5f3ff",
+                            graphThreadSyncLoading && graphThreadSyncConversationId === textValue(thread.conversationId) ? "#f3f4f6" : "#f5f3ff",
                           color: "#6d28d9",
-                          cursor:
-                            !textValue(thread.conversationId) ||
-                            !graphThreadSyncPreviewResult ||
-                            textValue(graphThreadSyncPreviewResult?.query?.conversationId || graphThreadSyncPreviewConversationId) !== textValue(thread.conversationId) ||
-                            graphThreadSyncPreviewLoading ||
-                            graphThreadSyncLoading
-                              ? "not-allowed"
-                              : "pointer",
+                          cursor: !textValue(thread.conversationId) || graphThreadSyncLoading ? "not-allowed" : "pointer",
                           whiteSpace: "nowrap",
                           fontWeight: 800,
                         }}
@@ -6105,35 +5977,6 @@ function openClaimAmountEditDialog() {
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Source</div>
-                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink }}>{textValue(thread.source) || "—"}</div>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Direction</div>
-                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink }}>{textValue(thread.direction) || "—"}</div>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>Conversation ID</div>
-                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: bmColors.ink, overflowWrap: "anywhere" }}>{textValue(thread.conversationId) || "—"}</div>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 11, color: bmColors.subtle, fontWeight: 900, textTransform: "uppercase" }}>MailDrop Present</div>
-                      <div style={{ marginTop: 3, fontSize: 13, fontWeight: 850, color: thread.clioMaildropEmailPresent ? bmColors.green : bmColors.red }}>
-                        {thread.clioMaildropEmailPresent ? "Yes" : "No"}
-                      </div>
-                    </div>
-                  </div>
 
                   {threadExpanded && (
                     <div
