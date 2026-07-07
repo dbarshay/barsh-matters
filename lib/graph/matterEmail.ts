@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { assertGraphDraftEnvironmentReady, graphApiBase, graphFetchJson } from "@/lib/graph/client";
+import { MATTER_EMAIL_SIMPLE_ATTACHMENT_BYTES, type ResolvedFiledAttachment } from "@/lib/graph/matterEmailAttachments";
 
 export type SendMatterEmailInput = {
   matterId?: number | null;
@@ -19,6 +20,8 @@ export type SendMatterEmailInput = {
   actorEmail?: string | null;
   /** When set, this is a REPLY to that Graph message — threaded via createReply (In-Reply-To/References). */
   replyToGraphMessageId?: string | null;
+  /** Phase C — already-filed documents (resolved + authorized + downloaded by the caller) to attach. */
+  attachments?: ResolvedFiledAttachment[];
 };
 
 export type SendMatterEmailResult = {
@@ -30,6 +33,7 @@ export type SendMatterEmailResult = {
   threadId?: string;
   messageId?: string;
   recorded?: boolean;
+  attachedCount?: number;
 };
 
 const enc = encodeURIComponent;
@@ -48,6 +52,80 @@ function normalizeSubject(subject: string): string {
 
 function addressList(emails: string[]): { emailAddress: { address: string } }[] {
   return emails.map((address) => ({ emailAddress: { address } }));
+}
+
+// 320 KiB * 10 — Graph upload-session chunks must be a multiple of 320 KiB (and <= ~4 MB per PUT).
+const UPLOAD_CHUNK_BYTES = 3_276_800;
+
+/**
+ * Attach one resolved filed document to a Graph draft. Files up to the simple limit go via a single
+ * POST; larger files (up to the per-file cap) stream through a Graph upload session (chunked PUT to a
+ * pre-authorized URL) — no compression, no quality loss.
+ */
+async function attachFiledDocumentToDraft(params: {
+  base: string;
+  mailbox: string;
+  messageId: string;
+  att: ResolvedFiledAttachment;
+}): Promise<{ ok: true; graphAttachmentId: string | null } | { ok: false; error: string }> {
+  const { base, mailbox, messageId, att } = params;
+
+  if (att.byteLength <= MATTER_EMAIL_SIMPLE_ATTACHMENT_BYTES) {
+    const up = await graphFetchJson({
+      url: `${base}/users/${enc(mailbox)}/messages/${enc(messageId)}/attachments`,
+      method: "POST",
+      body: {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        name: att.name,
+        contentType: att.contentType,
+        contentBytes: att.contentBytes,
+      },
+    });
+    if (!up.ok) return { ok: false, error: up.error || "attachment upload failed" };
+    return { ok: true, graphAttachmentId: up.json?.id ? String(up.json.id) : null };
+  }
+
+  // Upload session for the 3–5 MB range.
+  const session = await graphFetchJson({
+    url: `${base}/users/${enc(mailbox)}/messages/${enc(messageId)}/attachments/createUploadSession`,
+    method: "POST",
+    body: {
+      AttachmentItem: {
+        attachmentType: "file",
+        name: att.name,
+        size: att.byteLength,
+        contentType: att.contentType,
+      },
+    },
+  });
+  if (!session.ok) return { ok: false, error: session.error || "could not start upload session" };
+  const uploadUrl = session.json?.uploadUrl;
+  if (!uploadUrl) return { ok: false, error: "upload session did not return an upload URL" };
+
+  const buf = Buffer.from(att.contentBytes, "base64");
+  const total = buf.byteLength;
+  let graphAttachmentId: string | null = null;
+
+  for (let start = 0; start < total; start += UPLOAD_CHUNK_BYTES) {
+    const end = Math.min(start + UPLOAD_CHUNK_BYTES, total);
+    const chunk = buf.subarray(start, end);
+    // The uploadUrl is pre-authorized — do NOT send an Authorization header.
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Range": `bytes ${start}-${end - 1}/${total}` },
+      body: new Uint8Array(chunk),
+      cache: "no-store",
+    });
+    if (put.status !== 200 && put.status !== 201 && put.status !== 202) {
+      const t = await put.text().catch(() => "");
+      return { ok: false, error: `chunk upload failed (${put.status}).${t ? ` ${t.slice(0, 200)}` : ""}` };
+    }
+    if (put.status === 201) {
+      const j = await put.json().catch(() => null);
+      graphAttachmentId = j?.id ? String(j.id) : null;
+    }
+  }
+  return { ok: true, graphAttachmentId };
 }
 
 export async function sendMatterEmail(input: SendMatterEmailInput): Promise<SendMatterEmailResult> {
@@ -102,6 +180,22 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
     if (!draft.ok) return { ok: false, error: `Draft create failed: ${draft.error}` };
     msg = draft.json || {};
     graphMessageId = msg.id;
+  }
+
+  // 1b) Attach filed documents to the draft (before /send). Each is uploaded as a Graph fileAttachment;
+  // the bytes were already downloaded + size-checked + authorized to this matter/lawsuit by the caller.
+  const attachments = (input.attachments || []).filter((a) => a && a.contentBytes);
+  const attachmentResults: { name: string; clioDocumentId: string; graphAttachmentId: string | null; byteLength: number; contentType: string }[] = [];
+  for (const att of attachments) {
+    const up = await attachFiledDocumentToDraft({ base, mailbox, messageId: String(graphMessageId), att });
+    if (!up.ok) return { ok: false, error: `Attaching "${att.name}" failed: ${up.error}` };
+    attachmentResults.push({
+      name: att.name,
+      clioDocumentId: att.clioDocumentId,
+      graphAttachmentId: up.graphAttachmentId,
+      byteLength: att.byteLength,
+      contentType: att.contentType,
+    });
   }
 
   // 2) Send it.
@@ -165,6 +259,27 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
       },
     });
     messageId = message.id;
+    // Record each attached filed document (metadata only — the bytes stay in the Clio vault).
+    for (const ar of attachmentResults) {
+      try {
+        await db.emailAttachment.create({
+          data: {
+            messageId: message.id,
+            provider: "microsoft_graph",
+            graphAttachmentId: ar.graphAttachmentId,
+            name: ar.name,
+            contentType: ar.contentType,
+            sizeBytes: ar.byteLength,
+            isInline: false,
+            clioDocumentId: ar.clioDocumentId,
+            clioDocumentName: ar.name,
+            storageStatus: "clio_vault",
+          },
+        });
+      } catch {
+        /* best-effort — the email + attachment already went out */
+      }
+    }
     await db.emailMatterLink.create({
       data: {
         threadId: thread.id,
@@ -190,5 +305,6 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
     threadId,
     messageId,
     recorded,
+    attachedCount: attachmentResults.length,
   };
 }

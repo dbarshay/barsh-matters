@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { isAdminRequestAuthorized, adminUnauthorizedJson, adminSessionIdentityDiagnostics } from "@/lib/adminAuth";
 import { isMatterEmailEnabled, MATTER_EMAIL_DISABLED_MESSAGE } from "@/lib/graph/matterEmailConfig";
 import { sendMatterEmail } from "@/lib/graph/matterEmail";
+import { resolveFiledDocumentAttachments } from "@/lib/graph/matterEmailAttachments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +13,11 @@ export const dynamic = "force-dynamic";
 function toList(v: unknown): string[] {
   if (Array.isArray(v)) return v.map((x) => String(x || "").trim()).filter(Boolean);
   if (typeof v === "string") return v.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+  return [];
+}
+
+function toIdList(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map((x) => String(x || "").trim()).filter(Boolean);
   return [];
 }
 
@@ -44,6 +51,10 @@ export async function POST(req: NextRequest) {
   if (!replyToGraphMessageId && !subject) return NextResponse.json({ ok: false, error: "Subject is required." }, { status: 400 });
 
   const matterId = Number(body?.matterId);
+  const resolvedMatterId = Number.isFinite(matterId) && matterId > 0 ? matterId : null;
+  const matterDisplayNumber = body?.matterDisplayNumber ? String(body.matterDisplayNumber) : null;
+  const masterLawsuitId = body?.masterLawsuitId ? String(body.masterLawsuitId) : null;
+
   let actorEmail: string | null = null;
   try {
     actorEmail = adminSessionIdentityDiagnostics(req)?.email || null;
@@ -51,16 +62,32 @@ export async function POST(req: NextRequest) {
     actorEmail = null;
   }
 
+  // Phase C — resolve + authorize + download any requested filed-document attachments. Scoped to this
+  // matter/lawsuit server-side, so a caller can never attach a document filed to a different file.
+  const attachmentFiledDocumentIds = toIdList(body?.attachmentFiledDocumentIds);
+  let attachments;
+  if (attachmentFiledDocumentIds.length) {
+    const resolved = await resolveFiledDocumentAttachments(prisma, {
+      matterId: resolvedMatterId,
+      masterLawsuitId,
+      matterDisplayNumber,
+      filedDocumentIds: attachmentFiledDocumentIds,
+    });
+    if (!resolved.ok) return NextResponse.json({ ok: false, error: resolved.error }, { status: 400 });
+    attachments = resolved.attachments;
+  }
+
   const result = await sendMatterEmail({
-    matterId: Number.isFinite(matterId) && matterId > 0 ? matterId : null,
-    matterDisplayNumber: body?.matterDisplayNumber ? String(body.matterDisplayNumber) : null,
-    masterLawsuitId: body?.masterLawsuitId ? String(body.masterLawsuitId) : null,
+    matterId: resolvedMatterId,
+    matterDisplayNumber,
+    masterLawsuitId,
     to,
     cc,
     subject,
     bodyHtml,
     actorEmail,
     replyToGraphMessageId,
+    attachments,
   });
 
   return NextResponse.json(result, { status: result.ok ? 200 : 502 });

@@ -48,6 +48,12 @@ type Props = {
   onOpenDoc?: (doc: FiledDoc) => void;
   /** When set, each filed document shows a Remove control (archives the BM filing; Clio untouched). */
   onRemoveDoc?: (doc: FiledDoc) => void;
+  /** Selection mode: render a checkmark next to each document (e.g. picking email attachments). */
+  selectable?: boolean;
+  /** Ids of documents currently selected (only meaningful when selectable). */
+  selectedIds?: string[];
+  /** Toggle a document's selection (only meaningful when selectable). */
+  onToggleSelect?: (doc: FiledDoc) => void;
 };
 
 /** All descendant terminal folder keys of a folder (or itself if terminal). */
@@ -66,7 +72,11 @@ export default function FolderTree({
   onDropToFolder,
   onOpenDoc,
   onRemoveDoc,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
 }: Props) {
+  const selectedSet = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
   const [docs, setDocs] = useState<FiledDoc[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flat, setFlat] = useState(false);
@@ -143,7 +153,16 @@ export default function FolderTree({
       </div>
 
       {flat ? (
-        <FlatList docs={docs} query={query} setQuery={setQuery} onOpenDoc={onOpenDoc} onRemoveDoc={onRemoveDoc} />
+        <FlatList
+          docs={docs}
+          query={query}
+          setQuery={setQuery}
+          onOpenDoc={onOpenDoc}
+          onRemoveDoc={onRemoveDoc}
+          selectable={selectable}
+          selectedSet={selectedSet}
+          onToggleSelect={onToggleSelect}
+        />
       ) : (
         <div>
           {branches.map((b) => (
@@ -157,11 +176,47 @@ export default function FolderTree({
               onDropToFolder={onDropToFolder}
               onOpenDoc={onOpenDoc}
               onRemoveDoc={onRemoveDoc}
+              selectable={selectable}
+              selectedSet={selectedSet}
+              onToggleSelect={onToggleSelect}
             />
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+/** Checkmark box shown before each document in selection mode. */
+function SelectCheck({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+  return (
+    <span
+      role="checkbox"
+      aria-checked={checked}
+      title={checked ? "Selected — click to remove" : "Click to attach this document"}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        border: `1.5px solid ${checked ? NAVY : "#b7c2d0"}`,
+        background: checked ? NAVY : "#fff",
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: 900,
+        lineHeight: 1,
+        cursor: "pointer",
+        flexShrink: 0,
+      }}
+    >
+      {checked ? "✓" : ""}
+    </span>
   );
 }
 
@@ -174,6 +229,9 @@ function FolderNode({
   onDropToFolder,
   onOpenDoc,
   onRemoveDoc,
+  selectable,
+  selectedSet,
+  onToggleSelect,
 }: {
   folder: FolderSpec;
   depth: number;
@@ -183,6 +241,9 @@ function FolderNode({
   onDropToFolder?: (folderKey: string, files: File[]) => void;
   onOpenDoc?: (doc: FiledDoc) => void;
   onRemoveDoc?: (doc: FiledDoc) => void;
+  selectable?: boolean;
+  selectedSet?: Set<string>;
+  onToggleSelect?: (doc: FiledDoc) => void;
 }) {
   const count = countFor(folder);
   const irrelevant = caseType != null && !folderAppliesToCaseType(folder.key, caseType);
@@ -261,6 +322,9 @@ function FolderNode({
                 onDropToFolder={onDropToFolder}
                 onOpenDoc={onOpenDoc}
                 onRemoveDoc={onRemoveDoc}
+                selectable={selectable}
+                selectedSet={selectedSet}
+                onToggleSelect={onToggleSelect}
               />
             ))}
           {folder.terminal &&
@@ -279,6 +343,9 @@ function FolderNode({
                       gap: 8,
                     }}
                   >
+                    {selectable && onToggleSelect && (
+                      <SelectCheck checked={!!selectedSet?.has(d.id)} onToggle={() => onToggleSelect(d)} />
+                    )}
                     <span
                       onClick={clickable ? () => onOpenDoc!(d) : undefined}
                       title={clickable ? "Open document" : undefined}
@@ -326,12 +393,18 @@ function FlatList({
   setQuery,
   onOpenDoc,
   onRemoveDoc,
+  selectable,
+  selectedSet,
+  onToggleSelect,
 }: {
   docs: FiledDoc[];
   query: string;
   setQuery: (v: string) => void;
   onOpenDoc?: (doc: FiledDoc) => void;
   onRemoveDoc?: (doc: FiledDoc) => void;
+  selectable?: boolean;
+  selectedSet?: Set<string>;
+  onToggleSelect?: (doc: FiledDoc) => void;
 }) {
   const filtered = docs.filter((d) =>
     query.trim() === "" ? true : d.titleLabel.toLowerCase().includes(query.trim().toLowerCase()),
@@ -367,6 +440,9 @@ function FlatList({
               gap: 8,
             }}
           >
+            {selectable && onToggleSelect && (
+              <SelectCheck checked={!!selectedSet?.has(d.id)} onToggle={() => onToggleSelect(d)} />
+            )}
             <span
               onClick={clickable ? () => onOpenDoc!(d) : undefined}
               title={clickable ? "Open document" : undefined}
