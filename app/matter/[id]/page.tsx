@@ -669,6 +669,14 @@ const activeGroupKey =
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
   const [matterViewEmailsPopupOpen, setMatterViewEmailsPopupOpen] = useState(false);
+  // Compose (Phase A: native matter email send via Graph).
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeCc, setComposeCc] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeMsg, setComposeMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [matterClioDocumentsLoading, setMatterClioDocumentsLoading] = useState(false);
   const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
   const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
@@ -5460,6 +5468,82 @@ function openClaimAmountEditDialog() {
     return textValue(threads[0]?.conversationId);
   }
 
+  async function sendComposedMatterEmail() {
+    const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
+    const to = composeTo.trim();
+    if (!to) { setComposeMsg({ kind: "err", text: "Enter at least one recipient." }); return; }
+    if (!composeSubject.trim()) { setComposeMsg({ kind: "err", text: "Enter a subject." }); return; }
+    const ok = await bmConfirm({
+      title: "Send email",
+      message: `Send this email to ${to}${composeCc.trim() ? ` (cc ${composeCc.trim()})` : ""} from the firm mailbox? It will be filed to ${displayNumber || "this matter"}.`,
+      submitLabel: "Send",
+    });
+    if (!ok) return;
+    setComposeSending(true);
+    setComposeMsg(null);
+    try {
+      const res = await fetch("/api/graph/matter-email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matterId: resolvedNumericMatterId(),
+          matterDisplayNumber: displayNumber,
+          to: composeTo,
+          cc: composeCc,
+          subject: composeSubject,
+          body: composeBody.replace(/\n/g, "<br>"),
+          confirmSend: true,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j?.ok) {
+        setComposeMsg({ kind: "ok", text: `Sent to ${(j.sentTo || []).join(", ")}.` });
+        setComposeTo(""); setComposeCc(""); setComposeSubject(""); setComposeBody("");
+        setComposeOpen(false);
+        setEmailThreadPreviewResult(null); // refresh threads to show the new outbound message
+      } else {
+        setComposeMsg({ kind: "err", text: j?.error || "Send failed." });
+      }
+    } catch (err: any) {
+      setComposeMsg({ kind: "err", text: err?.message || "Send request failed." });
+    } finally {
+      setComposeSending(false);
+    }
+  }
+
+  function renderMatterEmailComposePanel() {
+    const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
+    const inputStyle: React.CSSProperties = { width: "100%", padding: "7px 10px", border: "1px solid #cdd6e0", borderRadius: 6, fontSize: 13 };
+    return (
+      <div style={{ border: "1px solid #e3e9f0", borderRadius: 10, padding: 14, marginBottom: 16, background: "#f8fafc" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontWeight: 900, color: "#00346e" }}>Compose email</div>
+          <button type="button" onClick={() => { setComposeOpen((v) => !v); setComposeMsg(null); if (!composeOpen && !composeSubject) setComposeSubject(displayNumber ? `[${displayNumber}] ` : ""); }}
+            style={{ border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", padding: "6px 12px", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+            {composeOpen ? "Close" : "New email"}
+          </button>
+        </div>
+        {composeOpen && (
+          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+            <label style={{ fontSize: 12, color: "#5a6b80" }}>To<input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="name@example.com, name2@…" style={inputStyle} /></label>
+            <label style={{ fontSize: 12, color: "#5a6b80" }}>Cc<input value={composeCc} onChange={(e) => setComposeCc(e.target.value)} placeholder="optional" style={inputStyle} /></label>
+            <label style={{ fontSize: 12, color: "#5a6b80" }}>Subject<input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} style={inputStyle} /></label>
+            <label style={{ fontSize: 12, color: "#5a6b80" }}>Message<textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={7} style={{ ...inputStyle, resize: "vertical" }} /></label>
+            <div style={{ fontSize: 11, color: "#5a6b80" }}>The matter tag {displayNumber ? `[${displayNumber}]` : ""} is kept on the subject so replies stay threaded to this matter.</div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button type="button" onClick={() => void sendComposedMatterEmail()} disabled={composeSending}
+                style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 800, fontSize: 13, cursor: composeSending ? "default" : "pointer", opacity: composeSending ? 0.6 : 1 }}>
+                {composeSending ? "Sending…" : "Send"}
+              </button>
+              {composeMsg && <span style={{ fontSize: 12, color: composeMsg.kind === "ok" ? "#137333" : "#b00020" }}>{composeMsg.text}</span>}
+            </div>
+          </div>
+        )}
+        {!composeOpen && composeMsg && <div style={{ marginTop: 8, fontSize: 12, color: composeMsg.kind === "ok" ? "#137333" : "#b00020" }}>{composeMsg.text}</div>}
+      </div>
+    );
+  }
+
   function matterEmailSyncContext(conversationId: string) {
     const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
     const threads = Array.isArray(emailThreadPreviewResult?.threads) ? emailThreadPreviewResult.threads : [];
@@ -7293,6 +7377,7 @@ function openClaimAmountEditDialog() {
           </div>
 
           <div style={{ padding: 20 }}>
+            {renderMatterEmailComposePanel()}
             {renderMatterEmailThreadsPanel()}
           </div>
 
