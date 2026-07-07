@@ -43,13 +43,17 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
   { keywords: ["arbitration award", "master arbitrator", "award of arbitrator", "aaa case no"], folderKey: "arbitration.awards", titleKey: "award", confidence: 0.75 },
   { keywords: ["ar-1", "ar1"], folderKey: "arbitration.correspondence_ar1", titleKey: "ar1", confidence: 0.6 },
 
+  // --- Radiology / medical report (HIGH priority: specific report markers, so a report faxed inside a
+  // cover-letter bundle isn't mis-read as a billing letter / verification from the boilerplate) ---
+  { keywords: ["impression:", "technique:", "clinical history", "3t mri", "diffusion weighted", "contrast was administered"], folderKey: "claim_documents.reports", titleKey: "report", confidence: 0.7 },
+
   // --- Denials / EOB / EOR ---
   { keywords: ["nf-10", "nf 10", "n.f.-10", "denial of claim form"], folderKey: "claim_documents.denials", titleKey: "nf10", confidence: 0.85 },
   { keywords: ["explanation of benefits", "explanation of review", "explanation of reimbursement", "eob", "eor"], folderKey: "claim_documents.denials", titleKey: "eob_eor", confidence: 0.7 },
 
   // --- Proof of mailing (ABOVE bills — fax-ack/POM docs mention "aob" and would mis-file as AOB) ---
   // Provider superbill cover sheet ("# of superbills attached") → Miscellaneous / Superbill.
-  { keywords: ["superbills attached", "of superbills attached", "# of superbills"], folderKey: "claim_documents.miscellaneous", titleKey: "superbill", confidence: 0.72 },
+  { keywords: ["superbills attached", "of superbills attached", "# of superbills", "patients attached", "number of patients attached", "number of patients seen"], folderKey: "claim_documents.miscellaneous", titleKey: "superbill", confidence: 0.72 },
 
   { keywords: ["proof of mailing", "proof of submission", "pom id", "certificate of mailing", "certified mail", "return receipt", "usps tracking", "fax confirmation", "transmission result", "transmission report", "fax acknowledge", "fax acknowledgment"], folderKey: "claim_documents.bills", titleKey: "proof_of_mailing", confidence: 0.74 },
 
@@ -74,7 +78,7 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
   ], folderKey: "claim_documents.bills", titleKey: "billing_letter", confidence: 0.6 },
 
   // --- Verification requests / responses (carrier-side; below billing letters) ---
-  { keywords: ["additional verification", "request for verification", "verification is requested", "delay of your claim", "verification request"], folderKey: "claim_documents.verification.requests", titleKey: "request_dated", confidence: 0.62 },
+  { keywords: ["additional verification", "request for verification", "verification is requested", "delay of your claim", "verification request", "requested information in your possession", "provide the requested information"], folderKey: "claim_documents.verification.requests", titleKey: "request_dated", confidence: 0.62 },
   { keywords: ["in response to your request for verification", "in response to your verification request", "in response to your request for additional verification", "enclosed is the requested verification", "requested verification is enclosed", "response to verification"], folderKey: "claim_documents.verification.responses", titleKey: "response_dated", confidence: 0.62 },
 
   // BRL billing cover letter, low-priority letterhead catch (below verification so a verification
