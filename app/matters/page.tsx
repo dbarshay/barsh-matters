@@ -2,6 +2,7 @@
 
 import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
+import { normalizeProviderName } from "@/lib/providerNameCase";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
@@ -1647,8 +1648,11 @@ export default function FilteredMattersPage() {
 
   function masterInfoDisplayValue(field: string, fallback: any): string {
     const override = masterInfoOverrides[field];
-    if (override !== undefined) return override || "—";
-    return clean(fallback) || "—";
+    const raw = override !== undefined ? override : clean(fallback);
+    // Normalize provider/client capitalization at display so all-caps stored names render properly
+    // (system-wide provider name casing — same normalizer used on the matter page and in documents).
+    if (field === "provider") return normalizeProviderName(raw) || "—";
+    return raw || "—";
   }
 
   function masterCourtDisplayValue(): string {
@@ -10038,7 +10042,7 @@ function masterDocumentPreviewText(value: unknown): string {
                                 className="barsh-filter-field-link"
                                 style={fieldLinkStyle}
                               >
-                                {clean(row.provider)}
+                                {normalizeProviderName(row.provider)}
                               </a>
                             ) : (
                               "—"
@@ -13863,7 +13867,7 @@ function masterDocumentPreviewText(value: unknown): string {
                                 className="barsh-filter-field-link"
                                 style={fieldLinkStyle}
                               >
-                                {clean(row.provider)}
+                                {normalizeProviderName(row.provider)}
                               </a>
                             ) : (
                               "—"

@@ -9262,7 +9262,7 @@ function openClaimAmountEditDialog() {
                 <div
                   className="barsh-direct-section-title"
                   style={{
-                    color: "#385a83",
+                    color: "#00346e",
                     fontSize: 12,
                     fontWeight: 950,
                     letterSpacing: "0.08em",
@@ -9591,7 +9591,7 @@ function openClaimAmountEditDialog() {
                 <div
                   className="barsh-direct-section-title"
                   style={{
-                    color: "#385a83",
+                    color: "#00346e",
                     fontSize: 12,
                     fontWeight: 950,
                     letterSpacing: "0.08em",
@@ -9661,7 +9661,7 @@ function openClaimAmountEditDialog() {
                 <div data-barsh-direct-matter-notes-section="true" style={{ gridColumn: "1 / 2", marginTop: 12, textAlign: "left" }}>
                   <div
                     className="barsh-direct-section-title"
-                    style={{ color: "#385a83", fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", margin: "0 0 6px", padding: "0 4px", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}
+                    style={{ color: "#00346e", fontSize: 12, fontWeight: 950, letterSpacing: "0.08em", margin: "0 0 6px", padding: "0 4px", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}
                   >
                     <span>Notes</span>
                     {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, fontWeight: 800, color: "#5a6b80", textTransform: "none", letterSpacing: 0 }}>From Carisk import</span>}
