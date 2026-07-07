@@ -15,6 +15,7 @@ import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryC
 import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
 import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
 import MatterEmailCompose from "@/components/email/MatterEmailCompose";
+import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -5611,6 +5612,18 @@ function openClaimAmountEditDialog() {
             onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); }}
           />
         )}
+
+        {/* Phase D — inbound email attachments awaiting OCR review/filing for this matter. */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>
+            Inbound attachments to review
+          </div>
+          <InboundAttachmentReview
+            matterId={resolvedNumericMatterId()}
+            matterDisplayNumber={displayNumber}
+            onChanged={() => { void refreshEmailUnread(); }}
+          />
+        </div>
       </div>
     );
   }

@@ -46,5 +46,16 @@ check("app/api/graph/thread-sync/route.ts", [
   "inboundAttachmentOcr",
 ]);
 
+// Operator review UI: lists pending, files via confirm, dismisses. Wired into both pages.
+check("components/email/InboundAttachmentReview.tsx", [
+  "/api/graph/inbound-attachments",
+  '"file"',
+  '"dismiss"',
+  "confirmFile: true",
+  "bmConfirm(",
+]);
+check("app/matter/[id]/page.tsx", ["InboundAttachmentReview"]);
+check("app/matters/page.tsx", ["InboundAttachmentReview"]);
+
 if (failed) process.exit(1);
 console.log("PASS: inbound attachment OCR (Phase D) is flag-gated, stages a review queue, and never files to Clio without confirmFile.");

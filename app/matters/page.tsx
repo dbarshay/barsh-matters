@@ -10,6 +10,7 @@ import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import { bmConfirm, bmAlert, bmPrompt } from "@/app/components/BmDialogHost";
 import LawsuitDocuments from "@/components/documents/LawsuitDocuments";
 import MatterEmailCompose from "@/components/email/MatterEmailCompose";
+import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 import { type FiledDoc } from "@/components/documents/FolderTree";
 import BarshHeader from "@/app/components/BarshHeader";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
@@ -7128,6 +7129,14 @@ function masterDocumentPreviewText(value: unknown): string {
               Unified Master Lawsuit email area.  Graph-synced messages and MailDrop-linked thread records appear here together.
             </p>
           </div>
+        </div>
+
+        {/* Phase D — inbound email attachments awaiting OCR review/filing for this lawsuit. */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>
+            Inbound attachments to review
+          </div>
+          <InboundAttachmentReview masterLawsuitId={masterId} onChanged={() => { void loadMasterEmailThreadPreview(); }} />
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
