@@ -275,6 +275,48 @@ entity they were generated from (matter OR lawsuit). To do:
 - **Placeholder docs** (bill-schedule, packet-summary, summons-complaint): code-level default folder/title
   mapping (they aren't DocumentTemplate records).
 
+## OCR classification, extraction tuning, learning + matter predictor — BUILT (2026-07-07)
+Tuned the OCR mapping/classifier against the ~90-doc `ocr-samples/inbox/` set and built the intelligence
+layer on the Upload Docs filing flow. All read-safe; the one matter write is operator-confirmed.
+- **Field extraction hardened** (`lib/ocr/mapping/intakeProfile.ts` + `normalize.ts` + `synonyms.ts`):
+  fixed pure-digit claim/policy rejected as money; PO-box / label-continuation insurers; individual-vs-
+  practice provider (practice-only; prefers a practice across ALL provider labels, then caption /
+  letterhead / head-text fallbacks); patient from **Claimant / Injured Person**; sibling-label guards
+  (patient≠insured, billing≠referring provider, claim≠our-file/index/policy/TIN); month-name dates;
+  DOB / NYSCEF / future-date exclusion; DOS single-date; amount = total charge; carrier-suffix scan.
+  **Recognition is fully case-insensitive.** New fields: `indexNumber` (court index, incl. CV-#/YY/CC),
+  `dateFiled` (NYSCEF stamp), `bmFileNumber` (BRL_ / dotted). Hit rates on the 89-doc set: patient 75,
+  provider 78, insurer 68, DOS 69, amount 51, claim 33, DOL 37.
+- **Classifier** (`lib/ocr/mapping/classify.ts`): auto-files **87/89** (no-suggestion 2). Covers WC forms,
+  litigation, arbitration, denials, POM (incl. EDI proof-of-submission), bills/superbills, billing letters
+  (KR + QR letterhead templates), Rx (written-order/orthosis), radiology reports (impression/technique/
+  3T MRI), verification req/resp, declaration/ID pages, and superbill coversheets → Misc.
+- **Human-in-the-loop learning** (`lib/ocr/learning.ts`; models `OcrFilingFeedback`, `OcrEntityDefault`):
+  logs suggestion-vs-choice + per-provider/carrier memory that biases future suggestions. Deterministic.
+- **Case-type-aware routing** (`lib/documents/caseTypeRouting.ts` + Upload Docs case-type picker): WC
+  matters route bills/letters/reports to the flat Workers' Comp folder (which gained the doc-type titles).
+- **Reference cross-reference + matter predictor** (`lib/ocr/crossReference.ts`): resolves provider /
+  carrier / patient to the registry (canonical + TIN) and predicts the matter from file# / claim# /
+  index# / policy# / (patient+provider) against `ClaimIndex`; Upload Docs auto-selects a strong-key
+  match. Read-only.
+- **Populate empty Date Filed / Index Number** (`lib/documents/populateLitigationFields.ts`): filing a
+  scan to a matter in a lawsuit can fill the lawsuit's blank Index Number / Date Filed — **operator-
+  confirmed checkbox**, blank-only (never overrides), audited.
+- **New Prisma models this session** (need `npx prisma db push && npx prisma generate`): `OcrFilingFeedback`,
+  `OcrEntityDefault`. Tuning harness: `scripts/ocr-review-report.ts` (PHI-safe aggregate),
+  `scripts/ocr-values-dump.ts` (full CSV). `ocr-samples/` is git-ignored (PHI). Verifiers:
+  `verify-ocr-filing-learning-safety`, `verify-ocr-cross-reference-safety`,
+  `verify-populate-litigation-fields-safety`.
+
+### OCR — still to do (saved for a future session)
+1. **Continue training on the inbox docs** — remaining field misses + any new document formats.
+2. **Old-paper migration**: add an **"old file number"** field on the matter; when creating a new BRL_
+   file, reference the old number; teach OCR the OLD numbering convention; cross-reference old → new BRL_
+   so a scan carrying an old file number resolves to (and auto-associates with) the new BRL_ matter
+   (extends `crossReference.ts` with old-file-number as a match key).
+3. **Split large scans into multiple doc types** — page-level segmentation + per-segment classification
+   so an 11-page mixed bundle (bill + report + POM) files as separate documents, not one blob.
+
 ## What's left (not built)
 - **Document OCR consumers/UI** — the engine exists (above); the intake verify UI is still open (Upload
   Docs covers the operator-driven path). See `docs/document-folder-structure.md` for the folder taxonomy.
@@ -300,6 +342,10 @@ inspection is needed. Keep your own copies.
 > Document Intelligence) is built and proven. Pick up [OCR field-mapping profile + verify UI |
 > Carisk Management Report | RBAC | your next item]."
 
+_Last updated 2026-07-07: OCR classification/extraction tuning + human-in-the-loop learning + case-type
+routing + reference cross-reference & matter predictor + operator-confirmed Date Filed/Index populate
+(all on the Upload Docs flow); classifier auto-files 87/89. Three OCR follow-ups saved (continue
+training, old-paper→BRL migration, split large scans). New models OcrFilingFeedback/OcrEntityDefault._
 _Last updated 2026-07-06: Carisk Management Report built (Saved-Incomplete tracker keyed by CIC# +
 admin view + Friday 8am ET Graph email via Vercel Cron); email send verified end-to-end from local._
 _Last updated 2026-07-04: added the OCR engine foundation; baselined migrations + wired shadow DB for
