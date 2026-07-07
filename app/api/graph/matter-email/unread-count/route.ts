@@ -22,8 +22,10 @@ export async function GET(req: NextRequest) {
     const threads = await prisma.emailThread.findMany({ where: threadWhere, select: { id: true } });
     const threadIds = threads.map((t) => t.id);
     if (threadIds.length === 0) return NextResponse.json({ ok: true, unread: 0 });
+    // Incoming = direction "inbound" (the reliable indicator — synced inbound messages can carry
+    // isSent: true from Graph, so filtering on isSent misses them). Unread = isRead not true.
     const unread = await prisma.emailMessage.count({
-      where: { threadId: { in: threadIds }, isSent: false, NOT: { isRead: true } },
+      where: { threadId: { in: threadIds }, direction: "inbound", NOT: { isRead: true } },
     });
     return NextResponse.json({ ok: true, unread });
   } catch {

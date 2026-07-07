@@ -46,7 +46,7 @@ check("components/email/MatterEmailCompose.tsx", [
 check("app/matter/[id]/page.tsx", ["data-barsh-direct-email-reply-button", "setEmailReply("]);
 
 // Unread-incoming alert badge on the Emails button (both pages) + read-only count route.
-check("app/api/graph/matter-email/unread-count/route.ts", ["isSent: false", "NOT: { isRead: true }"]);
+check("app/api/graph/matter-email/unread-count/route.ts", ['direction: "inbound"', "NOT: { isRead: true }"]);
 check("app/matter/[id]/page.tsx", ["data-barsh-direct-emails-unread-badge", "emailUnread"]);
 check("app/matters/page.tsx", ["data-barsh-master-emails-unread-badge", "masterEmailUnread"]);
 
