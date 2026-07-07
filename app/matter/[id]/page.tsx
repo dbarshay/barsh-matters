@@ -9237,7 +9237,7 @@ function openClaimAmountEditDialog() {
                 style={{
                   position: "relative",
                   display: "grid",
-                  gridTemplateColumns: "minmax(0, 1fr) 340px",
+                  gridTemplateColumns: "minmax(0, 1fr) 170px",
                   gap: 14,
                   alignItems: "start",
                   paddingTop: 12,
@@ -9247,7 +9247,7 @@ function openClaimAmountEditDialog() {
                     height (down past the Notes row), matching the lawsuit page. Sits in the column gap. */}
                 <div
                   aria-hidden="true"
-                  style={{ position: "absolute", top: 12, bottom: 0, right: "calc(340px + 7px)", width: 1, background: "#94a3b8" }}
+                  style={{ position: "absolute", top: 12, bottom: 0, right: "calc(170px + 7px)", width: 1, background: "#94a3b8" }}
                 />
                 <div
                   className="barsh-direct-left-info-column"
@@ -9579,7 +9579,7 @@ function openClaimAmountEditDialog() {
                   position: "relative",
                   display: "grid",
                   gap: 10,
-                  width: 340,
+                  width: 170,
                   maxWidth: "100%",
                   justifySelf: "start",
                   padding: "12px 0 0 12",

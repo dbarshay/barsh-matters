@@ -10206,8 +10206,8 @@ function masterDocumentPreviewText(value: unknown): string {
                         display: "grid",
                         gap: 14,
                         alignItems: "start",
-                        width: "calc(100% + 320px)",
-                        maxWidth: "calc(100% + 320px)",
+                        width: "calc(100% + 490px)",
+                        maxWidth: "calc(100% + 490px)",
                       }}
                     >
 
@@ -10717,10 +10717,10 @@ function masterDocumentPreviewText(value: unknown): string {
                       position: "relative",
                       display: "grid",
                       gap: 10,
-                      width: 340,
+                      width: 170,
                       maxWidth: "100%",
                       justifySelf: "start",
-                      transform: "translateX(340px)",
+                      transform: "translateX(510px)",
                       padding: "12px 0 0 12",
                       alignSelf: "stretch",
                       alignContent: "start",
