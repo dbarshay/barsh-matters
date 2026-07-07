@@ -288,6 +288,9 @@ export default function UploadDocsPage() {
           providerName: ocrProvider,
           insurerName: ocrInsurer,
           caseType,
+          // Litigation fields — server populates the lawsuit's Date Filed / Index Number only if blank.
+          indexNumber: (ocrIdentity as any)?.indexNumber ?? null,
+          dateFiled: (ocrIdentity as any)?.dateFiled ?? null,
         }),
       });
       const j = await res.json().catch(() => null);

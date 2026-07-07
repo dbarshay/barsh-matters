@@ -10,6 +10,7 @@ import { fileDocument } from "@/lib/documents/fileDocument";
 import type { ClioStorageTargetInput } from "@/lib/clioStoragePlan";
 import { adminSessionIdentityDiagnostics } from "@/lib/adminAuth";
 import { recordFilingFeedback } from "@/lib/ocr/learning";
+import { populateEmptyLawsuitLitigationFields } from "@/lib/documents/populateLitigationFields";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest) {
   const learnProviderName = body?.providerName ? String(body.providerName) : null;
   const learnInsurerName = body?.insurerName ? String(body.insurerName) : null;
   const caseType = body?.caseType ? String(body.caseType) : null;
+  // Litigation fields from the scan — used ONLY to populate a lawsuit's empty Date Filed / Index Number.
+  const litIndexNumber = body?.indexNumber ? String(body.indexNumber) : null;
+  const litDateFiled = body?.dateFiled ? String(body.dateFiled) : null;
 
   if (!Number.isFinite(matterId) || matterId <= 0) {
     return NextResponse.json({ ok: false, error: "A valid matter is required." }, { status: 400 });
@@ -218,6 +222,19 @@ export async function POST(req: NextRequest) {
       insurerName: learnInsurerName,
       createdById: identity?.email || identity?.userId || null,
     } as any);
+  } catch {
+    // non-fatal
+  }
+
+  // Populate the lawsuit's Date Filed / Index Number from the scan — ONLY when those are blank today
+  // (reference-value rule: scans never override existing values). Best-effort.
+  try {
+    await populateEmptyLawsuitLitigationFields(prisma, {
+      matterId,
+      indexNumber: litIndexNumber,
+      dateFiled: litDateFiled,
+      actorEmail: identity?.email || null,
+    });
   } catch {
     // non-fatal
   }
