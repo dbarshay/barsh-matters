@@ -6,10 +6,22 @@
 // is the primary action; the local record is best-effort. Gated by the caller (flag + operator confirm).
 
 import { prisma } from "@/lib/prisma";
-import { assertGraphDraftEnvironmentReady, graphApiBase, graphFetchJson } from "@/lib/graph/client";
+import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
+import { getGraphAuthReadiness } from "@/lib/graph/config";
 import { MATTER_EMAIL_SIMPLE_ATTACHMENT_BYTES, type ResolvedFiledAttachment } from "@/lib/graph/matterEmailAttachments";
 
+/** App creds ready (tenant/client/secret) + a concrete user mailbox. There is no firm mailbox fallback. */
+function resolveActorMailbox(mailboxUserId?: string | null): { ok: true; mailbox: string } | { ok: false; error: string } {
+  const readiness = getGraphAuthReadiness();
+  if (!readiness.appOnlyTokenConfigReady) return { ok: false, error: "Microsoft Graph app credentials are not configured (tenant/client/secret)." };
+  const mailbox = String(mailboxUserId || "").trim();
+  if (!mailbox.includes("@")) return { ok: false, error: "Could not determine your mailbox from your session. Sign in with your own account." };
+  return { ok: true, mailbox };
+}
+
 export type SendMatterEmailInput = {
+  /** The sending user's own BRL mailbox (their account email). Required — there is no firm mailbox. */
+  mailboxUserId?: string | null;
   matterId?: number | null;
   matterDisplayNumber?: string | null;
   masterLawsuitId?: string | null;
@@ -129,6 +141,8 @@ async function attachFiledDocumentToDraft(params: {
 }
 
 export type SaveDraftInput = {
+  /** The user's own BRL mailbox (their account email). Required — there is no firm mailbox. */
+  mailboxUserId?: string | null;
   matterId?: number | null;
   matterDisplayNumber?: string | null;
   masterLawsuitId?: string | null;
@@ -148,9 +162,9 @@ export async function saveMatterEmailDraft(input: SaveDraftInput): Promise<SendM
   const to = (input.to || []).map((e) => e.trim()).filter(Boolean);
   const cc = (input.cc || []).map((e) => e.trim()).filter(Boolean);
 
-  const env = assertGraphDraftEnvironmentReady();
-  if (!env.ok) return { ok: false, error: env.error };
-  const mailbox = env.mailboxUserId;
+  const actor = resolveActorMailbox(input.mailboxUserId);
+  if (!actor.ok) return { ok: false, error: actor.error };
+  const mailbox = actor.mailbox;
   const base = graphApiBase();
   const subject = ensureMatterSubjectTag(input.subject, input.matterDisplayNumber);
 
@@ -232,9 +246,9 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
   // On a reply, recipients default to the original sender (createReply pre-fills them), so To is optional.
   if (!isReply && to.length === 0) return { ok: false, error: "At least one recipient (To) is required." };
 
-  const env = assertGraphDraftEnvironmentReady();
-  if (!env.ok) return { ok: false, error: env.error };
-  const mailbox = env.mailboxUserId;
+  const actor = resolveActorMailbox(input.mailboxUserId);
+  if (!actor.ok) return { ok: false, error: actor.error };
+  const mailbox = actor.mailbox;
   const base = graphApiBase();
 
   let msg: any = {};

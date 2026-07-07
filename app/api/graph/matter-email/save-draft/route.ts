@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequestAuthorized, adminUnauthorizedJson, adminSessionIdentityDiagnostics } from "@/lib/adminAuth";
 import { isMatterEmailEnabled, MATTER_EMAIL_DISABLED_MESSAGE } from "@/lib/graph/matterEmailConfig";
 import { saveMatterEmailDraft } from "@/lib/graph/matterEmail";
+import { getRequestUserMailbox } from "@/lib/graph/userMailbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,7 +46,11 @@ export async function POST(req: NextRequest) {
     actorEmail = null;
   }
 
+  const userMailbox = getRequestUserMailbox(req);
+  if (!userMailbox) return NextResponse.json({ ok: false, error: "Could not determine your mailbox. Sign in with your own account." }, { status: 403 });
+
   const result = await saveMatterEmailDraft({
+    mailboxUserId: userMailbox,
     matterId: resolvedMatterId,
     matterDisplayNumber,
     masterLawsuitId,

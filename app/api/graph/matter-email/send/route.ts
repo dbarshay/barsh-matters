@@ -4,6 +4,7 @@ import { isAdminRequestAuthorized, adminUnauthorizedJson, adminSessionIdentityDi
 import { isMatterEmailEnabled, MATTER_EMAIL_DISABLED_MESSAGE } from "@/lib/graph/matterEmailConfig";
 import { sendMatterEmail } from "@/lib/graph/matterEmail";
 import { resolveFiledDocumentAttachments } from "@/lib/graph/matterEmailAttachments";
+import { getRequestUserMailbox } from "@/lib/graph/userMailbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,6 +63,10 @@ export async function POST(req: NextRequest) {
     actorEmail = null;
   }
 
+  // The email is sent from the logged-in user's OWN mailbox (no shared firm mailbox).
+  const userMailbox = getRequestUserMailbox(req);
+  if (!userMailbox) return NextResponse.json({ ok: false, error: "Could not determine your mailbox. Sign in with your own account." }, { status: 403 });
+
   // Phase C — resolve + authorize + download any requested filed-document attachments. Scoped to this
   // matter/lawsuit server-side, so a caller can never attach a document filed to a different file.
   const attachmentFiledDocumentIds = toIdList(body?.attachmentFiledDocumentIds);
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await sendMatterEmail({
+    mailboxUserId: userMailbox,
     matterId: resolvedMatterId,
     matterDisplayNumber,
     masterLawsuitId,

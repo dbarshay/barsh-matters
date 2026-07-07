@@ -831,6 +831,28 @@ model EmailMessage {
   @@index([deletedLocal])
 }
 
+// Microsoft Graph change-notification subscription (real-time inbound email). One active row per
+// mailbox resource; renewed before expiry by the webhook subscribe/renew endpoint (self-healing).
+model GraphSubscription {
+  id                 String    @id @default(cuid())
+  provider           String    @default("microsoft_graph")
+  subscriptionId     String    @unique
+  resource           String
+  changeType         String
+  notificationUrl    String
+  clientState        String?
+  mailboxUserId      String?
+  expirationDateTime DateTime
+  status             String    @default("active")
+  lastRenewedAt      DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([provider])
+  @@index([status])
+  @@index([expirationDateTime])
+}
+
 model EmailAttachment {
   id                      String       @id @default(cuid())
   messageId               String

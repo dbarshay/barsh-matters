@@ -31,6 +31,9 @@ type Msg = {
   hasAttachments: boolean | null;
   bodyHtml: string | null;
   bodyPreview: string | null;
+  matterId?: number | null;
+  matterDisplayNumber?: string | null;
+  masterLawsuitId?: string | null;
 };
 
 type FolderKey = "inbox" | "sent" | "drafts" | "deleted";
@@ -63,6 +66,9 @@ function senderLabel(m: Msg): string {
   const to = asList(m.toRecipients);
   return to.length ? `To: ${to[0]}${to.length > 1 ? ` +${to.length - 1}` : ""}` : "(no recipient)";
 }
+function matterTag(m: Msg): string {
+  return String(m.matterDisplayNumber || m.masterLawsuitId || "").trim();
+}
 function whenOf(m: Msg): number {
   const raw = m.receivedAt || m.sentAt;
   const t = raw ? new Date(raw).getTime() : 0;
@@ -88,14 +94,18 @@ export default function MatterEmailInbox({
   masterLawsuitId,
   matterDisplayNumber,
   displayNumber,
+  scope,
   onChanged,
 }: {
   matterId?: number | null;
   masterLawsuitId?: string | null;
   matterDisplayNumber?: string | null;
   displayNumber?: string | null;
+  /** "all" = firm-wide view of the logged-in user's own mailbox (header Emails button). */
+  scope?: "all";
   onChanged?: () => void;
 }) {
+  const isGlobal = scope === "all";
   const [messages, setMessages] = useState<Msg[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [folder, setFolder] = useState<FolderKey>("inbox");
@@ -105,11 +115,12 @@ export default function MatterEmailInbox({
   const [busy, setBusy] = useState(false);
 
   const query = useMemo(() => {
+    if (isGlobal) return "scope=all";
     if (Number.isFinite(matterId as number) && (matterId as number) > 0) return `matterId=${matterId}`;
     if (masterLawsuitId) return `masterLawsuitId=${encodeURIComponent(masterLawsuitId)}`;
     if (matterDisplayNumber) return `matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}`;
     return "";
-  }, [matterId, masterLawsuitId, matterDisplayNumber]);
+  }, [isGlobal, matterId, masterLawsuitId, matterDisplayNumber]);
 
   const load = useCallback(async () => {
     if (!query) return;
@@ -211,14 +222,18 @@ export default function MatterEmailInbox({
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#fff" }} data-barsh-email-inbox="true">
       {/* Command bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderBottom: "1px solid #e6e8eb", background: "#faf9f8", flex: "0 0 auto" }}>
-        <button
-          type="button"
-          onClick={() => { setComposing(true); setSelectedId(null); setReply(null); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "none", borderRadius: 4, background: "#0078d4", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 16px", cursor: "pointer" }}
-          data-barsh-email-newmail="true"
-        >
-          <span aria-hidden>✉️</span> New Mail
-        </button>
+        {isGlobal ? (
+          <span style={{ fontSize: 13, fontWeight: 800, color: "#00346e" }}>My Matter Email</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setComposing(true); setSelectedId(null); setReply(null); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "none", borderRadius: 4, background: "#0078d4", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 16px", cursor: "pointer" }}
+            data-barsh-email-newmail="true"
+          >
+            <span aria-hidden>✉️</span> New Mail
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         <button
           type="button"
@@ -294,8 +309,11 @@ export default function MatterEmailInbox({
                   <div style={{ fontSize: 13, fontWeight: unread ? 800 : 600, color: unread ? "#111827" : "#33415a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.subject || "(no subject)"}
                   </div>
-                  <div style={{ fontSize: 12, color: "#8a97a8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {m.bodyPreview || ""}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {isGlobal && matterTag(m) ? (
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 900, color: "#00346e", background: "#e4ecfb", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>{matterTag(m)}</span>
+                    ) : null}
+                    <span style={{ fontSize: 12, color: "#8a97a8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.bodyPreview || ""}</span>
                   </div>
                 </div>
               );
@@ -328,7 +346,12 @@ export default function MatterEmailInbox({
               </div>
 
               <div style={{ borderBottom: "1px solid #eef0f2", paddingBottom: 10 }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: "#00346e" }}>From: {senderLabel(selected)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#00346e", flex: 1 }}>From: {senderLabel(selected)}</div>
+                  {matterTag(selected) ? (
+                    <span style={{ fontSize: 11, fontWeight: 900, color: "#00346e", background: "#e4ecfb", borderRadius: 5, padding: "2px 7px", whiteSpace: "nowrap" }}>{matterTag(selected)}</span>
+                  ) : null}
+                </div>
                 <div style={{ fontSize: 12, color: "#5a6b80", marginTop: 3 }}>{selected.subject || "(no subject)"}</div>
                 <div style={{ fontSize: 11, color: "#8a97a8", marginTop: 2 }}>{timeLabel(selected)}</div>
               </div>
@@ -336,9 +359,9 @@ export default function MatterEmailInbox({
               {reply && reply.msg.id === selected.id ? (
                 <MatterEmailCompose
                   key={`${reply.mode}-${selected.id}`}
-                  matterId={numericMatterId}
-                  masterLawsuitId={masterLawsuitId ?? null}
-                  displayNumber={displayNumber ?? matterDisplayNumber ?? null}
+                  matterId={selected.matterId ?? numericMatterId}
+                  masterLawsuitId={selected.masterLawsuitId ?? masterLawsuitId ?? null}
+                  displayNumber={matterTag(selected) || displayNumber || matterDisplayNumber || null}
                   replyToGraphMessageId={selected.graphMessageId}
                   initialTo={replyContext(reply.mode, selected).to}
                   initialCc={replyContext(reply.mode, selected).cc}
@@ -358,8 +381,8 @@ export default function MatterEmailInbox({
                 <div style={{ marginTop: 4 }}>
                   <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>Attachments</div>
                   <InboundAttachmentReview
-                    matterId={numericMatterId}
-                    masterLawsuitId={masterLawsuitId ?? null}
+                    matterId={selected.matterId ?? numericMatterId}
+                    masterLawsuitId={selected.masterLawsuitId ?? masterLawsuitId ?? null}
                     conversationId={selected.conversationId}
                     onChanged={() => { onChanged?.(); }}
                   />

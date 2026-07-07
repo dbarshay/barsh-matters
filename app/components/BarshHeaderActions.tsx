@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import GlobalEmailInboxButton from "@/app/components/GlobalEmailInboxButton";
 
 type BarshHeaderActionsProps = {
   onAdministratorClick?: () => void;
@@ -58,6 +59,8 @@ export default function BarshHeaderActions({ onAdministratorClick }: BarshHeader
 
   return (
     <nav aria-label="Barsh Matters header actions" style={actionRowStyle}>
+      <GlobalEmailInboxButton />
+
       <a href="/lawsuits" title="Open the top-level Create Lawsuits workflow." style={baseActionStyle}>
         <span>Create Lawsuits</span>
       </a>

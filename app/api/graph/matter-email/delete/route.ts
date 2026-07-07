@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminRequestAuthorized, adminUnauthorizedJson } from "@/lib/adminAuth";
 import { isMatterEmailEnabled, MATTER_EMAIL_DISABLED_MESSAGE } from "@/lib/graph/matterEmailConfig";
 import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
-import { getGraphAuthConfig } from "@/lib/graph/config";
+import { getRequestUserMailbox } from "@/lib/graph/userMailbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
   });
   if (!rec) return NextResponse.json({ ok: false, error: "Message not found." }, { status: 404 });
 
-  const mailbox = String(rec.mailboxUserId || (getGraphAuthConfig() as any)?.mailboxUserId || "").trim();
+  // Act on the message's own mailbox, falling back to the acting user's mailbox (no firm mailbox).
+  const mailbox = String(rec.mailboxUserId || getRequestUserMailbox(req) || "").trim();
   const graphMessageId = String(rec.graphMessageId || "").trim();
 
   // Move the Graph message to Deleted Items (reversible). Graph DELETE /messages/{id} soft-deletes.

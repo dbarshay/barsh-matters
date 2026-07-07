@@ -6,6 +6,8 @@ import { createMatterAuditLogEntry } from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { buildAdminUserSignerProfileWritePayloadPhase7 } from "@/src/lib/admin-users/admin-user-signer-profile-write-contract-phase7";
 import { normalizeE164Phone } from "@/src/lib/auth/twilio-verify-2fa";
+import { ensureSubscriptionForMailbox } from "@/lib/graph/emailSubscription";
+import { isEmailWebhookEnabled } from "@/lib/graph/webhookConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -309,6 +311,16 @@ export async function POST(req: NextRequest) {
 
       return user;
     });
+
+    // Auto-provision this user's real-time email subscription (their own mailbox). Best-effort — the
+    // renewal cron also ensures every active user has a live subscription, so this just makes it instant.
+    try {
+      if (isEmailWebhookEnabled() && created?.email) {
+        await ensureSubscriptionForMailbox(String(created.email).toLowerCase());
+      }
+    } catch {
+      /* non-fatal — the every-6h subscribe cron will provision this mailbox */
+    }
 
     return NextResponse.json({
       ok: true,

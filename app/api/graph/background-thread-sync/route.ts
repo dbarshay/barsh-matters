@@ -197,27 +197,25 @@ async function runBackgroundThreadSync(req: NextRequest) {
     );
   }
 
-  if (!readiness.readyForFutureReadOnlySync) {
+  // Per-user: app creds (tenant/client/secret) are enough — each thread carries its own user mailbox.
+  if (!readiness.appOnlyTokenConfigReady) {
     return NextResponse.json(
       {
         ...base,
         ok: false,
         graphReadiness: readiness,
         error:
-          "Microsoft Graph read-only sync is not configured.  Configure tenant ID, client ID, client secret, and mailbox user before running background thread sync.",
+          "Microsoft Graph read-only sync is not configured.  Configure tenant ID, client ID, and client secret before running background thread sync.",
       },
       { status: 503 }
     );
   }
 
+  // Sync every matter/lawsuit thread using its OWN mailbox (no shared firm mailbox).
   const threads = await prisma.emailThread.findMany({
     where: {
       provider: PROVIDER,
       conversationId: { not: "" },
-      OR: [
-        { mailboxUserPrincipalName: config.mailboxUserId },
-        { mailboxUserPrincipalName: null },
-      ],
     },
     orderBy: [{ latestMessageAt: "desc" }, { updatedAt: "desc" }],
     take: threadLimit,
@@ -225,6 +223,7 @@ async function runBackgroundThreadSync(req: NextRequest) {
       id: true,
       provider: true,
       mailboxUserPrincipalName: true,
+      mailboxUserId: true,
       conversationId: true,
       subject: true,
       matterId: true,
@@ -250,9 +249,12 @@ async function runBackgroundThreadSync(req: NextRequest) {
   for (const thread of threads) {
     const conversationId = clean(thread.conversationId);
     if (!conversationId) continue;
+    // Each thread belongs to a specific user's mailbox — query that mailbox.
+    const threadMailbox = clean(thread.mailboxUserPrincipalName) || clean((thread as any).mailboxUserId);
+    if (!threadMailbox) continue;
 
     const graphResult = await graphFetchJson({
-      url: graphThreadMessagesUrl(config.mailboxUserId, conversationId, messageLimit),
+      url: graphThreadMessagesUrl(threadMailbox, conversationId, messageLimit),
       method: "GET",
     });
 
@@ -295,7 +297,7 @@ async function runBackgroundThreadSync(req: NextRequest) {
     }
 
     const persisted = await persistGraphThreadSyncMessages({
-      mailboxUserId: config.mailboxUserId,
+      mailboxUserId: threadMailbox,
       conversationId,
       messages,
       context: threadContext(thread),
@@ -320,7 +322,7 @@ async function runBackgroundThreadSync(req: NextRequest) {
         for (const m of inboundMessages) {
           if (!m.graphMessageId) continue;
           const r = await ingestInboundMessageAttachments(prisma, {
-            mailboxUserId: m.mailboxUserId || config.mailboxUserId,
+            mailboxUserId: m.mailboxUserId || threadMailbox,
             graphMessageId: m.graphMessageId,
             localMessageId: m.id,
             context: {
