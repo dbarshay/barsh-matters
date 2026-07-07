@@ -44,6 +44,7 @@ export default function InboundAttachmentReview({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pick, setPick] = useState<Record<string, { folderKey: string; titleKey: string }>>({});
+  const [preview, setPreview] = useState<{ id: string; name: string } | null>(null);
 
   const terminalFolders = useMemo(() => listTerminalFolders(), []);
 
@@ -207,6 +208,14 @@ export default function InboundAttachmentReview({
               <div style={{ flex: 1 }} />
               <button
                 type="button"
+                onClick={() => setPreview({ id: it.id, name: it.name || "attachment" })}
+                title="Preview this document without leaving the review panel"
+                style={{ border: "1px solid #00346e", borderRadius: 999, background: "#eef4fb", color: "#00346e", fontSize: 12, fontWeight: 900, padding: "7px 12px", cursor: "pointer" }}
+              >
+                Preview
+              </button>
+              <button
+                type="button"
                 onClick={() => void fileItem(it)}
                 disabled={busyId === it.id || !sel.folderKey || !sel.titleKey}
                 style={{ border: "1px solid #00346e", borderRadius: 999, background: busyId === it.id ? "#c7d2e4" : "#00346e", color: "#fff", fontSize: 12, fontWeight: 900, padding: "7px 14px", cursor: busyId === it.id ? "default" : "pointer" }}
@@ -222,9 +231,39 @@ export default function InboundAttachmentReview({
                 Dismiss
               </button>
             </div>
+
+            {preview?.id === it.id && (
+              <div style={{ marginTop: 4, border: "1px solid #dbe4f0", borderRadius: 10, overflow: "hidden", background: "#f8fafc" }} data-barsh-inbound-attachment-preview="true">
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#eef4fb", borderBottom: "1px solid #dbe4f0" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#00346e" }}>Preview</span>
+                  <div style={{ flex: 1 }} />
+                  <a
+                    href={`/api/graph/inbound-attachments/preview?attachmentId=${encodeURIComponent(it.id)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: 12, fontWeight: 800, color: "#00346e" }}
+                  >
+                    Open in new tab
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setPreview(null)}
+                    style={{ border: "1px solid #cdd6e0", borderRadius: 6, background: "#fff", color: "#26364a", fontSize: 12, fontWeight: 800, padding: "3px 10px", cursor: "pointer" }}
+                  >
+                    Close
+                  </button>
+                </div>
+                <iframe
+                  title={`Preview of ${it.name || "attachment"}`}
+                  src={`/api/graph/inbound-attachments/preview?attachmentId=${encodeURIComponent(it.id)}`}
+                  style={{ width: "100%", height: 520, border: "none", display: "block" }}
+                />
+              </div>
+            )}
           </div>
         );
       })}
+
     </div>
   );
 }
