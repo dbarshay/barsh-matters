@@ -48,6 +48,9 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
   { keywords: ["explanation of benefits", "explanation of review", "explanation of reimbursement", "eob", "eor"], folderKey: "claim_documents.denials", titleKey: "eob_eor", confidence: 0.7 },
 
   // --- Proof of mailing (ABOVE bills — fax-ack/POM docs mention "aob" and would mis-file as AOB) ---
+  // Provider superbill cover sheet ("# of superbills attached") → Miscellaneous / Superbill.
+  { keywords: ["superbills attached", "of superbills attached", "# of superbills"], folderKey: "claim_documents.miscellaneous", titleKey: "superbill", confidence: 0.72 },
+
   { keywords: ["proof of mailing", "proof of submission", "pom id", "certificate of mailing", "certified mail", "return receipt", "usps tracking", "fax confirmation", "transmission result", "transmission report", "fax acknowledge", "fax acknowledgment"], folderKey: "claim_documents.bills", titleKey: "proof_of_mailing", confidence: 0.74 },
 
   // --- Bills: NF-3, CMS-1500/HCFA, UB-04, superbill ---
