@@ -46,7 +46,7 @@ check("components/email/MatterEmailInbox.tsx", ['scope?: "all"', "isGlobal", "ma
 
 // Per-user real-time: one subscription per active user mailbox, derived per-notification, auto-provisioned.
 check("lib/graph/emailSubscription.ts", ["ensureSubscriptionForMailbox", "listActiveUserMailboxes", "resourceForMailbox", "ensureEmailSubscription"]);
-check("app/api/graph/webhook/route.ts", ["mailboxFromResource", "mailbox }"]);
+check("app/api/graph/webhook/route.ts", ["mailboxForNotification", "subscriptionId"]);
 check("lib/graph/webhookMessageSync.ts", ["input.mailbox", "matterTagFromSubject", "[BRL"]);
 check("app/api/admin/users/create/route.ts", ["ensureSubscriptionForMailbox"]);
 

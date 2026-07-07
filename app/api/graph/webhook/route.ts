@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { isEmailWebhookEnabled, getWebhookClientState } from "@/lib/graph/webhookConfig";
 import { processChangedMessage } from "@/lib/graph/webhookMessageSync";
 
@@ -20,10 +21,21 @@ function tokenResponse(token: string) {
   return new NextResponse(token, { status: 200, headers: { "Content-Type": "text/plain" } });
 }
 
-// Extract the owning mailbox from a notification resource path, e.g.
-// "Users/user@brl.com/Messages/AAA..." or "/users/user@brl.com/messages/AAA..." -> "user@brl.com".
-function mailboxFromResource(resource: string): string {
-  const m = /users\/([^/]+)\/messages/i.exec(resource || "");
+// Resolve the owning mailbox for a notification. Graph identifies the mailbox in the resource path by
+// the user's OBJECT GUID (not their email), so we look the email up by subscriptionId (which we stored
+// with the mailbox at subscribe time). Fall back to parsing the resource if the row is missing.
+async function mailboxForNotification(n: any): Promise<string> {
+  const subscriptionId = String(n?.subscriptionId || "").trim();
+  if (subscriptionId) {
+    try {
+      const row = await (prisma as any).graphSubscription.findUnique({ where: { subscriptionId } });
+      const mb = String(row?.mailboxUserId || "").trim().toLowerCase();
+      if (mb.includes("@")) return mb;
+    } catch {
+      /* fall through */
+    }
+  }
+  const m = /users\/([^/]+)\/messages/i.exec(String(n?.resource || ""));
   return m ? decodeURIComponent(m[1]).trim().toLowerCase() : "";
 }
 
@@ -62,9 +74,8 @@ export async function POST(req: NextRequest) {
 
     const graphMessageId = String(n?.resourceData?.id || n?.resourceData?.["@odata.id"] || "").trim();
     const changeType = String(n?.changeType || "").trim();
-    // The mailbox owning this message comes from the notification resource, e.g.
-    // "Users/user@brl.com/Messages/AAA..." — this is what makes the webhook per-user.
-    const mailbox = mailboxFromResource(String(n?.resource || ""));
+    // The mailbox owning this message — resolved by subscriptionId (canonical email). Per-user.
+    const mailbox = await mailboxForNotification(n);
     if (!graphMessageId || !mailbox) continue;
     const key = `${graphMessageId}:${changeType}`;
     if (seen.has(key)) continue;
