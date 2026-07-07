@@ -381,7 +381,9 @@ function latestGraphMessageDate(messages: PersistGraphThreadSyncMessage[]): Date
 
 function graphMessageDirection(message: PersistGraphThreadSyncMessage, mailboxUserPrincipalName: string): string {
   if (message.isDraft) return "outbound";
-  const fromEmail = graphFromEmail(message.from).toLowerCase();
+  // Some callers pre-extract the address into `fromEmail` and pass `from` as a display string; prefer
+  // the pre-extracted address, falling back to parsing the raw `from` object.
+  const fromEmail = (clean((message as any).fromEmail) || graphFromEmail(message.from)).toLowerCase();
   const mailbox = clean(mailboxUserPrincipalName).toLowerCase();
   if (fromEmail && mailbox && fromEmail === mailbox) return "outbound";
   // Exchange returns the mailbox's OWN messages (its sent copies) with an X.500 legacy DN
@@ -504,7 +506,9 @@ export async function persistGraphThreadSyncMessages(
     const sentAt = dateOrNull(message.sentAt);
     const receivedAt = dateOrNull(message.receivedAt);
     const from = graphFromDisplay(message.from);
-    const fromEmail = graphFromEmail(message.from);
+    // Prefer a pre-extracted address (background sync flattens `from` to a display string and provides
+    // `fromEmail` separately); otherwise parse the raw `from` object (manual thread-sync path).
+    const fromEmail = clean((message as any).fromEmail) || graphFromEmail(message.from);
     const bodyPreview = clean(message.bodyPreview);
     const bodyText = clean(message.bodyText);
     const bodyHtml = clean(message.bodyHtml);
