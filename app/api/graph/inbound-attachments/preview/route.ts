@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminRequestAuthorized, adminUnauthorizedJson } from "@/lib/adminAuth";
 import { isInboundAttachmentOcrEnabled, INBOUND_ATTACHMENT_OCR_DISABLED_MESSAGE } from "@/lib/graph/inboundOcrConfig";
 import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
+import { getGraphAuthConfig } from "@/lib/graph/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,9 @@ export async function GET(req: NextRequest) {
   });
   if (!rec) return NextResponse.json({ ok: false, error: "Attachment not found." }, { status: 404 });
 
-  const mailbox = String(rec.message?.mailboxUserId || "").trim();
+  // Graph calls target the app's configured mailbox; per-message mailboxUserId is often null on synced
+  // rows (persist stores mailboxUserPrincipalName), so fall back to the configured mailbox.
+  const mailbox = String(rec.message?.mailboxUserId || (getGraphAuthConfig() as any)?.mailboxUserId || "").trim();
   const graphMessageId = String(rec.message?.graphMessageId || "").trim();
   const graphAttachmentId = String(rec.graphAttachmentId || "").trim();
   if (!mailbox || !graphMessageId || !graphAttachmentId) {

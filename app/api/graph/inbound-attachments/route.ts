@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminRequestAuthorized, adminUnauthorizedJson, adminSessionIdentityDiagnostics } from "@/lib/adminAuth";
 import { isInboundAttachmentOcrEnabled, INBOUND_ATTACHMENT_OCR_DISABLED_MESSAGE } from "@/lib/graph/inboundOcrConfig";
 import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
+import { getGraphAuthConfig } from "@/lib/graph/config";
 import { getClioStorageWriteGuard } from "@/lib/clioStorageWriteGuard";
 import { resolveClioMatterFolderWithGuard } from "@/lib/clioFolderResolverExecutor";
 import { uploadBufferToClioMatterDocuments } from "@/lib/clioDocumentUpload";
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const mailbox = String(record.message?.mailboxUserId || "").trim();
+  const mailbox = String(record.message?.mailboxUserId || (getGraphAuthConfig() as any)?.mailboxUserId || "").trim();
   const graphMessageId = String(record.message?.graphMessageId || "").trim();
   const graphAttachmentId = String(record.graphAttachmentId || "").trim();
   if (!mailbox || !graphMessageId || !graphAttachmentId) {
