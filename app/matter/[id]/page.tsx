@@ -14,6 +14,7 @@ import BarshModal from "@/app/components/BarshModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
 import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
+import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -669,14 +670,8 @@ const activeGroupKey =
   const [expandedEmailThreadId, setExpandedEmailThreadId] = useState<string | null>(null);
   const [expandedEmailMessageId, setExpandedEmailMessageId] = useState<string | null>(null);
   const [matterViewEmailsPopupOpen, setMatterViewEmailsPopupOpen] = useState(false);
-  // Compose (Phase A: native matter email send via Graph).
+  // Compose (Phase A: native matter email send via Graph). The Outlook-style form lives in MatterEmailCompose.
   const [composeOpen, setComposeOpen] = useState(false);
-  const [composeTo, setComposeTo] = useState("");
-  const [composeCc, setComposeCc] = useState("");
-  const [composeSubject, setComposeSubject] = useState("");
-  const [composeBody, setComposeBody] = useState("");
-  const [composeSending, setComposeSending] = useState(false);
-  const [composeMsg, setComposeMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [matterClioDocumentsLoading, setMatterClioDocumentsLoading] = useState(false);
   const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
   const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
@@ -1488,7 +1483,7 @@ const activeGroupKey =
   const [paymentReceiptsLoading, setPaymentReceiptsLoading] = useState(false);
   const [paymentReceipts, setPaymentReceipts] = useState<any[]>([]);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
-  const [directActionGroup, setDirectActionGroup] = useState<"payments" | "documents" | null>(null);
+  const [directActionGroup, setDirectActionGroup] = useState<"payments" | "documents" | "emails" | null>(null);
   const [directPaymentsPanelOpen, setDirectPaymentsPanelOpen] = useState(false);
   const [paymentAmountInput, setPaymentAmountInput] = useState("");
   const [paymentDateInput, setPaymentDateInput] = useState(() => formatPaymentDateYYYYMMDD(new Date()));
@@ -5468,78 +5463,24 @@ function openClaimAmountEditDialog() {
     return textValue(threads[0]?.conversationId);
   }
 
-  async function sendComposedMatterEmail() {
-    const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
-    const to = composeTo.trim();
-    if (!to) { setComposeMsg({ kind: "err", text: "Enter at least one recipient." }); return; }
-    if (!composeSubject.trim()) { setComposeMsg({ kind: "err", text: "Enter a subject." }); return; }
-    const ok = await bmConfirm({
-      title: "Send email",
-      message: `Send this email to ${to}${composeCc.trim() ? ` (cc ${composeCc.trim()})` : ""} from the firm mailbox? It will be filed to ${displayNumber || "this matter"}.`,
-      submitLabel: "Send",
-    });
-    if (!ok) return;
-    setComposeSending(true);
-    setComposeMsg(null);
-    try {
-      const res = await fetch("/api/graph/matter-email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          matterId: resolvedNumericMatterId(),
-          matterDisplayNumber: displayNumber,
-          to: composeTo,
-          cc: composeCc,
-          subject: composeSubject,
-          body: composeBody.replace(/\n/g, "<br>"),
-          confirmSend: true,
-        }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (j?.ok) {
-        setComposeMsg({ kind: "ok", text: `Sent to ${(j.sentTo || []).join(", ")}.` });
-        setComposeTo(""); setComposeCc(""); setComposeSubject(""); setComposeBody("");
-        setComposeOpen(false);
-        setEmailThreadPreviewResult(null); // refresh threads to show the new outbound message
-      } else {
-        setComposeMsg({ kind: "err", text: j?.error || "Send failed." });
-      }
-    } catch (err: any) {
-      setComposeMsg({ kind: "err", text: err?.message || "Send request failed." });
-    } finally {
-      setComposeSending(false);
-    }
-  }
-
   function renderMatterEmailComposePanel() {
     const displayNumber = textValue(matter?.displayNumber || matter?.display_number || matterId);
-    const inputStyle: React.CSSProperties = { width: "100%", padding: "7px 10px", border: "1px solid #cdd6e0", borderRadius: 6, fontSize: 13 };
     return (
-      <div style={{ border: "1px solid #e3e9f0", borderRadius: 10, padding: 14, marginBottom: 16, background: "#f8fafc" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: composeOpen ? 10 : 0 }}>
           <div style={{ fontWeight: 900, color: "#00346e" }}>Compose email</div>
-          <button type="button" onClick={() => { setComposeOpen((v) => !v); setComposeMsg(null); if (!composeOpen && !composeSubject) setComposeSubject(displayNumber ? `[${displayNumber}] ` : ""); }}
+          <button type="button" onClick={() => setComposeOpen((v) => !v)}
             style={{ border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", padding: "6px 12px", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
             {composeOpen ? "Close" : "New email"}
           </button>
         </div>
         {composeOpen && (
-          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-            <label style={{ fontSize: 12, color: "#5a6b80" }}>To<input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="name@example.com, name2@…" style={inputStyle} /></label>
-            <label style={{ fontSize: 12, color: "#5a6b80" }}>Cc<input value={composeCc} onChange={(e) => setComposeCc(e.target.value)} placeholder="optional" style={inputStyle} /></label>
-            <label style={{ fontSize: 12, color: "#5a6b80" }}>Subject<input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} style={inputStyle} /></label>
-            <label style={{ fontSize: 12, color: "#5a6b80" }}>Message<textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={7} style={{ ...inputStyle, resize: "vertical" }} /></label>
-            <div style={{ fontSize: 11, color: "#5a6b80" }}>The matter tag {displayNumber ? `[${displayNumber}]` : ""} is kept on the subject so replies stay threaded to this matter.</div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button type="button" onClick={() => void sendComposedMatterEmail()} disabled={composeSending}
-                style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 800, fontSize: 13, cursor: composeSending ? "default" : "pointer", opacity: composeSending ? 0.6 : 1 }}>
-                {composeSending ? "Sending…" : "Send"}
-              </button>
-              {composeMsg && <span style={{ fontSize: 12, color: composeMsg.kind === "ok" ? "#137333" : "#b00020" }}>{composeMsg.text}</span>}
-            </div>
-          </div>
+          <MatterEmailCompose
+            matterId={resolvedNumericMatterId()}
+            displayNumber={displayNumber}
+            onSent={() => { setEmailThreadPreviewResult(null); }}
+          />
         )}
-        {!composeOpen && composeMsg && <div style={{ marginTop: 8, fontSize: 12, color: composeMsg.kind === "ok" ? "#137333" : "#b00020" }}>{composeMsg.text}</div>}
       </div>
     );
   }
@@ -9626,7 +9567,7 @@ function openClaimAmountEditDialog() {
                     data-barsh-direct-action-tab-row="true"
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                       gap: 8,
                       alignItems: "stretch",
                     }}
@@ -9634,6 +9575,7 @@ function openClaimAmountEditDialog() {
                     {[
                       { key: "payments", label: "Payments", fill: "#16a34a", soft: "#f0fdf4", text: "#166534" },
                       { key: "documents", label: "Documents", fill: "#8b5e3c", soft: "#f8efe7", text: "#7c4a22" },
+                      { key: "emails", label: "Emails", fill: "#00346e", soft: "#eef4fb", text: "#00346e" },
                     ].map(({ key, label, fill, soft, text }) => (
                       <button
                         key={key}
@@ -9790,29 +9732,6 @@ function openClaimAmountEditDialog() {
                         </button>
                         <button
                           type="button"
-                          title="Open read-only local email and Microsoft Graph thread records for this matter."
-                          onClick={() => {
-                            setActiveWorkspaceTab("email_threads");
-                            openMatterViewEmailsPopup();
-                          }}
-                          style={{
-                            minHeight: 36,
-                            border: "1px solid #8b5e3c",
-                            borderRadius: 999,
-                            background: "#f8efe7",
-                            color: "#7c4a22",
-                            fontSize: 12,
-                            fontWeight: 950,
-                            cursor: "pointer",
-                            padding: "0 14px",
-                            whiteSpace: "nowrap",
-                          }}
-                          data-barsh-direct-view-emails-button="true"
-                        >
-                          View Emails
-                        </button>
-                        <button
-                          type="button"
                           title="Open the Direct Matter document generation preview popup."
                           onClick={launchMatterDocumentGenerationDialog}
                           style={{
@@ -9830,6 +9749,29 @@ function openClaimAmountEditDialog() {
                           data-barsh-direct-generate-documents-button="true"
                         >
                           Generate Documents
+                        </button>
+                      </div>
+                    )}
+
+                    {directActionGroup === "emails" && (
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-direct-action-section="emails">
+                        <button
+                          type="button"
+                          title="View this matter's email threads (local + Microsoft Graph)."
+                          onClick={() => { setComposeOpen(false); openMatterViewEmailsPopup(); }}
+                          style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#eef4fb", color: "#00346e", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px", whiteSpace: "nowrap" }}
+                          data-barsh-direct-view-emails-button="true"
+                        >
+                          View Emails
+                        </button>
+                        <button
+                          type="button"
+                          title="Compose and send a new email from this matter."
+                          onClick={() => { setComposeOpen(true); openMatterViewEmailsPopup(); }}
+                          style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px", whiteSpace: "nowrap" }}
+                          data-barsh-direct-send-email-button="true"
+                        >
+                          Send Email
                         </button>
                       </div>
                     )}

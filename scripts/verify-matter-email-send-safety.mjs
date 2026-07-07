@@ -30,12 +30,26 @@ check("app/api/graph/matter-email/send/route.ts", [
   "sendMatterEmail(",
 ]);
 
-check("app/matter/[id]/page.tsx", [
-  "renderMatterEmailComposePanel",
+// Reusable Outlook-style compose component posts to the send route with confirmSend.
+check("components/email/MatterEmailCompose.tsx", [
   "/api/graph/matter-email/send",
   "confirmSend: true",
   "bmConfirm(",
 ]);
 
+// Dedicated Emails action group on both pages (separate from Documents), with View + Send triggers.
+check("app/matter/[id]/page.tsx", [
+  'label: "Emails"',
+  'directActionGroup === "emails"',
+  "data-barsh-direct-send-email-button",
+  "MatterEmailCompose",
+]);
+check("app/matters/page.tsx", [
+  'label: "Emails"',
+  'masterActionGroup === "emails"',
+  "data-barsh-master-send-email-button",
+  "renderMasterEmailComposePopup",
+]);
+
 if (failed) process.exit(1);
-console.log("PASS: matter email send (Phase A) is flag-gated, admin-only, and operator-confirmed.");
+console.log("PASS: matter email send (Phase A) is flag-gated, admin-only, operator-confirmed; dedicated Emails buttons on both pages.");
