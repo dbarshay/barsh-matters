@@ -48,11 +48,11 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
   { keywords: ["explanation of benefits", "explanation of review", "explanation of reimbursement", "eob", "eor"], folderKey: "claim_documents.denials", titleKey: "eob_eor", confidence: 0.7 },
 
   // --- Proof of mailing (ABOVE bills — fax-ack/POM docs mention "aob" and would mis-file as AOB) ---
-  { keywords: ["proof of mailing", "certificate of mailing", "certified mail", "return receipt", "usps tracking", "fax confirmation", "transmission result", "transmission report", "fax acknowledge", "fax acknowledgment"], folderKey: "claim_documents.bills", titleKey: "proof_of_mailing", confidence: 0.74 },
+  { keywords: ["proof of mailing", "proof of submission", "pom id", "certificate of mailing", "certified mail", "return receipt", "usps tracking", "fax confirmation", "transmission result", "transmission report", "fax acknowledge", "fax acknowledgment"], folderKey: "claim_documents.bills", titleKey: "proof_of_mailing", confidence: 0.74 },
 
   // --- Bills: NF-3, CMS-1500/HCFA, UB-04, superbill ---
   { keywords: ["nf-3", "nf 3", "n.f.-3", "verification of treatment by attending", "verification of treatment by the attending"], folderKey: "claim_documents.bills", titleKey: "bill", confidence: 0.8 },
-  { keywords: ["health insurance claim form", "cms-1500", "cms 1500", "hcfa", "ub-04", "ub 04", "ub04", "superbill", "super bill", "encounter form", "charge slip", "fee slip", "itemized bill", "statement of services"], folderKey: "claim_documents.bills", titleKey: "bill", confidence: 0.75 },
+  { keywords: ["health insurance claim form", "cms-1500", "cms 1500", "hcfa", "ub-04", "ub 04", "ub04", "superbill", "super bill", "encounter form", "charge slip", "fee slip", "itemized bill", "statement of services", "procedure description", "acpt asnt", "accept assignment"], folderKey: "claim_documents.bills", titleKey: "bill", confidence: 0.75 },
   { keywords: ["assignment of benefits", "aob"], folderKey: "claim_documents.bills", titleKey: "aob", confidence: 0.78 },
   { keywords: ["notice of lien"], folderKey: "claim_documents.bills", titleKey: "liens", confidence: 0.55 },
 
@@ -74,6 +74,10 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
   { keywords: ["additional verification", "request for verification", "verification is requested", "delay of your claim", "verification request"], folderKey: "claim_documents.verification.requests", titleKey: "request_dated", confidence: 0.62 },
   { keywords: ["in response to your request for verification", "in response to your verification request", "in response to your request for additional verification", "enclosed is the requested verification", "requested verification is enclosed", "response to verification"], folderKey: "claim_documents.verification.responses", titleKey: "response_dated", confidence: 0.62 },
 
+  // BRL billing cover letter, low-priority letterhead catch (below verification so a verification
+  // RESPONSE — also on our letterhead — is classified first). Catches the alternate ATT template.
+  { keywords: ["brlfirm.com", "brl attorneys", "info@brlfirm"], folderKey: "claim_documents.bills", titleKey: "billing_letter", confidence: 0.5 },
+
   // --- Payments / ledgers ---
   { keywords: ["payment ledger", "remittance advice", "amount paid", "check number", "payment voucher"], folderKey: "claim_documents.payments", titleKey: "payment", confidence: 0.6 },
 
@@ -86,6 +90,9 @@ const RULES: { keywords: string[]; folderKey: string; titleKey: string; confiden
 
   // --- Police / accident ---
   { keywords: ["police report", "police accident report", "mv-104"], folderKey: "claim_documents.miscellaneous", titleKey: "police_report", confidence: 0.75 },
+
+  // Insurance ID card / policy declaration page → Miscellaneous.
+  { keywords: ["insurance identification card", "insurance id card", "owner's policy of liability insurance", "policy of liability insurance", "declarations page", "declaration page", "dec page", "policy declarations"], folderKey: "claim_documents.miscellaneous", titleKey: "declaration_page", confidence: 0.6 },
 ];
 
 function escapeRe(s: string): string {

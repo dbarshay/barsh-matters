@@ -237,7 +237,7 @@ const RAW_TAXONOMY: RawFolder[] = [
         terminal: true,
         allowFreehandOther: true,
         promptsDeadline: true,
-        titles: [staticTitle("police_report", "Police Report")],
+        titles: [staticTitle("police_report", "Police Report"), staticTitle("declaration_page", "Declaration Page")],
       },
     ],
   },
