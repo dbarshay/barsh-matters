@@ -1506,7 +1506,6 @@ export default function FilteredMattersPage() {
         role="dialog"
         aria-modal="true"
         aria-label="New email"
-        onClick={() => setMasterEmailComposeOpen(false)}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterEmailComposeOpen(false); } }}
         tabIndex={-1}
         style={{ position: "fixed", inset: 0, zIndex: 50000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "rgba(15, 23, 42, 0.5)" }}
@@ -1518,7 +1517,7 @@ export default function FilteredMattersPage() {
             <button type="button" onClick={() => setMasterEmailComposeOpen(false)} aria-label="Close" style={{ background: "transparent", border: "none", color: "#fff", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
           </div>
           <div style={{ background: "#fff", borderBottomLeftRadius: 6, borderBottomRightRadius: 6, padding: 12 }}>
-            <MatterEmailCompose masterLawsuitId={masterId} displayNumber={masterId} onSent={() => { /* keep open for follow-up sends */ }} />
+            <MatterEmailCompose masterLawsuitId={masterId} displayNumber={masterId} initialSubject={buildMasterEmailSubject()} onSent={() => { /* keep open for follow-up sends */ }} />
           </div>
         </div>
       </div>
@@ -1538,7 +1537,6 @@ export default function FilteredMattersPage() {
         aria-modal="true"
         aria-label="View Lawsuit Documents"
         tabIndex={-1}
-        onClick={closeMasterViewDocumentsPopup}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterViewDocumentsPopup(); } }}
         style={{
           position: "fixed",
@@ -4847,6 +4845,19 @@ function masterSettlementDateFiledValue(): string {
     return `${providers[0]} + ${providers.length - 1} more`;
   }, [rows]);
 
+  // Default lawsuit email subject: "[file#] Provider a/a/o Patient and Insurer <index>" (+ " - <doc type>").
+  function buildMasterEmailSubject(docType?: string): string {
+    const val = (v: unknown) => { const s = clean(v); return s && s !== "—" ? s : ""; };
+    const provider = val(masterInfoDisplayValue("provider", masterProviderClientSummary));
+    const patient = val(masterInfoDisplayValue("patient", clean((masterSettlementDetailRows as any[])[0]?.patient)));
+    const insurer = val(masterInfoDisplayValue("insurer", masterInsurerSummary));
+    const index = val(masterIndexAaaDisplayValue());
+    const fileNumber = typeof window === "undefined" ? "" : currentMasterLawsuitIdForDocumentPreview();
+    const caption = [provider, patient ? `a/a/o ${patient}` : "", insurer ? `and ${insurer}` : ""].filter(Boolean).join(" ");
+    const doc = clean(docType);
+    return `${fileNumber ? `[${fileNumber}] ` : ""}${caption}${index ? ` ${index}` : ""}${doc ? ` - ${doc}` : ""}`.replace(/\s+/g, " ").trim();
+  }
+
   const masterTreatingProviderSummary = useMemo(() => {
     const treatingProviders = Array.from(
       new Set(rows.map((row: any) => clean(row.treatingProvider || row.treating_provider)).filter(Boolean))
@@ -7744,7 +7755,6 @@ function masterDocumentPreviewText(value: unknown): string {
         role="dialog"
         aria-modal="true"
         aria-label="Master Lawsuit Document Generation"
-        onClick={() => setMasterDocumentGenerationPopupOpen(false)}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterDocumentGenerationPopupOpen(false); } }}
         tabIndex={-1}
         style={{
@@ -9509,28 +9519,66 @@ function masterDocumentPreviewText(value: unknown): string {
                     {masterFinalStatusDisplayValue()}
                   </span>
 
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "7px 11px",
-                      border: "1px solid transparent",
-                      borderRadius: 999,
-                      background: "transparent",
-                      color: "transparent",
-                      fontSize: 12,
-                      fontWeight: 900,
-                      whiteSpace: "nowrap",
-                      textDecoration: "none",
-                      visibility: "hidden",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <span>MASTER LAWSUIT ID:</span>
-                    <span>0000.00.00000</span>
-                  </span>
+                  {(() => {
+                    // Sibling (child) matter bubbles — one per child matter of this lawsuit,
+                    // deduped by display number, colored by each matter's own Open/Closed status,
+                    // linking to the individual matter page. Same look/feel as the header pills.
+                    const seen = new Set<string>();
+                    const siblings: { key: string; label: string; href: string; closed: boolean }[] = [];
+                    for (const row of masterWorkspaceBillRows(masterSettlementDetailRows) as any[]) {
+                      const display = clean(row?.displayNumber) || clean(row?.display_number);
+                      const rowId = clean(row?.id);
+                      const label = display || rowId;
+                      const dedupeKey = (display || rowId).toLowerCase();
+                      if (!label || seen.has(dedupeKey)) continue;
+                      seen.add(dedupeKey);
+                      siblings.push({
+                        key: dedupeKey,
+                        label,
+                        href: `/matter/${encodeURIComponent(display || rowId)}`,
+                        closed: clean(row?.finalStatus) === "Closed",
+                      });
+                    }
+                    if (siblings.length === 0) return null;
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 6,
+                          marginTop: 8,
+                          maxWidth: 520,
+                        }}
+                        data-barsh-master-sibling-matter-bubbles="true"
+                      >
+                        {siblings.map((s) => (
+                          <a
+                            key={s.key}
+                            href={s.href}
+                            title={`Open matter ${s.label}`}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "5px 13px",
+                              borderRadius: 999,
+                              border: s.closed ? "1px solid #fecaca" : "1px solid #bbf7d0",
+                              background: s.closed ? "#fef2f2" : "#dcfce7",
+                              color: s.closed ? "#991b1b" : "#166534",
+                              fontSize: 14,
+                              fontWeight: 800,
+                              letterSpacing: "-0.01em",
+                              whiteSpace: "nowrap",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {s.label}
+                          </a>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
               </div>
@@ -10358,6 +10406,9 @@ function masterDocumentPreviewText(value: unknown): string {
                                 margin: 0,
                                 cursor: "pointer",
                                 font: "inherit",
+                                textAlign: "left",
+                                display: "block",
+                                width: "100%",
                               }}
                             >
                               {masterAdversaryAttorneyDisplayValue()}
@@ -10967,7 +11018,6 @@ function masterDocumentPreviewText(value: unknown): string {
                           role="dialog"
                           aria-modal="true"
                           aria-label="Close Lawsuit"
-                          onClick={closeMasterCloseLawsuitDialog}
                           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterCloseLawsuitDialog(); } }}
                           tabIndex={-1}
                           style={{
@@ -11298,7 +11348,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Close After Payment?"
-                onClick={() => setMasterPaymentClosePromptOpen(false)}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterPaymentClosePromptOpen(false); } }}
                 tabIndex={-1}
                 style={{
@@ -11378,7 +11427,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Confirm note deletion"
-                onClick={closeDeleteMasterNoteDialog}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeDeleteMasterNoteDialog(); } }}
                 tabIndex={-1}
                 style={{
@@ -11451,7 +11499,6 @@ function masterDocumentPreviewText(value: unknown): string {
                 role="dialog"
                 aria-modal="true"
                 aria-label={masterNoteEditingId ? "Edit Note" : "Add Note"}
-                onClick={closeMasterNoteDialog}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterNoteDialog(); } }}
                 tabIndex={-1}
                 style={{
@@ -11583,7 +11630,6 @@ function masterDocumentPreviewText(value: unknown): string {
                   overflow: "hidden",
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={closeMasterInfoEditDialog}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMasterInfoEditDialog(); } }}
                 tabIndex={-1}
               >
@@ -12217,7 +12263,6 @@ function masterDocumentPreviewText(value: unknown): string {
                   overflow: "hidden",
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={() => setMasterSettlementFormOpen(false)}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterSettlementFormOpen(false); } }}
                 tabIndex={-1}
               >
@@ -13251,7 +13296,6 @@ function masterDocumentPreviewText(value: unknown): string {
                   padding: 24,
                   background: "rgba(15, 23, 42, 0.58)",
                 }}
-                onClick={() => setMasterPaymentFormOpen(false)}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setMasterPaymentFormOpen(false); } }}
                 tabIndex={-1}
               >

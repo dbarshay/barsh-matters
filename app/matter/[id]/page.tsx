@@ -674,6 +674,41 @@ const activeGroupKey =
   const [composeOpen, setComposeOpen] = useState(false);
   // Reply (Phase B): when set, the compose panel is in reply mode threaded to that message.
   const [emailReply, setEmailReply] = useState<{ graphMessageId: string; to: string; subject: string } | null>(null);
+  // Individual-matter Notes (seeded from the Carisk import note; editable, stored on the matter).
+  const [matterNotes, setMatterNotes] = useState("");
+  const [matterNotesSource, setMatterNotesSource] = useState<string>("");
+  const [matterNotesLoaded, setMatterNotesLoaded] = useState(false);
+  const [matterNotesSaving, setMatterNotesSaving] = useState(false);
+  const [matterNotesMsg, setMatterNotesMsg] = useState<string>("");
+  async function loadMatterNotes() {
+    const mid = resolvedNumericMatterId();
+    if (!mid) return;
+    try {
+      const res = await fetch(`/api/matters/notes?matterId=${mid}`);
+      const j = await res.json().catch(() => ({}));
+      if (j?.ok) { setMatterNotes(j.notes || ""); setMatterNotesSource(j.source || ""); setMatterNotesLoaded(true); }
+    } catch { /* non-fatal */ }
+  }
+  async function saveMatterNotes() {
+    const mid = resolvedNumericMatterId();
+    if (!mid) return;
+    setMatterNotesSaving(true);
+    setMatterNotesMsg("");
+    try {
+      const res = await fetch("/api/matters/notes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matterId: mid, matterDisplayNumber: textValue(matter?.displayNumber || matter?.display_number || matterId), notes: matterNotes }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j?.ok) { setMatterNotesSource("local"); setMatterNotesMsg("Saved."); }
+      else setMatterNotesMsg(j?.error || "Save failed.");
+    } catch (err: any) {
+      setMatterNotesMsg(err?.message || "Save request failed.");
+    } finally {
+      setMatterNotesSaving(false);
+    }
+  }
   // Unread incoming email count → alert badge on the Emails action button.
   const [emailUnread, setEmailUnread] = useState(0);
   async function refreshEmailUnread() {
@@ -754,9 +789,10 @@ const activeGroupKey =
     void loadMatterEmailThreadPreview();
   }, [matterViewEmailsPopupOpen, emailThreadPreviewLoading, emailThreadPreviewResult]);
 
-  // Load the unread-incoming count for the Emails-button alert badge when the matter is available.
+  // Load the unread-incoming count for the Emails-button alert badge + the matter notes when available.
   useEffect(() => {
     void refreshEmailUnread();
+    void loadMatterNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matter?.matterId, matter?.displayNumber]);
 
@@ -989,7 +1025,6 @@ const activeGroupKey =
         role="dialog"
         aria-modal="true"
         aria-label="View Documents"
-        onClick={closeMatterViewDocumentsPopup}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterViewDocumentsPopup(); } }}
         tabIndex={-1}
         style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
@@ -1055,6 +1090,18 @@ const activeGroupKey =
     ].filter(Boolean);
 
     return candidates[0] || "";
+  }
+
+  // Default email subject: "[file#] Provider a/a/o Patient and Insurer" (+ " - <document type>" when
+  // composing from the generate-document flow).
+  function buildMatterEmailSubject(docType?: string): string {
+    const provider = normalizeProviderName(matter?.providerName || matter?.provider_name || matter?.provider);
+    const patient = textValue(matter?.patient?.name || matter?.patient);
+    const insurer = textValue(matter?.insurerName || matter?.insurer_name || matter?.insurer);
+    const fileNumber = directMatterDisplayNumberForDocumentActivity();
+    const caption = [provider, patient ? `a/a/o ${patient}` : "", insurer ? `and ${insurer}` : ""].filter(Boolean).join(" ");
+    const doc = textValue(docType);
+    return `${fileNumber ? `[${fileNumber}] ` : ""}${caption}${doc ? ` - ${doc}` : ""}`.replace(/\s+/g, " ").trim();
   }
 
   function formatMatterDocumentActivityDate(value: unknown): string {
@@ -1156,7 +1203,6 @@ const activeGroupKey =
         aria-modal="true"
         aria-label="Direct Matter Document Activity"
         tabIndex={-1}
-        onClick={closeMatterDocumentActivityPopup}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterDocumentActivityPopup(); } }}
         style={{
           position: "fixed",
@@ -5504,7 +5550,7 @@ function openClaimAmountEditDialog() {
             displayNumber={displayNumber}
             replyToGraphMessageId={emailReply?.graphMessageId ?? null}
             initialTo={emailReply?.to ?? null}
-            initialSubject={emailReply?.subject ?? null}
+            initialSubject={emailReply ? emailReply.subject : buildMatterEmailSubject()}
             onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); }}
           />
         )}
@@ -6600,15 +6646,7 @@ function openClaimAmountEditDialog() {
       finalizeUploadResult?.clioUploadTarget?.folderResolution?.targetPlan?.masterMatterId ||
       null;
     const finalizedDocumentDescription = textValue(selectedTemplate?.label) || "Finalized Document";
-    const finalizedEmailSubject = (() => {
-      const provider = normalizeProviderName(matter?.providerName || matter?.provider_name || matter?.provider);
-      const patient = textValue(matter?.patient?.name || matter?.patient);
-      const insurer = textValue(matter?.insurerName || matter?.insurer_name || matter?.insurer);
-      const fileNumber = directMatterDisplayNumberForDocumentActivity();
-      return `${provider} a/a/o ${patient} v. ${insurer}-- ${finalizedDocumentDescription}-- ${fileNumber}`
-        .replace(/\s+/g, " ")
-        .trim();
-    })();
+    const finalizedEmailSubject = buildMatterEmailSubject(finalizedDocumentDescription);
 
     const openFinalizedDocumentForDelivery = () => {
       if (!finalizedDocumentDeliveryUrl) {
@@ -7307,7 +7345,6 @@ function openClaimAmountEditDialog() {
         aria-label="View Emails"
         data-barsh-direct-view-emails-standard-modal="true"
         tabIndex={-1}
-        onClick={closeMatterViewEmailsPopup}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterViewEmailsPopup(); } }}
         style={{
           position: "fixed",
@@ -8543,7 +8580,6 @@ function openClaimAmountEditDialog() {
             overflow: "hidden",
             background: "rgba(15, 23, 42, 0.58)",
           }}
-          onClick={closeMatterAuditHistoryPopup}
           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterAuditHistoryPopup(); } }}
         >
           <div
@@ -8802,7 +8838,6 @@ function openClaimAmountEditDialog() {
           aria-modal="true"
           aria-label="Edit Date of Service"
           data-barsh-direct-dos-edit-standard-modal="true"
-          onClick={() => { setDirectFieldEditModal(null); setDirectFieldEditResult(null); }}
           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setDirectFieldEditModal(null); setDirectFieldEditResult(null); } }}
           tabIndex={-1}
           style={{
@@ -8868,7 +8903,6 @@ function openClaimAmountEditDialog() {
           aria-modal="true"
           aria-label={`Edit ${directPicklistFieldLabel(directFieldEditModal)}`}
           data-barsh-direct-picklist-edit-standard-modal="true"
-          onClick={() => { setDirectFieldEditModal(null); setDirectFieldEditResult(null); }}
           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setDirectFieldEditModal(null); setDirectFieldEditResult(null); } }}
           tabIndex={-1}
           style={{
@@ -8959,7 +8993,6 @@ function openClaimAmountEditDialog() {
           aria-modal="true"
           aria-label={"Edit " + identityFieldEditLabel(identityFieldEditModal)}
           data-barsh-direct-identity-edit-standard-modal="true"
-          onClick={closeIdentityFieldEditDialog}
           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeIdentityFieldEditDialog(); } }}
           tabIndex={-1}
           style={{
@@ -9059,7 +9092,6 @@ function openClaimAmountEditDialog() {
           aria-modal="true"
           aria-label="Edit Treating Provider"
           data-barsh-direct-treating-provider-edit-standard-modal="true"
-          onClick={closeTreatingProviderEditDialog}
           onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeTreatingProviderEditDialog(); } }}
           tabIndex={-1}
           style={{
@@ -9905,6 +9937,27 @@ function openClaimAmountEditDialog() {
                     {reopening ? "Reopening…" : "Reopen Matter (Admin)"}
                   </button>
                 )}
+
+                <div data-barsh-direct-matter-notes-section="true" style={{ marginTop: 16, textAlign: "left" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e" }}>Notes</span>
+                    {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, color: "#5a6b80" }}>From Carisk import</span>}
+                  </div>
+                  <textarea
+                    value={matterNotes}
+                    onChange={(e) => { setMatterNotes(e.target.value); setMatterNotesMsg(""); }}
+                    rows={4}
+                    placeholder="Add notes for this matter"
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #cdd6e0", borderRadius: 8, fontSize: 13, resize: "vertical", boxSizing: "border-box" }}
+                  />
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
+                    <button type="button" onClick={() => void saveMatterNotes()} disabled={matterNotesSaving || !matterNotesLoaded}
+                      style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontWeight: 800, fontSize: 12, cursor: matterNotesSaving ? "default" : "pointer", opacity: matterNotesSaving || !matterNotesLoaded ? 0.6 : 1 }}>
+                      {matterNotesSaving ? "Saving…" : "Save Notes"}
+                    </button>
+                    {matterNotesMsg && <span style={{ fontSize: 12, color: matterNotesMsg === "Saved." ? "#137333" : "#b00020" }}>{matterNotesMsg}</span>}
+                  </div>
+                </div>
 
 
                 {paymentFormOpen && (
@@ -11821,7 +11874,6 @@ function openClaimAmountEditDialog() {
           justifyContent: "center",
           zIndex: 1000,
         }}
-        onClick={() => setShowMetadataModal(false)}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setShowMetadataModal(false); } }}
         tabIndex={-1}
       >
@@ -12340,7 +12392,6 @@ function openClaimAmountEditDialog() {
         aria-modal="true"
         aria-label="Close Matter"
         data-barsh-direct-close-matter-standard-modal="true"
-        onClick={() => { setShowCloseModal(false); setCloseMatterTarget(null); setCloseReason(""); }}
         onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setShowCloseModal(false); setCloseMatterTarget(null); setCloseReason(""); } }}
         tabIndex={-1}
         style={{
