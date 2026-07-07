@@ -27,6 +27,9 @@ function numberOrNull(value: unknown): number | null {
 }
 
 function boundedInt(value: unknown, fallback: number, max: number): number {
+  // A missing query param is null/""; Number(null) and Number("") are 0 (finite), which would
+  // otherwise clamp to 1 and silently sync only ONE message/thread. Treat empties as the fallback.
+  if (value === null || value === undefined || value === "") return fallback;
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(1, Math.min(Math.floor(parsed), max));

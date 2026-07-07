@@ -20,6 +20,9 @@ function objectValue(value: unknown): Record<string, any> {
 
 function numberOrDefault(value: unknown, fallback: number): number {
   const raw = clean(value);
+  // A missing value cleans to ""; Number("") is 0 (finite), which would clamp to 1 and sync only ONE
+  // message. Treat an empty value as the fallback.
+  if (!raw) return fallback;
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(Math.max(Math.trunc(parsed), 1), 50);
