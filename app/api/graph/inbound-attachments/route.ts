@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
   const matterId = Number(sp.get("matterId"));
   const masterLawsuitId = (sp.get("masterLawsuitId") || "").trim();
   const matterDisplayNumber = (sp.get("matterDisplayNumber") || "").trim();
+  const conversationId = (sp.get("conversationId") || "").trim();
 
   const threadWhere: any = {};
   if (Number.isFinite(matterId) && matterId > 0) threadWhere.matterId = matterId;
@@ -35,11 +36,15 @@ export async function GET(req: NextRequest) {
   else if (matterDisplayNumber) threadWhere.matterDisplayNumber = matterDisplayNumber;
   else return NextResponse.json({ ok: false, error: "matterId, masterLawsuitId, or matterDisplayNumber required." }, { status: 400 });
 
+  // Optional per-conversation scope so the review controls can render under a specific email thread.
+  const messageWhere: any = { direction: "inbound", thread: threadWhere };
+  if (conversationId) messageWhere.conversationId = conversationId;
+
   try {
     const rows = await prisma.emailAttachment.findMany({
       where: {
         reviewStatus: "pending",
-        message: { direction: "inbound", thread: threadWhere },
+        message: messageWhere,
       },
       orderBy: { createdAt: "desc" },
       select: {

@@ -7123,14 +7123,6 @@ function masterDocumentPreviewText(value: unknown): string {
           </div>
         </div>
 
-        {/* Phase D — inbound email attachments awaiting OCR review/filing for this lawsuit. */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>
-            Inbound attachments to review
-          </div>
-          <InboundAttachmentReview masterLawsuitId={masterId} onChanged={() => { void loadMasterEmailThreadPreview(); }} />
-        </div>
-
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
           <button
             type="button"
@@ -7368,6 +7360,12 @@ function masterDocumentPreviewText(value: unknown): string {
                     </div>
                   </div>
 
+                  {/* Phase D — inbound attachments that arrived on THIS email thread, awaiting review. */}
+                  <InboundAttachmentReview
+                    masterLawsuitId={masterId}
+                    conversationId={clean(thread.conversationId)}
+                    onChanged={() => { void loadMasterEmailThreadPreview(); void refreshMasterEmailUnread(); }}
+                  />
 
                   {threadExpanded && (
                     <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 12, border: "1px solid #e5e7eb", background: "#f8fafc" }}>

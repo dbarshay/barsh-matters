@@ -33,11 +33,14 @@ export default function InboundAttachmentReview({
   matterId,
   masterLawsuitId,
   matterDisplayNumber,
+  conversationId,
   onChanged,
 }: {
   matterId?: number | null;
   masterLawsuitId?: string | null;
   matterDisplayNumber?: string | null;
+  /** When set, scope to a single email conversation and stay silent when it has nothing pending. */
+  conversationId?: string | null;
   onChanged?: () => void;
 }) {
   const [items, setItems] = useState<Item[] | null>(null);
@@ -48,12 +51,17 @@ export default function InboundAttachmentReview({
 
   const terminalFolders = useMemo(() => listTerminalFolders(), []);
 
+  const perThread = Boolean(conversationId);
+
   const queryString = useMemo(() => {
-    if (Number.isFinite(matterId as number) && (matterId as number) > 0) return `matterId=${matterId}`;
-    if (masterLawsuitId) return `masterLawsuitId=${encodeURIComponent(masterLawsuitId)}`;
-    if (matterDisplayNumber) return `matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}`;
-    return "";
-  }, [matterId, masterLawsuitId, matterDisplayNumber]);
+    let base = "";
+    if (Number.isFinite(matterId as number) && (matterId as number) > 0) base = `matterId=${matterId}`;
+    else if (masterLawsuitId) base = `masterLawsuitId=${encodeURIComponent(masterLawsuitId)}`;
+    else if (matterDisplayNumber) base = `matterDisplayNumber=${encodeURIComponent(matterDisplayNumber)}`;
+    if (!base) return "";
+    if (conversationId) base += `&conversationId=${encodeURIComponent(conversationId)}`;
+    return base;
+  }, [matterId, masterLawsuitId, matterDisplayNumber, conversationId]);
 
   const load = useCallback(async () => {
     if (!queryString) return;
@@ -161,9 +169,10 @@ export default function InboundAttachmentReview({
     }
   }
 
-  if (error && items === null) return <div style={{ color: "#b00020", padding: 10, fontSize: 13 }}>{error}</div>;
-  if (items === null) return <div style={{ color: "#8a97a8", padding: 10, fontSize: 13 }}>Loading inbound attachments…</div>;
-  if (items.length === 0) return <div style={{ color: "#8a97a8", padding: 10, fontSize: 13, fontStyle: "italic" }}>No inbound attachments awaiting review.</div>;
+  // Per-thread rendering stays silent while loading / when empty so it doesn't clutter the thread list.
+  if (error && items === null) return perThread ? null : <div style={{ color: "#b00020", padding: 10, fontSize: 13 }}>{error}</div>;
+  if (items === null) return perThread ? null : <div style={{ color: "#8a97a8", padding: 10, fontSize: 13 }}>Loading inbound attachments…</div>;
+  if (items.length === 0) return perThread ? null : <div style={{ color: "#8a97a8", padding: 10, fontSize: 13, fontStyle: "italic" }}>No inbound attachments awaiting review.</div>;
 
   const selectStyle: React.CSSProperties = { border: "1px solid #cdd6e0", borderRadius: 8, padding: "6px 8px", fontSize: 13, background: "#fff", color: "#00346e", maxWidth: 260 };
 

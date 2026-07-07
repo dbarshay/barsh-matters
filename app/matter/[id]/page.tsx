@@ -5620,18 +5620,6 @@ function openClaimAmountEditDialog() {
             onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); setComposeOpen(false); }}
           />
         )}
-
-        {/* Phase D — inbound email attachments awaiting OCR review/filing for this matter. */}
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>
-            Inbound attachments to review
-          </div>
-          <InboundAttachmentReview
-            matterId={resolvedNumericMatterId()}
-            matterDisplayNumber={displayNumber}
-            onChanged={() => { void refreshEmailUnread(); }}
-          />
-        </div>
       </div>
     );
   }
@@ -5987,6 +5975,12 @@ function openClaimAmountEditDialog() {
                     </div>
                   </div>
 
+                  {/* Phase D — inbound attachments that arrived on THIS email thread, awaiting review. */}
+                  <InboundAttachmentReview
+                    matterId={resolvedNumericMatterId()}
+                    conversationId={textValue(thread.conversationId)}
+                    onChanged={() => { void refreshEmailUnread(); void loadMatterEmailThreadPreview(); }}
+                  />
 
                   {threadExpanded && (
                     <div
