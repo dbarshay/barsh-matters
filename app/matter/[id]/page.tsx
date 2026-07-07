@@ -9600,6 +9600,27 @@ function openClaimAmountEditDialog() {
                     {textValue(matter?.closeReason || "") || "—"}
                   </div>
                 </div>              </div>
+
+                <div data-barsh-direct-matter-notes-section="true" style={{ gridColumn: "1 / -1", marginTop: 12, textAlign: "left" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e" }}>Notes</span>
+                    {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, color: "#5a6b80" }}>From Carisk import</span>}
+                  </div>
+                  <textarea
+                    value={matterNotes}
+                    onChange={(e) => { setMatterNotes(e.target.value); setMatterNotesMsg(""); }}
+                    rows={4}
+                    placeholder="Add notes for this matter"
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #cdd6e0", borderRadius: 8, fontSize: 13, resize: "vertical", boxSizing: "border-box" }}
+                  />
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
+                    <button type="button" onClick={() => void saveMatterNotes()} disabled={matterNotesSaving || !matterNotesLoaded}
+                      style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontWeight: 800, fontSize: 12, cursor: matterNotesSaving ? "default" : "pointer", opacity: matterNotesSaving || !matterNotesLoaded ? 0.6 : 1 }}>
+                      {matterNotesSaving ? "Saving…" : "Save Notes"}
+                    </button>
+                    {matterNotesMsg && <span style={{ fontSize: 12, color: matterNotesMsg === "Saved." ? "#137333" : "#b00020" }}>{matterNotesMsg}</span>}
+                  </div>
+                </div>
               </div>
 
               <div
@@ -9937,28 +9958,6 @@ function openClaimAmountEditDialog() {
                     {reopening ? "Reopening…" : "Reopen Matter (Admin)"}
                   </button>
                 )}
-
-                <div data-barsh-direct-matter-notes-section="true" style={{ marginTop: 16, textAlign: "left" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e" }}>Notes</span>
-                    {matterNotesSource === "carisk-import" && <span style={{ fontSize: 11, color: "#5a6b80" }}>From Carisk import</span>}
-                  </div>
-                  <textarea
-                    value={matterNotes}
-                    onChange={(e) => { setMatterNotes(e.target.value); setMatterNotesMsg(""); }}
-                    rows={4}
-                    placeholder="Add notes for this matter"
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #cdd6e0", borderRadius: 8, fontSize: 13, resize: "vertical", boxSizing: "border-box" }}
-                  />
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
-                    <button type="button" onClick={() => void saveMatterNotes()} disabled={matterNotesSaving || !matterNotesLoaded}
-                      style={{ background: "#00346e", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontWeight: 800, fontSize: 12, cursor: matterNotesSaving ? "default" : "pointer", opacity: matterNotesSaving || !matterNotesLoaded ? 0.6 : 1 }}>
-                      {matterNotesSaving ? "Saving…" : "Save Notes"}
-                    </button>
-                    {matterNotesMsg && <span style={{ fontSize: 12, color: matterNotesMsg === "Saved." ? "#137333" : "#b00020" }}>{matterNotesMsg}</span>}
-                  </div>
-                </div>
-
 
                 {paymentFormOpen && (
                   <div
