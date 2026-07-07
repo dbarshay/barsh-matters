@@ -3,6 +3,8 @@ import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
 import { getGraphAuthConfig, getGraphAuthReadiness } from "@/lib/graph/config";
 import { prisma } from "@/lib/prisma";
 import { persistGraphThreadSyncMessages } from "@/lib/graph/emailPersistence";
+import { isInboundAttachmentOcrEnabled } from "@/lib/graph/inboundOcrConfig";
+import { ingestInboundMessageAttachments } from "@/lib/graph/inboundAttachmentOcr";
 
 export const dynamic = "force-dynamic";
 
@@ -261,6 +263,43 @@ export async function POST(req: NextRequest) {
     context,
   });
 
+  // Phase D — stage inbound attachments into the OCR review queue (flag-gated, best-effort, no Clio
+  // write). Nothing files without a later per-document operator confirmation. Idempotent on re-sync.
+  let inboundAttachmentOcr: any = null;
+  if (isInboundAttachmentOcrEnabled()) {
+    try {
+      const inboundMessages = await prisma.emailMessage.findMany({
+        where: { conversationId, direction: "inbound", graphMessageId: { not: null } },
+        select: {
+          id: true,
+          graphMessageId: true,
+          mailboxUserId: true,
+          thread: { select: { matterId: true, masterLawsuitId: true, matterDisplayNumber: true } },
+        },
+      });
+      let processed = 0;
+      let ocrPending = 0;
+      for (const m of inboundMessages) {
+        if (!m.graphMessageId) continue;
+        const r = await ingestInboundMessageAttachments(prisma, {
+          mailboxUserId: m.mailboxUserId || config.mailboxUserId,
+          graphMessageId: m.graphMessageId,
+          localMessageId: m.id,
+          context: {
+            matterId: m.thread?.matterId ?? null,
+            masterLawsuitId: m.thread?.masterLawsuitId ?? null,
+            matterDisplayNumber: m.thread?.matterDisplayNumber ?? null,
+          },
+        });
+        processed += r.processed;
+        ocrPending += r.ocrPending;
+      }
+      inboundAttachmentOcr = { enabled: true, processed, ocrPending };
+    } catch (err: any) {
+      inboundAttachmentOcr = { enabled: true, error: err?.message || "inbound attachment ocr failed" };
+    }
+  }
+
   return NextResponse.json({
     ...responseBase,
     graphCallsMade: true,
@@ -279,6 +318,7 @@ export async function POST(req: NextRequest) {
       withAttachments: messages.filter((message: any) => message.hasAttachments).length,
     },
     persisted,
+    inboundAttachmentOcr,
     nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
     note:
       "Confirmed Graph thread sync completed.  This route read Microsoft Graph and persisted normalized Barsh Matters email metadata locally.  It did not create drafts, send email, write Clio, upload documents, or use local Outlook automation.",

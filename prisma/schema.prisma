@@ -845,6 +845,19 @@ model EmailAttachment {
   clioDocumentVersionUuid String?
   storageStatus           String       @default("metadata_only")
   metadata                Json?
+
+  // Phase D — inbound attachment OCR review queue. reviewStatus: "none" (outbound/ours or non-file),
+  // "pending" (inbound file OCR'd, awaiting operator confirmation), "filed" (operator filed it to a
+  // folder), "dismissed" (operator declined). ocrSuggestion holds the classifier/cross-reference
+  // output (folderKey/titleKey/fields/predictedMatterId/confidence) so nothing files without a human.
+  reviewStatus          String    @default("none")
+  ocrSuggestion         Json?
+  ocrExtractionId       String?
+  ocrPredictedMatterId  Int?
+  filedDocumentId       String?
+  reviewedAt            DateTime?
+  reviewedBy            String?
+
   createdAt               DateTime     @default(now())
   updatedAt               DateTime     @updatedAt
 
@@ -852,6 +865,7 @@ model EmailAttachment {
   @@index([graphAttachmentId])
   @@index([clioDocumentId])
   @@index([storageStatus])
+  @@index([reviewStatus])
 }
 
 model EmailSyncState {
