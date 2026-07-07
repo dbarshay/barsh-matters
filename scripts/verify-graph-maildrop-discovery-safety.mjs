@@ -68,7 +68,7 @@ console.log("\n=== VERIFY MAILDROP REGISTRY HELPER LOADS REGISTRY AND EMAIL THRE
 console.log("\n=== VERIFY PREVIEW MODE IS READ-ONLY ===");
 [
   'previewOnly: true',
-  "Preview-only MailDrop discovery completed.",
+  "Preview-only per-user MailDrop discovery completed.",
   "databaseRecordsChanged: false",
 ].forEach((marker) => mustContain(routePath, route, marker));
 

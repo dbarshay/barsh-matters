@@ -39,11 +39,20 @@ const maildropCron = Array.isArray(vercelJson.crons)
   ? vercelJson.crons.find((entry) => entry?.path === "/api/graph/maildrop-discovery")
   : null;
 
+// Real-time inbound email now comes from per-user Graph webhooks; these crons are BACKSTOPS, relaxed
+// from every-minute to every-5-minutes (cheaper, and webhooks cover real-time). A separate cron renews
+// the per-user webhook subscriptions.
+const subscribeCron = Array.isArray(vercelJson.crons)
+  ? vercelJson.crons.find((entry) => entry?.path === "/api/graph/webhook/subscribe")
+  : null;
+
 must(Boolean(knownThreadCron), "vercel.json has known-thread background email sync cron route");
-must(knownThreadCron?.schedule === "* * * * *", "known-thread background email sync cron runs every 1 minute");
+must(knownThreadCron?.schedule === "*/5 * * * *", "known-thread background email sync cron runs every 5 minutes (backstop; webhooks are real-time)");
 
 must(Boolean(maildropCron), "vercel.json has MailDrop discovery cron route");
-must(maildropCron?.schedule === "* * * * *", "MailDrop discovery cron runs every 1 minute");
+must(maildropCron?.schedule === "*/5 * * * *", "MailDrop discovery cron runs every 5 minutes (backstop; webhooks are real-time)");
+
+must(Boolean(subscribeCron), "vercel.json has per-user webhook subscription renewal cron route");
 
 must(Array.isArray(vercelJson.crons), "vercel.json crons remains an array");
 
@@ -80,4 +89,4 @@ if (failures > 0) {
 }
 
 console.log("=== VERCEL BACKGROUND EMAIL CRON SAFETY PASSED ===");
-console.log("Vercel cron is configured for every-minute known-thread Graph sync and every-minute MailDrop discovery, both guarded by CRON_SECRET / bearer authorization.");
+console.log("Vercel cron runs 5-minute backstop known-thread Graph sync + 5-minute MailDrop discovery (both CRON_SECRET / bearer guarded), plus a per-user webhook subscription renewal cron; real-time inbound is handled by per-user Graph webhooks.");

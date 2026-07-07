@@ -4,6 +4,7 @@ import { graphApiBase, graphFetchJson } from "@/lib/graph/client";
 import { getGraphAuthConfig, getGraphAuthReadiness } from "@/lib/graph/config";
 import { persistGraphThreadSyncMessages } from "@/lib/graph/emailPersistence";
 import { loadKnownMaildropAddresses } from "@/lib/graph/maildropRegistry";
+import { listActiveUserMailboxes } from "@/lib/graph/userMailbox";
 
 
 const MAILDROP_DISCOVERY_SOURCE = "graph_maildrop_discovery";
@@ -239,14 +240,15 @@ async function runMaildropDiscovery(req: NextRequest) {
     );
   }
 
-  if (!readiness.readyForFutureReadOnlySync) {
+  // Per-user: app creds (tenant/client/secret) are enough — discovery scans each active user's mailbox.
+  if (!readiness.appOnlyTokenConfigReady) {
     return NextResponse.json(
       {
         ...base,
         ok: false,
         graphReadiness: readiness,
         error:
-          "Microsoft Graph read-only sync is not configured.  Configure tenant ID, client ID, client secret, and mailbox user before running MailDrop discovery.",
+          "Microsoft Graph read-only sync is not configured.  Configure tenant ID, client ID, and client secret before running MailDrop discovery.",
       },
       { status: 503 }
     );
@@ -281,78 +283,57 @@ async function runMaildropDiscovery(req: NextRequest) {
     });
   }
 
-  const graphResult = await graphFetchJson({
-    url: graphRecentMessagesUrl(config.mailboxUserId, messageLimit),
-    method: "GET",
-  });
-
-  if (!graphResult.ok) {
-    return NextResponse.json(
-      {
-        ...base,
-        ok: false,
-        graphCallsMade: true,
-        readsMailbox: true,
-        graphStatus: graphResult.status,
-        graphError: graphResult.error || graphResult.statusText,
-        error: graphResult.error || graphResult.statusText || "Microsoft Graph recent-message lookup failed.",
-      },
-      { status: 502 }
-    );
+  // Per-user: scan EACH active user's own mailbox for messages addressed to a known Clio MailDrop.
+  const mailboxes = await listActiveUserMailboxes();
+  if (mailboxes.length === 0) {
+    return NextResponse.json({
+      ...base,
+      ok: true,
+      status: "no_active_user_mailboxes",
+      graphCallsMade: false,
+      readsMailbox: false,
+      counts: { knownMaildrops: knownByEmail.size, mailboxesScanned: 0, scannedGraphMessages: 0, matchedMessages: 0, discoveredThreads: 0, messagesUpserted: 0, matterLinksCreated: 0, filingLogsCreated: 0 },
+      matches: [],
+      message: "No active user mailboxes to scan.",
+    });
   }
 
-  const rows = Array.isArray(graphResult.json?.value) ? graphResult.json.value : [];
+  let graphCalls = 0;
+  let scannedGraphMessages = 0;
+  const graphErrors: { mailbox: string; error: string }[] = [];
+  // Keyed by conversationId; each conversation belongs to exactly one user mailbox.
+  const matchesByConversation = new Map<string, { maildrop: any; messages: any[]; matchedMaildropEmail: string; mailbox: string }>();
 
-  const scannedMessageSamples = rows.slice(0, 10).map((row: any) => ({
-    graphMessageId: clean(row?.id),
-    conversationId: clean(row?.conversationId),
-    subject: clean(row?.subject),
-    fromEmail: graphRecipientEmail(row?.from),
-    receivedAt: clean(row?.receivedDateTime),
-    sentAt: clean(row?.sentDateTime),
-    to: graphRecipientList(row?.toRecipients).slice(0, 10),
-    cc: graphRecipientList(row?.ccRecipients).slice(0, 10),
-    bcc: graphRecipientList(row?.bccRecipients).slice(0, 10),
-    recipientCount: allRecipientEmails(row).length,
-  }));
-
-  const knownMaildropSamples = Array.from(knownByEmail.entries()).slice(0, 25).map(([email, record]) => ({
-    clioMaildropEmail: email,
-    clioMaildropLabel: clean(record?.clioMaildropLabel),
-    matterId: record?.matterId ?? null,
-    matterDisplayNumber: clean(record?.matterDisplayNumber),
-    masterLawsuitId: clean(record?.masterLawsuitId),
-    clioMatterId: record?.clioMatterId ?? null,
-    clioDisplayNumber: clean(record?.clioDisplayNumber),
-  }));
-
-  const matchesByConversation = new Map<string, { maildrop: any; messages: any[]; matchedMaildropEmail: string }>();
-
-  for (const row of rows) {
-    const recipients = new Set(allRecipientEmails(row));
-    for (const [maildropEmail, maildrop] of knownByEmail.entries()) {
-      if (!recipients.has(maildropEmail)) continue;
-
-      const normalized = normalizeGraphMessage(row);
-      const conversationId = clean(normalized.conversationId);
-      const graphMessageId = clean(normalized.graphMessageId);
-      if (!conversationId || !graphMessageId) continue;
-
-      if (!matchesByConversation.has(conversationId)) {
-        matchesByConversation.set(conversationId, {
-          maildrop,
-          messages: [],
-          matchedMaildropEmail: maildropEmail,
-        });
+  for (const mailbox of mailboxes) {
+    const graphResult = await graphFetchJson({ url: graphRecentMessagesUrl(mailbox, messageLimit), method: "GET" });
+    graphCalls += 1;
+    if (!graphResult.ok) {
+      graphErrors.push({ mailbox, error: graphResult.error || graphResult.statusText || "lookup failed" });
+      continue; // one mailbox failing must not abort the others
+    }
+    const rows = Array.isArray(graphResult.json?.value) ? graphResult.json.value : [];
+    scannedGraphMessages += rows.length;
+    for (const row of rows) {
+      const recipients = new Set(allRecipientEmails(row));
+      for (const [maildropEmail, maildrop] of knownByEmail.entries()) {
+        if (!recipients.has(maildropEmail)) continue;
+        const normalized = normalizeGraphMessage(row);
+        const conversationId = clean(normalized.conversationId);
+        const graphMessageId = clean(normalized.graphMessageId);
+        if (!conversationId || !graphMessageId) continue;
+        if (!matchesByConversation.has(conversationId)) {
+          matchesByConversation.set(conversationId, { maildrop, messages: [], matchedMaildropEmail: maildropEmail, mailbox });
+        }
+        matchesByConversation.get(conversationId)?.messages.push(normalized);
+        break;
       }
-
-      matchesByConversation.get(conversationId)?.messages.push(normalized);
-      break;
     }
   }
 
+  const matchedMessages = Array.from(matchesByConversation.values()).reduce((sum, match) => sum + match.messages.length, 0);
   const matches = Array.from(matchesByConversation.entries()).map(([conversationId, match]) => ({
     conversationId,
+    mailbox: match.mailbox,
     matchedMaildropEmail: match.matchedMaildropEmail,
     clioMaildropLabel: clean(match.maildrop.clioMaildropLabel),
     matterId: match.maildrop.matterId,
@@ -364,45 +345,19 @@ async function runMaildropDiscovery(req: NextRequest) {
     subjects: Array.from(new Set(match.messages.map((message) => clean(message.subject)).filter(Boolean))).slice(0, 5),
   }));
 
-  const matchedMaildropSamples = matches.map((match) => ({
-    conversationId: match.conversationId,
-    matchedMaildropEmail: match.matchedMaildropEmail,
-    clioMaildropLabel: match.clioMaildropLabel,
-    matterId: match.matterId ?? null,
-    matterDisplayNumber: match.matterDisplayNumber,
-    masterLawsuitId: match.masterLawsuitId,
-    clioMatterId: match.clioMatterId ?? null,
-    clioDisplayNumber: match.clioDisplayNumber,
-    messageCount: match.messageCount,
-    subjects: match.subjects,
-  }));
-
   if (mode !== "sync") {
     return NextResponse.json({
       ...base,
       ok: true,
       previewOnly: true,
-      graphCallsMade: true,
-      readsMailbox: true,
+      graphCallsMade: graphCalls > 0,
+      readsMailbox: graphCalls > 0,
       databaseRecordsChanged: false,
-      counts: {
-        knownMaildrops: knownByEmail.size,
-        scannedGraphMessages: rows.length,
-        matchedMessages: Array.from(matchesByConversation.values()).reduce((sum, match) => sum + match.messages.length, 0),
-        discoveredThreads: matchesByConversation.size,
-        messagesUpserted: 0,
-        matterLinksCreated: 0,
-        filingLogsCreated: 0,
-      },
+      counts: { knownMaildrops: knownByEmail.size, mailboxesScanned: mailboxes.length, scannedGraphMessages, matchedMessages, discoveredThreads: matchesByConversation.size, messagesUpserted: 0, matterLinksCreated: 0, filingLogsCreated: 0 },
       matches,
-      nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
-      diagnostics: {
-        knownMaildropSamples,
-        scannedMessageSamples,
-        matchedMaildropSamples,
-      },
+      graphErrors,
       message:
-        "Preview-only MailDrop discovery completed.  This read recent Microsoft Graph messages and matched locally known MailDrop recipients, but did not persist local records.",
+        "Preview-only per-user MailDrop discovery completed.  This read recent Microsoft Graph messages across active user mailboxes and matched locally known MailDrop recipients, but did not persist local records.",
     });
   }
 
@@ -421,7 +376,7 @@ async function runMaildropDiscovery(req: NextRequest) {
     });
 
     const persisted = await persistGraphThreadSyncMessages({
-      mailboxUserId: config.mailboxUserId,
+      mailboxUserId: match.mailbox,
       conversationId,
       messages,
       context: contextFromMaildropRecord(match.maildrop),
@@ -431,58 +386,29 @@ async function runMaildropDiscovery(req: NextRequest) {
     matterLinksCreated += Number(persisted?.matterLinksCreated || 0);
     filingLogsCreated += 1;
 
-    persistedResults.push({
-      conversationId,
-      matchedMaildropEmail: match.matchedMaildropEmail,
-      persisted,
-    });
+    persistedResults.push({ conversationId, mailbox: match.mailbox, matchedMaildropEmail: match.matchedMaildropEmail, persisted });
   }
 
   await createMaildropDiscoveryRunLog({
     status: matchesByConversation.size ? "matched" : "no_matches",
     previewOnly: false,
     databaseChanged: true,
-    metadata: {
-      knownMaildrops: knownByEmail.size,
-      scannedGraphMessages: rows.length,
-      matchedMessages: Array.from(matchesByConversation.values()).reduce((sum, match) => sum + match.messages.length, 0),
-      discoveredThreads: matchesByConversation.size,
-      messagesUpserted,
-      matterLinksCreated,
-      filingLogsCreated,
-      nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
-      knownMaildropSamples,
-      scannedMessageSamples,
-      matchedMaildropSamples,
-    },
+    metadata: { knownMaildrops: knownByEmail.size, mailboxesScanned: mailboxes.length, scannedGraphMessages, matchedMessages, discoveredThreads: matchesByConversation.size, messagesUpserted, matterLinksCreated, filingLogsCreated, graphErrors },
   });
 
   return NextResponse.json({
     ...base,
     ok: true,
     previewOnly: false,
-    graphCallsMade: true,
-    readsMailbox: true,
+    graphCallsMade: graphCalls > 0,
+    readsMailbox: graphCalls > 0,
     databaseRecordsChanged: messagesUpserted > 0 || matterLinksCreated > 0 || filingLogsCreated > 0,
-    counts: {
-      knownMaildrops: knownByEmail.size,
-      scannedGraphMessages: rows.length,
-      matchedMessages: Array.from(matchesByConversation.values()).reduce((sum, match) => sum + match.messages.length, 0),
-      discoveredThreads: matchesByConversation.size,
-      messagesUpserted,
-      matterLinksCreated,
-      filingLogsCreated,
-    },
+    counts: { knownMaildrops: knownByEmail.size, mailboxesScanned: mailboxes.length, scannedGraphMessages, matchedMessages, discoveredThreads: matchesByConversation.size, messagesUpserted, matterLinksCreated, filingLogsCreated },
     matches,
     persistedResults,
-    nextLinkPresent: Boolean(clean(graphResult.json?.["@odata.nextLink"])),
-    diagnostics: {
-      knownMaildropSamples,
-      scannedMessageSamples,
-      matchedMaildropSamples,
-    },
+    graphErrors,
     message:
-      "Confirmed MailDrop discovery completed.  This route read recent Microsoft Graph messages, matched locally known MailDrop recipients, and persisted local Barsh Matters email metadata only.  It did not create drafts, send email, write Clio, upload documents, or use local Outlook automation.",
+      "Confirmed per-user MailDrop discovery completed.  This route read recent Microsoft Graph messages across active user mailboxes, matched locally known MailDrop recipients, and persisted local Barsh Matters email metadata only.  It did not create drafts, send email, write Clio, upload documents, or use local Outlook automation.",
   });
 }
 
