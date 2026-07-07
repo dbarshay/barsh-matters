@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 
 const enc = encodeURIComponent;
 
-// Delete an email = move it to the mailbox's Deleted Items (a REVERSIBLE soft delete — never a hard
-// delete/purge). Mirrors Outlook's Delete. Flag-gated, admin-only, requires confirmDelete. Also removes
-// the local copies so it leaves the Barsh Matters inbox view immediately.
+// Delete an email = move it to the mailbox's Deleted Items in Outlook (a REVERSIBLE soft delete — never
+// a hard delete/purge). Mirrors Outlook's Delete. Flag-gated, admin-only, requires confirmDelete. The
+// local copies are FLAGGED deletedLocal=true (not removed) so they show under the "Deleted Items" folder
+// in our inbox, matching Outlook.
 //   POST { messageId, confirmDelete: true }
 export async function POST(req: NextRequest) {
   if (!isMatterEmailEnabled()) return NextResponse.json({ ok: false, error: MATTER_EMAIL_DISABLED_MESSAGE }, { status: 403 });
@@ -46,10 +47,11 @@ export async function POST(req: NextRequest) {
     if (!del.ok) return NextResponse.json({ ok: false, error: `Delete failed: ${del.error}` }, { status: 502 });
   }
 
-  // Remove local copies so it disappears from the inbox view. Cascades remove any EmailAttachment rows.
+  // Flag local copies deletedLocal=true so they move to the "Deleted Items" folder in our inbox view
+  // (reversible, mirrors Outlook). We keep the rows so the Deleted Items folder has contents.
   try {
-    if (graphMessageId) await prisma.emailMessage.deleteMany({ where: { graphMessageId } });
-    else await prisma.emailMessage.delete({ where: { id: messageId } });
+    if (graphMessageId) await prisma.emailMessage.updateMany({ where: { graphMessageId }, data: { deletedLocal: true } });
+    else await prisma.emailMessage.update({ where: { id: messageId }, data: { deletedLocal: true } });
   } catch {
     /* non-fatal — Graph move already succeeded */
   }

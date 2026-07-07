@@ -1,8 +1,11 @@
 "use client";
 
-// Outlook-style email inbox for a matter/lawsuit: a flat, date-sorted list (unread highlighted, read
-// muted) on the left and a reading pane on the right. Click an email to read it (marks it read),
-// Reply / Reply All / Delete like Outlook, and review inbound attachments inline under the message.
+// Outlook-style email client for a matter/lawsuit. Three panes: a folder rail (Inbox / Sent / Drafts /
+// Deleted Items with counts), a flat date-sorted message list for the selected folder (unread
+// highlighted, read muted), and a reading pane. New Mail composes inside the popup; open an email to
+// Reply / Reply All / Delete and review inbound attachments inline. Actions are real in Outlook: send
+// and reply go out via Graph, Delete moves the message to the mailbox's Deleted Items (reversible),
+// Save Draft creates a real Outlook draft.
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { bmConfirm } from "@/app/components/BmDialogHost";
@@ -16,6 +19,8 @@ type Msg = {
   direction: string | null;
   isRead: boolean | null;
   isSent: boolean | null;
+  isDraft: boolean | null;
+  deletedLocal: boolean | null;
   subject: string | null;
   from: string | null;
   fromEmail: string | null;
@@ -28,6 +33,14 @@ type Msg = {
   bodyPreview: string | null;
 };
 
+type FolderKey = "inbox" | "sent" | "drafts" | "deleted";
+const FOLDERS: { key: FolderKey; label: string; icon: string }[] = [
+  { key: "inbox", label: "Inbox", icon: "📥" },
+  { key: "sent", label: "Sent", icon: "📤" },
+  { key: "drafts", label: "Drafts", icon: "🗒️" },
+  { key: "deleted", label: "Deleted Items", icon: "🗑️" },
+];
+
 function asList(v: any): string[] {
   if (Array.isArray(v)) return v.map((x) => String(x || "").trim()).filter(Boolean);
   if (typeof v === "string") return v.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
@@ -37,12 +50,18 @@ function isInbound(m: Msg): boolean {
   return m.direction === "inbound";
 }
 function isUnread(m: Msg): boolean {
-  return isInbound(m) && m.isRead !== true;
+  return isInbound(m) && !m.deletedLocal && m.isRead !== true;
+}
+function folderOf(m: Msg): FolderKey {
+  if (m.deletedLocal) return "deleted";
+  if (m.isDraft) return "drafts";
+  if (isInbound(m)) return "inbox";
+  return "sent";
 }
 function senderLabel(m: Msg): string {
   if (isInbound(m)) return m.from || m.fromEmail || "Unknown sender";
   const to = asList(m.toRecipients);
-  return to.length ? `To: ${to[0]}${to.length > 1 ? ` +${to.length - 1}` : ""}` : "Sent";
+  return to.length ? `To: ${to[0]}${to.length > 1 ? ` +${to.length - 1}` : ""}` : "(no recipient)";
 }
 function whenOf(m: Msg): number {
   const raw = m.receivedAt || m.sentAt;
@@ -79,8 +98,10 @@ export default function MatterEmailInbox({
 }) {
   const [messages, setMessages] = useState<Msg[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [folder, setFolder] = useState<FolderKey>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState<{ mode: "reply" | "replyAll"; msg: Msg } | null>(null);
+  const [composing, setComposing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const query = useMemo(() => {
@@ -107,9 +128,35 @@ export default function MatterEmailInbox({
     void load();
   }, [load]);
 
-  const selected = useMemo(() => (messages || []).find((m) => m.id === selectedId) || null, [messages, selectedId]);
+  const counts = useMemo(() => {
+    const c: Record<FolderKey, number> = { inbox: 0, sent: 0, drafts: 0, deleted: 0 };
+    let inboxUnread = 0;
+    for (const m of messages || []) {
+      c[folderOf(m)]++;
+      if (isUnread(m)) inboxUnread++;
+    }
+    return { c, inboxUnread };
+  }, [messages]);
+
+  const folderMessages = useMemo(
+    () => (messages || []).filter((m) => folderOf(m) === folder),
+    [messages, folder],
+  );
+
+  const selected = useMemo(
+    () => folderMessages.find((m) => m.id === selectedId) || null,
+    [folderMessages, selectedId],
+  );
+
+  function selectFolder(key: FolderKey) {
+    setFolder(key);
+    setSelectedId(null);
+    setReply(null);
+    setComposing(false);
+  }
 
   async function openMessage(m: Msg) {
+    setComposing(false);
     setSelectedId(m.id);
     setReply(null);
     if (isUnread(m)) {
@@ -128,7 +175,7 @@ export default function MatterEmailInbox({
   }
 
   async function deleteMessage(m: Msg) {
-    const ok = await bmConfirm({ title: "Delete email", message: `Move this email from ${senderLabel(m)} to Deleted Items?`, submitLabel: "Delete" });
+    const ok = await bmConfirm({ title: "Delete email", message: `Move this email (${senderLabel(m)}) to Deleted Items in Outlook?`, submitLabel: "Delete" });
     if (!ok) return;
     setBusy(true);
     try {
@@ -139,8 +186,9 @@ export default function MatterEmailInbox({
       });
       const j = await res.json().catch(() => ({}));
       if (j?.ok) {
-        setMessages((cur) => (cur || []).filter((x) => x.id !== m.id));
-        if (selectedId === m.id) setSelectedId(null);
+        // Soft-delete: it moves to the Deleted Items folder rather than disappearing.
+        setMessages((cur) => (cur || []).map((x) => (x.id === m.id ? { ...x, deletedLocal: true } : x)));
+        setSelectedId(null);
         onChanged?.();
       } else setError(j?.error || "Delete failed.");
     } catch {
@@ -157,44 +205,79 @@ export default function MatterEmailInbox({
     return { to: Array.from(new Set(allTo)).join(", "), cc: asList(m.ccRecipients).join(", ") };
   }
 
-  const listStyle: React.CSSProperties = { flex: "0 0 46%", maxWidth: "46%", borderRight: "1px solid #e6e8eb", overflowY: "auto" };
-  const paneStyle: React.CSSProperties = { flex: 1, overflowY: "auto", background: "#fff" };
+  const numericMatterId = Number.isFinite(matterId as number) ? (matterId as number) : null;
 
   return (
-    <div style={{ border: "1px solid #e1dfdd", borderRadius: 8, overflow: "hidden", background: "#fff" }} data-barsh-email-inbox="true">
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #e6e8eb", background: "#faf9f8" }}>
-        <strong style={{ fontSize: 16, color: "#00346e" }}>Inbox</strong>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#fff" }} data-barsh-email-inbox="true">
+      {/* Command bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderBottom: "1px solid #e6e8eb", background: "#faf9f8", flex: "0 0 auto" }}>
+        <button
+          type="button"
+          onClick={() => { setComposing(true); setSelectedId(null); setReply(null); }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "none", borderRadius: 4, background: "#0078d4", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 16px", cursor: "pointer" }}
+          data-barsh-email-newmail="true"
+        >
+          <span aria-hidden>✉️</span> New Mail
+        </button>
         <div style={{ flex: 1 }} />
         <button
           type="button"
           onClick={() => void load()}
-          style={{ border: "1px solid #cdd6e0", borderRadius: 6, background: "#fff", color: "#26364a", fontSize: 12, fontWeight: 800, padding: "5px 12px", cursor: "pointer" }}
+          style={{ border: "1px solid #cdd6e0", borderRadius: 6, background: "#fff", color: "#26364a", fontSize: 12, fontWeight: 800, padding: "6px 12px", cursor: "pointer" }}
         >
           Refresh
         </button>
       </div>
 
-      {error && <div style={{ color: "#b00020", padding: 10, fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#b00020", padding: 10, fontSize: 13, flex: "0 0 auto" }}>{error}</div>}
 
-      <div style={{ display: "flex", height: 560 }}>
-        {/* Left — the flat, date-sorted list */}
-        <div style={listStyle}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Folder rail */}
+        <div style={{ flex: "0 0 158px", borderRight: "1px solid #e6e8eb", background: "#f7f8fa", overflowY: "auto", padding: "8px 6px" }}>
+          {FOLDERS.map((f) => {
+            const active = folder === f.key;
+            const total = counts.c[f.key];
+            const badge = f.key === "inbox" ? counts.inboxUnread : total;
+            const showBadge = f.key === "inbox" ? counts.inboxUnread > 0 : total > 0;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => selectFolder(f.key)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
+                  border: "none", borderRadius: 6, cursor: "pointer",
+                  background: active ? "#e4ecfb" : "transparent",
+                  color: active ? "#0b57d0" : "#26364a",
+                  fontSize: 13, fontWeight: active ? 800 : 600, padding: "8px 10px", marginBottom: 2,
+                }}
+              >
+                <span aria-hidden style={{ fontSize: 14 }}>{f.icon}</span>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.label}</span>
+                {showBadge ? (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: f.key === "inbox" ? "#0b57d0" : "#8a97a8" }}>{badge}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Message list */}
+        <div style={{ flex: "0 0 40%", maxWidth: "40%", borderRight: "1px solid #e6e8eb", overflowY: "auto" }}>
           {messages === null ? (
             <div style={{ color: "#8a97a8", padding: 12, fontSize: 13 }}>Loading…</div>
-          ) : messages.length === 0 ? (
-            <div style={{ color: "#8a97a8", padding: 12, fontSize: 13, fontStyle: "italic" }}>No emails yet.</div>
+          ) : folderMessages.length === 0 ? (
+            <div style={{ color: "#8a97a8", padding: 12, fontSize: 13, fontStyle: "italic" }}>No messages in {FOLDERS.find((f) => f.key === folder)?.label}.</div>
           ) : (
-            messages.map((m) => {
+            folderMessages.map((m) => {
               const unread = isUnread(m);
-              const active = m.id === selectedId;
+              const active = m.id === selectedId && !composing;
               return (
                 <div
                   key={m.id}
                   onClick={() => void openMessage(m)}
                   style={{
-                    display: "grid",
-                    gap: 2,
-                    padding: "9px 12px 9px 13px",
+                    display: "grid", gap: 2, padding: "9px 12px 9px 13px",
                     borderBottom: "1px solid #eef0f2",
                     borderLeft: unread ? "3px solid #2563eb" : "3px solid transparent",
                     background: active ? "#e8eefb" : unread ? "#eff4ff" : "#fff",
@@ -220,9 +303,20 @@ export default function MatterEmailInbox({
           )}
         </div>
 
-        {/* Right — reading pane */}
-        <div style={paneStyle}>
-          {!selected ? (
+        {/* Reading pane / compose */}
+        <div style={{ flex: 1, overflowY: "auto", background: "#fff", minWidth: 0 }}>
+          {composing ? (
+            <div style={{ padding: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "#00346e", marginBottom: 10 }}>New Mail</div>
+              <MatterEmailCompose
+                matterId={numericMatterId}
+                masterLawsuitId={masterLawsuitId ?? null}
+                displayNumber={displayNumber ?? matterDisplayNumber ?? null}
+                onSent={() => { setComposing(false); void load(); onChanged?.(); }}
+                onSavedDraft={() => { setComposing(false); setFolder("drafts"); void load(); onChanged?.(); }}
+              />
+            </div>
+          ) : !selected ? (
             <div style={{ color: "#8a97a8", padding: 24, fontSize: 14, textAlign: "center" }}>Select an email to read it.</div>
           ) : (
             <div style={{ display: "grid", gap: 12, padding: 16 }}>
@@ -242,7 +336,7 @@ export default function MatterEmailInbox({
               {reply && reply.msg.id === selected.id ? (
                 <MatterEmailCompose
                   key={`${reply.mode}-${selected.id}`}
-                  matterId={Number.isFinite(matterId as number) ? (matterId as number) : null}
+                  matterId={numericMatterId}
                   masterLawsuitId={masterLawsuitId ?? null}
                   displayNumber={displayNumber ?? matterDisplayNumber ?? null}
                   replyToGraphMessageId={selected.graphMessageId}
@@ -264,7 +358,7 @@ export default function MatterEmailInbox({
                 <div style={{ marginTop: 4 }}>
                   <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", color: "#00346e", margin: "0 0 6px" }}>Attachments</div>
                   <InboundAttachmentReview
-                    matterId={Number.isFinite(matterId as number) ? (matterId as number) : null}
+                    matterId={numericMatterId}
                     masterLawsuitId={masterLawsuitId ?? null}
                     conversationId={selected.conversationId}
                     onChanged={() => { onChanged?.(); }}

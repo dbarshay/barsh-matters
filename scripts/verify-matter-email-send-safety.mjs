@@ -42,20 +42,20 @@ check("components/email/MatterEmailCompose.tsx", [
   "replyToGraphMessageId",
   "replyToMessageId:",
 ]);
-// Reply entry point in the matter thread panel.
-check("app/matter/[id]/page.tsx", ["data-barsh-direct-email-reply-button", "setEmailReply("]);
+// Reply entry point now lives in the Outlook-style inbox (Reply / Reply All in the reading pane).
+check("components/email/MatterEmailInbox.tsx", ["Reply All", "replyToGraphMessageId"]);
 
 // Unread-incoming alert badge on the Emails button (both pages) + read-only count route.
 check("app/api/graph/matter-email/unread-count/route.ts", ['direction: "inbound"', "NOT: { isRead: true }"]);
 check("app/matter/[id]/page.tsx", ["data-barsh-direct-emails-unread-badge", "emailUnread"]);
 check("app/matters/page.tsx", ["data-barsh-master-emails-unread-badge", "masterEmailUnread"]);
 
-// Dedicated Emails action group on both pages (separate from Documents), with View + Send triggers.
+// Dedicated Emails action on both pages. The matter page's Emails tab launches the Outlook-style inbox
+// modal directly (compose/send/reply all live inside the inbox popup).
 check("app/matter/[id]/page.tsx", [
   'label: "Emails"',
-  'directActionGroup === "emails"',
-  "data-barsh-direct-send-email-button",
-  "MatterEmailCompose",
+  "openMatterViewEmailsPopup()",
+  "MatterEmailInbox",
 ]);
 check("app/matters/page.tsx", [
   'label: "Emails"',

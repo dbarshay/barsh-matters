@@ -18,6 +18,7 @@ export default function MatterEmailCompose({
   masterLawsuitId,
   displayNumber,
   onSent,
+  onSavedDraft,
   replyToGraphMessageId,
   initialTo,
   initialCc,
@@ -27,6 +28,7 @@ export default function MatterEmailCompose({
   masterLawsuitId?: string | null;
   displayNumber?: string | null;
   onSent?: () => void;
+  onSavedDraft?: () => void;
   replyToGraphMessageId?: string | null;
   initialTo?: string | null;
   initialCc?: string | null;
@@ -39,6 +41,7 @@ export default function MatterEmailCompose({
   const [subject, setSubject] = useState(initialSubject || (tag ? `[${tag}] ` : ""));
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   // Phase C — filed-document attachments picked from the matter/lawsuit document tree.
@@ -95,6 +98,39 @@ export default function MatterEmailCompose({
       setMsg({ kind: "err", text: err?.message || "Send request failed." });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function saveDraft() {
+    if (!to.trim() && !subject.trim() && !body.trim()) {
+      setMsg({ kind: "err", text: "Nothing to save yet." });
+      return;
+    }
+    setSavingDraft(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/graph/matter-email/save-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matterId: matterId ?? null,
+          masterLawsuitId: masterLawsuitId ?? null,
+          matterDisplayNumber: tag || null,
+          to, cc, subject,
+          body: body.replace(/\n/g, "<br>"),
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j?.ok) {
+        setMsg({ kind: "ok", text: "Saved to Drafts." });
+        onSavedDraft?.();
+      } else {
+        setMsg({ kind: "err", text: j?.error || "Could not save draft." });
+      }
+    } catch (err: any) {
+      setMsg({ kind: "err", text: err?.message || "Save draft failed." });
+    } finally {
+      setSavingDraft(false);
     }
   }
 
@@ -162,6 +198,23 @@ export default function MatterEmailCompose({
           <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>📎</span>
           Attach{attachments.length ? ` (${attachments.length})` : ""}
         </button>
+        {!isReply && (
+          <button
+            type="button"
+            onClick={() => void saveDraft()}
+            disabled={sending || savingDraft}
+            title="Save this email as a draft in Outlook"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "#fff", color: "#605e5c", border: "1px solid #cdd6e0",
+              borderRadius: 2, padding: "6px 12px", fontWeight: 600, fontSize: 13,
+              cursor: sending || savingDraft ? "default" : "pointer",
+            }}
+          >
+            <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🗒️</span>
+            {savingDraft ? "Saving…" : "Save draft"}
+          </button>
+        )}
         {isReply && <span style={{ fontSize: 12, color: "#605e5c", fontWeight: 600 }}>Reply (threaded)</span>}
         {msg && <span style={{ fontSize: 13, color: msg.kind === "ok" ? "#107c10" : "#a4262c" }}>{msg.text}</span>}
       </div>

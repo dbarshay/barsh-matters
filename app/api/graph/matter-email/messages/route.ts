@@ -5,7 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Flat, date-sorted email list for a matter/lawsuit (Outlook-style inbox). Read-only. Returns synced
-// EmailMessages across the file's threads, newest first, deduped by graphMessageId.
+// EmailMessages across the file's threads, newest first, deduped by graphMessageId. Includes direction,
+// deletedLocal, and isDraft so the client can bucket messages into Outlook-style folders (Inbox / Sent /
+// Deleted Items / Drafts).
 //   GET ?matterId= | masterLawsuitId= | matterDisplayNumber=
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -21,9 +23,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const rows = await prisma.emailMessage.findMany({
-      where: { thread: threadWhere, isDraft: false },
+      where: { thread: threadWhere },
       orderBy: [{ receivedAt: "desc" }, { sentAt: "desc" }, { createdAt: "desc" }],
-      take: 300,
+      take: 500,
       select: {
         id: true,
         graphMessageId: true,
@@ -31,6 +33,8 @@ export async function GET(req: NextRequest) {
         direction: true,
         isRead: true,
         isSent: true,
+        isDraft: true,
+        deletedLocal: true,
         subject: true,
         from: true,
         fromEmail: true,

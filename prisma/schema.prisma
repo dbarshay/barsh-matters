@@ -806,6 +806,7 @@ model EmailMessage {
   isDraft                  Boolean           @default(false)
   isSent                   Boolean           @default(false)
   isRead                   Boolean?
+  deletedLocal             Boolean           @default(false)
   hasAttachments           Boolean           @default(false)
   importance               String?
   bodyPreview              String?
@@ -827,6 +828,7 @@ model EmailMessage {
   @@index([receivedAt])
   @@index([folderName])
   @@index([direction])
+  @@index([deletedLocal])
 }
 
 model EmailAttachment {

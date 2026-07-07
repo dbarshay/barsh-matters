@@ -17,6 +17,7 @@ import DropFileFilingForm from "@/components/documents/DropFileFilingForm";
 import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 import MatterEmailInbox from "@/components/email/MatterEmailInbox";
+import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -7257,106 +7258,20 @@ function openClaimAmountEditDialog() {
     if (!matterViewEmailsPopupOpen) return null;
 
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="View Emails"
-        data-barsh-direct-view-emails-standard-modal="true"
-        tabIndex={-1}
-        onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeMatterViewEmailsPopup(); } }}
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 10000,
-          background: "rgba(15, 23, 42, 0.45)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <div
-          onClick={(event) => event.stopPropagation()}
-          style={{
-            width: "min(1180px, 96vw)",
-            maxHeight: "88vh",
-            overflow: "auto",
-            border: "1px solid #cbd5e1",
-            borderRadius: 22,
-            background: "#ffffff",
-            boxShadow: "0 28px 90px rgba(15, 23, 42, 0.34)",
-          }}
+      <div data-barsh-direct-view-emails-standard-modal="true">
+        <DraggableResizableModal
+          title="Emails"
+          onClose={closeMatterViewEmailsPopup}
+          initialWidth={1200}
+          initialHeight={780}
         >
-          <div
-            data-barsh-direct-view-emails-header-standard="true"
-            style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              display: "grid",
-              gridTemplateColumns: "90px minmax(0, 1fr) 90px",
-              alignItems: "center",
-              gap: 14,
-              padding: "16px 20px",
-              borderBottom: "1px solid #00346e",
-              background: "#00346e",
-              borderTopLeftRadius: 22,
-              borderTopRightRadius: 22,
-            }}
-          >
-            <div aria-hidden="true" />
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 20,
-                fontWeight: 950,
-                color: "#ffffff",
-                textAlign: "center",
-              }}
-            >
-              View Emails
-            </h2>
-            <div aria-hidden="true" />
-          </div>
-
-          <div style={{ padding: 20 }}>
-            <MatterEmailInbox
-              matterId={resolvedNumericMatterId()}
-              matterDisplayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
-              displayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
-              onChanged={() => { void refreshEmailUnread(); }}
-            />
-          </div>
-
-          <div
-            data-barsh-direct-view-emails-footer-actions="true"
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              padding: "14px 20px 18px",
-              borderTop: "1px solid #e5e7eb",
-              background: "#f8fafc",
-            }}
-          >
-            <button
-              type="button"
-              onClick={closeMatterViewEmailsPopup}
-              disabled={emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading}
-              style={{
-                minWidth: 118,
-                height: 38,
-                border: "1px solid #cbd5e1",
-                borderRadius: 10,
-                background: "#ffffff",
-                color: "#385a83",
-                fontWeight: 900,
-                cursor: emailThreadPreviewLoading || graphThreadSyncPreviewLoading || graphThreadSyncLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
+          <MatterEmailInbox
+            matterId={resolvedNumericMatterId()}
+            matterDisplayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
+            displayNumber={textValue(matter?.displayNumber || matter?.display_number || matterId)}
+            onChanged={() => { void refreshEmailUnread(); }}
+          />
+        </DraggableResizableModal>
       </div>
     );
   }
@@ -9704,7 +9619,10 @@ function openClaimAmountEditDialog() {
                       <button
                         key={key}
                         type="button"
-                        onClick={() => setDirectActionGroup(key as any)}
+                        onClick={() => {
+                          if (key === "emails") { setDirectActionGroup(null); setComposeOpen(false); openMatterViewEmailsPopup(); }
+                          else setDirectActionGroup(key as any);
+                        }}
                         data-barsh-direct-action-tab={key}
                         style={{
                           width: "100%",
@@ -9887,28 +9805,7 @@ function openClaimAmountEditDialog() {
                       </div>
                     )}
 
-                    {directActionGroup === "emails" && (
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-direct-action-section="emails">
-                        <button
-                          type="button"
-                          title="View this matter's email threads (local + Microsoft Graph)."
-                          onClick={() => { setComposeOpen(false); openMatterViewEmailsPopup(); }}
-                          style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#eef4fb", color: "#00346e", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px", whiteSpace: "nowrap" }}
-                          data-barsh-direct-view-emails-button="true"
-                        >
-                          View Emails
-                        </button>
-                        <button
-                          type="button"
-                          title="Compose and send a new email from this matter."
-                          onClick={() => { setEmailReply(null); setComposeOpen(true); openMatterViewEmailsPopup(); }}
-                          style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px", whiteSpace: "nowrap" }}
-                          data-barsh-direct-send-email-button="true"
-                        >
-                          Send Email
-                        </button>
-                      </div>
-                    )}
+                    {/* The Emails tab launches the inbox modal directly (no sub-panel). */}
                   </div>
 
                 </div>

@@ -128,6 +128,103 @@ async function attachFiledDocumentToDraft(params: {
   return { ok: true, graphAttachmentId };
 }
 
+export type SaveDraftInput = {
+  matterId?: number | null;
+  matterDisplayNumber?: string | null;
+  masterLawsuitId?: string | null;
+  to: string[];
+  cc?: string[];
+  subject: string;
+  bodyHtml: string;
+  actorEmail?: string | null;
+};
+
+/**
+ * Save a compose as a REAL draft in the firm mailbox's Outlook Drafts folder (Graph create-message,
+ * no /send). Records a local EmailMessage with isDraft=true so it shows under our "Drafts" folder,
+ * matching Outlook. The Graph draft is the primary action; the local record is best-effort.
+ */
+export async function saveMatterEmailDraft(input: SaveDraftInput): Promise<SendMatterEmailResult> {
+  const to = (input.to || []).map((e) => e.trim()).filter(Boolean);
+  const cc = (input.cc || []).map((e) => e.trim()).filter(Boolean);
+
+  const env = assertGraphDraftEnvironmentReady();
+  if (!env.ok) return { ok: false, error: env.error };
+  const mailbox = env.mailboxUserId;
+  const base = graphApiBase();
+  const subject = ensureMatterSubjectTag(input.subject, input.matterDisplayNumber);
+
+  // Create the draft in Outlook (create-message with no send leaves it in Drafts).
+  const draft = await graphFetchJson({
+    url: `${base}/users/${enc(mailbox)}/messages`,
+    method: "POST",
+    body: {
+      subject,
+      body: { contentType: "HTML", content: input.bodyHtml || "" },
+      ...(to.length ? { toRecipients: addressList(to) } : {}),
+      ...(cc.length ? { ccRecipients: addressList(cc) } : {}),
+    },
+  });
+  if (!draft.ok) return { ok: false, error: `Draft save failed: ${draft.error}` };
+  const msg: any = draft.json || {};
+  const graphMessageId = msg.id;
+
+  // Record locally as a draft (best-effort — the Outlook draft already exists).
+  let threadId: string | undefined;
+  let messageId: string | undefined;
+  let recorded = false;
+  try {
+    const db = prisma as any;
+    const now = new Date();
+    const conversationId = String(msg.conversationId || `matter-draft-${graphMessageId || now.getTime()}`);
+    let thread = msg.conversationId ? await db.emailThread.findFirst({ where: { conversationId } }) : null;
+    if (!thread) {
+      thread = await db.emailThread.create({
+        data: {
+          conversationId,
+          internetMessageId: msg.internetMessageId ?? null,
+          mailboxUserId: mailbox,
+          subject,
+          normalizedSubject: normalizeSubject(subject),
+          latestMessageAt: now,
+          lastSyncedAt: now,
+          direction: "outbound",
+          source: "matter-draft",
+          matterId: input.matterId ?? null,
+          matterDisplayNumber: input.matterDisplayNumber ?? null,
+          masterLawsuitId: input.masterLawsuitId ?? null,
+          status: "active",
+        },
+      });
+    }
+    threadId = thread.id;
+    const message = await db.emailMessage.create({
+      data: {
+        threadId: thread.id,
+        mailboxUserId: mailbox,
+        graphMessageId: graphMessageId ?? null,
+        internetMessageId: msg.internetMessageId ?? null,
+        conversationId: msg.conversationId ?? null,
+        subject,
+        fromEmail: mailbox,
+        toRecipients: to,
+        ccRecipients: cc,
+        direction: "outbound",
+        isDraft: true,
+        isSent: false,
+        bodyHtml: input.bodyHtml || "",
+        webLink: msg.webLink ?? null,
+      },
+    });
+    messageId = message.id;
+    recorded = true;
+  } catch {
+    recorded = false;
+  }
+
+  return { ok: true, sentTo: to, subject, webLink: msg.webLink ?? null, threadId, messageId, recorded };
+}
+
 export async function sendMatterEmail(input: SendMatterEmailInput): Promise<SendMatterEmailResult> {
   const to = (input.to || []).map((e) => e.trim()).filter(Boolean);
   const cc = (input.cc || []).map((e) => e.trim()).filter(Boolean);
