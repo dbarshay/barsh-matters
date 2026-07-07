@@ -591,6 +591,17 @@ export default function FilteredMattersPage() {
   const [masterEditCourtDatesForms, setMasterEditCourtDatesForms] = useState<Record<string, { eventDate: string; eventTime: string; court: string; calendarNumber: string; judgeOrArbitrator: string; appearanceType: string; notes: string }>>({});
   const [masterActionGroup, setMasterActionGroup] = useState<"payments" | "settlement" | "documents" | "court_dates" | "emails" | null>(null);
   const [masterEmailComposeOpen, setMasterEmailComposeOpen] = useState(false);
+  const [masterEmailUnread, setMasterEmailUnread] = useState(0);
+  async function refreshMasterEmailUnread() {
+    const masterId = typeof window === "undefined" ? "" : currentMasterLawsuitIdForDocumentPreview();
+    if (!masterId) { setMasterEmailUnread(0); return; }
+    try {
+      const res = await fetch(`/api/graph/matter-email/unread-count?masterLawsuitId=${encodeURIComponent(masterId)}`);
+      const j = await res.json().catch(() => ({}));
+      if (typeof j?.unread === "number") setMasterEmailUnread(j.unread);
+    } catch { /* non-fatal */ }
+  }
+  useEffect(() => { void refreshMasterEmailUnread(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
   const [masterPaymentsPanelOpen, setMasterPaymentsPanelOpen] = useState(false);
   const [masterCloseReason, setMasterCloseReason] = useState("");
   const [masterClosing, setMasterClosing] = useState(false);
@@ -10833,9 +10844,13 @@ function masterDocumentPreviewText(value: unknown): string {
                               cursor: "pointer",
                               padding: "0 8px",
                               whiteSpace: "nowrap",
+                              position: "relative",
                             }}
                           >
                             {label}
+                            {key === "emails" && masterEmailUnread > 0 && (
+                              <span data-barsh-master-emails-unread-badge="true" title={`${masterEmailUnread} unread incoming email${masterEmailUnread === 1 ? "" : "s"}`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 999, background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px", border: "2px solid #fff" }}>{masterEmailUnread > 99 ? "99+" : masterEmailUnread}</span>
+                            )}
                           </button>
                       ))}
                     </div>

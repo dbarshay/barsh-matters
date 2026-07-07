@@ -17,6 +17,8 @@ export type SendMatterEmailInput = {
   subject: string;
   bodyHtml: string;
   actorEmail?: string | null;
+  /** When set, this is a REPLY to that Graph message — threaded via createReply (In-Reply-To/References). */
+  replyToGraphMessageId?: string | null;
 };
 
 export type SendMatterEmailResult = {
@@ -51,28 +53,56 @@ function addressList(emails: string[]): { emailAddress: { address: string } }[] 
 export async function sendMatterEmail(input: SendMatterEmailInput): Promise<SendMatterEmailResult> {
   const to = (input.to || []).map((e) => e.trim()).filter(Boolean);
   const cc = (input.cc || []).map((e) => e.trim()).filter(Boolean);
-  if (to.length === 0) return { ok: false, error: "At least one recipient (To) is required." };
+  const isReply = Boolean(input.replyToGraphMessageId);
+  // On a reply, recipients default to the original sender (createReply pre-fills them), so To is optional.
+  if (!isReply && to.length === 0) return { ok: false, error: "At least one recipient (To) is required." };
 
   const env = assertGraphDraftEnvironmentReady();
   if (!env.ok) return { ok: false, error: env.error };
   const mailbox = env.mailboxUserId;
   const base = graphApiBase();
-  const subject = ensureMatterSubjectTag(input.subject, input.matterDisplayNumber);
 
-  // 1) Create the draft (captures the real ids).
-  const draft = await graphFetchJson({
-    url: `${base}/users/${enc(mailbox)}/messages`,
-    method: "POST",
-    body: {
-      subject,
-      body: { contentType: "HTML", content: input.bodyHtml || "" },
-      toRecipients: addressList(to),
-      ...(cc.length ? { ccRecipients: addressList(cc) } : {}),
-    },
-  });
-  if (!draft.ok) return { ok: false, error: `Draft create failed: ${draft.error}` };
-  const msg: any = draft.json || {};
-  const graphMessageId: string | undefined = msg.id;
+  let msg: any = {};
+  let graphMessageId: string | undefined;
+  let subject = ensureMatterSubjectTag(input.subject, input.matterDisplayNumber);
+
+  if (isReply) {
+    // Reply path: createReply (threaded draft w/ quoted history) → prepend operator text → send.
+    const cr = await graphFetchJson({
+      url: `${base}/users/${enc(mailbox)}/messages/${enc(String(input.replyToGraphMessageId))}/createReply`,
+      method: "POST",
+      body: {},
+    });
+    if (!cr.ok) return { ok: false, error: `Reply draft failed: ${cr.error}` };
+    msg = cr.json || {};
+    graphMessageId = msg.id;
+    subject = msg.subject || subject;
+    const quoted = msg?.body?.content || "";
+    const patchBody: any = { body: { contentType: "HTML", content: `${input.bodyHtml || ""}${quoted ? `<br><br>${quoted}` : ""}` } };
+    if (to.length) patchBody.toRecipients = addressList(to);
+    if (cc.length) patchBody.ccRecipients = addressList(cc);
+    const patch = await graphFetchJson({
+      url: `${base}/users/${enc(mailbox)}/messages/${enc(String(graphMessageId))}`,
+      method: "PATCH",
+      body: patchBody,
+    });
+    if (!patch.ok) return { ok: false, error: `Reply update failed: ${patch.error}` };
+  } else {
+    // New-send path: create the draft (captures the real ids).
+    const draft = await graphFetchJson({
+      url: `${base}/users/${enc(mailbox)}/messages`,
+      method: "POST",
+      body: {
+        subject,
+        body: { contentType: "HTML", content: input.bodyHtml || "" },
+        toRecipients: addressList(to),
+        ...(cc.length ? { ccRecipients: addressList(cc) } : {}),
+      },
+    });
+    if (!draft.ok) return { ok: false, error: `Draft create failed: ${draft.error}` };
+    msg = draft.json || {};
+    graphMessageId = msg.id;
+  }
 
   // 2) Send it.
   const sent = await graphFetchJson({
@@ -89,23 +119,32 @@ export async function sendMatterEmail(input: SendMatterEmailInput): Promise<Send
   try {
     const db = prisma as any;
     const now = new Date();
-    const thread = await db.emailThread.create({
-      data: {
-        conversationId: String(msg.conversationId || `matter-compose-${graphMessageId || now.getTime()}`),
-        internetMessageId: msg.internetMessageId ?? null,
-        mailboxUserId: mailbox,
-        subject,
-        normalizedSubject: normalizeSubject(subject),
-        latestMessageAt: now,
-        lastSyncedAt: now,
-        direction: "outbound",
-        source: "matter-compose",
-        matterId: input.matterId ?? null,
-        matterDisplayNumber: input.matterDisplayNumber ?? null,
-        masterLawsuitId: input.masterLawsuitId ?? null,
-        status: "active",
-      },
-    });
+    const conversationId = String(msg.conversationId || `matter-compose-${graphMessageId || now.getTime()}`);
+    // Reuse the existing thread when replying (same conversationId); otherwise create a new one.
+    let thread = msg.conversationId
+      ? await db.emailThread.findFirst({ where: { conversationId } })
+      : null;
+    if (thread) {
+      await db.emailThread.update({ where: { id: thread.id }, data: { latestMessageAt: now, lastSyncedAt: now } });
+    } else {
+      thread = await db.emailThread.create({
+        data: {
+          conversationId,
+          internetMessageId: msg.internetMessageId ?? null,
+          mailboxUserId: mailbox,
+          subject,
+          normalizedSubject: normalizeSubject(subject),
+          latestMessageAt: now,
+          lastSyncedAt: now,
+          direction: "outbound",
+          source: isReply ? "matter-reply" : "matter-compose",
+          matterId: input.matterId ?? null,
+          matterDisplayNumber: input.matterDisplayNumber ?? null,
+          masterLawsuitId: input.masterLawsuitId ?? null,
+          status: "active",
+        },
+      });
+    }
     threadId = thread.id;
     const message = await db.emailMessage.create({
       data: {

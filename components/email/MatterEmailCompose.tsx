@@ -15,16 +15,23 @@ export default function MatterEmailCompose({
   masterLawsuitId,
   displayNumber,
   onSent,
+  replyToGraphMessageId,
+  initialTo,
+  initialSubject,
 }: {
   matterId?: number | null;
   masterLawsuitId?: string | null;
   displayNumber?: string | null;
   onSent?: () => void;
+  replyToGraphMessageId?: string | null;
+  initialTo?: string | null;
+  initialSubject?: string | null;
 }) {
   const tag = (displayNumber || "").trim();
-  const [to, setTo] = useState("");
+  const isReply = Boolean(replyToGraphMessageId);
+  const [to, setTo] = useState(initialTo || "");
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(tag ? `[${tag}] ` : "");
+  const [subject, setSubject] = useState(initialSubject || (tag ? `[${tag}] ` : ""));
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -50,6 +57,7 @@ export default function MatterEmailCompose({
           matterDisplayNumber: tag || null,
           to, cc, subject,
           body: body.replace(/\n/g, "<br>"),
+          replyToMessageId: replyToGraphMessageId ?? null,
           confirmSend: true,
         }),
       });
@@ -114,8 +122,9 @@ export default function MatterEmailCompose({
           }}
         >
           <span aria-hidden style={{ fontSize: 15, lineHeight: 1 }}>➤</span>
-          {sending ? "Sending…" : "Send"}
+          {sending ? "Sending…" : isReply ? "Send reply" : "Send"}
         </button>
+        {isReply && <span style={{ fontSize: 12, color: "#605e5c", fontWeight: 600 }}>Reply (threaded)</span>}
         {msg && <span style={{ fontSize: 13, color: msg.kind === "ok" ? "#107c10" : "#a4262c" }}>{msg.text}</span>}
       </div>
 

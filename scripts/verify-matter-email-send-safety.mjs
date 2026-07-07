@@ -21,6 +21,10 @@ check("lib/graph/matterEmail.ts", [
   "emailMessage.create",
   "emailMatterLink.create",
   'direction: "outbound"',
+  // Phase B: reply threads via createReply and reuses the existing thread.
+  "createReply",
+  "replyToGraphMessageId",
+  "emailThread.findFirst({ where: { conversationId } })",
 ]);
 
 check("app/api/graph/matter-email/send/route.ts", [
@@ -30,12 +34,21 @@ check("app/api/graph/matter-email/send/route.ts", [
   "sendMatterEmail(",
 ]);
 
-// Reusable Outlook-style compose component posts to the send route with confirmSend.
+// Reusable Outlook-style compose component posts to the send route with confirmSend (+ reply mode).
 check("components/email/MatterEmailCompose.tsx", [
   "/api/graph/matter-email/send",
   "confirmSend: true",
   "bmConfirm(",
+  "replyToGraphMessageId",
+  "replyToMessageId:",
 ]);
+// Reply entry point in the matter thread panel.
+check("app/matter/[id]/page.tsx", ["data-barsh-direct-email-reply-button", "setEmailReply("]);
+
+// Unread-incoming alert badge on the Emails button (both pages) + read-only count route.
+check("app/api/graph/matter-email/unread-count/route.ts", ["isSent: false", "NOT: { isRead: true }"]);
+check("app/matter/[id]/page.tsx", ["data-barsh-direct-emails-unread-badge", "emailUnread"]);
+check("app/matters/page.tsx", ["data-barsh-master-emails-unread-badge", "masterEmailUnread"]);
 
 // Dedicated Emails action group on both pages (separate from Documents), with View + Send triggers.
 check("app/matter/[id]/page.tsx", [

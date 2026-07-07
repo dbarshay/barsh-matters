@@ -38,8 +38,10 @@ export async function POST(req: NextRequest) {
   const cc = toList(body?.cc);
   const subject = String(body?.subject || "").trim();
   const bodyHtml = String(body?.body ?? body?.bodyHtml ?? "");
-  if (to.length === 0) return NextResponse.json({ ok: false, error: "At least one recipient (To) is required." }, { status: 400 });
-  if (!subject) return NextResponse.json({ ok: false, error: "Subject is required." }, { status: 400 });
+  const replyToGraphMessageId = body?.replyToMessageId ? String(body.replyToMessageId) : null;
+  // On a reply the recipients + subject come from the original message, so they're optional here.
+  if (!replyToGraphMessageId && to.length === 0) return NextResponse.json({ ok: false, error: "At least one recipient (To) is required." }, { status: 400 });
+  if (!replyToGraphMessageId && !subject) return NextResponse.json({ ok: false, error: "Subject is required." }, { status: 400 });
 
   const matterId = Number(body?.matterId);
   let actorEmail: string | null = null;
@@ -58,6 +60,7 @@ export async function POST(req: NextRequest) {
     subject,
     bodyHtml,
     actorEmail,
+    replyToGraphMessageId,
   });
 
   return NextResponse.json(result, { status: result.ok ? 200 : 502 });

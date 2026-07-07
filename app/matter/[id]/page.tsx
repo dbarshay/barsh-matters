@@ -672,6 +672,23 @@ const activeGroupKey =
   const [matterViewEmailsPopupOpen, setMatterViewEmailsPopupOpen] = useState(false);
   // Compose (Phase A: native matter email send via Graph). The Outlook-style form lives in MatterEmailCompose.
   const [composeOpen, setComposeOpen] = useState(false);
+  // Reply (Phase B): when set, the compose panel is in reply mode threaded to that message.
+  const [emailReply, setEmailReply] = useState<{ graphMessageId: string; to: string; subject: string } | null>(null);
+  // Unread incoming email count → alert badge on the Emails action button.
+  const [emailUnread, setEmailUnread] = useState(0);
+  async function refreshEmailUnread() {
+    const dn = textValue(matter?.displayNumber || matter?.display_number || matterId);
+    const mid = resolvedNumericMatterId();
+    if (!mid && !dn) return;
+    try {
+      const params = new URLSearchParams();
+      if (mid) params.set("matterId", String(mid));
+      if (dn) params.set("matterDisplayNumber", dn);
+      const res = await fetch(`/api/graph/matter-email/unread-count?${params.toString()}`);
+      const j = await res.json().catch(() => ({}));
+      if (typeof j?.unread === "number") setEmailUnread(j.unread);
+    } catch { /* non-fatal */ }
+  }
   const [matterClioDocumentsLoading, setMatterClioDocumentsLoading] = useState(false);
   const [matterClioDocumentsResult, setMatterClioDocumentsResult] = useState<any>(null);
   const [matterViewDocumentsPopupOpen, setMatterViewDocumentsPopupOpen] = useState(false);
@@ -736,6 +753,12 @@ const activeGroupKey =
     if (emailThreadPreviewLoading || emailThreadPreviewResult) return;
     void loadMatterEmailThreadPreview();
   }, [matterViewEmailsPopupOpen, emailThreadPreviewLoading, emailThreadPreviewResult]);
+
+  // Load the unread-incoming count for the Emails-button alert badge when the matter is available.
+  useEffect(() => {
+    void refreshEmailUnread();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matter?.matterId, matter?.displayNumber]);
 
   function directMatterNumericIdForDocuments(): number {
     const candidates = [
@@ -5468,17 +5491,21 @@ function openClaimAmountEditDialog() {
     return (
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: composeOpen ? 10 : 0 }}>
-          <div style={{ fontWeight: 900, color: "#00346e" }}>Compose email</div>
-          <button type="button" onClick={() => setComposeOpen((v) => !v)}
+          <div style={{ fontWeight: 900, color: "#00346e" }}>{emailReply ? "Reply" : "Compose email"}</div>
+          <button type="button" onClick={() => { setEmailReply(null); setComposeOpen((v) => !v); }}
             style={{ border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", padding: "6px 12px", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
             {composeOpen ? "Close" : "New email"}
           </button>
         </div>
         {composeOpen && (
           <MatterEmailCompose
+            key={emailReply?.graphMessageId || "new"}
             matterId={resolvedNumericMatterId()}
             displayNumber={displayNumber}
-            onSent={() => { setEmailThreadPreviewResult(null); }}
+            replyToGraphMessageId={emailReply?.graphMessageId ?? null}
+            initialTo={emailReply?.to ?? null}
+            initialSubject={emailReply?.subject ?? null}
+            onSent={() => { setEmailThreadPreviewResult(null); setEmailReply(null); }}
           />
         )}
       </div>
@@ -6061,6 +6088,26 @@ function openClaimAmountEditDialog() {
                             <div style={{ marginTop: 8, color: bmColors.muted, fontSize: 13, lineHeight: 1.45 }}>
                               {textValue(message.bodyPreview) || "No local body preview available."}
                             </div>
+
+                            {textValue(message.graphMessageId) && (
+                              <div style={{ marginTop: 8 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const gid = textValue(message.graphMessageId);
+                                    if (!gid) return;
+                                    const subj = textValue(message.subject || thread.subject);
+                                    setEmailReply({ graphMessageId: gid, to: textValue(message.fromEmail || message.from), subject: /^re:/i.test(subj) ? subj : `Re: ${subj}` });
+                                    setComposeOpen(true);
+                                    setMatterViewEmailsPopupOpen(true);
+                                  }}
+                                  style={{ border: "1px solid #0078d4", borderRadius: 6, background: "#0078d4", color: "#fff", padding: "5px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                                  data-barsh-direct-email-reply-button="true"
+                                >
+                                  ↩ Reply
+                                </button>
+                              </div>
+                            )}
 
                             {message.webLinkPresent && (
                               <div
@@ -9594,9 +9641,19 @@ function openClaimAmountEditDialog() {
                           cursor: "pointer",
                           padding: "0 8px",
                           whiteSpace: "nowrap",
+                          position: "relative",
                         }}
                       >
                         {label}
+                        {key === "emails" && emailUnread > 0 && (
+                          <span
+                            data-barsh-direct-emails-unread-badge="true"
+                            title={`${emailUnread} unread incoming email${emailUnread === 1 ? "" : "s"}`}
+                            style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 999, background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px", border: "2px solid #fff" }}
+                          >
+                            {emailUnread > 99 ? "99+" : emailUnread}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -9767,7 +9824,7 @@ function openClaimAmountEditDialog() {
                         <button
                           type="button"
                           title="Compose and send a new email from this matter."
-                          onClick={() => { setComposeOpen(true); openMatterViewEmailsPopup(); }}
+                          onClick={() => { setEmailReply(null); setComposeOpen(true); openMatterViewEmailsPopup(); }}
                           style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px", whiteSpace: "nowrap" }}
                           data-barsh-direct-send-email-button="true"
                         >
