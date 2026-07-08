@@ -16,6 +16,46 @@
 
 ---
 
+## Native email — PER-USER, real-time (built)
+
+Email is **user-specific**: every user works their **own** BRL Outlook mailbox (their account email).
+**There is no shared firm mailbox.** The old Clio MailDrop matching is retired.
+
+- **Mailbox identity:** `lib/graph/userMailbox.ts` — interactive routes derive the mailbox from the
+  signed session (`getRequestUserMailbox`); sync/webhooks enumerate `AdminUser` (`listActiveUserMailboxes`).
+- **Outlook-style inbox:** `components/email/MatterEmailInbox.tsx` — folder rail (Inbox/Sent/Drafts/
+  Deleted Items), reading pane, Reply/Reply All, Save Draft, inline inbound-attachment OCR review.
+  Keyboard **Delete/Backspace** moves a highlighted message to Deleted Items (reversible, no confirm).
+  Hosted in `components/ui/DraggableResizableModal.tsx`. Mounted on the **matter page**, the **lawsuit
+  page**, and firm-wide in the header (`app/components/GlobalEmailInboxButton.tsx`, `?scope=all`).
+- **Real-time:** Microsoft Graph change-notification **webhooks**, one subscription **per active user
+  mailbox** (`lib/graph/emailSubscription.ts`, model `GraphSubscription`). Receiver:
+  `app/api/graph/webhook/route.ts` (validation handshake + `clientState` secret; resolves the mailbox
+  by `subscriptionId`). Auto-provisions on user-create; renews via the every-6h `/api/graph/webhook/
+  subscribe` cron (self-heals if a subscription lapses). Backstop crons (`background-thread-sync`,
+  `maildrop-discovery`) relaxed to every 5 min.
+- **Matching (only matter-related mail is stored):** a reply into a known thread, OR a matter number —
+  `BRL_YYYYNNNNN` or `YYYY.MM.NNNNN` — found **anywhere in subject or body**
+  (`extractMatterNumbers` / `resolveMatterContext` in `lib/graph/webhookMessageSync.ts`, resolved to
+  `ClaimIndex.display_number`). No match → skipped, left untouched in Outlook.
+- **Actions are real in Outlook:** send/reply from the user's mailbox; Delete → Deleted Items; Save
+  Draft → real Outlook draft. Never hard-deletes.
+- **Flags/env:** `BARSH_MATTER_EMAIL_ENABLED=1`, `BARSH_INBOUND_ATTACHMENT_OCR_ENABLED=1`,
+  `BARSH_EMAIL_WEBHOOK_ENABLED=1`, `BARSH_EMAIL_WEBHOOK_CLIENT_STATE=<secret>`,
+  `BARSH_EMAIL_WEBHOOK_URL=https://<prod>/api/graph/webhook`, plus `CRON_SECRET` and the
+  `MICROSOFT_GRAPH_TENANT_ID/CLIENT_ID/CLIENT_SECRET`. `MICROSOFT_GRAPH_MAILBOX_USER_ID` is no longer
+  used by these routes.
+- **Azure (done):** app "Barsh Matters Graph Email" has **Application** permissions `Mail.Read`,
+  `Mail.ReadWrite`, `Mail.Send` with admin consent. Optional hardening: an Application Access Policy to
+  scope the app to only BRL users' mailboxes; rotate the (exposed) client secret before go-live.
+- **Open items:** the dotted `YYYY.MM.NNNNN` format only resolves to a matter if that string is stored
+  in `ClaimIndex.display_number` (point the lookup at the legacy field if it lives elsewhere); an
+  "Unmatched" triage view for non-matter mail is a possible future add. Three obsolete email-UI
+  verifiers (`verify-direct-matter-email-thread-ui-safety`, `verify-direct-view-emails-popup-modal-
+  safety`, `verify-master-email-thread-ui-safety`) are superseded — `git rm` them.
+
+---
+
 ## Status: the import module is BUILT (behind a flag)
 
 Everything below is implemented, tsc-clean, and covered by source-grep verifiers. It's all gated by

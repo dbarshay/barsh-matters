@@ -59,9 +59,8 @@ check("app/matter/[id]/page.tsx", [
 ]);
 check("app/matters/page.tsx", [
   'label: "Emails"',
-  'masterActionGroup === "emails"',
-  "data-barsh-master-send-email-button",
-  "renderMasterEmailComposePopup",
+  "setMasterEmailInboxOpen(true)",
+  "MatterEmailInbox",
 ]);
 
 if (failed) process.exit(1);

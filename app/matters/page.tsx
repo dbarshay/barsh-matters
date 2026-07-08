@@ -13,6 +13,8 @@ import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 import { type FiledDoc } from "@/components/documents/FolderTree";
 import BarshHeader from "@/app/components/BarshHeader";
+import MatterEmailInbox from "@/components/email/MatterEmailInbox";
+import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider" | "dateOfLoss";
@@ -593,6 +595,7 @@ export default function FilteredMattersPage() {
   const [masterEditCourtDatesForms, setMasterEditCourtDatesForms] = useState<Record<string, { eventDate: string; eventTime: string; court: string; calendarNumber: string; judgeOrArbitrator: string; appearanceType: string; notes: string }>>({});
   const [masterActionGroup, setMasterActionGroup] = useState<"payments" | "settlement" | "documents" | "court_dates" | "emails" | null>(null);
   const [masterEmailComposeOpen, setMasterEmailComposeOpen] = useState(false);
+  const [masterEmailInboxOpen, setMasterEmailInboxOpen] = useState(false);
   const [masterEmailUnread, setMasterEmailUnread] = useState(0);
   async function refreshMasterEmailUnread() {
     const masterId = typeof window === "undefined" ? "" : currentMasterLawsuitIdForDocumentPreview();
@@ -1529,6 +1532,27 @@ export default function FilteredMattersPage() {
             <MatterEmailCompose masterLawsuitId={masterId} displayNumber={masterId} initialSubject={buildMasterEmailSubject()} onSent={() => setMasterEmailComposeOpen(false)} />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  function renderMasterViewEmailsPopup() {
+    if (!masterEmailInboxOpen) return null;
+    const masterId = currentMasterLawsuitIdForDocumentPreview();
+    return (
+      <div data-barsh-master-view-emails-standard-modal="true">
+        <DraggableResizableModal
+          title="Emails"
+          onClose={() => { setMasterEmailInboxOpen(false); void refreshMasterEmailUnread(); }}
+          initialWidth={1200}
+          initialHeight={780}
+        >
+          <MatterEmailInbox
+            masterLawsuitId={masterId}
+            displayNumber={masterId}
+            onChanged={() => { void refreshMasterEmailUnread(); }}
+          />
+        </DraggableResizableModal>
       </div>
     );
   }
@@ -10807,7 +10831,10 @@ function masterDocumentPreviewText(value: unknown): string {
                           <button
                             key={key}
                             type="button"
-                            onClick={() => setMasterActionGroup(key as any)}
+                            onClick={() => {
+                              if (key === "emails") { setMasterActionGroup(null); setMasterEmailComposeOpen(false); setMasterEmailInboxOpen(true); }
+                              else setMasterActionGroup(key as any);
+                            }}
                             data-barsh-master-action-tab={key}
                             style={{
                               width: "100%",
@@ -10867,12 +10894,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         </div>
                       )}
 
-                      {masterActionGroup === "emails" && (
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-barsh-master-action-section="emails">
-                          <button type="button" title="View this lawsuit's email threads." onClick={() => { setMasterEmailComposeOpen(false); setActiveMasterWorkspaceTab("email_threads"); void loadMasterEmailThreadPreview(); }} style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#eef4fb", color: "#00346e", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-view-emails-button="true">View Emails</button>
-                          <button type="button" title="Compose and send a new email from this lawsuit." onClick={() => setMasterEmailComposeOpen(true)} style={{ minHeight: 36, border: "1px solid #00346e", borderRadius: 999, background: "#00346e", color: "#ffffff", fontSize: 12, fontWeight: 950, cursor: "pointer", padding: "0 14px" }} data-barsh-master-send-email-button="true">Send Email</button>
-                        </div>
-                      )}
+                      {/* The Emails tab launches the Outlook-style inbox modal directly (no sub-panel). */}
                     </div>
                   </div>
 
@@ -11050,6 +11072,7 @@ function masterDocumentPreviewText(value: unknown): string {
 
                       {renderMasterViewDocumentsPopup()}
                       {renderMasterEmailComposePopup()}
+                      {renderMasterViewEmailsPopup()}
                       {renderMasterDocumentHistoryPopup()}
                       {renderMasterDocumentGenerationPopup()}
                       {renderMasterDocumentDeliveryPopup()}

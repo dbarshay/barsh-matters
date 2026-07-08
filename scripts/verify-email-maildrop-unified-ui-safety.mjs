@@ -1,57 +1,23 @@
 import fs from "node:fs";
 
+// The matter and lawsuit pages share ONE unified email surface: the Outlook-style MatterEmailInbox,
+// launched from the Emails action as a draggable/resizable modal. (The former MailDrop thread panels
+// and separate View/Send chrome were retired.)
 let failures = 0;
-
-function read(path) {
-  return fs.readFileSync(path, "utf8");
+function mustContain(path, marker) {
+  const text = fs.readFileSync(path, "utf8");
+  if (!text.includes(marker)) { console.error(`FAIL ${path}: missing ${marker}`); failures += 1; }
+  else console.log(`PASS ${path}: ${marker}`);
 }
 
-function mustContain(path, text, needle) {
-  if (!text.includes(needle)) {
-    console.error("FAIL " + path + ": missing " + needle);
-    failures += 1;
-  }
+for (const page of ["app/matter/[id]/page.tsx", "app/matters/page.tsx"]) {
+  mustContain(page, "MatterEmailInbox");
+  mustContain(page, "DraggableResizableModal");
 }
+mustContain("app/matter/[id]/page.tsx", "openMatterViewEmailsPopup()");
+mustContain("app/matters/page.tsx", "setMasterEmailInboxOpen(true)");
+mustContain("components/email/MatterEmailInbox.tsx", 'label: "Deleted Items"');
 
-function mustNotContain(path, text, needle) {
-  if (text.includes(needle)) {
-    console.error("FAIL " + path + ": must not contain " + needle);
-    failures += 1;
-  }
-}
-
-console.log("=== EMAIL / MAILDROP UNIFIED UI SAFETY VERIFICATION ===");
-
-const directPath = "app/matter/[id]/page.tsx";
-const masterPath = "app/matters/page.tsx";
-const direct = read(directPath);
-const master = read(masterPath);
-
-mustContain(directPath, direct, "label: \"Emails\"");
-mustContain(directPath, direct, "note: \"Matter emails and MailDrop threads\"");
-mustContain(directPath, direct, "function renderMatterViewEmailsPopup()");
-mustContain(directPath, direct, "function renderMatterEmailThreadsPanel()");
-mustContain(directPath, direct, "data-barsh-direct-view-emails-standard-modal=\"true\"");
-mustContain(directPath, direct, "data-barsh-direct-view-emails-footer-actions=\"true\"");
-mustContain(directPath, direct, "void loadMatterEmailThreadPreview();");
-mustContain(directPath, direct, "Email records load automatically when this panel opens.");
-mustContain(directPath, direct, "hidden");
-mustContain(directPath, direct, "aria-hidden=\"true\"");
-
-mustContain(masterPath, master, "Unified Master Lawsuit email area.");
-mustContain(masterPath, master, "if (activeMasterWorkspaceTab !== \"email_threads\") return;");
-mustContain(masterPath, master, "void loadMasterEmailThreadPreview();");
-mustContain(masterPath, master, "Graph-synced messages and MailDrop-linked thread records appear here together");
-mustContain(masterPath, master, "Email records load automatically when this panel opens.");
-mustContain(masterPath, master, "hidden");
-mustContain(masterPath, master, "aria-hidden=\"true\"");
-
-mustNotContain(directPath, direct, "label: \"Email / Threads\"");
-mustNotContain(masterPath, master, ">Email / Threads<");
-
-if (failures > 0) {
-  console.error("=== EMAIL / MAILDROP UNIFIED UI SAFETY FAILED: " + failures + " failure(s) ===");
-  process.exit(1);
-}
-
-console.log("=== EMAIL / MAILDROP UNIFIED UI SAFETY PASSED ===");
+if (failures > 0) { console.error(`\n=== EMAIL UNIFIED UI SAFETY FAILED: ${failures} ===`); process.exit(1); }
+console.log("\n=== EMAIL UNIFIED UI SAFETY PASSED ===");
+console.log("Matter and lawsuit pages both mount the unified Outlook-style inbox in a draggable modal.");
