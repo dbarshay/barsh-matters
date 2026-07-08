@@ -89,7 +89,15 @@ export function extractMatterNumbers(text: string): string[] {
   // is 3+ digits so a plain calendar date like 2026.07.15 is not mistaken for a matter number.
   const dotted = /\b(20\d{2})[.\-/](\d{2})[.\-/](\d{3,})\b/g;
   while ((m = dotted.exec(t))) out.push(`${m[1]}.${m[2]}.${m[3]}`);
+  // Legacy paper file number: 445YY-NNNNNNNNN (constant "445" prefix + 2-digit year + 9 digits). Kept
+  // during migration so scans/emails referencing the old number still associate to the migrated matter.
+  const legacy = /\b(445\d{2}-\d{7,10})\b/g;
+  while ((m = legacy.exec(t))) out.push(m[1]);
   return Array.from(new Set(out));
+}
+
+function isLegacyTag(t: string): boolean {
+  return /^445\d{2}-\d{7,10}$/.test(t);
 }
 
 export async function resolveMatterContext(conversationId: string, matchText: string): Promise<any | null> {
@@ -107,7 +115,8 @@ export async function resolveMatterContext(conversationId: string, matchText: st
   //    PRECEDENCE: if BOTH appear, route to the Lawsuit Matter.
   const tags = extractMatterNumbers(matchText);
   const individualTags = tags.filter((t) => /^BRL_/i.test(t));
-  const lawsuitTags = tags.filter((t) => !/^BRL_/i.test(t));
+  const legacyTags = tags.filter(isLegacyTag);
+  const lawsuitTags = tags.filter((t) => !/^BRL_/i.test(t) && !isLegacyTag(t));
 
   if (lawsuitTags.length) {
     let masterLawsuitId = lawsuitTags[0];
@@ -127,6 +136,16 @@ export async function resolveMatterContext(conversationId: string, matchText: st
       /* fall through */
     }
     return { source: "graph_webhook", matterDisplayNumber: individualTags[0] }; // present but no matter record yet
+  }
+  if (legacyTags.length) {
+    // Legacy paper number → the migrated matter that stores it in old_matter_number.
+    try {
+      const claim = await (prisma as any).claimIndex.findFirst({ where: { old_matter_number: { in: legacyTags } }, select: { matter_id: true, display_number: true } });
+      if (claim) return { source: "graph_webhook", matterId: typeof claim.matter_id === "number" ? claim.matter_id : null, matterDisplayNumber: claim.display_number || null };
+    } catch {
+      /* fall through */
+    }
+    return { source: "graph_webhook", matterDisplayNumber: legacyTags[0] }; // not migrated yet — surfaced firm-wide
   }
   return null;
 }

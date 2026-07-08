@@ -186,6 +186,7 @@ model ClioToken {
 model ClaimIndex {
   matter_id               Int     @id
   display_number          String?
+  old_matter_number       String? // legacy paper file number "445YY-NNNNNNNNN" (migration; retired after cutover)
   description             String?
   claim_number_raw        String?
   claim_number_normalized String?
@@ -249,6 +250,7 @@ model ClaimIndex {
   patient                    Patient? @relation(fields: [patient_id], references: [id])
 
   @@index([case_type])
+  @@index([old_matter_number])
   @@index([fingerprint])
   @@index([patient_id])
   @@index([claim_number_normalized])
