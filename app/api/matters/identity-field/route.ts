@@ -10,6 +10,7 @@ type IdentityFieldName =
   | "insurer_name"
   | "claim_number_raw"
   | "treating_provider"
+  | "service_type"
   | "date_of_loss";
 
 type IdentityFieldConfig = {
@@ -42,6 +43,11 @@ const IDENTITY_FIELDS: Record<string, IdentityFieldConfig> = {
     fieldName: "treating_provider",
     label: "Treating Provider",
     referenceType: "treating_provider",
+  },
+  service_type: {
+    fieldName: "service_type",
+    label: "Service Type",
+    referenceType: "service_type",
   },
 };
 
@@ -83,6 +89,7 @@ function claimIndexValue(claimIndex: any, fieldName: IdentityFieldName): string 
     return textValue(claimIndex?.claim_number_raw || claimIndex?.claim_number_normalized);
   }
   if (fieldName === "treating_provider") return textValue(claimIndex?.treating_provider);
+  if (fieldName === "service_type") return textValue(claimIndex?.service_type);
   return "";
 }
 
@@ -184,6 +191,13 @@ function updateDataForField(config: IdentityFieldConfig, nextValue: string) {
     };
   }
 
+  if (config.fieldName === "service_type") {
+    return {
+      service_type: nextValue,
+      indexed_at: new Date(),
+    };
+  }
+
   return {
     indexed_at: new Date(),
   };
@@ -218,6 +232,7 @@ export async function GET(request: Request) {
         claim_number_normalized: true,
         date_of_loss: true,
         treating_provider: true,
+        service_type: true,
         master_lawsuit_id: true,
       },
     });
@@ -311,6 +326,7 @@ export async function PATCH(request: Request) {
         claim_number_normalized: true,
         date_of_loss: true,
         treating_provider: true,
+        service_type: true,
         master_lawsuit_id: true,
       },
     });
@@ -366,6 +382,7 @@ export async function PATCH(request: Request) {
           claim_number_normalized: true,
           date_of_loss: true,
           treating_provider: true,
+          service_type: true,
           master_lawsuit_id: true,
         },
       });

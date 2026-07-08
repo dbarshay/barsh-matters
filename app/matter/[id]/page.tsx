@@ -19,6 +19,7 @@ import InboundAttachmentReview from "@/components/email/InboundAttachmentReview"
 import MatterEmailInbox from "@/components/email/MatterEmailInbox";
 import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
 import OldFileNumberField from "@/components/OldFileNumberField";
+import ServiceTypePicklist from "@/components/ServiceTypePicklist";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -9340,6 +9341,8 @@ function openClaimAmountEditDialog() {
                     {formatDOS(matter?.dosStart, matter?.dosEnd) || "—"}
                   </div>
                 </div>
+
+                <ServiceTypePicklist matterId={resolvedNumericMatterId()} />
 
                 <div className="barsh-direct-summary-card">
                   <div
