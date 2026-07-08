@@ -89,11 +89,15 @@ export function extractMatterNumbers(text: string): string[] {
   // is 3+ digits so a plain calendar date like 2026.07.15 is not mistaken for a matter number.
   const dotted = /\b(20\d{2})[.\-/](\d{2})[.\-/](\d{3,})\b/g;
   while ((m = dotted.exec(t))) out.push(`${m[1]}.${m[2]}.${m[3]}`);
-  // Legacy paper numbers (kept during migration): an Individual Matter is "445YY-NNNNNNNNN" (constant
-  // "445" + 2-digit year + digits); an aggregated Lawsuit Matter is "445-PKTYY-NNNN" (literal "445-PKT").
-  const legacyLawsuit = /\b(445-PKT\d{2}-\d{3,6})\b/gi;
+  // Legacy paper numbers (kept during migration). Confirmed against the OCR sample set:
+  //   Individual Matter        = "445YY-NNNNNN"  (constant "445" + 2-digit year + 6-digit sequence;
+  //                              a trailing "_NNNNNNNNN" / " NNNNNNNNN" is a separate id, NOT the file #).
+  //   aggregated Lawsuit Matter = "445-PKTYY-NNNN" (literal "445-PKT").
+  // The prefix is the signal: "445YY-<digits>" = Individual, "445-PKTYY-<digits>" = Lawsuit. We capture
+  // the leading digit run (stopping at space/underscore/punctuation), which drops any trailing "_id".
+  const legacyLawsuit = /\b(445-PKT\d{2}-\d{2,})/gi;
   while ((m = legacyLawsuit.exec(t))) out.push(m[1].toUpperCase());
-  const legacyIndividual = /\b(445\d{2}-\d{7,10})\b/g;
+  const legacyIndividual = /\b(445\d{2}-\d{3,})/g;
   while ((m = legacyIndividual.exec(t))) out.push(m[1]);
   return Array.from(new Set(out));
 }
@@ -102,10 +106,10 @@ function isDottedLawsuit(t: string): boolean {
   return /^\d{4}\.\d{2}\.\d{3,}$/.test(t);
 }
 function isLegacyLawsuit(t: string): boolean {
-  return /^445-PKT\d{2}-\d{3,6}$/i.test(t);
+  return /^445-PKT\d{2}-\d{2,}$/i.test(t);
 }
 function isLegacyIndividual(t: string): boolean {
-  return /^445\d{2}-\d{7,10}$/.test(t);
+  return /^445\d{2}-\d{3,}$/.test(t);
 }
 
 export async function resolveMatterContext(conversationId: string, matchText: string): Promise<any | null> {
