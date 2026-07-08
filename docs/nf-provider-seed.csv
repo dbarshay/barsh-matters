@@ -1,0 +1,58 @@
+displayName,aliases,active,notes
+"Meadowbrook Medical Equipment, Inc.",Meadowbrook Medical Equipment,,MAP (close match): alias existing provider — suffix/punct
+"Paul Priolo, D.C., P.C.","PAUL PRIOLO, D.C.",,MAP (close match): alias existing provider — suffix/punct (personal name)
+"Palo Physical Therapy and Rehabilitation, P.C.",PALO PHYSICAL THERAPY AND REHABILITATION PC,,MAP (close match): alias existing provider — suffix/punct
+"Motion Medical Diagnostics, P.C.",MOTION MEDICAL DIAGNOSTICS PC,,MAP (close match): alias existing provider — suffix/punct
+"Raymond A. Semente, D.C., P.C.","RAYMOND A. SEMENTE DC., PC.",,MAP (close match): alias existing provider — fuzzy 0.87 (typo?)
+"Haar Orthopedics & Sports Medicine, P.C.",Haar Orthopedics and Sports Medicine,,MAP (close match): alias existing provider — suffix/punct
+"D. Gentile, D.O., P.C.","D. GENTILE, DO, P.C.",,MAP (close match): alias existing provider — suffix/punct (personal name)
+"Concierge Chiropractic Healthcare, P.C.",CONCIERGE CHIROPRACTIC HEALTHCARE PC,,MAP (close match): alias existing provider — suffix/punct
+"Sanford R. Wert, M.D., P.C.",SANFORD R. WERT MD PC,,MAP (close match): alias existing provider — suffix/punct (personal name)
+"Community Radiology Services, P.C.","COMMUNITY RADIOLOGY SERVICES, PC",,MAP (close match): alias existing provider — suffix/punct
+"Newburgh Primary Care, P.C. d/b/a Elite Orthopedics",NEWBURGH PRIMARY CARE PC DBA ELITE ORTHOPEDICS,,MAP (close match): alias existing provider — fuzzy 0.98 (typo?)
+"Sonali Lal Physician, P.C.",SONALI LAL PHYSICIAN PC,,MAP (close match): alias existing provider — suffix/punct
+"Haas Chiropractic, P.C.","HAAS CHRIOPRACTIC, P.C.",,MAP (close match): alias existing provider — fuzzy 0.94 (typo?)
+"Todd Goldman, D.C., P.C.",TODD GOLDMAN DC PC,,MAP (close match): alias existing provider — suffix/punct (personal name)
+"Elite Physical Therapy, P.C.","ELITE PHYSICAL THERAPY, PC",,MAP (close match): alias existing provider — suffix/punct
+"Diagnostic Testing Chiropractic, P.C.","DIAGNOSTIC TESTING CHIROPRACTIC, PC.",,MAP (close match): alias existing provider — suffix/punct
+"Engracia O. Lazatin, M.D. d/b/a Advanced Multi Medicine & Rehab",ENGRACIA O. LAZATIN M.D. DBA ADVANCED MULTI MEDICINE & REHAB;Engracia O. Lazatin M.D.,,"MAP (close match): alias existing provider — d/b/a of existing, fuzzy 0.98 (typo?)"
+"Connetquot Chiropractic, P.C. d/b/a Ligament Laxity Analysis",LIGAMENT LAXITY ANALYSIS,,MAP (close match): alias existing provider — d/b/a of existing
+"Quantum Physical Therapy & Chiropractic Care, PLLC","QUANTUM PHYSICAL THERAPY & CIHIROPRACTIC CARE, PLLC",,MAP (close match): alias existing provider — fuzzy 0.99 (typo?)
+"Precision Medical Monitoring, P.C.",PRECISION MEDICAL MONITORING PC,,MAP (close match): alias existing provider — suffix/punct
+"LI Chiropractic and Physical Therapy, PLLC d/b/a Block Sports Chiropractic and Physical Therapy","LI CHIRORACTIC AND PHYSICAL THERAPY, PLLC dba BLOCK SPORTS CHIROPRACTIC AND PHYSICAL THERAPY",,MAP (close match): alias existing provider — fuzzy 0.99 (typo?)
+"Aric Hausknecht, M.D. Complete Care","ARIC HAUSKNECHT, MD COMPLETE CARE",,MAP (close match): alias existing provider — suffix/punct
+Advanced Dental Care,,false,"REVIEW: fuzzy-similar to existing 'Advanced Dental Care of NYC, P.C.' — creating new to avoid a wrong merge; convert to alias if actually the same"
+"Active Sports Medicine & Orthopaedic Surgery, P.C.",,false,REVIEW: fuzzy-similar to existing 'Sports Medicine and Orthopaedic Surgery' — creating new to avoid a wrong merge; convert to alias if actually the same
+Atlantis Surgery Center,,false,REVIEW: fuzzy-similar to existing 'Atlantic Surgery Center' — creating new to avoid a wrong merge; convert to alias if actually the same
+"Neuroaxis Neurosurgical Associates, P.C.",,false,new legacy provider (inactive); ~313 rows
+"Integrative Medical Wellness, P.C.",,false,new legacy provider (inactive); ~252 rows
+"Community Medical Wellness, P.C.",,false,new legacy provider (inactive); ~56 rows
+North Queens Surgery Center,,false,new legacy provider (inactive); ~52 rows
+"Dr. Robert A. Kenul, D.C.",,false,new legacy provider (inactive); ~44 rows
+"Acupuncture & Chiropractic Associates of Long Island, PLLC",,false,new legacy provider (inactive); ~27 rows
+"Orthomed Health, P.C.",,false,new legacy provider (inactive); ~21 rows
+Action Sports Medicine,,false,new legacy provider (inactive); ~18 rows
+"Long Island Neuro Science Medical Consulting, PLLC",,false,new legacy provider (inactive); ~15 rows
+"Foot & Ankle Surgical Associates, LLP",,false,new legacy provider (inactive); ~10 rows
+Summit IONM,,false,new legacy provider (inactive); ~8 rows
+"Central Suffolk Spine & Sports Chiropractic, LLP",,false,new legacy provider (inactive); ~8 rows
+"Katzman Orthopedics, P.C.",,false,new legacy provider (inactive); ~7 rows
+Dassa Orthopedic Medical Services,,false,new legacy provider (inactive); ~5 rows
+Within Normal Limits Physical Therapy,,false,new legacy provider (inactive); ~4 rows
+"Orthopaedic Medical Care, P.C.",,false,new legacy provider (inactive); ~4 rows
+"Nerve Protection Specialists, LLC",,false,new legacy provider (inactive); ~3 rows
+Parkside Health & Wellness Center,,false,new legacy provider (inactive); ~3 rows
+Action Open MRI,,false,new legacy provider (inactive); ~2 rows
+Laila Collins,,false,new legacy provider (inactive); ~2 rows
+Monitoring Company LLC,,false,new legacy provider (inactive); ~2 rows
+Revemp Physical Therapy Rehab PLLC,,false,new legacy provider (inactive); ~2 rows
+Signal Neuromonitoring LLC,,false,new legacy provider (inactive); ~2 rows
+"William S. Thatcher, D.C.",,false,new legacy provider (inactive); ~1 rows
+"Good to 20 Neuromonitoring, LLC",,false,new legacy provider (inactive); ~1 rows
+Elite Neurospine LLC,,false,new legacy provider (inactive); ~1 rows
+Nay NY LLC,,false,new legacy provider (inactive); ~1 rows
+"Brian Mayrsohn, M.D. PLLC",,false,new legacy provider (inactive); ~1 rows
+"Cross River Pain Management, P.C.",,false,new legacy provider (inactive); ~1 rows
+Northeast Regional Neuro Monitoring,,false,new legacy provider (inactive); ~1 rows
+"Chiropractic Approach, P.C.",,false,new legacy provider (inactive); ~1 rows
+Jericho Dental,,false,new legacy provider (inactive); ~1 rows

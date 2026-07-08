@@ -1,0 +1,58 @@
+displayName,aliases,active,notes
+"Meadowbrook Medical Equipment, Inc.",Meadowbrook Medical Equipment,,map alias (suffix/punct); ~4888 rows
+"Paul Priolo, D.C., P.C.","PAUL PRIOLO, D.C.",,map alias (suffix/punct (personal name)); ~3211 rows
+"Palo Physical Therapy and Rehabilitation, P.C.",PALO PHYSICAL THERAPY AND REHABILITATION PC,,map alias (suffix/punct); ~2419 rows
+"Motion Medical Diagnostics, P.C.",MOTION MEDICAL DIAGNOSTICS PC,,map alias (suffix/punct); ~2022 rows
+"Raymond A. Semente, D.C., P.C.","RAYMOND A. SEMENTE DC., PC.",,map alias (fuzzy 0.87 (typo?)); ~1255 rows
+"Haar Orthopedics & Sports Medicine, P.C.",Haar Orthopedics and Sports Medicine,,map alias (suffix/punct); ~1219 rows
+"D. Gentile, D.O., P.C.","D. GENTILE, DO, P.C.",,map alias (suffix/punct (personal name)); ~910 rows
+"Concierge Chiropractic Healthcare, P.C.",CONCIERGE CHIROPRACTIC HEALTHCARE PC,,map alias (suffix/punct); ~593 rows
+"Sanford R. Wert, M.D., P.C.",SANFORD R. WERT MD PC,,map alias (suffix/punct (personal name)); ~576 rows
+"Community Radiology Services, P.C.","COMMUNITY RADIOLOGY SERVICES, PC",,map alias (suffix/punct); ~215 rows
+"Newburgh Primary Care, P.C. d/b/a Elite Orthopedics",NEWBURGH PRIMARY CARE PC DBA ELITE ORTHOPEDICS,,map alias (fuzzy 0.98 (typo?)); ~134 rows
+"Advanced Dental Care of NYC, P.C.",ADVANCED DENTAL CARE,,map alias (fuzzy 0.85 (typo?)); ~114 rows
+"Sonali Lal Physician, P.C.",SONALI LAL PHYSICIAN PC,,map alias (suffix/punct); ~98 rows
+"Haas Chiropractic, P.C.","HAAS CHRIOPRACTIC, P.C.",,map alias (fuzzy 0.94 (typo?)); ~79 rows
+"Todd Goldman, D.C., P.C.",TODD GOLDMAN DC PC,,map alias (suffix/punct (personal name)); ~47 rows
+"Elite Physical Therapy, P.C.","ELITE PHYSICAL THERAPY, PC",,map alias (suffix/punct); ~43 rows
+"Diagnostic Testing Chiropractic, P.C.","DIAGNOSTIC TESTING CHIROPRACTIC, PC.",,map alias (suffix/punct); ~37 rows
+"Engracia O. Lazatin, M.D. d/b/a Advanced Multi Medicine & Rehab",ENGRACIA O. LAZATIN M.D. DBA ADVANCED MULTI MEDICINE & REHAB;Engracia O. Lazatin M.D.,,"map alias (d/b/a of existing, fuzzy 0.98 (typo?)); ~17 rows"
+"Connetquot Chiropractic, P.C. d/b/a Ligament Laxity Analysis",LIGAMENT LAXITY ANALYSIS,,map alias (d/b/a of existing); ~12 rows
+"Quantum Physical Therapy & Chiropractic Care, PLLC","QUANTUM PHYSICAL THERAPY & CIHIROPRACTIC CARE, PLLC",,map alias (fuzzy 0.99 (typo?)); ~12 rows
+"Precision Medical Monitoring, P.C.",PRECISION MEDICAL MONITORING PC,,map alias (suffix/punct); ~5 rows
+"LI Chiropractic and Physical Therapy, PLLC d/b/a Block Sports Chiropractic and Physical Therapy","LI CHIRORACTIC AND PHYSICAL THERAPY, PLLC dba BLOCK SPORTS CHIROPRACTIC AND PHYSICAL THERAPY",,map alias (fuzzy 0.99 (typo?)); ~2 rows
+Sports Medicine and Orthopaedic Surgery,"ACTIVE SPORTS MEDICINE & ORTHOPAEDIC SURGERY, P.C.",,map alias (fuzzy 0.92 (typo?)); ~1 rows
+Atlantic Surgery Center,ATLANTIS SURGERY CENTER,,map alias (fuzzy 0.96 (typo?)); ~1 rows
+"Aric Hausknecht, M.D. Complete Care","ARIC HAUSKNECHT, MD COMPLETE CARE",,map alias (suffix/punct); ~1 rows
+"NEUROAXIS NEUROSURGICAL ASSOCIATES, P.C.",,false,new legacy provider (inactive); ~313 rows
+"INTEGRATIVE MEDICAL WELLNESS, P.C.",,false,new legacy provider (inactive); ~252 rows
+"COMMUNITY MEDICAL WELLNESS, P.C.",,false,new legacy provider (inactive); ~56 rows
+NORTH QUEENS SURGERY CENTER,,false,new legacy provider (inactive); ~52 rows
+"DR. ROBERT A. KENUL, D.C.",,false,new legacy provider (inactive); ~44 rows
+"ACUPUNCTURE & CHIROPRACTIC ASSOCIATES OF LONG ISLAND, PLLC",,false,new legacy provider (inactive); ~27 rows
+"ORTHOMED HEALTH, P.C",,false,new legacy provider (inactive); ~21 rows
+ACTION SPORTS MEDICINE,,false,new legacy provider (inactive); ~18 rows
+"LONG ISLAND NEURO SCIENCE MEDICAL CONSULTING, PLLC",,false,new legacy provider (inactive); ~15 rows
+"FOOT & ANKLE SURGICAL ASSOCIATES, LLP",,false,new legacy provider (inactive); ~10 rows
+SUMMIT IONM,,false,new legacy provider (inactive); ~8 rows
+"CENTRAL SUFFOLK SPINE & SPORTS CHIROPRACTIC, LLP",,false,new legacy provider (inactive); ~8 rows
+"KATZMAN ORTHOPEDICS,PC",,false,new legacy provider (inactive); ~7 rows
+DASSA ORTHOPEDIC MEDICAL SERVICES,,false,new legacy provider (inactive); ~5 rows
+WITHIN NORMAL LIMITS PHYSICAL THERAPY,,false,new legacy provider (inactive); ~4 rows
+"ORTHOPAEDIC MEDICAL CARE, P.C.",,false,new legacy provider (inactive); ~4 rows
+"NERVE PROTECTION SPECIALISTS, LLC",,false,new legacy provider (inactive); ~3 rows
+PARKSIDE HEALTH & WELLNESS CENTER,,false,new legacy provider (inactive); ~3 rows
+ACTION OPEN MRI,,false,new legacy provider (inactive); ~2 rows
+LAILA COLLINS,,false,new legacy provider (inactive); ~2 rows
+MONITORING COMPANY LLC,,false,new legacy provider (inactive); ~2 rows
+REVEMP PHYSICAL THERAPY REHAB PLLC,,false,new legacy provider (inactive); ~2 rows
+Signal Neuromonitoring LLC,,false,new legacy provider (inactive); ~2 rows
+"WILLIAM S. THATCHER, D.C.",,false,new legacy provider (inactive); ~1 rows
+"GOOD TO 20 NEUROMONITORING, LLC",,false,new legacy provider (inactive); ~1 rows
+ELITE NEUROSPINE LLC,,false,new legacy provider (inactive); ~1 rows
+NAY NY LLC,,false,new legacy provider (inactive); ~1 rows
+"BRIAN MAYRSOHN, MD PLLC",,false,new legacy provider (inactive); ~1 rows
+"CROSS RIVER PAIN MANAGEMENT, P.C.",,false,new legacy provider (inactive); ~1 rows
+NORTHEAST REGIONAL NEURO MONITORING,,false,new legacy provider (inactive); ~1 rows
+"CHIROPRACTIC APPROACH, P.C.",,false,new legacy provider (inactive); ~1 rows
+JERICHO DENTAL,,false,new legacy provider (inactive); ~1 rows
