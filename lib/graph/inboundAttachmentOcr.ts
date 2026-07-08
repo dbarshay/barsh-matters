@@ -12,6 +12,7 @@ import { persistExtraction } from "@/lib/ocr/persist";
 import { suggestFolderTitle, mapOcrToTitleFields, mapBillToIntakeFields } from "@/lib/ocr/mapping";
 import { getFolder } from "@/lib/documents/folderTaxonomy";
 import { crossReferenceExtraction } from "@/lib/ocr/crossReference";
+import { extractMatterNumbers, resolveMatterContext } from "@/lib/graph/webhookMessageSync";
 import {
   isInboundAttachmentOcrEnabled,
   INBOUND_ATTACHMENT_OCR_MAX_BYTES,
@@ -71,8 +72,14 @@ async function buildOcrSuggestion(
     classifierSuggestion?.titleKey ?? (folderKey ? getFolder(folderKey)?.titles[0]?.key : undefined);
   const prefill = folderKey && titleKey ? mapOcrToTitleFields(result, folderKey, titleKey) : {};
 
+  // Detect the file number across ALL taxonomies (BM + legacy) from FILENAME + OCR text, and resolve it
+  // to the actual matter/lawsuit (incl. old_matter_number / oldLawsuitNumber), with lawsuit precedence.
+  const detectText = [bytes.fileName || "", result.text].filter(Boolean).join("\n");
+  const bmFileNumber = extractMatterNumbers(detectText).find((n) => /^BRL_/i.test(n) || /^\d{4}\.\d{2}\./.test(n)) || null;
+  const fileNumberMatch = await resolveMatterContext("", detectText).catch(() => null);
+
   const identity = {
-    bmFileNumber: bmFileNumberFrom(result.text),
+    bmFileNumber,
     patientName: intake.patientName.value || null,
     claimNumber: intake.claimNumber.value || null,
     policyNumber: intake.policyNumber.value || null,
@@ -101,12 +108,14 @@ async function buildOcrSuggestion(
     prefill,
     identity,
     crossRef,
+    fileNumberMatch,
     meanConfidence: result.meanConfidence,
   };
 
   return {
     ocrExtractionId: row.id as string,
-    predictedMatterId: (crossRef as any)?.predictedMatterId ?? null,
+    // A resolved file-number match (any taxonomy, incl. legacy) is the strongest predictor; fall back to cross-ref.
+    predictedMatterId: (fileNumberMatch as any)?.matterId ?? (crossRef as any)?.predictedMatterId ?? null,
     suggestion,
   };
 }

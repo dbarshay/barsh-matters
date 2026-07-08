@@ -38,10 +38,35 @@ Precedence: if a document/email mentions **both**, it routes to the **Lawsuit**.
   **filename** (`10- 44526-812455_….pdf`, `445-PKT24-126923_….pdf`) even when the page text is messy — so
   the document detector should scan the filename too, not just the OCR text.
 
+## Migration sequence (spreadsheet-based, first cutover)
+
+Because a lawsuit's membership is **fixed at creation** (individuals are linked during lawsuit creation
+and **no matters can be added afterward**), the order is mandatory:
+
+1. **Individual-matter spreadsheet first** → creates each `ClaimIndex` row, assigns a `BRL_2026NNNNN`,
+   stores the legacy `445YY-NNNNNN` in `old_matter_number`.
+2. **Lawsuit spreadsheet second** → creates each `Lawsuit`, stores the legacy `445-PKTYY-NNNNNN` in
+   `oldLawsuitNumber`, and **links** the already-created individuals at creation.
+
+The **lawsuit spreadsheet carries the membership** — each lawsuit row lists the individual matters it
+aggregates. The **join key** is the legacy `445YY-…` number: the lawsuit import resolves each listed old
+number via `ClaimIndex.old_matter_number` → the created matter → links it (`ClaimIndex.master_lawsuit_id`
+= `Lawsuit.masterLawsuitId`). (Native BM link field is the same.)
+
 ## Status
 
-- **A (done):** schema fields + shared matcher/resolver; email + Unmatched-assign route by legacy numbers.
+- **A (done):** schema fields (`ClaimIndex.old_matter_number`, `Lawsuit.oldLawsuitNumber`) + shared
+  matcher/resolver in `lib/graph/webhookMessageSync.ts`; email + Unmatched-assign route by legacy numbers,
+  lawsuit precedence.
 - **B (done):** editable "Old Matter Number" / "Old Lawsuit Number" fields on the matter/lawsuit pages
   (`components/OldFileNumberField.tsx` + `/api/admin/old-file-number`).
-- **C (todo):** wire legacy detection (incl. filename scan) into Upload Docs + inbound email-attachment OCR.
+- **C part 1 (done):** `app/api/documents/ocr-prefill/route.ts` now runs the shared matcher/resolver over
+  **filename + OCR text**, recognizing all four taxonomies and returning a resolved `fileNumberMatch`.
+- **C part 2 (done):** inbound email-attachment OCR (`lib/graph/inboundAttachmentOcr.ts`) now detects all
+  taxonomies from filename+text and sets `predictedMatterId` from the resolved match; the Upload Docs UI
+  auto-runs a matter search on the resolved display number (so legacy docs surface the right matter).
+  Note: pure **lawsuit** matches in Upload Docs still route via the lawsuit doc tree (the upload page is
+  matter-oriented) — fine for now.
 - **D (todo):** new scan/drop folder channel.
+- **Not yet built:** the spreadsheet importers for individuals + lawsuits (with the membership/join-key
+  linking described above). This is the actual first-cutover tooling.

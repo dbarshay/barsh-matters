@@ -189,8 +189,9 @@ export default function UploadDocsPage() {
           applyCaseType(normalizeCaseType(predicted.caseType));
           setPredictedNote(`Auto-matched to ${predicted.displayNumber} by ${predicted.matchedOn}. Change if wrong.`);
         } else if (!matter) {
-          // No confident prediction — pre-run a search on the strongest available key.
-          const autoQuery = (identity?.bmFileNumber || identity?.claimNumber || identity?.patientName || "").trim();
+          // No cross-ref prediction — pre-run a search. Prefer a file-number match resolved by the shared
+          // matcher (covers legacy 445YY-/445-PKT via old_matter_number, returned as the BM display number).
+          const autoQuery = (j.fileNumberMatch?.matterDisplayNumber || identity?.bmFileNumber || identity?.claimNumber || identity?.patientName || "").trim();
           if (autoQuery.length >= 2) {
             setQ(autoQuery);
             void runSearch(autoQuery);
