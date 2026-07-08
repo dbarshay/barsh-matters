@@ -131,7 +131,7 @@ export async function resolveMatterContext(conversationId: string, matchText: st
   return null;
 }
 
-export async function processChangedMessage(input: { graphMessageId: string; changeType: string; mailbox: string }): Promise<ProcessResult> {
+export async function processChangedMessage(input: { graphMessageId: string; changeType: string; mailbox: string; forceContext?: any }): Promise<ProcessResult> {
   const graphMessageId = clean(input.graphMessageId);
   if (!graphMessageId) return { ok: false, action: "error", error: "Missing message id." };
   const changeType = clean(input.changeType).toLowerCase();
@@ -167,8 +167,9 @@ export async function processChangedMessage(input: { graphMessageId: string; cha
   const conversationId = message.conversationId;
   if (!conversationId) return { ok: true, action: "skipped", reason: "no conversationId" };
 
+  // An operator-chosen context (Unmatched triage "Assign") overrides automatic resolution.
   const matchText = [message.subject, message.bodyText, message.bodyHtml, message.bodyPreview].filter(Boolean).join("\n");
-  const context = await resolveMatterContext(conversationId, matchText);
+  const context = input.forceContext ?? (await resolveMatterContext(conversationId, matchText));
   if (!context) return { ok: true, action: "skipped", reason: "not matter-related (no tracked conversation or matter number in subject/body)" };
 
   await persistGraphThreadSyncMessages({ mailboxUserId: mailbox, conversationId, messages: [message], context });

@@ -114,11 +114,29 @@ export default function MatterEmailInbox({
   const isGlobal = scope === "all";
   const [messages, setMessages] = useState<Msg[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [folder, setFolder] = useState<FolderKey>("inbox");
+  const [folder, setFolder] = useState<FolderKey | "unmatched">("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState<{ mode: "reply" | "replyAll"; msg: Msg } | null>(null);
   const [composing, setComposing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Unmatched triage (firm-wide view only): recent inbound mail BM couldn't tie to a file, live from Graph.
+  const [unmatched, setUnmatched] = useState<any[] | null>(null);
+  const [unmatchedSelId, setUnmatchedSelId] = useState<string | null>(null);
+  const [assignValue, setAssignValue] = useState("");
+  const [assignBusy, setAssignBusy] = useState(false);
+  const [assignErr, setAssignErr] = useState<string | null>(null);
+
+  const loadUnmatched = useCallback(async () => {
+    setUnmatched(null);
+    setAssignErr(null);
+    try {
+      const res = await fetch("/api/graph/matter-email/unmatched", { cache: "no-store" });
+      const j = await res.json().catch(() => ({}));
+      setUnmatched(j?.ok ? j.messages || [] : []);
+    } catch {
+      setUnmatched([]);
+    }
+  }, []);
 
   const query = useMemo(() => {
     if (isGlobal) return "scope=all";
@@ -185,11 +203,46 @@ export default function MatterEmailInbox({
     [folderMessages, selectedId],
   );
 
-  function selectFolder(key: FolderKey) {
+  function selectFolder(key: FolderKey | "unmatched") {
     setFolder(key);
     setSelectedId(null);
     setReply(null);
     setComposing(false);
+    setUnmatchedSelId(null);
+    setAssignValue("");
+    setAssignErr(null);
+    if (key === "unmatched") void loadUnmatched();
+  }
+
+  const selectedUnmatched = useMemo(
+    () => (unmatched || []).find((m: any) => m.graphMessageId === unmatchedSelId) || null,
+    [unmatched, unmatchedSelId],
+  );
+
+  async function assignUnmatched(m: any) {
+    const fileNumber = assignValue.trim();
+    if (!fileNumber) { setAssignErr("Enter an Individual Matter (BRL_…) or Lawsuit Matter (YYYY.MM.NNNNN) number."); return; }
+    setAssignBusy(true);
+    setAssignErr(null);
+    try {
+      const res = await fetch("/api/graph/matter-email/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graphMessageId: m.graphMessageId, fileNumber, confirmAssign: true }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j?.ok) {
+        setUnmatched((cur) => (cur || []).filter((x: any) => x.graphMessageId !== m.graphMessageId));
+        setUnmatchedSelId(null);
+        setAssignValue("");
+        void load();
+        onChanged?.();
+      } else setAssignErr(j?.error || "Assign failed.");
+    } catch {
+      setAssignErr("Assign request failed.");
+    } finally {
+      setAssignBusy(false);
+    }
   }
 
   async function openMessage(m: Msg) {
@@ -301,11 +354,55 @@ export default function MatterEmailInbox({
               </button>
             );
           })}
+          {isGlobal && (
+            <button
+              type="button"
+              onClick={() => selectFolder("unmatched")}
+              data-barsh-email-unmatched-folder="true"
+              style={{
+                display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
+                border: "none", borderRadius: 6, cursor: "pointer",
+                background: folder === "unmatched" ? "#fdecea" : "transparent",
+                color: folder === "unmatched" ? "#b23327" : "#26364a",
+                fontSize: 13, fontWeight: folder === "unmatched" ? 800 : 600, padding: "8px 10px",
+                marginTop: 8, borderTop: "1px solid #e6e8eb",
+              }}
+              title="Recent inbound mail BM could not tie to a matter or lawsuit — assign it here."
+            >
+              <span aria-hidden style={{ fontSize: 14 }}>❓</span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Unmatched</span>
+              {unmatched && unmatched.length > 0 ? <span style={{ fontSize: 11, fontWeight: 800, color: "#b23327" }}>{unmatched.length}</span> : null}
+            </button>
+          )}
         </div>
 
         {/* Message list */}
         <div style={{ flex: "0 0 40%", maxWidth: "40%", borderRight: "1px solid #e6e8eb", overflowY: "auto" }}>
-          {messages === null ? (
+          {folder === "unmatched" ? (
+            unmatched === null ? (
+              <div style={{ color: "#8a97a8", padding: 12, fontSize: 13 }}>Scanning your mailbox…</div>
+            ) : unmatched.length === 0 ? (
+              <div style={{ color: "#8a97a8", padding: 12, fontSize: 13, fontStyle: "italic" }}>No unmatched mail.</div>
+            ) : (
+              unmatched.map((m: any) => {
+                const active = m.graphMessageId === unmatchedSelId;
+                return (
+                  <div
+                    key={m.graphMessageId}
+                    onClick={() => { setUnmatchedSelId(m.graphMessageId); setAssignValue(""); setAssignErr(null); }}
+                    style={{ display: "grid", gap: 2, padding: "9px 12px 9px 13px", borderBottom: "1px solid #eef0f2", borderLeft: "3px solid transparent", background: active ? "#fdecea" : "#fff", cursor: "pointer" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#1b2a3d", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{m.from || m.fromEmail || "Unknown sender"}</span>
+                      {m.hasAttachments ? <span aria-hidden style={{ color: "#5a6b80", fontSize: 12 }}>📎</span> : null}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#33415a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.subject || "(no subject)"}</div>
+                    <div style={{ fontSize: 12, color: "#8a97a8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.bodyPreview || ""}</div>
+                  </div>
+                );
+              })
+            )
+          ) : messages === null ? (
             <div style={{ color: "#8a97a8", padding: 12, fontSize: 13 }}>Loading…</div>
           ) : folderMessages.length === 0 ? (
             <div style={{ color: "#8a97a8", padding: 12, fontSize: 13, fontStyle: "italic" }}>No messages in {FOLDERS.find((f) => f.key === folder)?.label}.</div>
@@ -349,7 +446,34 @@ export default function MatterEmailInbox({
 
         {/* Reading pane / compose */}
         <div style={{ flex: 1, overflowY: "auto", background: "#fff", minWidth: 0 }}>
-          {composing ? (
+          {folder === "unmatched" ? (
+            !selectedUnmatched ? (
+              <div style={{ color: "#8a97a8", padding: 24, fontSize: 14, textAlign: "center" }}>Select an email, then assign it to a matter or lawsuit.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 12, padding: 16 }}>
+                <div style={{ borderBottom: "1px solid #eef0f2", paddingBottom: 10 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#00346e" }}>From: {selectedUnmatched.from || selectedUnmatched.fromEmail}</div>
+                  <div style={{ fontSize: 12, color: "#5a6b80", marginTop: 3 }}>{selectedUnmatched.subject || "(no subject)"}</div>
+                </div>
+                <div style={{ fontSize: 13, color: "#33415a", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{selectedUnmatched.bodyPreview || "(no preview available)"}</div>
+                <div style={{ borderTop: "1px solid #eef0f2", paddingTop: 12, display: "grid", gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#00346e" }}>Assign to a file</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input
+                      value={assignValue}
+                      onChange={(e) => setAssignValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void assignUnmatched(selectedUnmatched); } }}
+                      placeholder="Individual Matter (BRL_2026NNNNN) or Lawsuit (YYYY.MM.NNNNN)"
+                      style={{ flex: 1, minWidth: 240, border: "1px solid #cdd6e0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+                    />
+                    <button type="button" disabled={assignBusy} onClick={() => void assignUnmatched(selectedUnmatched)} style={{ border: "none", borderRadius: 6, background: assignBusy ? "#93a4bd" : "#00346e", color: "#fff", fontSize: 13, fontWeight: 800, padding: "8px 16px", cursor: assignBusy ? "default" : "pointer" }}>{assignBusy ? "Assigning…" : "Assign"}</button>
+                  </div>
+                  {assignErr ? <div style={{ fontSize: 12, color: "#b23327" }}>{assignErr}</div> : null}
+                  <div style={{ fontSize: 11, color: "#8a97a8" }}>Files this email into the matter/lawsuit and removes it from Unmatched.</div>
+                </div>
+              </div>
+            )
+          ) : composing ? (
             <div style={{ padding: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 900, color: "#00346e", marginBottom: 10 }}>New Mail</div>
               <MatterEmailCompose
