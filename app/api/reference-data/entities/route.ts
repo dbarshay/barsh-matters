@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     const query = cleanReferenceText(req.nextUrl.searchParams.get("q"));
     const normalizedQuery = normalizeReferenceText(query);
     const active = parseActiveFilter(req.nextUrl.searchParams.get("active"));
-    const limit = safeLimit(req.nextUrl.searchParams.get("limit"), 50, 100);
+    const limit = safeLimit(req.nextUrl.searchParams.get("limit"), 50, 10000);
 
     const where: Prisma.ReferenceEntityWhereInput = { type };
 

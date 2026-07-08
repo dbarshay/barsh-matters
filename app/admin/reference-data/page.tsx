@@ -723,7 +723,7 @@ export default function AdminReferenceDataPage() {
         type: nextType,
         q: nextQuery,
         active: nextActive,
-        limit: "100",
+        limit: "10000",
       });
 
       const res = await fetch(`/api/reference-data/entities?${params.toString()}`, {
