@@ -93,12 +93,15 @@ export function extractMatterNumbers(text: string): string[] {
   //   Individual Matter        = "445YY-NNNNNN"  (constant "445" + 2-digit year + 6-digit sequence;
   //                              a trailing "_NNNNNNNNN" / " NNNNNNNNN" is a separate id, NOT the file #).
   //   aggregated Lawsuit Matter = "445-PKTYY-NNNN" (literal "445-PKT").
-  // The prefix is the signal: "445YY-<digits>" = Individual, "445-PKTYY-<digits>" = Lawsuit. We capture
-  // the leading digit run (stopping at space/underscore/punctuation), which drops any trailing "_id".
-  const legacyLawsuit = /\b(445-PKT\d{2}-\d{2,})/gi;
-  while ((m = legacyLawsuit.exec(t))) out.push(m[1].toUpperCase());
-  const legacyIndividual = /\b(445\d{2}-\d{3,})/g;
-  while ((m = legacyIndividual.exec(t))) out.push(m[1]);
+  // Lawsuit Matter (legacy): anchor on the distinctive literal "PKT" (rarely occurs by accident), then
+  // grab the 2-digit year + number around it, tolerant of how OCR mangles the separators. Normalize to
+  // the canonical "445-PKTYY-NNNNNN" regardless of whether OCR kept the "445-" prefix or the dashes.
+  const legacyLawsuit = /\bPKT[\s-]*(\d{2})[\s-]+(\d{2,})/gi;
+  while ((m = legacyLawsuit.exec(t))) out.push(`445-PKT${m[1]}-${m[2]}`);
+  // Individual Matter (legacy): "445YY-<digits>". Keep requiring the dash/separator (it's what tells a
+  // file number apart from a random 5-digit run), but tolerate whitespace/newline after it and normalize.
+  const legacyIndividual = /\b(445\d{2}-\s{0,2}\d{3,})/g;
+  while ((m = legacyIndividual.exec(t))) out.push(m[1].replace(/\s+/g, ""));
   return Array.from(new Set(out));
 }
 
