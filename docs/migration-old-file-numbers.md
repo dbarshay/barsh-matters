@@ -72,6 +72,28 @@ number via `ClaimIndex.old_matter_number` → the created matter → links it (`
   content hash (`fileHash`) + `graphAttachmentId`, so the same file via multiple channels files once.
 - **Importer (todo):** the first-cutover tooling — see below.
 
+## Reference seeding (Approach A — seeder does match-or-create in-app)
+
+The build sandbox CANNOT reach the live Neon DB, so "match existing vs. new" happens in the **seeder**
+(runs in-app with DB access), not in a static worksheet. Registry model: `ReferenceEntity` (`type`,
+`displayName`, `normalizedName`, `active`; `@@unique([type, normalizedName])`) + `ReferenceAlias`.
+
+- The **normalization worksheet** (`NF-normalization-worksheet.xlsx`) captures the operator's **canonical
+  name** choices per source value (merges within the source — e.g. the single Provider dup
+  `NICOLE PULASKI, LAC.` ← `Nicole Pulaski, LAC`).
+- The **seeder**, per canonical value: normalize → look up an existing `ReferenceEntity` of that type
+  (+ its aliases). **MATCH** → map to it, add nothing. **NEW** → create it; **providers `active=false`**
+  (legacy/closed), other new types default active (adjust per table).
+- **Dry-run preview report first**: "N matched existing, M new (added inactive)", full match/new breakdown
+  for review; commit only on confirm.
+- Provider column is essentially clean (145 distinct, 1 real dup found by fuzzy match). Insurer (1,060),
+  SettledWith (2,767), DenialReason (947), ServiceType (433) are the ones needing real canonicalization
+  in the worksheet.
+- Reference-tab distinct counts (full 264,179 rows): Provider 145 · ProviderGroup 44 · Insurer 1,060 ·
+  Court 17 · ServiceType 433 · DenialReason 947 · Status 134 · Defendant 353 · SettledWith 2,767 ·
+  VerificationStatus 2 · PlaintiffAttorney 1 · **distinct patients (Claimant) 42,407** (handled separately
+  after the dedup decision — one-per-matter vs name+key vs name-only).
+
 ## First-cutover import — "NF All Closed" spreadsheet
 
 Source: `NF All Closed.xlsx`, one sheet, **33 columns, ~264,179 data rows** (one row per legacy individual
