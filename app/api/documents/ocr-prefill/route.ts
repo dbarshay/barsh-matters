@@ -6,6 +6,7 @@ import { suggestFolderTitle, mapOcrToTitleFields, mapBillToIntakeFields } from "
 import { getFolder, findTitle } from "@/lib/documents/folderTaxonomy";
 import { getLearnedSuggestion } from "@/lib/ocr/learning";
 import { crossReferenceExtraction } from "@/lib/ocr/crossReference";
+import { extractMatterNumbers, resolveMatterContext } from "@/lib/graph/webhookMessageSync";
 import { prisma } from "@/lib/prisma";
 
 // OCR-prefill for the filing flow (Phase 4b). Runs the engine on inbound bytes (BEFORE Clio),
@@ -93,16 +94,15 @@ export async function POST(req: NextRequest) {
 
   const prefill = folderKey && titleKey ? mapOcrToTitleFields(result, folderKey, titleKey) : {};
 
-  // Our BM file number if the document carries it — the strongest matter predictor. Appears as the
-  // standard BRL_YYYYNNNNN or, on litigation docs, the dotted YYYY.MM.NNNNNN variant. (Legacy docs
-  // predate the convention, so this is usually null on older scans.)
-  const bmFileNumber = ((): string | null => {
-    const brl = result.text.match(/\bBRL[_\s-]?(\d{9})\b/i);
-    if (brl) return `BRL_${brl[1]}`;
-    const dotted = result.text.match(/\b(\d{4}\.\d{2}\.\d{4,6})\b/);
-    if (dotted) return dotted[1];
-    return null;
-  })();
+  // File-number detection uses the SHARED matcher/resolver (same as email), scanning the FILENAME +
+  // OCR text. It recognizes every taxonomy — BM Individual (BRL_2026NNNNN), BM Lawsuit (YYYY.MM.NNNNNN),
+  // legacy Individual (445YY-NNNNNN) and legacy Lawsuit (445-PKTYY-NNNNNN, PKT-anchored) — and resolves
+  // to the actual matter/lawsuit (incl. old_matter_number / oldLawsuitNumber) with lawsuit precedence.
+  const detectText = [fileName || "", result.text].filter(Boolean).join("\n");
+  const detectedNumbers = extractMatterNumbers(detectText);
+  const bmFileNumber = detectedNumbers.find((n) => /^BRL_/i.test(n) || /^\d{4}\.\d{2}\./.test(n)) || null;
+  // Resolved matter/lawsuit for ANY format (this is what lets the UI auto-select even for legacy docs).
+  const fileNumberMatch = await resolveMatterContext("", detectText).catch(() => null);
 
   // Identity fields (patient/claim/etc.) for matter auto-suggestion + entity memory in the flow.
   const identity = {
@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     ocrExtractionId: row.id,
     crossRef,
+    fileNumberMatch,
     fileHash: row.fileHash,
     meanConfidence: result.meanConfidence,
     suggestion,
