@@ -67,6 +67,38 @@ number via `ClaimIndex.old_matter_number` → the created matter → links it (`
   auto-runs a matter search on the resolved display number (so legacy docs surface the right matter).
   Note: pure **lawsuit** matches in Upload Docs still route via the lawsuit doc tree (the upload page is
   matter-oriented) — fine for now.
-- **D (todo):** new scan/drop folder channel.
-- **Not yet built:** the spreadsheet importers for individuals + lawsuits (with the membership/join-key
-  linking described above). This is the actual first-cutover tooling.
+- **D (todo):** new scan/drop folder channel. Design decided: three intake front-doors (scan-to-email,
+  watched cloud folder, bulk drag-drop) all funnel into ONE `ingestScannedDocument` core; de-dup by file
+  content hash (`fileHash`) + `graphAttachmentId`, so the same file via multiple channels files once.
+- **Importer (todo):** the first-cutover tooling — see below.
+
+## First-cutover import — "NF All Closed" spreadsheet
+
+Source: `NF All Closed.xlsx`, one sheet, **33 columns, ~264,179 data rows** (one row per legacy individual
+file; `Case_Id` unique). All `Case Type = NF`, all closed. Key columns:
+
+- `Case_Id` = legacy **Individual** number `445YY-NNNNNN` → `ClaimIndex.old_matter_number`.
+- `Packet ID` = legacy **Lawsuit** number `445-PKTYY-NNNNNN` → `Lawsuit.oldLawsuitNumber`. Present on ~46%
+  of rows; ~2,448 distinct packets per 30k sample (→ **~20k lawsuits, ~264k matters** full-file). Some
+  packets aggregate 60–75 members. Rows with no Packet ID are standalone individual matters.
+- Others → matter fields: `Claimant`(patient), `Claim Number`, `Policy No`, `Index OR AAA Number`,
+  `Insurance Company`, `Provider`, `Provider Group`, `Court Name`, `Defendant`, `Plaintiff Attorney`,
+  `D.O.S. Start/End`, `Date Of Loss`, `Date Opened`, `Final Status`(CLOSED), `Settled With`, `Service Type`,
+  `Case Filling Status (YES/NO)`, and financials (`Claim Amount`, collection/voluntary/total payments,
+  `Suit Balance`). Watch for junk like `Plaintiff Attorney = "Header not found"`, `Policy No = "N/A"`.
+
+### Decisions (locked)
+- **Single sheet drives both.** Packet ID is **authoritative** for lawsuit membership — no separate lawsuit
+  sheet. Lawsuit-level fields (court, index #, attorney) derive from the packet's member rows.
+- **BRL_ numbers preserve the ORIGINAL file year** from the `Case_Id` (`44521-…` → `BRL_2021NNNNN`), not the
+  import year.
+- **Import as CLOSED / record-only** (no active workflow). Create the Clio document folder **lazily** — only
+  when the first document is associated (don't provision ~264k empty folders).
+
+### Architecture (required by scale)
+- **Chunked, resumable, idempotent background job** (a single serverless request can't process 264k rows).
+  Batch inserts; track progress in an import-run record; dedup by `old_matter_number` (matters) and
+  `oldLawsuitNumber` (lawsuits) so re-runs are safe.
+- **Order within the job:** (1) create/upsert all individual matters (assign BRL_ by original year, set
+  old_matter_number, closed status, mapped fields); (2) group non-empty Packet IDs, create/upsert one lawsuit
+  per packet, link members (`ClaimIndex.master_lawsuit_id` + `Lawsuit.lawsuitMatters`).
