@@ -48,11 +48,19 @@ Email is **user-specific**: every user works their **own** BRL Outlook mailbox (
 - **Azure (done):** app "Barsh Matters Graph Email" has **Application** permissions `Mail.Read`,
   `Mail.ReadWrite`, `Mail.Send` with admin consent. Optional hardening: an Application Access Policy to
   scope the app to only BRL users' mailboxes; rotate the (exposed) client secret before go-live.
-- **Open items:** the dotted `YYYY.MM.NNNNN` format only resolves to a matter if that string is stored
-  in `ClaimIndex.display_number` (point the lookup at the legacy field if it lives elsewhere); an
-  "Unmatched" triage view for non-matter mail is a possible future add. Three obsolete email-UI
-  verifiers (`verify-direct-matter-email-thread-ui-safety`, `verify-direct-view-emails-popup-modal-
-  safety`, `verify-master-email-thread-ui-safety`) are superseded — `git rm` them.
+- **Routing taxonomy (done):** `BRL_2026NNNNN` = **Individual Matter** (`ClaimIndex.display_number`);
+  `YYYY.MM.NNNNN` = **Lawsuit Matter** (`Lawsuit.masterLawsuitId`). Matched anywhere in subject/body; if
+  BOTH appear, routes to the **Lawsuit Matter** (precedence). Shared resolver `resolveMatterContext`
+  drives the webhook, the backstop cron, and the Unmatched "Assign".
+- **Unmatched triage (done):** firm-wide header inbox has an **Unmatched** folder — live-scans the user's
+  recent inbound mail BM couldn't tie to a file (read-only, never auto-stored); **Assign** files it to a
+  typed matter/lawsuit number. Routes: `/api/graph/matter-email/unmatched`, `/api/graph/matter-email/assign`.
+- **TODO — Unmatched follow-ons (later):**
+  - Scan window is only the ~40 most recent messages and matches on **subject + preview** — consider
+    paginating / a "load more", a date range, and matching the **full body**.
+  - Surface unmatched mail **with attachments** more prominently (badge/sort).
+  - One-click **"Assign to the matter/lawsuit I'm currently viewing"** (prefill the file number from the
+    open matter/lawsuit context) in addition to typing it.
 
 ---
 
