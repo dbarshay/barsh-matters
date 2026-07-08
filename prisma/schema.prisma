@@ -148,6 +148,7 @@ model Patient {
 model Lawsuit {
   id                          Int       @id @default(autoincrement())
   masterLawsuitId             String    @unique
+  oldLawsuitNumber            String? // legacy aggregated file number "445-PKTYY-NNNN" (migration; retired after cutover)
   claimNumber                 String?
   lawsuitMatters              String
   sharedFolderPath            String
@@ -171,6 +172,7 @@ model Lawsuit {
 
   @@index([clioMasterMatterId])
   @@index([clioMasterDisplayNumber])
+  @@index([oldLawsuitNumber])
 }
 
 model ClioToken {

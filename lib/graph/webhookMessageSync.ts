@@ -89,14 +89,22 @@ export function extractMatterNumbers(text: string): string[] {
   // is 3+ digits so a plain calendar date like 2026.07.15 is not mistaken for a matter number.
   const dotted = /\b(20\d{2})[.\-/](\d{2})[.\-/](\d{3,})\b/g;
   while ((m = dotted.exec(t))) out.push(`${m[1]}.${m[2]}.${m[3]}`);
-  // Legacy paper file number: 445YY-NNNNNNNNN (constant "445" prefix + 2-digit year + 9 digits). Kept
-  // during migration so scans/emails referencing the old number still associate to the migrated matter.
-  const legacy = /\b(445\d{2}-\d{7,10})\b/g;
-  while ((m = legacy.exec(t))) out.push(m[1]);
+  // Legacy paper numbers (kept during migration): an Individual Matter is "445YY-NNNNNNNNN" (constant
+  // "445" + 2-digit year + digits); an aggregated Lawsuit Matter is "445-PKTYY-NNNN" (literal "445-PKT").
+  const legacyLawsuit = /\b(445-PKT\d{2}-\d{3,6})\b/gi;
+  while ((m = legacyLawsuit.exec(t))) out.push(m[1].toUpperCase());
+  const legacyIndividual = /\b(445\d{2}-\d{7,10})\b/g;
+  while ((m = legacyIndividual.exec(t))) out.push(m[1]);
   return Array.from(new Set(out));
 }
 
-function isLegacyTag(t: string): boolean {
+function isDottedLawsuit(t: string): boolean {
+  return /^\d{4}\.\d{2}\.\d{3,}$/.test(t);
+}
+function isLegacyLawsuit(t: string): boolean {
+  return /^445-PKT\d{2}-\d{3,6}$/i.test(t);
+}
+function isLegacyIndividual(t: string): boolean {
   return /^445\d{2}-\d{7,10}$/.test(t);
 }
 
@@ -114,38 +122,43 @@ export async function resolveMatterContext(conversationId: string, matchText: st
   //      Lawsuit Matter    = "YYYY.MM.NNNNN"  -> Lawsuit.masterLawsuitId (the dotted number itself)
   //    PRECEDENCE: if BOTH appear, route to the Lawsuit Matter.
   const tags = extractMatterNumbers(matchText);
-  const individualTags = tags.filter((t) => /^BRL_/i.test(t));
-  const legacyTags = tags.filter(isLegacyTag);
-  const lawsuitTags = tags.filter((t) => !/^BRL_/i.test(t) && !isLegacyTag(t));
+  const brlTags = tags.filter((t) => /^BRL_/i.test(t)); // Individual Matter (BM)
+  const legacyIndTags = tags.filter(isLegacyIndividual); // Individual Matter (legacy 445YY-)
+  const dottedTags = tags.filter(isDottedLawsuit); // Lawsuit Matter (BM)
+  const legacyLawTags = tags.filter(isLegacyLawsuit); // Lawsuit Matter (legacy 445-PKT)
 
-  if (lawsuitTags.length) {
-    let masterLawsuitId = lawsuitTags[0];
+  // LAWSUIT-type wins if present (BM dotted number OR legacy 445-PKT number).
+  if (dottedTags.length || legacyLawTags.length) {
     try {
-      const lawsuit = await (prisma as any).lawsuit.findFirst({ where: { masterLawsuitId: { in: lawsuitTags } }, select: { masterLawsuitId: true } });
-      if (lawsuit) masterLawsuitId = lawsuit.masterLawsuitId;
+      if (dottedTags.length) {
+        const l = await (prisma as any).lawsuit.findFirst({ where: { masterLawsuitId: { in: dottedTags } }, select: { masterLawsuitId: true } });
+        if (l) return { source: "graph_webhook", masterLawsuitId: l.masterLawsuitId };
+      }
+      if (legacyLawTags.length) {
+        const l = await (prisma as any).lawsuit.findFirst({ where: { oldLawsuitNumber: { in: legacyLawTags } }, select: { masterLawsuitId: true } });
+        if (l) return { source: "graph_webhook", masterLawsuitId: l.masterLawsuitId };
+      }
     } catch {
-      /* keep the raw dotted number so the firm-wide view still surfaces it */
+      /* fall through to raw tag */
     }
-    return { source: "graph_webhook", masterLawsuitId };
+    return { source: "graph_webhook", masterLawsuitId: dottedTags[0] || legacyLawTags[0] }; // not migrated yet — surfaced firm-wide
   }
-  if (individualTags.length) {
+
+  // INDIVIDUAL-type (BM BRL_ OR legacy 445YY-).
+  if (brlTags.length || legacyIndTags.length) {
     try {
-      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: { in: individualTags } }, select: { matter_id: true, display_number: true } });
-      if (claim) return { source: "graph_webhook", matterId: typeof claim.matter_id === "number" ? claim.matter_id : null, matterDisplayNumber: claim.display_number || individualTags[0] };
+      if (brlTags.length) {
+        const c = await (prisma as any).claimIndex.findFirst({ where: { display_number: { in: brlTags } }, select: { matter_id: true, display_number: true } });
+        if (c) return { source: "graph_webhook", matterId: typeof c.matter_id === "number" ? c.matter_id : null, matterDisplayNumber: c.display_number || brlTags[0] };
+      }
+      if (legacyIndTags.length) {
+        const c = await (prisma as any).claimIndex.findFirst({ where: { old_matter_number: { in: legacyIndTags } }, select: { matter_id: true, display_number: true } });
+        if (c) return { source: "graph_webhook", matterId: typeof c.matter_id === "number" ? c.matter_id : null, matterDisplayNumber: c.display_number || legacyIndTags[0] };
+      }
     } catch {
-      /* fall through */
+      /* fall through to raw tag */
     }
-    return { source: "graph_webhook", matterDisplayNumber: individualTags[0] }; // present but no matter record yet
-  }
-  if (legacyTags.length) {
-    // Legacy paper number → the migrated matter that stores it in old_matter_number.
-    try {
-      const claim = await (prisma as any).claimIndex.findFirst({ where: { old_matter_number: { in: legacyTags } }, select: { matter_id: true, display_number: true } });
-      if (claim) return { source: "graph_webhook", matterId: typeof claim.matter_id === "number" ? claim.matter_id : null, matterDisplayNumber: claim.display_number || null };
-    } catch {
-      /* fall through */
-    }
-    return { source: "graph_webhook", matterDisplayNumber: legacyTags[0] }; // not migrated yet — surfaced firm-wide
+    return { source: "graph_webhook", matterDisplayNumber: brlTags[0] || legacyIndTags[0] }; // not migrated yet — surfaced firm-wide
   }
   return null;
 }
