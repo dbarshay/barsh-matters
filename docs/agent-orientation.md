@@ -4,6 +4,11 @@ Read this first. It captures the architecture, the non-obvious conventions, and 
 gotchas so you don't have to rediscover them every session. Keep it updated when these
 facts change.
 
+> **End-of-day practice (standing instruction):** when a working session wraps up, append a
+> dated session log to `docs/RESUME-HERE.md` (curated summary of decisions + current state,
+> not the raw transcript), then commit it. Also: when working with `ReferenceEntity` rows,
+> always check the hidden `details` fields (e.g. `_hiddenImportFields`), not just `displayName`.
+
 ## What this app is
 
 Next.js (App Router) + TypeScript + Prisma (SQLite locally, Postgres/Neon in prod),

@@ -16,6 +16,29 @@
 
 ---
 
+## Session log (most recent first — **append a dated entry at the end of each working day**)
+
+### 2026-07-08 — reference seeding, DB/Vercel outage fix, matter/lawsuit UI
+
+**DB/Vercel outage fixed + permanent guard (deployed).** Login broke with `password authentication failed for user 'neondb_owner'`. Root cause: Neon's role password was rotated, but the hand-maintained Vercel DB env vars (`DATABASE_URL`, `POSTGRES_DATABASE_URL_UNPOOLED` — manual Apr-27 overrides) still held the old password, and the login route read `process.env.DATABASE_URL` directly with no fallback. Fix: new `lib/databaseUrl.ts` `resolveDatabaseUrl()` — on Vercel it builds the connection string from Neon's **integration-managed `POSTGRES_PG*` components** (auto-refreshed on rotation); locally an explicit URL wins. Wired into `lib/prisma.ts` and `app/api/auth/login/route.ts`.
+- **Lesson:** rotate the Neon password via Vercel → Storage → **"Rotate Integration Secrets"** (keeps Neon+Vercel in sync), NOT the Neon console reset (which desyncs the manual vars). A console reset here left the current password only in Neon; had to re-mirror it into Vercel `POSTGRES_PGPASSWORD` + local `.env.local`.
+
+**Reference seeding (task #178, Approach A — match-or-create via the reference-data CSV import: `displayName` matches existing → update+attach `aliases`; no match → create; providers `active=false`; dry-run then confirm).**
+- **Provider → `provider_client`** ✓ seeded — `docs/nf-provider-seed.csv` (22 alias-maps onto existing providers + 35 new inactive, title-cased). `Nitin Mariwalla` misspelled source left to manual.
+- **Court → `court_venue`** ✓ seeded — `docs/nf-court-seed.csv` (10 alias-maps of legacy NF court names onto existing venues + 1 create `AAA Arbitration`; Supreme Court/Westchester/Onondaga/Lien/test dropped).
+- **ServiceType → `service_type`** ✓ seeded — `docs/nf-service-type-seed.csv` (29 update: Title-cased the ALL-CAPS displays + 406 source aliases, compounds → primary service; 3 create: Orthopedic, Pain Management, Acupuncture). `UNKNOWN` renamed to **`Unknown/Other`** (kept `UNKNOWN` as an alias so it still resolves). ~97% of rows resolve.
+- **Insurer → `insurer_company`** — **DEFERRED.** 1,060 canonical values not merged; ~777 are variants of existing insurers (GEICO/State Farm/Progressive families). Needs brand-level grouping before a clean seed (string fuzzy is unreliable here).
+- **ProviderGroup** — no reference table; it's a **hidden, provider-derived field.** 39/44 NF codes exactly match `provider_client` records' `details._hiddenImportFields.hidden_provider_group_name`. Importer rule (#178): derive `ClaimIndex.providerGroup` from the resolved provider's hidden group (NF column as fallback); **exclude** `KOFFLER-MUA`, `SVETLANA`, `CELLA-SENI`, `LEVI-TRISH-SENI`, `TEST-GROUP`.
+- **Still to seed:** DenialReason (947), Defendant (353), SettledWith (2,767), Status (134), VerificationStatus (2), PlaintiffAttorney (1).
+- **Process note:** always check reference tables' hidden `details` fields (e.g. `_hiddenImportFields`), not just `displayName`.
+- Reference-data admin browse list cap raised 100 → 10,000 (`app/api/reference-data/entities/route.ts`, `app/admin/reference-data/page.tsx`).
+
+**Matter / Lawsuit UI (deployed, working).**
+- Matter page (`app/matter/[id]/page.tsx`): "Old Matter Number" moved inline with the "Claim Information" title; new **Service Type** picklist card between Date of Service and Denial Reason (`components/ServiceTypePicklist.tsx`), backed by the `identity-field` API which now supports `service_type` (`app/api/matters/identity-field/route.ts`).
+- Lawsuit page (`app/lawsuits/page.tsx`): **Old Lawsuit Number** field added to each lawsuit group header (for PKT/packet files).
+
+---
+
 ## Native email — PER-USER, real-time (built)
 
 Email is **user-specific**: every user works their **own** BRL Outlook mailbox (their account email).
