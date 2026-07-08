@@ -9041,21 +9041,28 @@ function openClaimAmountEditDialog() {
                 >
               <div className="barsh-direct-summary-column">
                 <div
-                  className="barsh-direct-section-title"
                   style={{
-                    color: "#00346e",
-                    fontSize: 12,
-                    fontWeight: 950,
-                    letterSpacing: "0.08em",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
                     margin: "0 0 2px",
                     padding: "0 4px",
-                    textTransform: "uppercase",
                   }}
                 >
-                  Claim Information
-                </div>
-
-                <div style={{ padding: "4px 4px 8px" }}>
+                  <div
+                    className="barsh-direct-section-title"
+                    style={{
+                      color: "#00346e",
+                      fontSize: 12,
+                      fontWeight: 950,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Claim Information
+                  </div>
                   <OldFileNumberField matterId={resolvedNumericMatterId()} label="Old Matter Number" />
                 </div>
 

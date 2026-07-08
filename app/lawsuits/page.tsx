@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
+import OldFileNumberField from "@/components/OldFileNumberField";
 import * as XLSX from "xlsx";
 
 type Matter = any;
@@ -998,6 +999,7 @@ export default function LawsuitsPage() {
           ) : (
             groups.map((group, idx) => {
               const rows = [...getRows(group)].sort(compareRows);
+              const groupMasterLawsuitId = rows.map((m) => masterId(m)).find(Boolean) || "";
 
               const eligibleRows = rows.filter((m) => isSelectableMatter(m));
               const allEligibleSelected =
@@ -1005,7 +1007,7 @@ export default function LawsuitsPage() {
 
               return (
                 <div key={`${getClaimNumber(group)}-${idx}`} style={card}>
-                  <div style={header}>
+                  <div style={{ ...header, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                     <span>
                       Claim Number:{" "}
                       <button
@@ -1017,6 +1019,9 @@ export default function LawsuitsPage() {
                         {getClaimNumber(group)}
                       </button>
                     </span>
+                    {groupMasterLawsuitId ? (
+                      <OldFileNumberField masterLawsuitId={groupMasterLawsuitId} label="Old Lawsuit Number" />
+                    ) : null}
                   </div>
 
                   <table style={table}>
