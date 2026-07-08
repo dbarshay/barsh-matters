@@ -18,6 +18,7 @@ import MatterEmailCompose from "@/components/email/MatterEmailCompose";
 import InboundAttachmentReview from "@/components/email/InboundAttachmentReview";
 import MatterEmailInbox from "@/components/email/MatterEmailInbox";
 import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
+import OldFileNumberField from "@/components/OldFileNumberField";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
 function num(v: any) {
@@ -9052,6 +9053,10 @@ function openClaimAmountEditDialog() {
                   }}
                 >
                   Claim Information
+                </div>
+
+                <div style={{ padding: "4px 4px 8px" }}>
+                  <OldFileNumberField matterId={resolvedNumericMatterId()} label="Old Matter Number" />
                 </div>
 
                 <a

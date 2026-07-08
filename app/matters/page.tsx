@@ -15,6 +15,7 @@ import { type FiledDoc } from "@/components/documents/FolderTree";
 import BarshHeader from "@/app/components/BarshHeader";
 import MatterEmailInbox from "@/components/email/MatterEmailInbox";
 import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
+import OldFileNumberField from "@/components/OldFileNumberField";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 
 type FilterKind = "patient" | "provider" | "insurer" | "claim" | "master" | "treatingProvider" | "dateOfLoss";
@@ -10284,6 +10285,10 @@ function masterDocumentPreviewText(value: unknown): string {
                       }}
                     >
                       Lawsuit Information
+                    </div>
+
+                    <div style={{ padding: "2px 0 8px" }}>
+                      <OldFileNumberField masterLawsuitId={currentMasterLawsuitIdForDocumentPreview()} label="Old Lawsuit Number" />
                     </div>
 
                     <div
