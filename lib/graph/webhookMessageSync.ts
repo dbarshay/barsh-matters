@@ -101,25 +101,38 @@ export async function resolveMatterContext(conversationId: string, matchText: st
     });
     if (thread) return { source: "graph_webhook", ...thread };
   }
-  // 2) A matter number appears anywhere in the subject or body — resolve it to a matter.
+  // 2) A file number appears anywhere in the subject or body. Two separate BM file taxonomies, routed
+  //    independently to whichever is mentioned (both, if both appear):
+  //      Individual Matter = "BRL_2026NNNNN"  -> ClaimIndex.display_number (numeric matter_id)
+  //      Lawsuit Matter    = "YYYY.MM.NNNNN"  -> Lawsuit.masterLawsuitId (the dotted number itself)
   const tags = extractMatterNumbers(matchText);
-  if (tags.length) {
-    // Prefer a real matter record: ClaimIndex.display_number → numeric matter_id (so per-matter badges
-    // match, not just the firm-wide display-number view).
+  const individualTags = tags.filter((t) => /^BRL_/i.test(t));
+  const lawsuitTags = tags.filter((t) => !/^BRL_/i.test(t));
+
+  let matterId: number | null = null;
+  let matterDisplayNumber: string | null = null;
+  let masterLawsuitId: string | null = null;
+
+  if (individualTags.length) {
     try {
-      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: { in: tags } }, select: { matter_id: true, display_number: true } });
-      if (claim) return { source: "graph_webhook", matterId: typeof claim.matter_id === "number" ? claim.matter_id : null, matterDisplayNumber: claim.display_number };
+      const claim = await (prisma as any).claimIndex.findFirst({ where: { display_number: { in: individualTags } }, select: { matter_id: true, display_number: true } });
+      if (claim) { matterId = typeof claim.matter_id === "number" ? claim.matter_id : null; matterDisplayNumber = claim.display_number || individualTags[0]; }
+      else matterDisplayNumber = individualTags[0]; // present but no matter record yet — still surfaced firm-wide
     } catch {
-      /* fall through */
+      matterDisplayNumber = individualTags[0];
     }
-    // Else reuse an existing thread that already carries one of these numbers.
-    const byTag = await prisma.emailThread.findFirst({
-      where: { matterDisplayNumber: { in: tags } },
-      select: { matterId: true, matterDisplayNumber: true, masterLawsuitId: true, clioMatterId: true, clioDisplayNumber: true, clioMaildropEmail: true, clioMaildropLabel: true },
-    });
-    if (byTag) return { source: "graph_webhook", ...byTag };
-    // A number was present but matches no matter record yet — still tag it so the firm-wide view surfaces it.
-    return { source: "graph_webhook", matterDisplayNumber: tags[0] };
+  }
+  if (lawsuitTags.length) {
+    try {
+      const lawsuit = await (prisma as any).lawsuit.findFirst({ where: { masterLawsuitId: { in: lawsuitTags } }, select: { masterLawsuitId: true } });
+      masterLawsuitId = lawsuit ? lawsuit.masterLawsuitId : lawsuitTags[0];
+    } catch {
+      masterLawsuitId = lawsuitTags[0];
+    }
+  }
+
+  if (matterId || matterDisplayNumber || masterLawsuitId) {
+    return { source: "graph_webhook", matterId, matterDisplayNumber, masterLawsuitId };
   }
   return null;
 }
