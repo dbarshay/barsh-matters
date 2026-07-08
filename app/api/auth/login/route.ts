@@ -34,6 +34,7 @@ import {
   TWO_FACTOR_PENDING_COOKIE,
   TWO_FACTOR_PENDING_TTL_SECONDS,
 } from "@/src/lib/auth/two-factor-pending";
+import { resolveDatabaseUrl } from "@/lib/databaseUrl";
 
 const { Pool } = require("pg") as { Pool: any };
 
@@ -73,7 +74,10 @@ function normalizeUsername(value: unknown): string {
 }
 
 function configuredDatabaseUrl(): string {
-  return cleanAdminAuthValue(process.env.DATABASE_URL);
+  // Was: process.env.DATABASE_URL only (no fallback) — a stale manual DATABASE_URL after a Neon password
+  // rotation broke login. Now uses the shared resolver so login connects with the same integration-managed
+  // (auto-refreshed) credentials as the rest of the app. See lib/databaseUrl.ts.
+  return cleanAdminAuthValue(resolveDatabaseUrl());
 }
 
 function getCredentialPool(): any | null {

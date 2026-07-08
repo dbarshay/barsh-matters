@@ -2,15 +2,15 @@ import "server-only";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { resolveDatabaseUrl } from "@/lib/databaseUrl";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-const databaseUrl =
-  process.env.POSTGRES_DATABASE_URL_UNPOOLED ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.DATABASE_URL;
+// Prefer Neon's integration-managed credentials on Vercel (auto-refreshed on rotation), an explicit
+// URL locally. See lib/databaseUrl.ts for the full rationale.
+const databaseUrl = resolveDatabaseUrl();
 
 if (!databaseUrl) {
   throw new Error("No Postgres database URL found.");
