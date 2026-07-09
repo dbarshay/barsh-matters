@@ -46,13 +46,13 @@ function explicitUrl(): string | undefined {
 
 /**
  * Resolve the Postgres connection string.
- * - On Vercel: build from the integration-managed components (auto-refreshed on rotation); fall back to
- *   an explicit URL only if the components are somehow absent.
- * - Elsewhere (local/CI): an explicitly configured URL wins; integration components are the fallback.
+ *
+ * DATABASE_URL FIRST, everywhere. The Neon–Vercel integration does NOT reliably propagate password
+ * rotations to its managed POSTGRES_* vars (confirmed: after a rotation the integration vars stayed
+ * stale on Vercel while only DATABASE_URL, set manually, was current). So we no longer depend on the
+ * integration vars — DATABASE_URL is maintained by hand in Vercel + .env.local and updated on the rare
+ * rotation. The integration-built URL and other explicit URLs remain as last-resort fallbacks.
  */
 export function resolveDatabaseUrl(): string | undefined {
-  if (process.env.VERCEL) {
-    return integrationBuiltUrl() ?? explicitUrl();
-  }
-  return explicitUrl() ?? integrationBuiltUrl() ?? undefined;
+  return process.env.DATABASE_URL || integrationBuiltUrl() || explicitUrl() || undefined;
 }
