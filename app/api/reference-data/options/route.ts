@@ -70,6 +70,15 @@ const TYPE_ALIASES: Record<string, string> = {
   defense_attorneys: "adversary_attorney",
   defense_firm: "adversary_attorney",
   defense_firms: "adversary_attorney",
+
+  settlement_contact: "individual",
+  settlement_contacts: "individual",
+  settled_with: "individual",
+  settledwith: "individual",
+  settlement: "individual",
+  settlements: "individual",
+  adjuster: "individual",
+  adjusters: "individual",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -83,6 +92,7 @@ const TYPE_LABELS: Record<string, string> = {
   transaction_type: "Transaction Types",
   transaction_status: "Transaction Statuses",
   adversary_attorney: "Adversary Attorneys",
+  individual: "Settlement Contacts",
 };
 
 function textValue(value: unknown): string {

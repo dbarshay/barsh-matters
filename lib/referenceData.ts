@@ -41,6 +41,16 @@ export function normalizeReferenceEntityType(value: unknown): ReferenceEntityTyp
     persons: "individual",
     people: "individual",
 
+    // "individual" is the Settlement Contacts list (label only; key kept for back-compat)
+    settlement_contact: "individual",
+    settlement_contacts: "individual",
+    settled_with: "individual",
+    settledwith: "individual",
+    settlement: "individual",
+    settlements: "individual",
+    adjuster: "individual",
+    adjusters: "individual",
+
     adversary_attorneys: "adversary_attorney",
     attorney: "adversary_attorney",
     attorneys: "adversary_attorney",
@@ -116,7 +126,7 @@ export function referenceTypeOptions() {
 
 export function referenceTypeLabel(type: ReferenceEntityType): string {
   const labels: Record<ReferenceEntityType, string> = {
-    individual: "Individuals",
+    individual: "Settlement Contacts",
     adversary_attorney: "Adversary Attorneys",
     insurer_company: "Insurers / Companies",
     provider_client: "Providers / Clients",

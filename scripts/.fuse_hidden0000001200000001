@@ -1,0 +1,163 @@
+// Build the DenialReason reference seed CSV from the NF distinct-value tally.
+// Pure compute (no DB). Reads docs/nf-denial-reason-distinct.csv; writes:
+//   docs/nf-denial-reason-seed.csv         (displayName,aliases,active,notes)
+//   docs/nf-denial-reason-seed-report.md   (coverage report + dropped values)
+// Rules encode the 2026-07-09 locked decisions.
+import { readFileSync, writeFileSync } from "fs";
+import { resolve } from "path";
+
+const REPO = resolve(process.cwd());
+const IN = resolve(REPO, "docs/nf-denial-reason-distinct.csv");
+const OUT = resolve(REPO, "docs/nf-denial-reason-seed.csv");
+const REPORT = resolve(REPO, "docs/nf-denial-reason-seed-report.md");
+
+function parseCsv(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  const s = text.replace(/^﻿/, "");
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i], n = s[i + 1];
+    if (c === '"') { if (q && n === '"') { cell += '"'; i++; } else q = !q; continue; }
+    if (c === "," && !q) { row.push(cell); cell = ""; continue; }
+    if ((c === "\n" || c === "\r") && !q) { if (c === "\r" && n === "\n") i++; row.push(cell); if (row.some(x => x !== "")) rows.push(row); row = []; cell = ""; continue; }
+    cell += c;
+  }
+  row.push(cell); if (row.some(x => x !== "")) rows.push(row);
+  return rows;
+}
+
+const norm = (v) => String(v ?? "").toLowerCase().replace(/[’']/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+
+const T = {
+  FEE: "Fee Schedule",
+  IME: "Medical Necessity (IME)",
+  PEER: "Medical Necessity (Peer Review)",
+  CAUS: "Medical Necessity (Causality)",
+  NS_IME: "No-Show (IME)",
+  NS_EUO: "No-Show (EUO)",
+  R120: "120 Day Rule- Failure to Provide Verification (OVR)",
+  R45: "45 Day Rule (Late Submission of Bill)",
+  R30: "30 Day Rule (Late Notice of Claim)",
+  NC_MOTO: "No Coverage (Motorcycle)",
+  NC_ELIG: "No Coverage (Not Eligible IP)",
+  NC_OOS: "No Coverage (Out of State Carrier)",
+  NC_EXH: "No Coverage (Policy Exhausted)",
+  NC_EXP: "No Coverage (Policy Expired)",
+  NC_WRONG: "No Coverage (Wrong Carrier)",     // rename of "No-Coverage (Wrong Carrier)"
+  FRAUD: "Alleged Fraud",
+  NC_OTHER: "No Coverage (Other)",              // NEW
+  NC_WC: "No Coverage (Workers Compensation)",  // NEW
+  DUP: "Duplicate Billing",                     // NEW
+  PPO: "PPO/Carrier Contract",                  // NEW (PPO network + carrier agreements)
+  VERIF: "Verification/Investigation Pending",  // NEW
+  DEDUCT: "Deductible",                         // NEW
+};
+
+// Whole-value overrides: only the STANDALONE value moves here. These strings still return
+// null in classifySeg, so any COMPOUND containing them falls through to its primary reason.
+const OVERRIDE = {
+  "coventry contract": T.PPO,
+  "nhq negotiation payment": T.PPO,
+  "agreement with carrier": T.PPO,
+  "deductible": T.DEDUCT,
+  "deductible applied": T.DEDUCT,
+  "policy deductible": T.DEDUCT,
+};
+
+function classifySeg(seg) {
+  const s = seg.toLowerCase();
+  if (/ime\s*no[\s-]*show|ime no show/.test(s)) return T.NS_IME;
+  if (/euo/.test(s)) return T.NS_EUO;
+  if (/\bime\b|negative ime/.test(s)) return T.IME;
+  if (/peer/.test(s)) return T.PEER;
+  if (/caus?al|casual|not related to the accident|causality/.test(s)) return T.CAUS;
+  if (/medical necessity|medically unnecessary|excessive treatment|treatment plan not consistent|not based on correct application|not consistent with/.test(s)) return T.PEER;
+  if (/fee schedule|rvu|unit rule|ground rule|\bcpt\b|down coding|eapg|excessive billing|procedure code|improper fee|improper cpt|improper billing|bill form|npi incorrect/.test(s)) return T.FEE;
+  if (/duplicate/.test(s)) return T.DUP;
+  if (/120[\s-]*day|120 days/.test(s)) return T.R120;
+  if (/45[\s-]*day|45 days/.test(s)) return T.R45;
+  if (/30[\s-]*day|30 day|late notice of claim|no reasonable justification given for late notice/.test(s)) return T.R30;
+  if (/workers?\s*comp/.test(s)) return T.NC_WC;
+  if (/ppo/.test(s)) return T.PPO;
+  if (/motor.?cycle/.test(s)) return T.NC_MOTO;
+  if (/exhausted/.test(s)) return T.NC_EXH;
+  if (/expired|cancell?ed|not in force|no policy in effect|benefits terminated|policy was not in force|was not in force|after benefits terminated/.test(s)) return T.NC_EXP;
+  if (/out of state/.test(s)) return T.NC_OOS;
+  if (/wrong carrier|incorrect carrier|incorrect insurance|insurance company inco|insurance carrier/.test(s)) return T.NC_WRONG;
+  if (/not eligible|ineligible|in eligible|eligible injured|eligible for benefits/.test(s)) return T.NC_ELIG;
+  if (/policy exclusion|not a covered event|non.?compensable|no coverage/.test(s)) return T.NC_OTHER;
+  if (/fraud|material misrepresentation|misrepresentation|fraudulent|staged/.test(s)) return T.FRAUD;
+  if (/verification|investigation|outstanding vr|pending|non.?cooperation|additional information|lack of information|requires detailed narrative|variance not obtained|av received|aob requested|delay letter|nf-2|need additional/.test(s)) return T.VERIF;
+  if (/policy violation/.test(s)) return T.NC_OTHER; // bare fallback (judgment call)
+  return null;
+}
+
+function classify(value) {
+  const whole = value.trim().toLowerCase();
+  if (OVERRIDE[whole]) return OVERRIDE[whole];
+  for (const seg of value.split(",").map(x => x.trim()).filter(Boolean)) {
+    const t = classifySeg(seg);
+    if (t) return t;
+  }
+  return null;
+}
+
+const rows = parseCsv(readFileSync(IN, "utf8")).slice(1);
+const groups = new Map();
+const dropped = [];
+let totalRows = 0, mappedRows = 0;
+
+for (const [value, countStr] of rows) {
+  const count = parseInt(countStr, 10) || 0;
+  totalRows += count;
+  const target = classify(value);
+  if (!target) { dropped.push({ value, count }); continue; }
+  mappedRows += count;
+  if (!groups.has(target)) groups.set(target, { aliases: new Map(), rows: 0, distinct: 0 });
+  const g = groups.get(target);
+  g.rows += count; g.distinct += 1;
+  const nv = norm(value);
+  if (nv && nv !== norm(target)) {
+    const ex = g.aliases.get(nv);
+    if (!ex || count > ex.count) g.aliases.set(nv, { raw: value, count });
+  }
+}
+
+const order = [T.FEE, T.IME, T.PEER, T.CAUS, T.NS_IME, T.NS_EUO, T.R120, T.R45, T.R30,
+  T.NC_MOTO, T.NC_ELIG, T.NC_OOS, T.NC_EXH, T.NC_EXP, T.NC_WRONG, T.FRAUD,
+  T.NC_OTHER, T.NC_WC, T.DUP, T.PPO, T.VERIF, T.DEDUCT];
+const NEW = new Set([T.NC_OTHER, T.NC_WC, T.DUP, T.PPO, T.VERIF, T.DEDUCT]);
+const csvCell = (s) => /[",\r\n]/.test(String(s)) ? `"${String(s).replace(/"/g, '""')}"` : String(s);
+
+const outRows = [["displayName", "aliases", "active", "notes"]];
+for (const t of order) {
+  const g = groups.get(t);
+  if (!g) { outRows.push([t, "", "TRUE", NEW.has(t) ? "NEW category (no legacy variants mapped)" : "existing (no legacy variants mapped)"]); continue; }
+  const aliases = [...g.aliases.values()].sort((a, b) => b.count - a.count).map(a => a.raw);
+  const tag = t === T.NC_WRONG ? "RENAME of 'No-Coverage (Wrong Carrier)' (drop hyphen); " : NEW.has(t) ? "NEW category; " : "existing; ";
+  const notes = `${tag}seeded from NF legacy — ${g.distinct} source variants, ${g.rows.toLocaleString()} rows, ${aliases.length} aliases`;
+  outRows.push([t, aliases.join(";"), "TRUE", notes]);
+}
+writeFileSync(OUT, outRows.map(r => r.map(csvCell).join(",")).join("\n") + "\n", "utf8");
+
+dropped.sort((a, b) => b.count - a.count);
+const droppedRows = dropped.reduce((s, d) => s + d.count, 0);
+let md = `# DenialReason seed — coverage report (${new Date().toISOString().slice(0, 10)})\n\n`;
+md += `Source: \`docs/nf-denial-reason-distinct.csv\` — 947 distinct values, ${totalRows.toLocaleString()} rows with a denial value.\n\n`;
+md += `- **Mapped:** ${mappedRows.toLocaleString()} rows (${(100 * mappedRows / totalRows).toFixed(1)}%) -> ${order.filter(t => groups.get(t)).length} canonical targets.\n`;
+md += `- **Dropped (non-denial status / junk, no canonical home):** ${droppedRows.toLocaleString()} rows (${(100 * droppedRows / totalRows).toFixed(1)}%), ${dropped.length} distinct values.\n\n`;
+md += `## Per-target (row weight desc)\n\n| Target | New? | Distinct variants | Rows |\n|---|---|---:|---:|\n`;
+for (const t of [...order].filter(t => groups.get(t)).sort((a, b) => groups.get(b).rows - groups.get(a).rows)) {
+  const g = groups.get(t);
+  md += `| ${t} | ${NEW.has(t) ? "NEW" : t === T.NC_WRONG ? "rename" : ""} | ${g.distinct} | ${g.rows.toLocaleString()} |\n`;
+}
+md += `\n## Dropped values (all ${dropped.length}, count desc)\n\nPayment/status notes or data-quality strings, not denial categories — left unresolved:\n\n`;
+for (const d of dropped) md += `- ${d.count.toString().padStart(4)} × ${d.value}\n`;
+writeFileSync(REPORT, md, "utf8");
+
+console.log(`Mapped ${mappedRows.toLocaleString()}/${totalRows.toLocaleString()} rows (${(100 * mappedRows / totalRows).toFixed(1)}%)`);
+console.log(`Dropped ${droppedRows.toLocaleString()} rows across ${dropped.length} distinct values\n`);
+for (const t of [...order].filter(t => groups.get(t)).sort((a, b) => groups.get(b).rows - groups.get(a).rows)) {
+  const g = groups.get(t);
+  console.log(`  ${g.rows.toString().padStart(7)}  [${g.distinct.toString().padStart(3)} var]  ${NEW.has(t) ? "*NEW* " : t === T.NC_WRONG ? "*REN* " : "      "}${t}`);
+}
+console.log(`\nTop 12 dropped:`); for (const d of dropped.slice(0, 12)) console.log(`  ${d.count.toString().padStart(5)}  ${d.value}`);

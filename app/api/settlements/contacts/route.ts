@@ -4,13 +4,23 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Settled-With picker source of truth = the "Settlement Contacts" reference list
+// (ReferenceEntity type "individual"). Contact fields (email/phone/company/role) live in
+// ReferenceEntity.details; search matches displayName + aliases (aliases include email and
+// "name company", so those remain searchable).
+
 function clean(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function contactDisplay(contact: any): string {
-  const name = clean(contact?.name);
-  const email = clean(contact?.email);
+function detailStr(details: unknown, key: string): string {
+  if (details && typeof details === "object" && !Array.isArray(details)) {
+    return clean((details as Record<string, unknown>)[key]);
+  }
+  return "";
+}
+
+function contactDisplay(name: string, email: string): string {
   if (name && email) return `${name} <${email}>`;
   return name || email || "";
 }
@@ -21,25 +31,38 @@ export async function GET(req: NextRequest) {
     const query = clean(url.searchParams.get("q"));
     const includeInactive = clean(url.searchParams.get("includeInactive")).toLowerCase() === "true";
 
-    const contacts = await prisma.settlementContact.findMany({
+    const entities = await prisma.referenceEntity.findMany({
       where: {
-        ...(includeInactive ? {} : { isActive: true }),
+        type: "individual",
+        ...(includeInactive ? {} : { active: true }),
         ...(query
           ? {
               OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-                { company: { contains: query, mode: "insensitive" } },
-                { role: { contains: query, mode: "insensitive" } },
+                { displayName: { contains: query, mode: "insensitive" } },
+                { aliases: { some: { alias: { contains: query, mode: "insensitive" } } } },
               ],
             }
           : {}),
       },
-      orderBy: [
-        { name: "asc" },
-        { email: "asc" },
-      ],
+      orderBy: [{ displayName: "asc" }],
       take: 50,
+    });
+
+    const contacts = entities.map((entity) => {
+      const name = clean(entity.displayName);
+      const email = detailStr(entity.details, "email");
+      return {
+        id: entity.id,
+        name,
+        email,
+        phone: detailStr(entity.details, "phone"),
+        company: detailStr(entity.details, "company"),
+        role: detailStr(entity.details, "role") || "Settled With",
+        notes: clean(entity.notes),
+        isActive: entity.active,
+        type: "individual",
+        display: contactDisplay(name, email),
+      };
     });
 
     return NextResponse.json({
@@ -48,17 +71,7 @@ export async function GET(req: NextRequest) {
       localFirst: true,
       sourceOfTruth: "barsh-matters-local",
       count: contacts.length,
-      contacts: contacts.map((contact) => ({
-        id: contact.id,
-        name: contact.name,
-        email: contact.email,
-        phone: contact.phone,
-        company: contact.company,
-        role: contact.role,
-        notes: contact.notes,
-        isActive: contact.isActive,
-        display: contactDisplay(contact),
-      })),
+      contacts,
       safety: {
         readOnly: true,
         clioRecordsChanged: false,

@@ -1,0 +1,186 @@
+// Defendant -> adversary_attorney seed builder + worksheet writeback.
+// Pure compute. Reads docs/nf-defendant-distinct.csv + data/reference/adversary_attorneys_upload.csv.
+// Writes: docs/nf-defendant-seed.csv, docs/nf-defendant-mapping.csv, and fills the Defendant tab of
+// the NF-normalization-worksheet.xlsx (backup saved first). Curated rules for high-volume firm
+// families + key-based auto-merge for the rest. Every non-trivial merge/drop is noted for review.
+import { readFileSync, writeFileSync, copyFileSync, existsSync } from "fs";
+import { resolve } from "path";
+import * as XLSX from "xlsx";
+
+const REPO = resolve(process.cwd());
+const WS = "/sessions/friendly-great-dijkstra/mnt/!!!!!Barsh Matters Workspace!!!!!/NF-normalization-worksheet.xlsx";
+
+function parseCsv(text){const rows=[];let row=[],cell="",q=false;const s=text.replace(/^﻿/,"");for(let i=0;i<s.length;i++){const c=s[i],n=s[i+1];if(c==='"'){if(q&&n==='"'){cell+='"';i++;}else q=!q;continue;}if(c===","&&!q){row.push(cell);cell="";continue;}if((c==="\n"||c==="\r")&&!q){if(c==="\r"&&n==="\n")i++;row.push(cell);if(row.some(x=>x!==""))rows.push(row);row=[];cell="";continue;}cell+=c;}row.push(cell);if(row.some(x=>x!==""))rows.push(row);return rows;}
+const norm=(v)=>String(v??"").toLowerCase().replace(/[’']/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+
+// firm clustering key: strip prefixes/suffixes/parentheticals/carrier tags/punct
+function key(name){
+  let s=" "+String(name).toUpperCase()+" ";
+  s=s.replace(/\([^)]*\)/g," ");
+  s=s.replace(/&/g," AND ");
+  s=s.replace(/[^A-Z0-9 ]/g," ");
+  s=s.replace(/\b(PROGRESSIVE|ALLSTATE|LIBERTY MUTUAL|NON PROGRESSIVE|NON ALLSTATE|NYC CASES|SUFFOLK|NON SUFFOLK)\b/g," ");
+  s=s.replace(/\bTHE\b/g," ");
+  s=s.replace(/\bLAW\s+OFFICES?\s+OF\b/g," ");
+  s=s.replace(/\bLAW\s+OFFICES?\b/g," ");
+  s=s.replace(/\bLAW\s+FIRM\s+OF\b/g," ").replace(/\bLAW\s+FIRM\b/g," ").replace(/\bLAW\s+GROUP\b/g," ");
+  s=s.replace(/\bATTORNEYS?\s+AT\s+LAW\b/g," ");
+  s=s.replace(/\b(PC|PLLC|LLP|LLC|LLLP|ESQS|ESQ|ESQUIRE|PA|JR|SR)\b/g," ");
+  s=s.replace(/\bAND\s+ASSOCIATES\b/g," ").replace(/\bASSOCIATES\b/g," ");
+  return s.replace(/\s+/g," ").trim();
+}
+
+// 39 canonical firms
+const canonRows=parseCsv(readFileSync(resolve(REPO,"data/reference/adversary_attorneys_upload.csv"),"utf8"));
+const cdi=canonRows[0].indexOf("display_firm_name");
+const CANON=canonRows.slice(1).map(r=>r[cdi]);
+const canonByKey=new Map(); for(const c of CANON) canonByKey.set(key(c),c);
+
+// Curated rules: [regex over UPPERCASE source, canonical display, isExisting, note]
+const U=(s)=>String(s).toUpperCase();
+const RULES=[
+  [/PRINTZ/, "Law Office of Printz & Goldstein", false, "new firm (Printz & Goldstein — distinct from Goldstein Flecker)"],
+  [/GOLDSTEIN.*(HOPKINS|FLECKER)|(HOPKINS|FLECKER).*GOLDSTEIN/, "Law Offices of Eileen Hopkins", true, "→ existing (Eileen Hopkins = the Goldstein/Flecker/Hopkins firm; per review)"],
+  [/MERANI/, "Merani Kamara Law Group / Peter C. Merani, P.C. Attorneys at Law", true, "→ existing (Merani/Kamara/Peter C. Merani all one firm)"],
+  [/MARSHALL\s*,?\s*DENNEHEY/, "Marshall Dennehey, P.C.", true, "→ existing (Marshall Dennehey Warner Coleman & Goggin = same firm)"],
+  [/(MCCORMACK|MCCORMICK)\s*,?\s*&?\s*MATTEI/, "McCormack, Mattei & Holler", true, "→ existing (McCormick spelling / Progressive tag merged) — REVIEW spelling"],
+  [/KAREN\s+L?\.?\s*LAWRENCE/, "Law Office of Karen L. Lawrence", false, "new firm (Suffolk/Non-Suffolk tags merged)"],
+  [/JOHN\s+TROP/, "Law Offices of John Trop", false, "new firm (Office/Offices merged)"],
+  [/DANIEL\s+J\.?\s+TUCKER/, "Law Offices of Daniel J. Tucker", true, "→ existing (NYC-Cases tag merged)"],
+  [/PERRY\s+(AND|&)\s+FRANKSON/, "Law Offices of Perry & Frankson", false, "new firm"],
+  [/MARTYN.*(SMITH|MURRAY|YONG)/, "Martyn, Smith, Murray & Yong, Esqs.", true, "→ existing (Scranton PA firm)"],
+  [/MARTYN/, "Martyn & Martyn", false, "new firm (Martyn & Martyn / Martyn Toher & Martyn merged — REVIEW)"],
+  [/ROSSILLO.*LICATA/, "Rossillo & Licata, P.C.", true, "→ existing"],
+  [/GULLO/, "Gullo & Associates, LLC", true, "→ existing (LLC/LLP variants)"],
+  [/FREIBERG/, "Freiberg, Peck & Kang, LLP", true, "→ existing (Non-Progressive tag merged)"],
+  [/GALLO\s+VITUCCI/, "Gallo Vitucci & Klar, LLP", true, "→ existing"],
+  [/DE\s*MARTINI.*YI/, "De Martini & Yi, LLP", true, "→ existing"],
+  [/JAFFE.*VELAZQUEZ/, "Jaffe & Velazquez, LLP", true, "→ existing"],
+  [/JAFFE.*KOUMOURDAS/, "Jaffe & Koumourdas, LLP", false, "new firm"],
+  [/RUTH\s+NAZARIAN/, "Law Offices of Ruth Nazarian", true, "→ existing"],
+  [/RUBIN\s*&?\s*NAZARIAN|NAZARIAN.*RUBIN/, "Law Offices of Rubin & Nazarian", false, "new firm (distinct from Ruth Nazarian)"],
+  [/JAMES\s+F\.?\s*SULLIVAN/, "Law Offices of James F. Sullivan, P.C.", true, "→ existing"],
+  [/JAMES\s+F\.?\s*BUTLER/, "Law Offices of James F. Butler & Associates", false, "new firm"],
+  [/ROTHENBERG\s*&?\s*ROMANEK/, "Law Offices of Rothenberg & Romanek", true, "→ existing"],
+  [/BURATTI/, "Law Office of Buratti, Rothenberg & Burns", false, "new firm (distinct from Rothenberg & Romanek)"],
+  [/(ABRAMS|ABRAHAM)\s*,?\s*COHEN/, "Abrams, Cohen & Associates, P.C.", true, "→ existing (Abraham typo merged) — REVIEW"],
+  [/ABRAMS\s+FENSTER/, "Abrams Fensterman LLP", true, "→ existing (long typo variant merged)"],
+  [/FOLEY\s*,?\s*SMIT/, "Foley, Smit, O'Boyle & Weisman", false, "new firm (Office(s)-of variants merged)"],
+  [/NIGHTINGALE/, "Nightingale Law, P.C.", true, "→ existing (Michael S. Nightingale = same) — REVIEW"],
+  [/GOLDBERG.*MILLER.*RUBIN/, "Goldberg, Miller & Rubin, P.C.", true, "→ existing"],
+  [/NICOLINI.*PARADISE/, "Nicolini, Paradise, Ferretti, Sabella, PLLC", true, "→ existing"],
+  [/SARAH\s+C\.?\s+VARGHESE/, "Sarah C. Varghese & Associates", true, "→ existing"],
+  [/TINA\s+NEWSOME/, "Law Offices of Tina Newsome-Lee", true, "→ existing"],
+  [/RICHARD\s+SCHOENBERG/, "Law Offices of Richard Schoenberg", true, "→ existing"],
+  [/RAE\s+L\.?\s+VOSS/, "The Law Office of Rae L. Voss", true, "→ existing"],
+  [/JASON\s+TENENBAUM/, "Law Office of Jason Tenenbaum, P.C.", true, "→ existing"],
+  [/DESTIN\s+C?\.?\s*SANTACROSE/, "Law Office of Destin C. Santacrose", true, "→ existing"],
+  [/JOSEPH\s+C\.?\s+SETTE/, "Law Office of Joseph C. Sette & Associates", true, "→ existing"],
+  [/JAIME\s+E?\.?\s*GANGEMI/, "Law Office of Jaime E. Gangemi", true, "→ existing"],
+  [/PATRICK\s+NEGLIA/, "Law Office of Patrick Neglia", true, "→ existing"],
+  [/MURIEL\s+GOODE/, "Muriel Goode-Trufant", true, "→ existing"],
+  [/CALLINAN\s*&?\s*SMITH/, "Callinan & Smith, LLP", true, "→ existing"],
+  [/HUSCH\s+BLACKWELL/, "Husch Blackwell LLLP", true, "→ existing"],
+  [/GOTTLIEB\s+OSTRAGER/, "Gottlieb Ostrager LLP", true, "→ existing"],
+  [/MCDONNELL\s+ADELS/, "McDonnell Adels & Klestzick, PLLC", true, "→ existing"],
+  [/EILEEN\s+HOPKINS/, "Law Offices of Eileen Hopkins", true, "→ existing"],
+  [/BRIAN\s+RAYHILL/, "Law Offices of Brian Rayhill", true, "→ existing"],
+  [/HOLLANDER\s+LEGAL/, "Hollander Legal Group, P.C.", true, "→ existing"],
+  [/RUBIN\s*,?\s*FIORELLA/, "Rubin, Fiorella & Friedman, LLP", false, "new firm (Mercante variant merged)"],
+  [/LAWRENCE\s+N\.?\s*ROGAK/, "Law Office of Lawrence N. Rogak, LLC", false, "new firm"],
+  [/PENA\s*&?\s*KAHN/, "Pena & Kahn, PLLC", false, "new firm"],
+];
+
+// Drops: not defense firms
+const DROP=[
+  [/HINDS-RADIX|HONERABLE|HONORABLE/, "DROP: a judge, not a defense firm"],
+  [/NEW YORK MARINE\s*&?\s*GENERAL INSURANCE/, "DROP: a carrier, not a defense firm (belongs to Insurer)"],
+];
+
+// Title-case a firm string (used for new-firm canonical when no curated rule)
+function titleCase(s){
+  const keepUpper=new Set(["LLP","LLC","PLLC","PC","LLLP","PA","ESQ","ESQS","II","III"]);
+  return String(s).split(/\s+/).map(w=>{
+    const bare=w.replace(/[.,]/g,"");
+    if(keepUpper.has(bare.toUpperCase())) return w.toUpperCase();
+    if(/^[A-Z]\.?$/.test(w)) return w.toUpperCase();           // single initial
+    if(w==="&"||w==="AND") return w==="AND"?"and":"&";
+    return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+  }).join(" ");
+}
+
+// Load sources
+const src=parseCsv(readFileSync(resolve(REPO,"docs/nf-defendant-distinct.csv"),"utf8")).slice(1)
+  .map(([v,c])=>({value:v,count:parseInt(c,10)||0}));
+
+// Assign canonical
+function assign(s){
+  const up=U(s.value);
+  for(const [re,note] of DROP) if(re.test(up)) return {canonical:"",matchType:"drop",note};
+  for(const [re,disp,isEx,note] of RULES) if(re.test(up)) return {canonical:disp,matchType:isEx?"existing":"new",note};
+  const k=key(s.value);
+  if(canonByKey.has(k)) return {canonical:canonByKey.get(k),matchType:"existing",note:"→ existing (key match)"};
+  return {canonical:null,matchType:"cluster",note:""}; // resolve after clustering
+}
+const assigned=src.map(s=>({...s,...assign(s)}));
+
+// Cluster the leftovers by key; canonical = best (prefer mixed-case highest count, else title-cased)
+const byKey=new Map();
+for(const a of assigned) if(a.matchType==="cluster"){ const k=key(a.value); (byKey.get(k)||byKey.set(k,[]).get(k)).push(a); }
+for(const [k,arr] of byKey){
+  const mixed=arr.filter(a=>/[a-z]/.test(a.value)).sort((x,y)=>y.count-x.count);
+  const top=arr.slice().sort((x,y)=>y.count-x.count)[0];
+  const disp = mixed.length ? mixed[0].value.trim() : titleCase(top.value);
+  const merged = arr.length>1;
+  for(const a of arr){ a.canonical=disp; a.matchType="new"; a.note = merged ? `new firm (merged ${arr.length} variants by key)` : "new firm"; }
+}
+
+// Group by canonical for the seed
+const groups=new Map();
+for(const a of assigned){
+  if(!a.canonical) continue;
+  if(!groups.has(a.canonical)) groups.set(a.canonical,{rows:0,variants:[],existing:CANON.includes(a.canonical)});
+  const g=groups.get(a.canonical); g.rows+=a.count; g.variants.push(a);
+}
+const csvCell=(s)=>/[",\r\n]/.test(String(s))?`"${String(s).replace(/"/g,'""')}"`:String(s);
+const seed=[["displayName","aliases","active","notes"]];
+const canonNorm=(d)=>norm(d);
+for(const [disp,g] of [...groups.entries()].sort((a,b)=>b[1].rows-a[1].rows)){
+  const aliases=[...new Map(g.variants.map(v=>[norm(v.value),v]).filter(([nv])=>nv&&nv!==canonNorm(disp))).values()]
+    .sort((a,b)=>b.count-a.count).map(v=>v.value);
+  const tag=g.existing?"existing → adversary_attorney":"NEW firm";
+  seed.push([disp,aliases.join(";"),"TRUE",`${tag}; ${g.variants.length} src variants, ${g.rows.toLocaleString()} rows, ${aliases.length} aliases`]);
+}
+writeFileSync(resolve(REPO,"docs/nf-defendant-seed.csv"),seed.map(r=>r.map(csvCell).join(",")).join("\n")+"\n","utf8");
+
+// Mapping audit CSV
+const map=[["Source","Count","Canonical","MatchType","Note"]];
+for(const a of assigned.sort((x,y)=>y.count-x.count)) map.push([a.value,String(a.count),a.canonical||"",a.matchType,a.note]);
+writeFileSync(resolve(REPO,"docs/nf-defendant-mapping.csv"),map.map(r=>r.map(csvCell).join(",")).join("\n")+"\n","utf8");
+
+// Write into the worksheet Defendant tab (backup first)
+if(existsSync(WS)){
+  copyFileSync(WS, WS.replace(/\.xlsx$/,".bak.xlsx"));
+  const wb=XLSX.read(readFileSync(WS),{type:"buffer"});
+  const bySource=new Map(assigned.map(a=>[a.value,a]));
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets["Defendant"],{header:1,defval:"",raw:false});
+  const out=[rows[0]];
+  for(let i=1;i<rows.length;i++){
+    const a=bySource.get(rows[i][0]);
+    out.push([rows[i][0], rows[i][1], a?a.canonical:rows[i][2], a?a.note:""]);
+  }
+  wb.Sheets["Defendant"]=XLSX.utils.aoa_to_sheet(out);
+  writeFileSync(WS, XLSX.write(wb,{type:"buffer",bookType:"xlsx"}));
+}
+
+// Summary
+const existingCount=[...groups.values()].filter(g=>g.existing).length;
+const newCount=[...groups.values()].filter(g=>!g.existing).length;
+const dropRows=assigned.filter(a=>a.matchType==="drop");
+console.log(`Sources: ${src.length} distinct, ${src.reduce((s,x)=>s+x.count,0).toLocaleString()} rows`);
+console.log(`Canonical firms: ${groups.size}  (existing match: ${existingCount}, new: ${newCount})`);
+console.log(`Dropped: ${dropRows.length} (${dropRows.map(d=>d.value).join("; ")||"none"})`);
+console.log(`\nTop 25 canonical groups:`);
+for(const [disp,g] of [...groups.entries()].sort((a,b)=>b[1].rows-a[1].rows).slice(0,25))
+  console.log(`  ${g.rows.toString().padStart(6)}  [${g.variants.length} var] ${g.existing?"       ":"*NEW*  "}${disp}`);
+console.log(`\nWrote docs/nf-defendant-seed.csv, docs/nf-defendant-mapping.csv, and filled worksheet Defendant tab (backup: NF-normalization-worksheet.bak.xlsx)`);

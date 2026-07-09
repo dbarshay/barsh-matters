@@ -244,7 +244,7 @@ type ImportCleanupConfirmResponse = {
 };
 
 const DEFAULT_TYPES: ReferenceTypeOption[] = [
-  { value: "individual", label: "Individuals" },
+  { value: "individual", label: "Settlement Contacts" },
   { value: "adversary_attorney", label: "Adversary Attorneys" },
   { value: "insurer_company", label: "Insurers / Companies" },
   { value: "provider_client", label: "Providers / Clients" },
