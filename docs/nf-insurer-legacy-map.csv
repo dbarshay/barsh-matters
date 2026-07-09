@@ -1,0 +1,217 @@
+nf_value,count,canonical,kind
+GEICO INSURANCE COMPANY,17719,Government Employees Insurance Company,brand-generic -> flagship
+STATE FARM INSURANCE COMPANY,5584,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+PROGRESSIVE INSURANCE COMPANY,4989,Progressive Casualty Insurance Company,brand-generic -> flagship
+GEICO INS,3607,Government Employees Insurance Company,brand-generic -> flagship
+GEICO,3530,Government Employees Insurance Company,brand-generic -> flagship
+STATE FARM INSURANCE,3287,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+MVAIC,3226,Motor Vehicle Accident Indemnification Corporation,curated (+MVIAC typo)
+STATE FARM,2811,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+PROGRESSIVE,2159,Progressive Casualty Insurance Company,brand-generic -> flagship
+GEICO INS NYPIP,2070,Government Employees Insurance Company,brand-generic -> flagship
+GEICO NEW YORK,1960,Government Employees Insurance Company,brand-generic -> flagship
+TRAVELERS PROPERTY AND CASUALTY COMPANY,1496,Travelers Property Casualty Company of America,brand-generic -> flagship
+LIBERTY MUTUAL INSURANCE,1437,Liberty Mutual Insurance Company,brand-generic -> flagship
+USAA,896,USAA Casualty Insurance Company,brand-generic -> flagship
+ALLSTATE FIRE CASUALTY INSURANCE COMPANY,732,Allstate Insurance Company,brand-generic -> flagship
+ALLSTATE,650,Allstate Insurance Company,brand-generic -> flagship
+SAFECO INSURANCE COMPANY,603,Safeco National Insurance Company,brand-generic -> flagship
+NATIONWIDE INSURANCE COMPANY,596,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+USAA INSURANCE COMPANY,596,USAA Casualty Insurance Company,brand-generic -> flagship
+TRAVELERS INSURANCE,590,Travelers Property Casualty Company of America,brand-generic -> flagship
+GEICO INSURANCE,588,Government Employees Insurance Company,brand-generic -> flagship
+TRAVELERS INSURANCE COMPANY,502,Travelers Property Casualty Company of America,brand-generic -> flagship
+FARMERS INSURANCE COMPANY,465,Farmers Property and Casualty Insurance Company,brand-generic -> flagship
+ALLSTATE (NF),449,Allstate Insurance Company,brand-generic -> flagship
+ALLSTATE INSURANCE,357,Allstate Insurance Company,brand-generic -> flagship
+STATE FARM INS-NF,337,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+INTEGON NATIONAL INS,319,National General Insurance Company,brand-generic -> flagship
+MTA NEW YORK CITY TRANSIT,304,New York City Transit Authority,self-insured
+METROPOLITAN GROUP PROPERTY AND CASUALTY INSURANCE,287,Metropolitan General Insurance Company,brand-generic -> flagship
+INTEGON INSURANCE COMPANY,282,National General Insurance Company,brand-generic -> flagship
+AVIS RENT A CAR SYSTEM LLC,273,Avis Rent a Car,rental self-insured
+ALLSTATE INSURANCE C,234,Allstate Insurance Company,brand-generic -> flagship
+SEDGWICK,214,Sedgwick Claims,TPA (+Sedgewick typo)
+NATIONAL GENERAL INS,194,National General Insurance Company,brand-generic -> flagship
+NATIONWIDE,183,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+21 CENTURY INSURANCE COMPANY,181,21st Century Insurance Company,brand-generic -> flagship
+BRISTOL WEST INSURANCE COMPANY,180,21st Century Casualty Company,curated (REVIEW: Bristol West usually Farmers)
+Enterprise Rent A Car C/O Rental Claims Services f/k/a Elco Claims Services,175,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+PLYMOUTH ROCK INSURANCE COMPANY,156,Plymouth Rock Assurance Corporation of New York,brand-generic -> flagship
+TRAVELERS,155,Travelers Property Casualty Company of America,brand-generic -> flagship
+MOTOR VEHICLE ACCIDENT INDEMNITY COMPANY,119,Motor Vehicle Accident Indemnification Corporation,curated (+MVIAC typo)
+LIBERTY MUTUAL GENERAL INSURANCE CO.,99,Liberty Mutual Insurance Company,brand-generic -> flagship
+HARTFORD INSURANCE,97,Hartford Underwriters Insurance Company,brand-generic -> flagship
+KEMPER INSURANCE COMPANY,84,Kemper Independence Insurance Company,brand-generic -> flagship
+PROGRESSIVE MEDICAL CLAIMS,84,Progressive Casualty Insurance Company,brand-generic -> flagship
+REPUBLIC WESTERN INSURANCE COMPANY,82,Repwest Insurance Company,curated
+NYC TRANSIT C/O CORVEL CORPORATION,81,New York City Transit Authority,self-insured
+RENTAL CLAIMS SERVICES,81,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+SAFECO,81,Safeco National Insurance Company,brand-generic -> flagship
+TRAVELERS INS,72,Travelers Property Casualty Company of America,brand-generic -> flagship
+ESIS,69,ESIS Insurance Company,TPA
+NYC OFFICE OF THE COMPTROLLER,67,The City of New York Office of The Comptroller,govt self-insured
+SEDGWICK CLAIMS MANAGEMENT SERVICE,63,Sedgwick Claims,TPA (+Sedgewick typo)
+NYCTA,62,New York City Transit Authority,self-insured
+USSA,60,USAA Casualty Insurance Company,brand-generic -> flagship
+STATE FARM MUTUAL INS CO.,60,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+SEDGWICK INSURANCE OF NY,57,Sedgwick Claims,TPA (+Sedgewick typo)
+LIBERTY MUTUAL INSURANCE CORPORATION,55,Liberty Mutual Insurance Company,brand-generic -> flagship
+PLYMOUTH ROCK CLAIMS DEPARTMENT,55,Plymouth Rock Assurance Corporation of New York,brand-generic -> flagship
+"Avis Budget Group, Inc. c/o Sedgwick Claims Management Services",51,Avis Rent a Car,rental self-insured
+PROGRESSIVE GARDEN STATE INSURANCE COMPANY,51,Progressive Casualty Insurance Company,brand-generic -> flagship
+USAA CASUALTY INSURANCE,50,USAA Casualty Insurance Company,brand-generic -> flagship
+Met Life Insurance Company,49,Metropolitan General Insurance Company,brand-generic -> flagship
+PLYMOUTH ROCK ASSURANCE COMPANY,48,Plymouth Rock Assurance Corporation of New York,brand-generic -> flagship
+AVIS BUDGET GROUP,48,Avis Rent a Car,rental self-insured
+HANOVER INSURANCE,48,Hanover Insurance Company,brand-generic -> flagship
+METROPOLITAN CASUALTY INSURANCE COMPANY,48,Metropolitan General Insurance Company,brand-generic -> flagship
+Rental Claims P.O.Box 14392 lexington 40512 KY,45,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+PROGRESSIVE INS. CO.,44,Progressive Casualty Insurance Company,brand-generic -> flagship
+MERCURY CASUALTY INSURANCE COMPANY,43,Mercury Casualty Company,brand-generic -> flagship
+OFFICE OF THE COMPTROLLER DIVISION OF LAW-RM.,42,The City of New York Office of The Comptroller,govt self-insured
+OLD REPUBLIC INSURANCE C/O SEDGWICK CLAIMS MANAGEMENT SERVICES INC,40,Sedgwick Claims,TPA (+Sedgewick typo)
+MVIAC,40,Motor Vehicle Accident Indemnification Corporation,curated (+MVIAC typo)
+NATIONWIDE INSURANCE CO.,39,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+ESIS INS.,38,ESIS Insurance Company,TPA
+CITY OF NY OFF OF COMPTROLLER,35,The City of New York Office of The Comptroller,govt self-insured
+SEDGWICK CLAIMS MANAGEMENT,34,Sedgwick Claims,TPA (+Sedgewick typo)
+MERCURY INSURANCE COMPANY,33,Mercury Casualty Company,brand-generic -> flagship
+KEMPER INSURANCE,30,Kemper Independence Insurance Company,brand-generic -> flagship
+SAFECO INS. CO.,29,Safeco National Insurance Company,brand-generic -> flagship
+PROGRESSIVE NORTHEASTERN INSURANCE,29,Progressive Casualty Insurance Company,brand-generic -> flagship
+ACE ESIS,28,ESIS Insurance Company,TPA
+ALLSTATE INS,25,Allstate Insurance Company,brand-generic -> flagship
+LIBERTY MUTUAL,24,Liberty Mutual Insurance Company,brand-generic -> flagship
+SEDGWICK INSURANCE COMPANY,24,Sedgwick Claims,TPA (+Sedgewick typo)
+STATE FARM CASUALTY AND CASUALTY COMPANY,23,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+INFINITY INSURANCE,22,Infinity Insurance Company,brand-generic -> flagship
+GEICO INSURANCE COMAPNY,22,Government Employees Insurance Company,brand-generic -> flagship
+BRISTOL WEST CLAIMS SERVICE,22,21st Century Casualty Company,curated (REVIEW: Bristol West usually Farmers)
+SEDGWICK INS. CO.,20,Sedgwick Claims,TPA (+Sedgewick typo)
+NEW YORK CITY TRANSIT AUTHORITY INSURANCE COMPANY,19,New York City Transit Authority,self-insured
+AVIS BUDGET INSURANCE COMPANY,18,Avis Rent a Car,rental self-insured
+METLIFE INSURANCE COMPANY,17,Metropolitan General Insurance Company,brand-generic -> flagship
+STATE FARM INSURANCE CO.,17,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+LIBERTY MUTUAL PERSONAL INSURANCE COMPANY,16,Liberty Mutual Insurance Company,brand-generic -> flagship
+STATE FARM INS.,15,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+NYC TRANSIT AUTHORITY INSURANCE COMPANY,15,New York City Transit Authority,self-insured
+THE HARTFORD,14,Hartford Underwriters Insurance Company,brand-generic -> flagship
+TRAVELERS OF FLORIDA,13,Travelers Property Casualty Company of America,brand-generic -> flagship
+ENTERPRISE INSURANCE COMPANY,13,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+ALLSTATE NEW JERSEY PROPERTY AND CASUALTY INSURANCE COMPANY,13,Allstate Insurance Company,brand-generic -> flagship
+TRAVELERS PROPERTY CASUALTY COMPANY,12,Travelers Property Casualty Company of America,brand-generic -> flagship
+FARMERS INSURANCE GROUP,12,Farmers Property and Casualty Insurance Company,brand-generic -> flagship
+ALLSTATE INDEMNITY INSURANCE COMPANY,12,Allstate Insurance Company,brand-generic -> flagship
+ENTERPRISE HOLDINGS,12,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+HANOVER INSURANCE GROUP,12,Hanover Insurance Company,brand-generic -> flagship
+"MVAIC,",12,Motor Vehicle Accident Indemnification Corporation,curated (+MVIAC typo)
+SEDGWICK CLAIMS SERVICES,11,Sedgwick Claims,TPA (+Sedgewick typo)
+ENTERPRISE RENT A CAR INS.,11,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+Enterprise (Rental Claims Services),11,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+ENTERPRISE DAMAGE RECOVERY UNIT,11,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+NEW YORK CITY TRANSIT,10,New York City Transit Authority,self-insured
+INTEGON GENERAL INSURANCE COMPANY,10,National General Insurance Company,brand-generic -> flagship
+ESIS CLAIMS,10,ESIS Insurance Company,TPA
+MTA - TRANSIT AUTHORITY INSURANCE COMPANY,10,New York City Transit Authority,self-insured
+"Hertz Vehicles, LLC c/o ESIS Claims",10,ESIS Insurance Company,TPA
+STATE FARM INDEMNITY COMPANY,9,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+SEDGWICK CMS INSURANCE COMPANY,9,Sedgwick Claims,TPA (+Sedgewick typo)
+INTEGON,9,National General Insurance Company,brand-generic -> flagship
+383 INTEGON NATIONAL INS CO,9,National General Insurance Company,brand-generic -> flagship
+21ST CENTURY,9,21st Century Insurance Company,brand-generic -> flagship
+MCC/NY NATIONWIDE MUTUAL INS,9,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+HERTZ CLAIM MANAGEMENT C/O ESIS,8,ESIS Insurance Company,TPA
+NYC OFFICE OF COMPTROLLER,8,The City of New York Office of The Comptroller,govt self-insured
+PROGRESSIVE SELECT INSURANCE COMPANY,8,Progressive Casualty Insurance Company,brand-generic -> flagship
+ENTERPRISE INSURANCE,7,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+FARMERS INSURANCE COMPANY INC,7,Farmers Property and Casualty Insurance Company,brand-generic -> flagship
+Bristol West Ins Co,7,21st Century Casualty Company,curated (REVIEW: Bristol West usually Farmers)
+USAA AUTO INSURANCE COMPANY,7,USAA Casualty Insurance Company,brand-generic -> flagship
+TRAVELERS EXCESS AND SURPLUS COMPANY,7,Travelers Property Casualty Company of America,brand-generic -> flagship
+TRAVELERS CASUALTY AND SURETY COMPANY,7,Travelers Property Casualty Company of America,brand-generic -> flagship
+ELCO ADMINISTRATIVE SERVICES/ELRAC C/O RENTAL CLAIM SERVICES,7,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+ALLSTATE NEW JERSEY INSURANCE COMPANY,6,Allstate Insurance Company,brand-generic -> flagship
+INFINITY INDEMNITY INSURANCE COMPANY,6,Infinity Insurance Company,brand-generic -> flagship
+MET LIFE AUTO INSURANCE COMPANY,6,Metropolitan General Insurance Company,brand-generic -> flagship
+NYC COMPTROLLER'S OFFICE,6,The City of New York Office of The Comptroller,govt self-insured
+ADIRONDACK INSURANCE EXCHANGE c/o National General,6,National General Insurance Company,brand-generic -> flagship
+HANOVER INS.,6,Hanover Insurance Company,brand-generic -> flagship
+NEW YORK CITY OFFICE OF COMPTROLLERS,5,The City of New York Office of The Comptroller,govt self-insured
+NATIONWIDE AFFINITY INSURANCE COMPANY,5,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+KEMPER INSURANCE CO,5,Kemper Independence Insurance Company,brand-generic -> flagship
+LIBERTY MUTUAL GROUP,5,Liberty Mutual Insurance Company,brand-generic -> flagship
+TRAVELERS INSURANCE CO.,5,Travelers Property Casualty Company of America,brand-generic -> flagship
+PROGRESSIVE CLAIMS,5,Progressive Casualty Insurance Company,brand-generic -> flagship
+"THE AUTOMOBILE INSURANCE COMPANY OF HARTFORD,CT",4,Hartford Underwriters Insurance Company,brand-generic -> flagship
+INTEGON INS. CO,4,National General Insurance Company,brand-generic -> flagship
+TRAVELERS INS CO,4,Travelers Property Casualty Company of America,brand-generic -> flagship
+FIRST LIBERTY MUTUAL INSURANCE COMPANY,4,Liberty Mutual Insurance Company,brand-generic -> flagship
+SAFECO INS,4,Safeco National Insurance Company,brand-generic -> flagship
+THE AUTOMOBILE INSURANCE COMPANY OF HARTFORD,4,Hartford Underwriters Insurance Company,brand-generic -> flagship
+GEICO INSURANCE/AUTO,3,Government Employees Insurance Company,brand-generic -> flagship
+NEW YORK CITY COMPTROLLER,3,The City of New York Office of The Comptroller,govt self-insured
+ALLSTATE INSURANCE COM,3,Allstate Insurance Company,brand-generic -> flagship
+ALLSTATE INSURANCE CO. II,3,Allstate Insurance Company,brand-generic -> flagship
+TRAVELERS AUTO INSURANCE,3,Travelers Property Casualty Company of America,brand-generic -> flagship
+TRAVELERS MELVILLE CLAIM,3,Travelers Property Casualty Company of America,brand-generic -> flagship
+PROGRESSIVE AUTO INSURANCE COMPANY,3,Progressive Casualty Insurance Company,brand-generic -> flagship
+ALLSTATE NEW JERSY PROPERTY AND CASUALTY INSURANCE,3,Allstate Insurance Company,brand-generic -> flagship
+NATIONWIDE INS CO,3,Nationwide Property and Casualty Insurance Company,brand-generic -> flagship
+MERCURY INSURANCE CO,3,Mercury Casualty Company,brand-generic -> flagship
+STATE FARM GUARANTY INSURANCE COMPANY,3,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+Liberty Mutual Ins P O BOX 4836 Syracuse 13221 NY,3,Liberty Mutual Insurance Company,brand-generic -> flagship
+MERCURY AUTO INSURANCE,3,Mercury Casualty Company,brand-generic -> flagship
+LIBERTY MUTUAL COMMERCIAL DEPT,3,Liberty Mutual Insurance Company,brand-generic -> flagship
+Progressive Southeastern Insurance,3,Progressive Casualty Insurance Company,brand-generic -> flagship
+GEICO NYPIP INS CO,3,Government Employees Insurance Company,brand-generic -> flagship
+USAA CLAIMS DEPARTMENT,3,USAA Casualty Insurance Company,brand-generic -> flagship
+"Rental Claims Services-ELRAC, LLC",3,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+INTEGON C/O ASSIGNED RISK SOLUTIONS,2,National General Insurance Company,brand-generic -> flagship
+Travelers Indemnity of Connecticut c/o Claim Service Bureau of NY Inc,2,Travelers Property Casualty Company of America,brand-generic -> flagship
+USAA AUTO INJURIES SOLUTIONS,2,USAA Casualty Insurance Company,brand-generic -> flagship
+METLIFE AUTO & HOME,2,Metropolitan General Insurance Company,brand-generic -> flagship
+HARTFORD PROPERTY AND CASUALTY INSURANCE COMPANY,2,Hartford Underwriters Insurance Company,brand-generic -> flagship
+PROGRESSIVE INSURANCE GROUP,2,Progressive Casualty Insurance Company,brand-generic -> flagship
+AMERICAN MERCURY INSURANCE COMPANY,2,Mercury Casualty Company,brand-generic -> flagship
+INTEGON INS,2,National General Insurance Company,brand-generic -> flagship
+Travelers Indemnity of Connecticut c/o claims Service Bureau of NY Inc,2,Travelers Property Casualty Company of America,brand-generic -> flagship
+PROGRESSIVE PREMIER INSURANCE COMPANY,2,Progressive Casualty Insurance Company,brand-generic -> flagship
+USAA GENERAL INSURANCE COMPANY,2,USAA Casualty Insurance Company,brand-generic -> flagship
+BRISTOL WEST INSURANCE GROUP,2,21st Century Casualty Company,curated (REVIEW: Bristol West usually Farmers)
+ENTERPRISE RENTAL CAR,2,"Elrac, Inc. d/b/a Enterprise Rent a Car",rental self-insured (+Rental Claims Svcs)
+TRAVELERS AUTO INSURANCE CO. OF NJ,2,Travelers Property Casualty Company of America,brand-generic -> flagship
+SAFECO AUTO INSURANCE COMPANY,2,Safeco National Insurance Company,brand-generic -> flagship
+USAA General Ins Co.,2,USAA Casualty Insurance Company,brand-generic -> flagship
+PROGRESSIVE GULF INSURANCE COMPANY,2,Progressive Casualty Insurance Company,brand-generic -> flagship
+LIBERTY MUTUAL GENERAL INSURANCE COMPANY,2,Liberty Mutual Insurance Company,brand-generic -> flagship
+INTEGON INSURANCE COMPANY C/O NATIONAL LIABILITY,1,National General Insurance Company,brand-generic -> flagship
+AUTOMOBILE INSURANCE COMPANY OF HARTFORD,1,Hartford Underwriters Insurance Company,brand-generic -> flagship
+STATE FARM INSURANCE COM,1,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+METLIFE INSURANCE CO,1,Metropolitan General Insurance Company,brand-generic -> flagship
+PROGRESSIVE COUNTY MUTUAL INSURANCE COMPANY,1,Progressive Casualty Insurance Company,brand-generic -> flagship
+METLIFE AUTO AND HOME INSURANCE COMPANY,1,Metropolitan General Insurance Company,brand-generic -> flagship
+21ST CENTURY AUTO INSURANCE,1,21st Century Insurance Company,brand-generic -> flagship
+ALLSTATE INC. CO.,1,Allstate Insurance Company,brand-generic -> flagship
+MERCURY INDEMNITY,1,Mercury Casualty Company,brand-generic -> flagship
+PROPERTY AND CASUALITY INSURANCE COMPANY OF HARTFORD,1,Hartford Underwriters Insurance Company,brand-generic -> flagship
+ADIRONDACK INDEMNITY COMPANY c/o National General,1,National General Insurance Company,brand-generic -> flagship
+SAFECO CLAIMS,1,Safeco National Insurance Company,brand-generic -> flagship
+COMPTROLLER INSURANCE,1,The City of New York Office of The Comptroller,govt self-insured
+USAA MEDICAL MAIL DEPT,1,USAA Casualty Insurance Company,brand-generic -> flagship
+SAFECO INS CO OF ILLINOIS,1,Safeco National Insurance Company,brand-generic -> flagship
+AVIS BUDGET RENT A CAR,1,Avis Rent a Car,rental self-insured
+NYCTA C\O CORVEL CORPORATION,1,New York City Transit Authority,self-insured
+STATE FARM INS. CO.,1,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+AVIS BUDGET CLAIMS,1,Avis Rent a Car,rental self-insured
+KEMPER CLAIMS DEPARTMENT,1,Kemper Independence Insurance Company,brand-generic -> flagship
+KEMPER INS CO,1,Kemper Independence Insurance Company,brand-generic -> flagship
+GMAC-NATIONAL GENERAL INSURANCE CO.,1,National General Insurance Company,brand-generic -> flagship
+GARRISON PROPERTY AND CASUALITY. A USAA SUBSIDIARY,1,USAA Casualty Insurance Company,brand-generic -> flagship
+LIBERTY MUTUAL AUTO INSURANCE,1,Liberty Mutual Insurance Company,brand-generic -> flagship
+THE HARTFORD INSURANCE GROUP,1,Hartford Underwriters Insurance Company,brand-generic -> flagship
+STATE FARM INSURANCE COMPANIES CLAIM OFFICE,1,State Farm Mutual Automobile Insurance Company,brand-generic -> flagship
+Travelers Excess And Surplus Lines Company,1,Travelers Property Casualty Company of America,brand-generic -> flagship
+"PROGRESSIVE COUNTY MUTUAL INSURANCE COMPANY,",1,Progressive Casualty Insurance Company,brand-generic -> flagship
+PROGRESSIVE PREMIER INSURANCE COMPANY OF ILLINOIS,1,Progressive Casualty Insurance Company,brand-generic -> flagship
+INTEGON GENERAL INSURANCE- NYP,1,National General Insurance Company,brand-generic -> flagship
