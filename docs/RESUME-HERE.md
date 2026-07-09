@@ -18,6 +18,28 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-09 — DenialReason seeding decisions locked; export/tally scripts; sandbox note tightened
+
+- **DenialReason (#178) decisions LOCKED** — full rulings + verified seed mechanics in the reference-seeding
+  section below. Canonical set exported: **16 entities, 0 aliases, no hidden `details`** (nothing to preserve).
+- **New scripts:**
+  - `scripts/export-denial-reason-reference.ts` — dumps canonical `denial_reason` (displayName, active,
+    aliases, notes, `details`) → `docs/denial-reason-canonical-export.csv`; flags whether "Lack of Medical
+    Necessity" exists (it does not) and lists any hidden `_hiddenImportFields` (none).
+  - `scripts/nf-denial-reason-distinct.ts` — tallies distinct `DenialReasons` + row counts from
+    `NF All Closed.xlsx` → `docs/nf-denial-reason-distinct.csv`.
+- **Env-loader precedence bug fixed** in the export script: it loaded `.env` before `.env.local` with
+  first-writer-wins, so a **stale `DATABASE_URL` in `.env` beat the fresh one in `.env.local`** (P1000
+  auth-fail on the script even though `npm run dev` worked, since Next prioritizes `.env.local`). Fixed the
+  load order to `.env.development.local` > `.env.local` > `.env`. NOTE: **both `.env` and `.env.local` define
+  `DATABASE_URL`** — keep them in sync, or prefer `.env.local`.
+- **Sandbox/egress reality (tightened the note below):** egress is allowlist-only — the proxy `403`s npm,
+  prisma binaries, and Neon alike; the vendored engine is `schema-engine-darwin` on a Linux sandbox. So all
+  prisma/DB/tsx-against-DB commands run on the Mac; the agent runs only pure-compute in-sandbox. The 39 MB
+  `NF All Closed.xlsx` parse exceeds the 45s shell cap → background it.
+- **Source spreadsheets location documented** (Sample data section): `~/Desktop/!!!!!Barsh Matters
+  Workspace!!!!!/`.
+
 ### 2026-07-08 — reference seeding, DB/Vercel outage fix, matter/lawsuit UI
 
 **DB/Vercel `password authentication failed for user 'neondb_owner'` — recurring, now solved.** This bit twice. Root cause: the Neon–Vercel integration performs **system-initiated secret rotations** (seen in Vercel → Storage → brl-clio-db → "A secret rotation was requested … with reason: `system`"), and it does **NOT reliably propagate the new password to Vercel's managed `POSTGRES_*` env vars** — so after a rotation the live app authenticates with a stale password. `.env.local` is static and Vercel env is build-time, so a rotation breaks both until manually refreshed + redeployed.
@@ -31,8 +53,45 @@
 - **ServiceType → `service_type`** ✓ seeded — `docs/nf-service-type-seed.csv` (29 update: Title-cased the ALL-CAPS displays + 406 source aliases, compounds → primary service; 3 create: Orthopedic, Pain Management, Acupuncture). `UNKNOWN` renamed to **`Unknown/Other`** (kept `UNKNOWN` as an alias so it still resolves). ~97% of rows resolve.
 - **Insurer → `insurer_company`** — **DEFERRED.** 1,060 canonical values not merged; ~777 are variants of existing insurers (GEICO/State Farm/Progressive families). Needs brand-level grouping before a clean seed (string fuzzy is unreliable here).
 - **ProviderGroup** — no reference table; it's a **hidden, provider-derived field.** 39/44 NF codes exactly match `provider_client` records' `details._hiddenImportFields.hidden_provider_group_name`. Importer rule (#178): derive `ClaimIndex.providerGroup` from the resolved provider's hidden group (NF column as fallback); **exclude** `KOFFLER-MUA`, `SVETLANA`, `CELLA-SENI`, `LEVI-TRISH-SENI`, `TEST-GROUP`.
-- **Still to seed:** DenialReason (947), Defendant (353), SettledWith (2,767), Status (134), VerificationStatus (2), PlaintiffAttorney (1).
-  - **DenialReason — analysis started, resume here:** ~97% of rows keyword-map onto the 16 canonical reasons (Fee Schedule, IME/Peer/Causality Medical Necessity, No-Show EUO/IME, 30/45/120-Day rules, No Coverage subtypes, Alleged Fraud). Open decisions before building the seed CSV: (1) generic `MEDICAL NECESSITY` (~11k rows, no subtype) → which subtype or a new generic; (2) generic `No Coverage` (~1k) → subtype or generic; (3) new categories — `Duplicate` (~1.4k), `Workers Compensation` (~576), `PPO Contract` (~278), maybe a `Verification/Investigation Pending` bucket (~700); (4) residual ~3% (compounds → map to their primary/first reason; junk like blank/placeholder dropped). Same seed pattern as ServiceType (title-case display, aliases for variants).
+- **DenialReason → `denial_reason`** ✓ IMPORTED (2026-07-09) — `docs/nf-denial-reason-seed.csv` (22 rows: 16 update incl. Wrong-Carrier hyphen-rename + 6 create: No Coverage (Other), No Coverage (Workers Compensation), Duplicate Billing, PPO/Carrier Contract, Verification/Investigation Pending, Deductible). 99.0% of rows mapped; import confirmed via reference-data admin (6 create / 16 update / 810 aliases).
+- **Defendant → `adversary_attorney`** ✓ IMPORTED (2026-07-09; history: 60 rows / 23 created / 37 updated / 39 aliases) — Defendant column holds **defense law firms**, not carriers. `docs/nf-defendant-seed.csv` = **60 firms (37 update + 23 create)** after a ≥30-row cutoff on new firms. Source: 353 distinct firm strings (`docs/nf-defendant-distinct.csv`) clustered by `scripts/build-defendant-seed.mjs` (curated rules for high-volume families + key-based auto-merge; strips Law Office(s) of / suffixes / punctuation / carrier tags like `(ALLSTATE)`/`- PROGRESSIVE`/`(Suffolk)`). Full source→canonical mapping written into the **Defendant tab of `NF-normalization-worksheet.xlsx`** (Desktop workspace folder; `.bak.xlsx` saved) + `docs/nf-defendant-mapping.csv`. Review rulings applied: Goldstein/Flecker/Hopkins family → existing **Law Offices of Eileen Hopkins**; Rubin & Nazarian → existing **Law Offices of Ruth Nazarian**; Buratti Rothenberg & Burns kept distinct from Rothenberg & Romanek. **Cut:** 241 new firms <30 rows dropped (875 rows, ~1%; blanked in worksheet w/ note). Dropped 2 non-firms (a judge, a carrier). NEXT: import via reference-data admin (type `adversary_attorney`) → preview (expect 37 update + 23 create) → confirm. Generic tally helper: `scripts/nf-column-distinct.mjs "<xlsx>" "<header-regex>" "<out.csv>"` (reuse for SettledWith/Status/Insurer).
+- **Status → `closed_reason`** ✓ IMPORTED (2026-07-09; history: 21 rows / 4 created / 17 updated / 92 aliases; then renamed POLICY EXHAUSTED/NO COVERAGE → …/MVAIC via `scripts/rename-reference-entity.ts`) — 134 distinct close/status values (`docs/nf-status-distinct.csv`) → `docs/nf-status-seed.csv` = **21 rows (17 update + 4 create)** via `scripts/build-status-seed.mjs`. PAID family (226k rows) folds into the 5 existing PAID(x) buckets; 2,698 rows of workflow stages + bare "CLOSED" dropped. Review rulings: AAA losses (+ "Losing AAA Award") → existing **AAA- DECISION- DISMISSED WITH PREJUDICE**; generic DECISION-LOSS → **MOTION LOSS**; returned-to-client family → **PER CLIENT**; AAA without-prejudice + court dismissals + lien + 30-day/NF2 → new **OTHER**; new canonicals **DUPLICATE / DISCONTINUED WITHOUT PREJUDICE / CARRIER IN LIQUIDATION / OTHER**. MVAIC (`CLOSE FILE - MVIAC NOT QUALIFIED`, 1.85k) attaches to **POLICY EXHAUSTED/NO COVERAGE**, which then must be renamed to `POLICY EXHAUSTED/NO COVERAGE/MVAIC` — the CSV importer can't rename to a differently-normalized display, so use `scripts/rename-reference-entity.ts closed_reason "<old>" "<new>"` AFTER the import. Mapping audit in worksheet Status tab + `docs/nf-status-mapping.csv`. New helper: `scripts/export-reference.ts <type>` (generalized canonical export).
+- **Still to seed:** SettledWith (2,767), VerificationStatus (2), PlaintiffAttorney (1). Insurer still deferred (below).
+  - **DenialReason — seed CSV BUILT (2026-07-09), pending the admin reference-data import.** Canonical `denial_reason` =
+    **16 entities, 0 aliases, and NO hidden `details`** on any of them (checked via the export below —
+    nothing to preserve/merge). Full canonical list → `docs/denial-reason-canonical-export.csv`, produced by
+    `scripts/export-denial-reason-reference.ts` (also prints whether "Lack of Medical Necessity" exists: it
+    does NOT — the only medical-necessity canonicals are IME / Peer Review / Causality; No Coverage has only
+    subtypes, no generic). Distinct source values tallied by `scripts/nf-denial-reason-distinct.ts` →
+    `docs/nf-denial-reason-distinct.csv`. Rulings:
+    - Generic `MEDICAL NECESSITY` (~11k, no subtype) → **alias onto `Medical Necessity (Peer Review)`**.
+    - Generic `No Coverage` (~1k, no subtype) → **create `No Coverage (Other)`**.
+    - **Create** new categories: `Duplicate Billing` (~1.7k), `No Coverage (Workers Compensation)` (~568 —
+      as a No-Coverage subtype, NOT a standalone WC category), `PPO/Carrier Contract` (~387 — PPO networks
+      incl. Coventry + carrier agreements: standalone `Agreement with carrier` / `NHQ negotiation Payment` /
+      `Services not provided or authorized by network/primary care providers`),
+      `Verification/Investigation Pending` (~498), and `Deductible` (~63 — standalone `DEDUCTIBLE` /
+      `Deductible Applied` / `policy deductible`).
+    - **Rename** existing `No-Coverage (Wrong Carrier)` → `No Coverage (Wrong Carrier)` (drop hyphen). Done as
+      a normal seed row: `normalizeReferenceText` collapses all punctuation to spaces, so both normalize to
+      `no coverage wrong carrier` → row matches the existing entity → confirm's UPDATE path overwrites
+      `displayName`. No separate migration needed.
+    - Residual ~3%: compounds → alias onto the primary/first reason; junk (blank/placeholder) dropped.
+    - **Seed mechanics (verified in `lib/referenceImport.ts` + `app/api/reference-data/import-confirm/route.ts`):**
+      match is by **normalized displayName ONLY** (aliases do NOT match to an existing entity); on UPDATE the
+      confirm overwrites `displayName`/`normalizedName`/`notes`/`active` (blank `active`→true, blank `notes`→null),
+      so **fill `active` and `notes` on every seed row** to avoid clobbering. Same seed pattern as ServiceType.
+    - **Build:** `scripts/build-denial-reason-seed.mjs` (pure compute, ran in-sandbox) → `docs/nf-denial-reason-seed.csv`
+      (22 rows: 16 existing incl. Wrong Carrier rename + 6 new) + `docs/nf-denial-reason-seed-report.md`. **Coverage:
+      96,463 / 97,486 rows = 99.0% mapped**; 1,023 rows (1.0%, 36 distinct) dropped as non-denial statuses
+      (Partially/Fully paid EOB, Pharma Portion, No Denial Issued, Settlement, Improper licensure, data-quality
+      strings — deductible + carrier-agreement values are now their own categories). Whole-value OVERRIDE routes only
+      the STANDALONE `Agreement with carrier`/`NHQ negotiation Payment`/`Coventry Contract` → PPO/Carrier Contract and
+      standalone deductible values → Deductible; compounds still fall through to their primary reason. Seed mirrored to
+      the Desktop workspace folder.
+    - **NEXT:** import `docs/nf-denial-reason-seed.csv` via the reference-data admin importer (type `denial_reason`):
+      upload → **preview** (expect ~16 update + 6 create; the Wrong Carrier row shows as update+rename) → confirm.
+      Then Defendant / SettledWith / Status / VerificationStatus / PlaintiffAttorney remain (Insurer still deferred).
 - **Process note:** always check reference tables' hidden `details` fields (e.g. `_hiddenImportFields`), not just `displayName`.
 - Reference-data admin browse list cap raised 100 → 10,000 (`app/api/reference-data/entities/route.ts`, `app/admin/reference-data/page.tsx`).
 
@@ -173,9 +232,13 @@ still named `clio-lawsuit-aggregator` (legacy, cosmetic). Node **v24**, `tsx` is
    write an `OcrExtraction` row). Readiness should print `"ready":true,"provider":"azure"`.
 
 ## Sandbox / workflow notes (for the agent)
-- The agent's Linux sandbox **cannot run git or reach Neon**, and `npx prisma generate` fails there
-  (engine download blocked). **You (the user) run all git + prisma commands** on your Mac; the results
-  propagate to the shared `node_modules` mount the sandbox sees.
+- The agent's Linux sandbox has **allowlisted egress only** — a proxy `403`s every non-allowlisted host
+  (npm, prisma binaries, and Neon alike), so `npx prisma generate`, any Prisma query, and any DB/network
+  command fail there. It's not just the engine download: the vendored engine is `schema-engine-darwin`
+  (macOS, from your Mac), the sandbox is Linux, and the real wall is that Neon's Postgres host isn't
+  reachable. **You (the user) run all git + prisma + tsx-against-DB commands** on your Mac; results
+  propagate to the shared `node_modules` mount the sandbox sees. The agent CAN run pure-compute scripts
+  in-sandbox (e.g. an xlsx tally via the installed `xlsx` pkg) when given the input file.
 - Migration history is now clean (single `0_init` baseline, 2026-07-04) and `migrate dev` works on
   Neon. `prisma.config.ts` reads an optional `SHADOW_DATABASE_URL` (env, in `.env.local`, git-ignored)
   pointing at a dedicated throwaway Neon branch named `shadow` — needed because **Neon won't
@@ -406,9 +469,18 @@ layer on the Upload Docs filing flow. All read-safe; the one matter write is ope
 - `docs/dow-data-dictionary.md` · `docs/carisk-data-dictionary.md` · `docs/manual-creation-intake.md`
   · `docs/document-folder-structure.md` · `docs/agent-orientation.md`
 
-## Sample data (kept out of the repo on purpose — PHI)
-`searchResults (3).xlsx` (Carisk) and `May 2026.xlsx` (Dow). Drag into chat only when raw-data
-inspection is needed. Keep your own copies.
+## Sample data / source spreadsheets (kept out of the repo — PHI)
+These live in the Desktop folder **`~/Desktop/!!!!!Barsh Matters Workspace!!!!!/`** (NOT in the repo). In
+Cowork, **connect that folder** (the agent can request-access to it by path) when raw-data inspection is
+needed — don't copy PHI into the repo. Current contents:
+- **`NF All Closed.xlsx`** (~39 MB, 264,179 rows) — the legacy no-fault migration source; column inventory in
+  `docs/nf-all-closed-analysis.md`. This is the source for the #178 reference-seed distinct-value tallies.
+- **`NF-normalization-worksheet.xlsx`** — working normalization/reconcile scratch for the reference seeds.
+- **`Carerisk.xlsx`** (Carisk clearinghouse export) and **`Dow.xlsx`** (Dow provider spreadsheet) — import test data.
+- Seed CSVs are mirrored here too (`nf-provider-seed.csv`, `nf-court-seed.csv`, `nf-service-type-seed.csv`),
+  plus `Barsh Matters Templates` / `Barsh Matter New Templates` / `brand` asset folders.
+- **Sandbox caveat:** parsing `NF All Closed.xlsx` (39 MB) in-sandbox exceeds the 45s shell cap — run such
+  tallies **backgrounded** (`nohup node … &`, then poll the log/output), or run the `tsx` script on the Mac.
 
 ## To resume, tell Claude:
 > "Read `docs/RESUME-HERE.md`, then continue. The import module (Dow, Carisk, Manual, Other
