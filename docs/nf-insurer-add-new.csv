@@ -1,0 +1,14 @@
+Display Name,Aliases,Active,Notes,hidden_naic_number
+Adirondack Insurance Exchange,ADIRONDACK INSURANCE EXCHANGE|ADIRONDACK INSURANCE COMAPNY,true,"NY personal-auto carrier, insolvent ~2011; not in current DFS",12583
+Global Liberty Insurance Company of New York,GLOBAL LIBERTY INSURANCE COMPANY OF NEW YORK|GLOBAL LIBERTY INSURANCE COMPANY|GLOBAL LIBERTY|GLOBAL LIBERTY INS. CO,true,"NY livery carrier, liquidated ~2021; not in current DFS",11092
+First Acceptance Insurance Company,FIRST ACCEPTANCE INSURANCE COMPANY|FIRST ACCEPTANCE INSURANCE,true,TN non-standard auto; not NY-admitted,10336
+Safe Auto Insurance Company,SAFE AUTO|SAFE AUTO INSURANCE COMPANY,true,OH non-standard auto; not NY-admitted,25405
+American Country Insurance Company,AMERICAN COUNTRY INSURANCE COMPANY|AMERICAN COUNTRY INS,true,IL (Kingsway) livery carrier; not in NY DFS Auto,38237
+Citizens United Reciprocal Exchange (CURE),CURE AUTO INS,true,NJ/PA/MI reciprocal; not NY-admitted,37028
+Peak Property and Casualty Insurance Corporation,PEAK PROPERTY AND CASUALTY INSURANCE CORP,true,Kingsway carrier; not in DFS,18139
+American Access Casualty Company,AMERICAN ACCESS CASUALTY CO,true,IL non-standard auto; not NY-admitted,10730
+MGA Insurance Company,MGA INSURANCE COMPANY|GAINSCO AUTO INSURANCE COMPANY|GAINSCO,true,GAINSCO non-standard auto; not in DFS [VERIFY NAIC],22594
+American Modern Select Insurance Company,AMERICAN MODERN SELECT INSURANCE COMPANY,true,OH carrier; DISTINCT from American Modern Home (which is in canonical),38652
+Omni Insurance Company,OMNI INSURANCE COMPANY,true,GA non-standard auto; not in DFS,39098
+American Independent Insurance Company,GOOD TO GO AUTO INSURANCE|GOOD2GO,true,CONFIRM: Good2Go brand underwriter; not NY-admitted,17957
+Fiduciary Insurance Company of America,FIDUCIARY INS CO OF AMERICA,true,"NY livery carrier, liquidated; not in current DFS [VERIFY NAIC]",11641

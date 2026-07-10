@@ -1,0 +1,9 @@
+Display Name,Aliases,Notes
+Utica Mutual Insurance Company,UTICA INSURANCE CO.|UTICA MUTUAL INSURANCE,Rescue alias: generic 'Utica' -> group's primary NY auto writer
+Utica National Assurance Company,UTICA NATIONAL INSURANCE COMPANY|UTICA NATIONAL INS.|UTICA NATIONAL|UTICA NATIONAL INS CO.,Rescue alias: generic 'Utica National' -> Utica National Assurance
+Merchants Mutual Insurance Company,MERCHANTS INSURANCE COMPANY,Rescue alias: generic 'Merchants' -> flagship NY Merchants Mutual
+New Jersey Manufacturers Insurance Company,NJM INSURANCE GROUP|NEW JERSEY MANUFACTURERS INS,Rescue alias: NJM abbreviation
+Federal Insurance Company,CHUBB INSURANCE COMPANY|CHUBB INSURANCE|CHUBB INS GROUP,BRAND MAPPING (Chubb->Federal) - consider bulk-legacy map instead
+Hereford Insurance Company,HEREFORD AUTO INSURANCE COMPANY,Rescue alias: Hereford Auto -> Hereford Insurance Company
+New York Marine and General Insurance Company,NY MARINE AND GENERAL INSURANCE COMPANY,Rescue alias: NY -> New York expansion
+Government Employees Insurance Company,GOVERMENT EMPLOYEES INSURANCE CO,Rescue alias: 'Goverment' typo -> GEICO

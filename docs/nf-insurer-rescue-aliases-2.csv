@@ -1,0 +1,12 @@
+Display Name,Aliases,Notes
+"Church Mutual Insurance Company, SI",CHURCH MUTUAL INS,Rescue alias: Church Mutual (S.I.)
+Michigan Millers Mutual Insurance Company,MICHIGAN MILLIER MUTUAL INSURANCE COMPANY,Rescue alias: 'Millier' typo -> Millers
+Encompass Insurance Company of America,ENCOMPASS INSURANCE COMPANY|ENCOMPASS INSURANCE|ENCOMPASS,Rescue alias: generic Encompass -> of America
+American States Insurance Company,AMERICAN STATES,Rescue alias
+Old Republic Insurance Company,OLD REPUBLIC INSURANCE,Rescue alias
+Garrison Property and Casualty Insurance Company,GARRISON PROPERTY AND CASUALITY INSURANCE COMPANY,Rescue alias: 'Casuality' typo (USAA)
+Farm Family Casualty Insurance Company,FARM FAMILY MUTUAL INSURANCE CO.|FARM FAMILY CASUALTY|FARM FAMILY INSURANCE,Rescue alias: generic Farm Family
+Pennsylvania Manufacturers' Association Insurance Company,PMA INSURANCE COMPANY|PMA INSURANCE,Rescue alias: PMA
+Maya Assurance Company,MAYA ASSURANCE INSURANCE COMPANY|MAYA INSURANCE COMPANY,Rescue alias
+State Auto Property & Casualty Insurance Company,STATE AUTO INSURANCE COMPANY,Rescue alias: generic State Auto
+Philadelphia Indemnity Insurance Company,PHILADELPHIA INDEMNITY INSURANCE|PHILADELPHIA INSURANCE COMPANY,Rescue alias (import AFTER dfs-gaps adds this entity)

@@ -96,6 +96,7 @@ export async function GET(request: Request) {
         matter_stage_name: true,
         index_aaa_number: true,
         treating_provider: true,
+        import_batch: true,
         indexed_at: true,
       },
     });
@@ -169,6 +170,8 @@ export async function GET(request: Request) {
       index_aaa_number: rowWithMetadata.index_aaa_number || "",
       treatingProvider: rowWithMetadata.treating_provider || "",
       treating_provider: rowWithMetadata.treating_provider || "",
+      importBatch: rowWithMetadata.import_batch || "",
+      import_batch: rowWithMetadata.import_batch || "",
     };
 
     return NextResponse.json({

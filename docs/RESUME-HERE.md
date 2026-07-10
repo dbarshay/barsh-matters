@@ -18,6 +18,69 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-10 (later) — NF Bulk trial review: fixes from first 50-row run
+
+Ran a 50-row trial (batch shown in UI). Result was internally consistent (45 created + 5 missing-field
+skips; 21 aggregated into 8 lawsuits + 24 standalone; 33 patients, all pre-2025 quarantined). Fixes made
+from reviewing the created records — all still bulk-only / additive:
+
+- **Close-reason no longer pollutes `status`.** Confirm route now writes the legacy Status/Close Reason to
+  `close_reason` ONLY (with `final_status="Closed"`), not also to `status`. (Was why Home's "Final Status =
+  Closed" filter — which searches the `status` column — returned almost nothing.)
+- **Bulk lawsuits are born CLOSED.** `lawsuitOptions` now carries `finalStatus`/`final_status`/`closeReason`
+  (same fields `/api/lawsuits/close` writes), so aggregated lawsuits match their closed members instead of
+  showing Open.
+- **`-legacy` tag now renders everywhere the BM number shows** (was defined but never wired). New pure helper
+  `lib/legacyDisplay.ts` (`isLegacyMatter`/`legacyTag`, keyed on `import_batch="nf-legacy"`). Wired into:
+  matter header badge (`app/matter/[id]/page.tsx`), Home search results (`app/page.tsx`), Matters list rows
+  (`app/matters/page.tsx`), and Lawsuit member rows (`app/lawsuits/page.tsx`). Carried through the shared
+  `CLAIM_INDEX_SELECT` (`lib/claimIndexQuery.ts`) + `by-matter` route so list/search rows have the flag.
+  Display-only — never fed to search/nav/Clio/email (those use the raw `display_number`).
+- **Blank workflow stage.** Bulk matters now import with `matter_stage_name = null` (extra overrides the
+  shared creator's default "PRE-LIT NEW COLLECTIONS INTAKE" — meaningless for closed historical files).
+- **Service-type capitalization normalized** (bulk-only). New `normalizeServiceType()` in `bulkAdapter.ts`:
+  Title-Cases words, preserves acronyms (MRI, PT, DME, EMG/NCV, ROM/MMT, 3T, XRAY, …), handles "/"+"-"+comma
+  compounds, and drops the junk "--- Select Sevice Types ---" placeholder. e.g. `PHYSICAL THERAPY`→`Physical
+  Therapy`, `CT-SCAN`→`CT-Scan`, `--- Select… ---, PT`→`PT`. Live importers still store service_type raw.
+- **Cleanup script:** `scripts/bulk-cleanup.ts` — dry-run by default; `--yes` deletes the batch
+  (`import_batch="nf-legacy"` matters, `clioMasterMappingSource="none-nf-bulk-import"` lawsuits, orphaned
+  `source="nf-legacy"` patients) and marks bulk ImportBatches undone. Lets you re-run the trial clean.
+- **How the app finds these:** it's search-driven — `/matters` and `/lawsuits` need a filter. Find bulk
+  records via Home → search by Claimant / Claim / Insurance Company, or the header BRL# box.
+- Scoped `tsc` on all touched files: clean (only pre-existing `<style jsx global>` warnings, unrelated).
+- **Re-run after fixes:** `npx tsx scripts/bulk-cleanup.ts` (review) → `--yes` → redo the 50-row trial →
+  verify lawsuits now Closed and `-legacy` shows in lists → then the full load.
+- STILL OPEN: rejected-rows export (show which of the 5 skipped rows failed and why) before the full run;
+  consider promoting frequent recorded-raw carriers into the legacy map.
+
+### 2026-07-10 — NF Bulk importer FULLY WIRED (per-column mapping finalized)
+
+- **Final column mapping LOCKED** and implemented (all bulk-only — live Dow/Carisk/Other importers and the
+  matter/lawsuit code are untouched; only additive schema cols `ClaimIndex.import_batch` + `Patient.matchable`).
+  - **Numbers by ORIGINAL year:** matters `BRL_{445YY}` (from Case_Id), lawsuits `{445-PKTYY}.MM.NNNNN`
+    (from Packet). Confirm groups rows by matter-year → `createMattersFromStaged(group, undefined, {importBatch, whenYear})`;
+    lawsuits use `buildMasterIdAt(lawsuit_year, earliestMemberMonth)`.
+  - **Row = matter; PKT with ≥2 members = a Lawsuit (dotted).** Singletons stay standalone under `BRL_` — no
+    dotted number (matches old system: PKT only when 2+ aggregated). Guard: `if (matterIds.length < 2) continue`.
+  - **Per-row provider** (mapped "Provider" col → `resolveReferenceEntity(...,"provider_client")`, lenient →
+    record raw). Operator's fixed provider is now just an **optional fallback** for blank-provider rows.
+  - **Carrier + Defendant** resolve leniently too (Defendant → `adversary_attorney`).
+  - **Financials seeded directly** (no receipts): `claim_amount`; `balance_presuit`=Suit Balance;
+    `payment_voluntary`/`payment_amount` = **Collection when aggregated** (rolls up to the lawsuit's "Payments"),
+    else **Voluntary+Collection** on the standalone matter. `final_status="Closed"`, `close_reason`/`status` set.
+  - **Lawsuit-level fields** (Defendant→`lawsuitOptions.adversaryAttorney`, Court→`Lawsuit.venue`, Index/AAA→
+    `Lawsuit.indexAaaNumber`, Date AAA Arb Filed→`lawsuitOptions.dateFiled`) go on the lawsuit when there's a PKT;
+    on a **standalone matter (no PKT) they go into the matter NOTES** (`description`), with Date Bill Sent + Date
+    Opened. (Confirmed: individual matters have **no** UI field for Index/AAA — it's sourced from lawsuit metadata.)
+  - **Settled With** → `ClaimIndex.settled_with`. **Provider Group** is derived from the provider (col not imported).
+  - **Lazy Clio** everywhere (no matter/folder created here; lawsuit `clioMasterMatterId=null`, `clioLazyCreate:true`).
+- Files touched: `lib/import/bulkAdapter.ts` (added provider/settled_with/index/court/defendant/date_bill_sent/
+  date_aaa_arb_filed/provider_group cols + matter_year/lawsuit_year to staged), `app/api/import/bulk/confirm/route.ts`
+  (full rewrite per above), `app/admin/import/other/bulk/page.tsx` (provider now optional fallback).
+  Scoped `tsc --noEmit` on all touched files: **clean**.
+- **TO RUN:** `npx prisma db push` + `npx prisma generate` (for the two additive cols), set `BARSH_IMPORT_ENABLED=1`,
+  then Admin → Import → Other Sources → **Bulk Import**. Do a **trial run (first N rows)** before the full load.
+
 ### 2026-07-09 — DenialReason seeding decisions locked; export/tally scripts; sandbox note tightened
 
 - **DenialReason (#178) decisions LOCKED** — full rulings + verified seed mechanics in the reference-seeding
@@ -70,6 +133,9 @@
   - **"Settlement Contacts" reference type (2026-07-09):** the `individual` type was **relabeled** "Individuals" → "Settlement Contacts" (key kept `individual` for back-compat; no migration) in `lib/referenceData.ts` (label + `settled_with`/`adjuster` aliases), `app/admin/reference-data/page.tsx` (DEFAULT_TYPES), `app/api/reference-data/options/route.ts`. The settlement **"Settled With" picker now derives from this reference list** — `app/api/settlements/contacts/route.ts` queries `ReferenceEntity` type `individual` (email/phone/company from `details`) instead of the standalone `SettlementContact` table. **These are code changes — commit + deploy required** (a Vercel "Redeploy" of the old commit won't show the new label). Test junk purged via `scripts/cleanup-test-individuals.ts` (deleted 3 inactive Import-smoke rows). `VerificationStatus` + `PlaintiffAttorney` eliminated (not seeding).
 - **Still to seed:** Insurer (in progress — files built, not imported; see above). All other taxonomies done.
 - **Patients (Claimant) — NOT a reference seed; handled by the matter import.** ~42k distinct claimants ≈ 1 per matter (high-cardinality per-matter entities, not a controlled vocabulary). Created into the `Patient` master by the importer. **Bulk-load dedup design (task, 2026-07-09):** don't rely on per-row name fuzzy (would flood holds + create misspelling dupes). Pre-cluster with **strong accident/claim key (Packet ID > Claim# > Policy#+DOL > solo) + fuzzy NAME within that group** — folds misspellings ("JON/JOHN SMITH" same packet), keeps families apart by first name, never merges across groups on name alone. Analysis (`scripts/nf-patient-cluster-analysis.mjs`): 264k rows → **43,651 distinct patients** (naive exact-name would both dup misspellings AND wrongly merge namesakes). Decision: **per-accident** (same person, different DOL = separate Patient — benign split beats wrong merge). NEXT: emit per-matter→canonical-patient map at import time; **gated on Insurer** (bulk import can't run until insurer resolves).
+  - **PRE-2025 QUARANTINE (decision 2026-07-10):** for the one-time bulk load, patients on matters **opened before 1/1/2025** are recorded **bulk-only** (kept on the historical matter) and are **NOT written to the live patient registry** used for future-import matching; only **2025-and-later** matters seed matchable canonical patients. Rationale: an 18+ month gap makes it very unlikely a future import's patient is legitimately the *same person* as a pre-2025 closed-matter patient, so excluding them removes far more risk (old-misspelling false-merge collisions) than it costs (a rare missed re-link). Within-bulk dedup clustering still runs so the historical records themselves are deduped — those pre-2025 identities just stay quarantined from the live matching namespace. This is the **patient analog of the insurer registry-vs-legacy-map quarantine.**
+  - **LEGACY FILE-NUMBER MARKING (decision 2026-07-10):** goal = make bulk-imported (legacy) matters clearly distinguishable. **Do NOT append `-legacy` to `ClaimIndex.display_number`.** That field is parsed by strict regexes — `lib/clioStoragePlan.ts` uses `/^BRL_\d{9}$/` and `/^BRL_(\d{4})(\d{5})$/` to build Clio folder/storage targets, plus finalize-normalization / claim-index prefix / matter-search parsers — so any suffix breaks Clio storage routing. Instead: add a dedicated flag on `ClaimIndex` (e.g. `import_batch = 'nf-legacy'` or a boolean) and render the `-legacy` suffix **only in the display/UI layer** (matter lists, document titles). Keeps the canonical `BRL_YYYYNNNNNN` parseable while making legacy files obvious. If a literal tag in a number-string is truly required, put it on the dotted presentation label, never on the parsed `display_number`.
+  - **BULK IMPORTER BUILT (2026-07-10)** — lives under **Import OTHERS → "Bulk Import"** (`app/admin/import/other/page.tsx` card → `app/admin/import/other/bulk/page.tsx`). Flow: upload xlsx → map columns (auto-suggested) + pick fixed provider/case-type → **aggregate** preview → confirm. Files: adapter `lib/import/bulkAdapter.ts` (`BULK_FIELDS`, `mapBulkRows`; adds `opened_date` for the pre-2025 quarantine + an **accident key** Packet ID > Claim# > Policy#+DOL > solo, and a `patient_cluster` = accident_key+nameKey); lenient carrier `lib/import/bulkCarrierResolution.ts` (**strict registry → bulk-only `docs/nf-insurer-legacy-map.csv` (never written to ReferenceAlias) → record RAW**; never held); routes `app/api/import/bulk/{headers,preview,confirm}/route.ts` (all flag-gated by `BARSH_IMPORT_ENABLED`, source `"bulk"`). Confirm clusters patients by accident key, creates **one Patient per cluster** (createMany w/ explicit ids), sets **`matchable=false` for pre-2025** clusters (quarantine) / true for 2025+, pre-assigns `patient_id` so `createMattersFromStaged` makes no extra patients, records the carrier string via `extra.insurer_name`, and stamps **`import_batch="nf-legacy"`** on every matter. **Packet→Lawsuit aggregation (2026-07-10):** after matters are created, rows sharing a **Packet ID** are grouped into a **Lawsuit** (dotted `masterLawsuitId` via `buildMasterId`, `lawsuitMatters` = CSV of matter_ids, `Lawsuit.lawsuitOptions.source="nf-bulk-import"`), and each sibling's `ClaimIndex.master_lawsuit_id` is set; rows with no Packet ID stay standalone matters (currently a lawsuit is created even for a 1-matter packet — trivially switch to ≥2 if singleton lawsuits aren't wanted). **Legacy numbers carried:** **445 → `ClaimIndex.old_matter_number`** (per matter, via `bulkExtraFields`) and **445-PKT → `Lawsuit.oldLawsuitNumber`** (per packet). Mapping adds two columns for these in `BULK_FIELDS`. **Shared-lib changes:** `ClaimIndex.import_batch` + `Patient.matchable` (schema — **run `npx prisma db push` + `npx prisma generate` on the Mac**); `resolvePatient` now filters `matchable:true`; `createPatient(name, source, {matchable})`; `createMattersFromStaged(rows, provider?, {importBatch?})`; `formatMatterDisplayLabel()` in `lib/matterNumbering.ts` (display-only `-legacy`). **v1 caveats / TODO:** (a) does NOT yet link a 2025+ bulk cluster to a pre-existing live patient (creates its own — safe for closed historical matters; add cross-link later, e.g. via `scripts/nf-patient-cluster-analysis.mjs`); (b) processes the whole file in one request (run **locally**, no serverless timeout, or wrap the confirm logic in a CLI) — the `maxRows` box does a small trial run first; (c) no per-row `ImportRow` persisted for a load this size (only an `ImportBatch` summary); (d) `docs/nf-insurer-legacy-map.csv` is optional — with our final design the registry already holds the clean aliases and everything else records raw, so the file can be absent (loader no-ops).
 - **VerificationStatus + PlaintiffAttorney — ELIMINATED** (not seeding; VerificationStatus = 2 workflow values, PlaintiffAttorney = `Header not found` junk).
   - **DenialReason — seed CSV BUILT (2026-07-09), pending the admin reference-data import.** Canonical `denial_reason` =
     **16 entities, 0 aliases, and NO hidden `details`** on any of them (checked via the export below —

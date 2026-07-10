@@ -8350,6 +8350,9 @@ function openClaimAmountEditDialog() {
               }}
             >
               {textValue(matter?.displayNumber)}
+              {(matter?.import_batch || matter?.importBatch) === "nf-legacy" ? (
+                <span style={{ fontSize: 20, fontWeight: 900, opacity: 0.75, marginLeft: 4 }}>-legacy</span>
+              ) : null}
             </span>
             <span
               style={{

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
+import { legacyTag } from "@/lib/legacyDisplay";
 
 type SearchKind = "brl_matter" | "numeric_ambiguous" | "master" | "text";
 
@@ -22,6 +23,7 @@ type MatterResult = {
   denialReason: string;
   status: string;
   finalStatus: "Open" | "Closed";
+  importBatch: string;
 };
 
 type AdvancedPicklistOption = {
@@ -802,6 +804,7 @@ function toMatterResult(row: any, matchedBy: string, fallbackClaimNumber = ""): 
     denialReason: advancedDisplayValue("Denial Reason", advancedValues.denialReason),
     status: homeDetailedStatusFromMatter(row),
     finalStatus: homeFinalStatusFromMatter(row),
+    importBatch: row?.import_batch ?? row?.importBatch ?? "",
   };
 }
 
@@ -2599,7 +2602,7 @@ export default function Home() {
                           <tr key={row.id}>
                             <td style={homeResultsTdStyle}>
                               <a href={`/matter/${row.id}`} style={homeResultsMatterLinkStyle}>
-                                {row.displayNumber || row.id}
+                                {row.displayNumber || row.id}{legacyTag(row)}
                               </a>
                             </td>
                             <td style={homeResultsTdStyle}>

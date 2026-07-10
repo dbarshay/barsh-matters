@@ -1,0 +1,113 @@
+Alias (NF value),Target Canonical,Target Type,Notes
+UTICA INSURANCE CO.,Utica Mutual Insurance Company,EXISTING,generic Utica -> group NY auto writer
+UTICA MUTUAL INSURANCE,Utica Mutual Insurance Company,EXISTING,
+UTICA NATIONAL INSURANCE COMPANY,Utica National Assurance Company,EXISTING,generic Utica National
+UTICA NATIONAL INS.,Utica National Assurance Company,EXISTING,
+UTICA NATIONAL,Utica National Assurance Company,EXISTING,
+UTICA NATIONAL INS CO.,Utica National Assurance Company,EXISTING,
+MERCHANTS INSURANCE COMPANY,Merchants Mutual Insurance Company,EXISTING,generic Merchants
+NJM INSURANCE GROUP,New Jersey Manufacturers Insurance Company,EXISTING,NJM
+NEW JERSEY MANUFACTURERS INS,New Jersey Manufacturers Insurance Company,EXISTING,
+HEREFORD AUTO INSURANCE COMPANY,Hereford Insurance Company,EXISTING,
+NY MARINE AND GENERAL INSURANCE COMPANY,New York Marine and General Insurance Company,EXISTING,NY->New York
+GOVERMENT EMPLOYEES INSURANCE CO,Government Employees Insurance Company,EXISTING,typo -> GEICO
+CHURCH MUTUAL INS,"Church Mutual Insurance Company, SI",EXISTING,
+MICHIGAN MILLIER MUTUAL INSURANCE COMPANY,Michigan Millers Mutual Insurance Company,EXISTING,typo Millier
+ENCOMPASS INSURANCE COMPANY,Encompass Insurance Company of America,EXISTING,generic Encompass
+ENCOMPASS INSURANCE,Encompass Insurance Company of America,EXISTING,
+ENCOMPASS,Encompass Insurance Company of America,EXISTING,
+AMERICAN STATES,American States Insurance Company,EXISTING,
+OLD REPUBLIC INSURANCE,Old Republic Insurance Company,EXISTING,
+GARRISON PROPERTY AND CASUALITY INSURANCE COMPANY,Garrison Property and Casualty Insurance Company,EXISTING,typo Casuality (USAA)
+FARM FAMILY MUTUAL INSURANCE CO.,Farm Family Casualty Insurance Company,EXISTING,
+FARM FAMILY CASUALTY,Farm Family Casualty Insurance Company,EXISTING,
+FARM FAMILY INSURANCE,Farm Family Casualty Insurance Company,EXISTING,
+PMA INSURANCE COMPANY,Pennsylvania Manufacturers' Association Insurance Company,EXISTING,PMA (WC)
+PMA INSURANCE,Pennsylvania Manufacturers' Association Insurance Company,EXISTING,WC
+MAYA ASSURANCE INSURANCE COMPANY,Maya Assurance Company,EXISTING,
+MAYA INSURANCE COMPANY,Maya Assurance Company,EXISTING,
+STATE AUTO INSURANCE COMPANY,State Auto Property & Casualty Insurance Company,EXISTING,
+AMERICAN FAMILY INSURANCE CO,American Family Connect Property and Casualty Insurance Company,EXISTING,NY auto writer (judgment)
+PROSIGHT SPECIALTY I,New York Marine and General Insurance Company,EXISTING,ProSight underwriting carrier
+Prosight Specialty Insurance,New York Marine and General Insurance Company,EXISTING,ProSight underwriting carrier
+Midvale Insurance Company,Midvale Indemnity Company,EXISTING,
+TRISTATE INSURANCE COMPANY,Tri-State Insurance Company of Minnesota,EXISTING,"active, not liquidated"
+THE STATE INSURANCE FUND,New York State Insurance Fund,EXISTING,NYSIF (WC)
+STATE INSURANCE FUND,New York State Insurance Fund,EXISTING,WC
+SAFETY NATIONAL CASUALTY,Safety National Casualty Corporation,EXISTING,WC/excess
+NATIONAL LIABILITY AND FIRE INS C/O ASSIGNED RISK SOLUTIONS,National Liability & Fire Insurance Company,EXISTING,carrier; ARS is TPA
+NATIONAL LIBERTY AND FIRE INSURANCE COMPANY,National Liability & Fire Insurance Company,EXISTING,typo Liberty->Liability
+NATIONAL LIABILITY FIRE INSURANCE COMPANY,National Liability & Fire Insurance Company,EXISTING,
+National Liability and fire insurance,National Liability & Fire Insurance Company,EXISTING,
+INDEMNITY INS OF NORTH AMERICA,Indemnity Insurance Company of North America,EXISTING,WC (ACE/Chubb)
+AMTRUST NORTH AMERICAN,AmTrust Insurance Company,EXISTING,WC
+AMTRUST INSURANCE NF,AmTrust Insurance Company,EXISTING,WC
+ZURICH NORTH AMERICAN INSURANCE COMPANY,Zurich North America Insurance Company,EXISTING,
+ZURICH NORTH AMERICA,Zurich North America Insurance Company,EXISTING,
+DAIRYLAND/SENTRY INSURANCE,Dairyland Insurance Company,EXISTING,
+PERMANENT GENERAL INSURANCE COMPANY,Permanent General Assurance Corporation,EXISTING,
+NY CENTRAL MUTUAL INS.,New York Central Mutual Fire Insurance Company,EXISTING,near-variant
+AMICA INSURANCE,Amica Mutual Insurance Company,EXISTING,near-variant
+A. CENTRAL INSURANCE COMPANY,Central Insurance Company,EXISTING,near-variant
+PRIVILEGE UNDERWRITERS,Privilege Underwriters Reciprocal Exchange,EXISTING,PURE
+CNA INSURANCE COMPANY,Continental Casualty Company,EXISTING,CNA brand
+ACE INSURANCE COMPANY,ACE American Insurance Company,EXISTING,review (ACE/Chubb)
+ADIRONDACK INSURANCE COMAPNY,Adirondack Insurance Exchange,NEW,typo Comapny
+GLOBAL LIBERTY,Global Liberty Insurance Company of New York,NEW,
+GLOBAL LIBERTY INS. CO,Global Liberty Insurance Company of New York,NEW,
+GLOBAL LIBERTY INSURANCE COMPANY,Global Liberty Insurance Company of New York,NEW,
+FIRST ACCEPTANCE INSURANCE,First Acceptance Insurance Company,NEW,
+SAFE AUTO,Safe Auto Insurance Company,NEW,
+SAFE AUTO INS.,Safe Auto Insurance Company,NEW,
+AMERICAN COUNTRY INS,Curative Insurance Company of Illinois,EXISTING,merged former-name -> current name
+CURE AUTO INS,Citizens United Reciprocal Exchange (CURE),NEW,
+GOOD TO GO AUTO INSURANCE,American Independent Insurance Company,NEW,Good2Go brand
+GOOD2GO,American Independent Insurance Company,NEW,
+AUTO OWNERS INS CO,Auto-Owners Insurance Company,NEW,
+UNITED AUTOMOBILE INS,United Automobile Insurance Company,NEW,
+Peak Property and Casualty Insurance Corp,Peak Property and Casualty Insurance Corporation,NEW,Corp variant
+AMERICAN ACCESS CASUALTY CO,American Access Casualty Company,NEW,Co variant
+PHILADELPHIA  INDEMNITY INSURANCE,Philadelphia Indemnity Insurance Company,NEW,double-space variant
+PHILADELPHIA INSURANCE COMPANY,Philadelphia Indemnity Insurance Company,NEW,
+ATLANTIC CASUALTY INSURANCE,Atlantic Casualty Insurance Company,NEW,
+U-HAUL COMPANY C/O REPWEST INSURANCE COMPANY,Repwest Insurance Company,EXISTING,carrier; U-Haul is fleet
+LANCER INSURANCE,Lancer Insurance Company,EXISTING,
+ERIE INSURANCE GROUP,Erie Insurance Company of New York,EXISTING,NY writer (review)
+NEW YORK CENTRAL INSURANCE COMPANY,New York Central Mutual Fire Insurance Company,EXISTING,
+PURE INSURANCE COMPANY,Privilege Underwriters Reciprocal Exchange,EXISTING,PURE
+NEW JERSEY MANUFACTU,New Jersey Manufacturers Insurance Company,EXISTING,truncated export value
+ZURICH,American Zurich Insurance Company,EXISTING,generic Zurich (review)
+ELCO,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO INSURANCE,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO INSURANCE COMPANY,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO ADMINISTRATION SERVICE,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO ADMINISTRATIVE SERVICES,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO ADMINISTRATIVE SVCS,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+ELCO ADMINISTRATIVE INSURANCE,ELRAC LLC d/b/a Enterprise Rent-A-Car,EXISTING,ELCO -> Elrac (per user)
+NATIONAL CASUALTY INSURANCE COMPANY,National Casualty Company,EXISTING,NAIC 11991 (Nationwide)
+NATIONAL CONTINENTA,National Continental Insurance Company,EXISTING,truncated; NAIC 10243 (Progressive)
+NATIONAL LIABILITY INSURANCE COMPANY,National Liability & Fire Insurance Company,EXISTING,NAIC 20052 (per user)
+NATIONAL SPECIALITY INSURANCE COMPANY,National Specialty Insurance Company,EXISTING,typo Speciality; NAIC 22608
+NATIONAL UNION FIRE INSURANCE COMPANY OF PITTSBURG,National Union Fire Insurance Company,EXISTING,NAIC 19445 (AIG)
+NATIONAL CONTINENTAL CO.,National Continental Insurance Company,EXISTING,NAIC 10243 (Progressive)
+ABI BUSINESS INSURANCE COMPANY,American Bankers Insurance Company of Florida,EXISTING,ABI; NAIC 10111
+NATIONAL INSURANCE COMPANY,Integon National Insurance Company,EXISTING,NAIC 29742 (per user)
+NATIONAL FIRE INSURANCE COMPANY,National Liability & Fire Insurance Company,EXISTING,NAIC 20052 (per user)
+NATIONAL DOCUMENT CENTER INSURANCE CO.,Foremost Signature Insurance Company,EXISTING,carrier is Foremost Signature c/o National Document Center; NAIC 41513
+NYCM Insurance,New York Central Mutual Fire Insurance Company,EXISTING,NYCM (per user)
+NYSIF,New York State Insurance Fund,EXISTING,per user
+ESURANCE,Esurance Insurance Company,EXISTING,group-A confirmed
+MAIN STREET AMERICA,Main Street America Assurance Company,EXISTING,group-A confirmed
+MAIN STREET AMERICAN INSURANCE COMPANY,Main Street America Assurance Company,EXISTING,group-A confirmed
+CENTRAL INSURANCE COMPANY,Central Insurance Company,EXISTING,group-A confirmed
+CHARTER OAK FIRE INSURANCE,Charter Oak Fire Insurance Company,EXISTING,group-A confirmed
+CNA CONTINENTAL CASUALTY,Continental Casualty Company,EXISTING,group-A confirmed
+COUNTRY-WIDE INSURACE,Country-Wide Insurance Company,EXISTING,group-A confirmed
+COUNTRYWAY-PERSONAL INSURANCE COMPANY,Countryway Insurance Company,EXISTING,group-A confirmed
+MITSUI SUMITOMO,Mitsui Sumitomo Insurance USA Inc.,EXISTING,group-A confirmed
+ARBELLA INS GROUP,"Arbella Protection Insurance Company, Inc.",EXISTING,group-A confirmed
+ZURICH INSURANCE COMPANY,Zurich American Insurance Company,EXISTING,group-A confirmed
+MIDVALE INDEMNITY COMPANY NAIC,Midvale Indemnity Company,EXISTING,group-A confirmed
+AMERICAN ACCESS CASUALTY INSURANCE COMPANY,American Access Casualty Company,NEW,group-A confirmed
+AMERICAN COUNTRY INSURANCE COMPANY,Curative Insurance Company of Illinois,EXISTING,merged former-name -> current name
+AMERICAN MODERN SELECT INSURANCE COMPANY,Trusted Resource Underwriters Exchange of Ohio,EXISTING,merged former-name -> current name

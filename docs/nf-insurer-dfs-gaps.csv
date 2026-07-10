@@ -1,0 +1,11 @@
+Display Name,Active,Aliases,Notes,hidden_naic_number,hidden_domicile,hidden_group_name,hidden_street,hidden_city,hidden_state,hidden_zipcode,hidden_phone,hidden_website
+"Automobile Insurance Company of Hartford, Connecticut",true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),19062,Connecticut,Travelers Group,One Tower Square,Hartford,Connecticut,06183,860-277-0111,www.travelers.com
+Travelers Casualty and Surety Company of America,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),31194,Connecticut,Travelers Group,One Tower Square,Hartford,Connecticut,06183,315-424-5645,www.travelers.com
+Philadelphia Indemnity Insurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),18058,Pennsylvania,Tokio Marine Holdings,"Three Bala Plaza East, Suite 400",Bala Cynwyd,Pennsylvania,19004,800-765-9749,www.phly.com
+Next Insurance US Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),16285,Delaware,,975 California Ave.,Palo Alto,California,94304,,www.nextinsurance.com
+Diamond State Insurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),42048,Indiana,Global Indemnity Group,"Three Bala Plaza East, Suite 300",Bala Cynwyd,Pennsylvania,19004,610-664-1500,
+Pioneer Specialty Insurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),40312,Minnesota,Western National Group,4700 W. 77th Street,Edina,Minnesota,55434,,
+United National Insurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),13064,Pennsylvania,,"Three Bala Plaza East, Suite 300",Bala Cynwyd,Pennsylvania,19004,,
+Western National Assurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),24465,Minnesota,Western National Group,4700 W. 77th Street,Edina,Minnesota,55434,,
+Western National Mutual Insurance Company,true,,Added from NY DFS Auto directory 2026-07 (missing from canonical),15377,Minnesota,Western National Group,4700 W. 77th Street,Edina,Minnesota,55434,,
+Renaissance Reinsurance Ltd.,true,,NAIC backfill from NY DFS Auto directory (already in canonical),14033,Bermuda,,12 Crow Lane,Pembroke,,HM 19,,

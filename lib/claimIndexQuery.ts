@@ -213,4 +213,5 @@ export const CLAIM_INDEX_SELECT = {
   final_status: true,
   matter_stage_name: true,
   treating_provider: true,
+  import_batch: true,
 };

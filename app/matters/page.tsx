@@ -3,6 +3,7 @@
 import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
 import { normalizeProviderName } from "@/lib/providerNameCase";
+import { legacyTag } from "@/lib/legacyDisplay";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
@@ -43,6 +44,7 @@ type MatterRow = {
   billAmount: any;
   isMaster: boolean;
   matchedBy: string;
+  importBatch: string;
 };
 
 type ClaimResultsSortKey =
@@ -260,6 +262,7 @@ function toMatterRow(row: any, matchedBy: string): MatterRow | null {
     billAmount: row?.billAmount ?? row?.bill_amount ?? row?.amount,
     isMaster: isMasterMatterRow(row),
     matchedBy,
+    importBatch: row?.importBatch ?? row?.import_batch ?? "",
   };
 }
 
@@ -9971,7 +9974,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         <tr key={rowId}>
                           <td style={masterSettlementTdStyle}>
                             <a href={`/matter/${encodeURIComponent(clean(row.displayNumber) || clean(row.display_number) || rowId)}`} style={matterLinkStyle}>
-                              {clean(row.displayNumber) || rowId}
+                              {clean(row.displayNumber) || rowId}{legacyTag(row)}
                             </a>
                           </td>
                           <td style={masterSettlementTdStyle}>
@@ -12142,7 +12145,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         <tbody>
                           {record.rows.map((row: any) => (
                             <tr key={row.id}>
-                              <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", fontWeight: 800 }}>{row.displayNumber || row.matterId}</td>
+                              <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", fontWeight: 800 }}>{row.displayNumber || row.matterId}{legacyTag(row)}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.provider || "—"}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>{row.patient || "—"}</td>
                               <td style={{ padding: 8, borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>{formatSettlementHistoryMoney(row.allocatedSettlement || 0)}</td>
@@ -12687,7 +12690,7 @@ function masterDocumentPreviewText(value: unknown): string {
                             return (
                               <tr key={`master-settlement-popup-${rowId}`}>
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb", fontWeight: 900 }}>
-                                  {clean(row.displayNumber) || rowId}
+                                  {clean(row.displayNumber) || rowId}{legacyTag(row)}
                                 </td>
                                 <td style={{ padding: "6px 8px", border: "1px solid #e5e7eb" }}>
                                   {clean(row.provider) || "—"}
@@ -13799,7 +13802,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         <tr key={rowId}>
                           <td style={masterSettlementTdStyle}>
                             <a href={`/matter/${encodeURIComponent(clean(row.displayNumber) || clean(row.display_number) || rowId)}`} style={matterLinkStyle}>
-                              {clean(row.displayNumber) || rowId}
+                              {clean(row.displayNumber) || rowId}{legacyTag(row)}
                             </a>
                           </td>
                           <td style={masterSettlementTdStyle}>
@@ -13942,7 +13945,7 @@ function masterDocumentPreviewText(value: unknown): string {
                   <tr key={row.id} className="barsh-filter-row">
                     <td style={tdStyle}>
                       <a href={`/matter/${encodeURIComponent(displayNumber(row) || String(row.id))}`} style={matterLinkStyle}>
-                        {row.displayNumber || row.id}
+                        {row.displayNumber || row.id}{legacyTag(row)}
                       </a>
                     </td>
                     <td style={tdStyle}>

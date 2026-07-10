@@ -41,7 +41,8 @@ export type CreatedResult = { key: string | number; matterId: number; displayNum
 
 export async function createMattersFromStaged(
   rows: CreatableRow[],
-  provider?: { id: string; displayName: string }
+  provider?: { id: string; displayName: string },
+  opts?: { importBatch?: string; whenYear?: number }
 ): Promise<CreatedResult> {
   if (!rows.length) return [];
 
@@ -61,7 +62,9 @@ export async function createMattersFromStaged(
     patientIdByName.set(name, p.id);
   }
 
-  const nums = await allocateMatterNumbers(rows.length);
+  // whenYear lets the bulk load number legacy matters under their ORIGINAL file year (from Case_Id
+  // 445YY), not the import year. One call = one year, so callers group rows by year.
+  const nums = await allocateMatterNumbers(rows.length, opts?.whenYear);
   const resolvedPatientId = (r: CreatableRow) => r.patientId ?? patientIdByName.get(r.staged.patient_name) ?? null;
   const providerNameFor = (r: CreatableRow) => r.providerDisplayName ?? provider?.displayName ?? null;
 
@@ -84,6 +87,7 @@ export async function createMattersFromStaged(
     fingerprint: r.staged.fingerprint,
     final_status: "Open",
     matter_stage_name: BARSH_IMPORT_DEFAULT_MATTER_STATUS,
+    import_batch: opts?.importBatch ?? null, // e.g. "nf-legacy" for the one-time bulk load; null otherwise
     raw_json: JSON.stringify(r.staged.raw ?? {}),
     ...(r.extra ?? {}), // source-specific columns (Carisk), merged last
   }));

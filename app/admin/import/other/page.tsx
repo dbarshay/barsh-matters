@@ -24,6 +24,12 @@ const cards = [
     icon: "📄",
   },
   {
+    label: "Bulk Import",
+    href: "/admin/import/other/bulk",
+    description: "One-time bulk load of a very large closed-file spreadsheet (e.g. NF All Closed). Lenient carrier matching (records raw when unmatched), accident-key patient dedup, pre-2025 quarantine, and a -legacy tag.",
+    icon: "📦",
+  },
+  {
     label: "Document OCR",
     href: "#",
     description: "Scan a document (usually a bill / claim form) and attempt to extract a matter from it — coming soon.",

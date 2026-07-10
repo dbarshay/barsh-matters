@@ -16,6 +16,17 @@ const MIN_SEQ_WIDTH = 6;
 // MAX(ClaimIndex.matter_id) so they never collide with legacy Clio-era matter ids.
 const MATTER_ID_FLOOR = 1_000_000;
 
+/**
+ * DISPLAY-ONLY label for a matter number. Appends "-legacy" for bulk-imported (import_batch) matters
+ * so they're unmistakable in lists / titles / pickers. NEVER feed the result to clioStoragePlan, email
+ * subject-tag matching, or OCR cross-reference — those parse the raw display_number (BRL_YYYYNNNNNN)
+ * with strict regexes and a suffix breaks them. Pass `legacy` = (matter.import_batch != null).
+ */
+export function formatMatterDisplayLabel(displayNumber: string, opts?: { legacy?: boolean }): string {
+  const dn = String(displayNumber ?? "");
+  return opts?.legacy && dn ? `${dn}-legacy` : dn;
+}
+
 /** BRL_{year}{seq}, seq zero-padded to a minimum of 6 digits (grows if larger). */
 export function formatBrlDisplayNumber(year: number, seq: number): string {
   if (!Number.isInteger(year) || year < 2000) throw new Error("formatBrlDisplayNumber: invalid year.");

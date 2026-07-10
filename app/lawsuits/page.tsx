@@ -5,6 +5,7 @@ import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
 import OldFileNumberField from "@/components/OldFileNumberField";
+import { legacyTag } from "@/lib/legacyDisplay";
 import * as XLSX from "xlsx";
 
 type Matter = any;
@@ -1078,7 +1079,7 @@ export default function LawsuitsPage() {
                             </td>
                             <td style={td}>
                               <a href={`/matter/${id}`} style={fieldAnchor} title={`Open ${displayNumber(m)}`}>
-                                {displayNumber(m)}
+                                {displayNumber(m)}{legacyTag(m)}
                               </a>
                             </td>
                             <td style={td}>
@@ -1354,7 +1355,7 @@ export default function LawsuitsPage() {
                 <tbody>
                   {selectedMatters.map((m) => (
                     <tr key={`create-review-${matterId(m)}`}>
-                      <td style={td}>{displayNumber(m)}</td>
+                      <td style={td}>{displayNumber(m)}{legacyTag(m)}</td>
                       <td style={td}>{val(m, "patientName", "patient_name") || "—"}</td>
                       <td style={td}>{val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}</td>
                       <td style={td}>{insurerName(m) || "—"}</td>

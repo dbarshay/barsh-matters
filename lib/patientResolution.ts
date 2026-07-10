@@ -75,8 +75,10 @@ export async function resolvePatient(rawName: unknown): Promise<PatientResolutio
   const key = patientMatchKey(canonical);
   if (!key) return { status: "new" };
 
+  // Only MATCHABLE patients are link/suggest targets. Quarantined bulk-load patients (matchable:false,
+  // e.g. pre-2025 NF matters) are recorded for history but never re-linked by later imports.
   const exact = await prisma.patient.findMany({
-    where: { normalizedName: key },
+    where: { normalizedName: key, matchable: true },
     select: { id: true, name: true },
     take: 25,
   });
@@ -93,7 +95,7 @@ export async function resolvePatient(rawName: unknown): Promise<PatientResolutio
   const last = lastNameKey(canonical);
   const close = last
     ? await prisma.patient.findMany({
-        where: { normalizedName: { contains: last } },
+        where: { normalizedName: { contains: last }, matchable: true },
         select: { id: true, name: true },
         take: 25,
       })
@@ -105,10 +107,12 @@ export async function resolvePatient(rawName: unknown): Promise<PatientResolutio
   return { status: "new" };
 }
 
-/** Create a new patient master record from an incoming name. */
-export async function createPatient(rawName: unknown, source = "import") {
+/** Create a new patient master record from an incoming name.
+ *  `matchable=false` quarantines it (recorded for history but never a future-import link target) —
+ *  used by the bulk importer for pre-2025 matters. */
+export async function createPatient(rawName: unknown, source = "import", opts?: { matchable?: boolean }) {
   const name = toFirstLastProperCase(rawName);
   return prisma.patient.create({
-    data: { name, normalizedName: patientMatchKey(name), source },
+    data: { name, normalizedName: patientMatchKey(name), source, matchable: opts?.matchable ?? true },
   });
 }
