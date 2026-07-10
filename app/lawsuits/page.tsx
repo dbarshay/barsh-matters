@@ -1171,7 +1171,7 @@ export default function LawsuitsPage() {
                                     style={{ ...fieldAnchor, color: "#ca8a04" }}
                                     title={`Open master lawsuit ${masterId(m)}${clioMasterDisplayNumber(m) ? ` / ${clioMasterDisplayNumber(m)}` : ""}`}
                                   >
-                                    {masterId(m)}
+                                    {masterId(m)}{legacyTag(m)}
                                   </a>
                                 ) : (
                                   <button
@@ -1180,7 +1180,7 @@ export default function LawsuitsPage() {
                                     style={{ ...fieldLinkButton, color: "#ca8a04" }}
                                     title="Search this master lawsuit"
                                   >
-                                    {masterId(m)}
+                                    {masterId(m)}{legacyTag(m)}
                                   </button>
                                 )
                               ) : (
@@ -1364,7 +1364,7 @@ export default function LawsuitsPage() {
                       <td style={tdRight}>{money(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"))}</td>
                       <td style={td}>{denialReason(m)}</td>
                       <td style={td}>{adversaryAttorneyName(m) || "—"}</td>
-                      <td style={td}>{masterId(m) || "Not Filed"}</td>
+                      <td style={td}>{masterId(m) ? `${masterId(m)}${legacyTag(m)}` : "Not Filed"}</td>
                       <td style={td}><span style={matterStatusStyle(m)}>{matterStatus(m)}</span></td>
                     </tr>
                   ))}

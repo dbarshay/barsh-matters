@@ -8399,7 +8399,7 @@ function openClaimAmountEditDialog() {
               }}
             >
               <span>MASTER LAWSUIT ID:</span>
-              <span>{textValue(matter?.masterLawsuitId)}</span>
+              <span>{textValue(matter?.masterLawsuitId)}{(matter?.import_batch || matter?.importBatch) === "nf-legacy" ? "-legacy" : ""}</span>
             </a>
           )}
 </div>

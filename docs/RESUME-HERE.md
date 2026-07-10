@@ -18,6 +18,37 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-10 (later 2) — More trial fixes; PAUSED mid-debug of first 50 (resume here)
+
+Continued reviewing the 50-row trial. Fixes (all bulk-only unless noted):
+
+- **Insurer showing NUMBERS — real bug, fixed.** `nf-insurer-legacy-map.csv` has 4 cols
+  (`nf_value,count,canonical,kind`) but `bulkCarrierResolution.ts` read col-index-1 (`count`) as the
+  canonical, so legacy-map carriers displayed their count (TRAVELERS→1496, GEICO INSURANCE COMPANY→17719,
+  MVAIC→…, METROPOLITAN→287). Loader is now header-driven (reads the `canonical` column by name). Verified
+  against real data. NOTE: only affects carriers that fall to the legacy map; strict-registry matches were fine.
+- **Court capitalization** — new `normalizeTitleCase()` in `bulkAdapter.ts` applied to `court_venue`:
+  `SIXTH DISTRICT COURT: PATCHOGUE`→`Sixth District Court: Patchogue` (minor words lowercased, NY/US/LLC etc.
+  kept upper).
+- **Required fields relaxed for bulk** → now ONLY Patient + Provider + Insurer are required. Claim/Policy/
+  Packet, amount, DOS, Date Opened are recorded when present but never skip a row (MVAIC files legitimately
+  have no claim/policy). Updated `mapBulkRow` validation + `BULK_FIELDS` required flags (Provider now required;
+  Case_Id/DateOpened/DOS/ClaimAmount no longer required).
+- **5 skips in the first 50 were:** Michele Thiele (no DOS); Seefat Aman ×2, Guillermo Sterling, Luz Candelario
+  (no Claim/Policy/Packet — 3 are MVAIC). With the relaxed rule these now import.
+- **`-legacy` on LAWSUIT (dotted) numbers** — was only on individual BM numbers. Added everywhere the master
+  lawsuit number renders: matter-header "MASTER LAWSUIT ID" chip (`matter/[id]`), Home results Lawsuit ID
+  col (`page.tsx`), Matters list Master Lawsuit col (`matters/page.tsx`), Lawsuits page master links, and the
+  **master-workspace header badge** (`matters/page.tsx` ~9442, keyed on `rows.some(isLegacyMatter)`).
+- Scoped `tsc` clean (only pre-existing styled-jsx warnings).
+
+**⏸ RESUME HERE (clean slate):** the trial import was UNDONE via `npx tsx scripts/bulk-cleanup.ts --yes`
+(removed 45 matters, 8 lawsuits, 33 patients; batch marked undone) — the DB currently has NO bulk data.
+Next session: re-run a fresh 50-row trial with ALL the above fixes and re-verify — insurer names correct
+(no numbers), courts Title Case, blank stage, lawsuits born Closed, `-legacy` on BOTH matter and lawsuit
+badges (smaller/lighter style) + in lists, and the 5 previously-skipped rows now importing. Then build the
+rejected-rows CSV export before the full ~264k load. All of today's fixes are committed + pushed.
+
 ### 2026-07-10 (later) — NF Bulk trial review: fixes from first 50-row run
 
 Ran a 50-row trial (batch shown in UI). Result was internally consistent (45 created + 5 missing-field

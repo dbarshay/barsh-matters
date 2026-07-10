@@ -3,7 +3,7 @@
 import { formatDateOnlyForDisplay } from "@/lib/dateOnlyDisplay";
 import { BARSH_MATTER_STATUS_OPTIONS } from "@/lib/matterStatusOptions";
 import { normalizeProviderName } from "@/lib/providerNameCase";
-import { legacyTag } from "@/lib/legacyDisplay";
+import { legacyTag, isLegacyMatter } from "@/lib/legacyDisplay";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
@@ -9440,6 +9440,9 @@ function masterDocumentPreviewText(value: unknown): string {
                     }}
                   >
                     {value}
+                    {rows.some(isLegacyMatter) ? (
+                      <span style={{ fontSize: 20, fontWeight: 900, opacity: 0.75, marginLeft: 4 }}>-legacy</span>
+                    ) : null}
                   </span>
                   <span
                     style={{
@@ -14013,7 +14016,7 @@ function masterDocumentPreviewText(value: unknown): string {
                           className="barsh-filter-field-link"
                           style={fieldLinkStyle}
                         >
-                          {row.masterLawsuitId}
+                          {row.masterLawsuitId}{legacyTag(row)}
                         </a>
                       ) : (
                         "—"

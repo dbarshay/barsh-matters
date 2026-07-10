@@ -2673,7 +2673,7 @@ export default function Home() {
                                   style={homeResultsFieldButtonStyle}
                                   title="Open master lawsuit page"
                                 >
-                                  {row.masterLawsuitId}
+                                  {row.masterLawsuitId}{legacyTag(row)}
                                 </a>
                               ) : (
                                 "Not Filed"

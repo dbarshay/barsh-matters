@@ -28,13 +28,24 @@ function loadLegacyMap(): Record<string, string> {
     if (!existsSync(fp)) continue;
     const text = readFileSync(fp, "utf8");
     const lines = text.split(/\r?\n/).filter(Boolean);
-    // tolerate a header row; expect two columns: raw value, canonical BM value
-    for (const line of lines) {
+    if (!lines.length) continue;
+    // The CSV is header-driven: current format is `nf_value,count,canonical,kind` (a `count` column sits
+    // BETWEEN the raw value and the canonical). Resolve columns by NAME so an extra/reordered column can
+    // never make us treat the count as the canonical name. Falls back to col0=raw, col1=canonical for a
+    // bare two-column file with no header.
+    const header = splitCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
+    const findIdx = (names: string[], fallback: number) => {
+      const i = header.findIndex((h) => names.includes(h));
+      return i >= 0 ? i : fallback;
+    };
+    const hasHeader = header.some((h) => ["nf_value", "raw", "source", "value", "canonical"].includes(h));
+    const rawIdx = findIdx(["nf_value", "raw", "source", "value", "nf"], 0);
+    const canonIdx = findIdx(["canonical", "bm_value", "canonical_name", "target"], 1);
+    for (const line of lines.slice(hasHeader ? 1 : 0)) {
       const cells = splitCsvLine(line);
-      if (cells.length < 2) continue;
-      const [raw, canonical] = cells;
+      const raw = cells[rawIdx];
+      const canonical = cells[canonIdx];
       if (!raw || !canonical) continue;
-      if (/^(raw|source|nf_value|value)$/i.test(raw.trim())) continue; // header
       map[normalizeReferenceText(raw)] = canonical.trim();
     }
   }

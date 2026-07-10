@@ -13,13 +13,13 @@ import { normalizeCaseType } from "@/lib/import/otherAdapter";
 // everything else is recorded RAW on the historical matter (never held, never creates a registry row).
 
 export const BULK_FIELDS: { key: string; label: string; required?: boolean; aliases: string[] }[] = [
-  { key: "old_matter_number", label: "Case_Id (legacy 445 # → matter; sets year)", required: true, aliases: ["caseid", "case id", "case_id", "445", "oldfilenumber", "filenumber", "oldmatternumber", "matternumber"] },
+  { key: "old_matter_number", label: "Case_Id (legacy 445 # → matter; sets year)", aliases: ["caseid", "case id", "case_id", "445", "oldfilenumber", "filenumber", "oldmatternumber", "matternumber"] },
   { key: "old_lawsuit_number", label: "Packet ID (legacy 445-PKT # → lawsuit; 2+ = a lawsuit)", aliases: ["packet", "packetid", "packet id", "445pkt", "445 pkt", "packetnumber", "oldlawsuitnumber", "lawsuitnumber"] },
   { key: "claim_number_raw", label: "Claim Number", aliases: ["claim", "claimnumber", "claimno", "claim #", "insuredsid"] },
   { key: "policy_number", label: "Policy Number", aliases: ["policy", "policynumber", "policyno", "policy #"] },
   { key: "patient_name", label: "Patient / Claimant", required: true, aliases: ["patient", "patientname", "claimant", "insured", "member", "name"] },
   { key: "carrier_raw", label: "Insurer / Carrier", required: true, aliases: ["carrier", "carriername", "insurer", "insurance", "insurancecompany", "payer"] },
-  { key: "provider_raw", label: "Provider (per-row)", aliases: ["provider", "providername", "facility"] },
+  { key: "provider_raw", label: "Provider (per-row)", required: true, aliases: ["provider", "providername", "facility"] },
   { key: "provider_group", label: "Provider Group", aliases: ["providergroup", "provider group", "group"] },
   { key: "settled_with", label: "Settled With", aliases: ["settledwith", "settled with"] },
   { key: "index_aaa_number", label: "Index OR AAA Number", aliases: ["index", "aaa", "indexoraaanumber", "index or aaa number", "indexnumber"] },
@@ -164,6 +164,33 @@ export function normalizeServiceType(raw: string): string {
   return normalized.join(", ");
 }
 
+// Title-case normalizer for shout-case free-text fields (bulk-only) — e.g. court names stored as
+// "SIXTH DISTRICT COURT: PATCHOGUE" -> "Sixth District Court: Patchogue". Lowercases minor words (of/the/
+// and…) except when first; keeps a few tokens uppercase (NY, NYC, US…). Punctuation (":") is preserved.
+const TITLE_MINOR_WORDS = new Set(["of", "the", "and", "at", "in", "for", "to", "a", "an", "on", "or", "de"]);
+const TITLE_KEEP_UPPER = new Set(["NY", "NYC", "US", "USA", "LLC", "LLP", "PC", "PLLC", "DBA", "NJ", "CT"]);
+
+function capFirstAlpha(word: string): string {
+  const lower = word.toLowerCase();
+  const idx = lower.search(/[a-z]/);
+  if (idx < 0) return word; // no letters (pure punctuation/number)
+  return lower.slice(0, idx) + lower.charAt(idx).toUpperCase() + lower.slice(idx + 1);
+}
+
+export function normalizeTitleCase(raw: string): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  const words = s.split(/\s+/).filter(Boolean);
+  return words
+    .map((w, i) => {
+      const bare = w.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (TITLE_KEEP_UPPER.has(bare)) return w.toUpperCase();
+      if (i > 0 && TITLE_MINOR_WORDS.has(bare.toLowerCase())) return w.toLowerCase();
+      return capFirstAlpha(w);
+    })
+    .join(" ");
+}
+
 const PRE_2025_CUTOFF_YEAR = 2025;
 
 export function mapBulkRow(row: Record<string, unknown>, mapping: BulkMapping, fixed: BulkFixed, rowIndex: number): StagedBulkMatter {
@@ -193,13 +220,15 @@ export function mapBulkRow(row: Record<string, unknown>, mapping: BulkMapping, f
   const caseRaw = fixed.caseType ? fixed.caseType : cell(row, mapping, "case_type");
   const caseType = fixed.caseType ? fixed.caseType : normalizeCaseType(caseRaw);
 
+  // Bulk load requires ONLY Patient + Provider + Insurer (per the closed-file load decision). Claim/
+  // Policy/Packet, amount, DOS, and Date Opened are recorded when present but never block a row — these
+  // are historical closed files (e.g. MVAIC matters legitimately have no claim/policy number).
+  const providerVal = cell(row, mapping, "provider_raw");
+  const hasProvider = !!providerVal || !!fixed.providerEntityId || !!fixed.providerDisplayName;
   const errors: string[] = [];
-  if (!claim && !policy && !packet) errors.push("Missing Packet ID / Claim / Policy.");
   if (!patient) errors.push("Missing patient name.");
-  if (!carrier) errors.push("Missing carrier.");
-  if (amount === null) errors.push("Missing/invalid amount.");
-  if (!dos.start) errors.push("Missing/invalid date(s) of service.");
-  if (!opened) errors.push("Missing/invalid Date Opened.");
+  if (!hasProvider) errors.push("Missing provider.");
+  if (!carrier) errors.push("Missing carrier / insurer.");
 
   // Strong accident key: PKT (Packet ID / 445-PKT) > Claim# > Policy#+DOL > per-row solo (never merges).
   const accident_key = packetKey
@@ -232,7 +261,7 @@ export function mapBulkRow(row: Record<string, unknown>, mapping: BulkMapping, f
     provider_group: cell(row, mapping, "provider_group"),
     settled_with: cell(row, mapping, "settled_with"),
     index_aaa_number: cell(row, mapping, "index_aaa_number"),
-    court_venue: cell(row, mapping, "court_venue"),
+    court_venue: normalizeTitleCase(cell(row, mapping, "court_venue")),
     defendant: cell(row, mapping, "defendant"),
     date_bill_sent: toDateOnly(cell(row, mapping, "date_bill_sent")),
     date_aaa_arb_filed: toDateOnly(cell(row, mapping, "date_aaa_arb_filed")),
