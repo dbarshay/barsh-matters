@@ -8,9 +8,16 @@
 //
 // Env (put in .env next to this file, or export before running):
 //   MIGRATION_DATABASE_URL   the dedicated ledger DB (already set for the migration)
-//   WATCHDOG_WEBHOOK_URL     where to POST the alert JSON — a Slack/Discord incoming webhook, or a
-//                            Zapier/IFTTT/Make "catch webhook -> email me" hook. This is how it reaches you.
 //   ALERT_MINUTES            stall threshold in minutes (default 60)
+//   --- email via Azure Communication Services (preferred; no third party) ---
+//   ACS_CONNECTION_STRING    from the ACS resource ("Keys" blade). Azure blocks VM port 25, so this API
+//                            path is the sanctioned way to send mail from an Azure VM.
+//   ACS_SENDER_ADDRESS       e.g. DoNotReply@<guid>.azurecomm.net (the managed domain's MailFrom address)
+//   ALERT_EMAIL              where to send the alert (your inbox)
+//   --- optional fallback ---
+//   WATCHDOG_WEBHOOK_URL     if set and email isn't configured, POST the alert here instead
+//
+// Requires the ACS email SDK once:  npm i @azure/communication-email
 //
 // Cron (every 15 min), added by the deploy line below:
 //   */15 * * * * cd /home/azureuser/atlas-migration && /usr/bin/node watchdog.mjs >> watchdog.log 2>&1
@@ -31,6 +38,9 @@ const get = (k, d) => process.env[k] ?? env[k] ?? d;
 
 const DB = get("MIGRATION_DATABASE_URL");
 const WEBHOOK = get("WATCHDOG_WEBHOOK_URL");
+const ACS_CONN = get("ACS_CONNECTION_STRING");
+const ACS_SENDER = get("ACS_SENDER_ADDRESS");
+const ALERT_EMAIL = get("ALERT_EMAIL");
 const ALERT_MINUTES = Number(get("ALERT_MINUTES", 60));
 const STATE_FILE = "watchdog-state.json";
 const now = Date.now();
@@ -45,24 +55,46 @@ const state = existsSync(STATE_FILE)
   ? JSON.parse(readFileSync(STATE_FILE, "utf8"))
   : { lastDone: -1, lastProgressTs: now, alerted: false };
 
+async function sendEmail(subject, detail) {
+  // Uses Azure Communication Services Email (the SDK signs the request; no port-25 needed).
+  const { EmailClient } = await import("@azure/communication-email");
+  const client = new EmailClient(ACS_CONN);
+  const poller = await client.beginSend({
+    senderAddress: ACS_SENDER,
+    content: { subject: `Atlas migration watchdog: ${subject}`, plainText: detail },
+    recipients: { to: [{ address: ALERT_EMAIL }] },
+  });
+  await poller.pollUntilDone();
+}
+
 async function fire(subject, detail) {
   console.error(`[${stamp}] ALERT: ${subject} — ${detail}`);
-  if (!WEBHOOK) {
-    console.error(`[${stamp}] (no WATCHDOG_WEBHOOK_URL set — alert logged only, not delivered)`);
-    return;
+  const body = `${subject}\n\n${detail}\n\n(sent ${stamp})`;
+
+  if (ACS_CONN && ACS_SENDER && ALERT_EMAIL) {
+    try {
+      await sendEmail(subject, body);
+      console.error(`[${stamp}] alert emailed to ${ALERT_EMAIL} via Azure Communication Services`);
+      return;
+    } catch (e) {
+      console.error(`[${stamp}] ACS email failed: ${e?.message || e} — falling back`);
+    }
   }
-  try {
-    // Shape works for Slack/Discord (they read `text`/`content`) and for generic catch-hooks (full JSON).
-    const text = `⚠️ Atlas migration watchdog: ${subject}\n${detail}`;
-    await fetch(WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, content: text, subject, detail, at: stamp }),
-    });
-    console.error(`[${stamp}] alert delivered to webhook`);
-  } catch (e) {
-    console.error(`[${stamp}] webhook POST failed: ${e?.message || e}`);
+  if (WEBHOOK) {
+    try {
+      const text = `⚠️ Atlas migration watchdog: ${body}`;
+      await fetch(WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, content: text, subject, detail, at: stamp }),
+      });
+      console.error(`[${stamp}] alert delivered to webhook`);
+      return;
+    } catch (e) {
+      console.error(`[${stamp}] webhook POST failed: ${e?.message || e}`);
+    }
   }
+  console.error(`[${stamp}] (no delivery channel configured — alert logged only)`);
 }
 
 const pool = new Pool({ connectionString: DB });
