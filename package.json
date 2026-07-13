@@ -686,6 +686,7 @@
     "verify:direct-matter-header-locked": "node scripts/verify-direct-matter-header-locked.mjs"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.32.0",
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-better-sqlite3": "^7.7.0",
     "@prisma/adapter-neon": "^7.8.0",
