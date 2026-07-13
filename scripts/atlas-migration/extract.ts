@@ -138,7 +138,13 @@ async function status() {
     else if (has("--status")) await status();
     else console.log("Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --status");
   } catch (e: any) {
-    console.error("FAILED:", e?.message || e);
+    const msg = e?.message || String(e);
+    if (/relation .* does not exist|does not exist/i.test(msg)) {
+      console.error("\n*** LEDGER TABLES MISSING — the ledger database was reset/dropped underneath the run. ***");
+      console.error("*** Cause: MIGRATION_DATABASE_URL points at a DB that a backup/restore reverts (e.g. the app DB). ***");
+      console.error("*** Fix: point MIGRATION_DATABASE_URL at a DEDICATED Neon project (nothing else touches it), then re-run. ***\n");
+    }
+    console.error("FAILED:", msg);
     process.exitCode = 1;
   } finally {
     await db().end().catch(() => {});

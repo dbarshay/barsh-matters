@@ -45,11 +45,10 @@ export const config = {
     accessTier: (process.env.AZURE_ACCESS_TIER || "Cool") as "Hot" | "Cool" | "Cold",
   },
   ledger: {
-    databaseUrl:
-      process.env.MIGRATION_DATABASE_URL ||
-      process.env.DATABASE_URL ||
-      process.env.POSTGRES_DATABASE_URL_UNPOOLED ||
-      "",
+    // MUST be a DEDICATED database (its own Neon project). NO fallback to the app's DATABASE_URL — the app's
+    // backup/restore tooling reverts that DB from snapshots and drops the ledger tables, destroying the
+    // manifest. The guard in assertLedger() enforces this.
+    databaseUrl: process.env.MIGRATION_DATABASE_URL || "",
   },
   run: {
     caseConcurrency: num(process.env.CASE_CONCURRENCY, 4),
@@ -68,5 +67,17 @@ export function assertAzure() {
   if (!config.azure.connectionString) throw new Error("AZURE_STORAGE_CONNECTION_STRING is required (or set DRY_RUN=1).");
 }
 export function assertLedger() {
-  if (!config.ledger.databaseUrl) throw new Error("No Postgres URL for the manifest (MIGRATION_DATABASE_URL / DATABASE_URL).");
+  if (!config.ledger.databaseUrl) {
+    throw new Error(
+      "MIGRATION_DATABASE_URL must point at a DEDICATED database (its own Neon project) — NOT the app DB. " +
+        "The app's backup/restore tooling drops raw ledger tables, so the manifest must live in its own database."
+    );
+  }
+  const appDb = (process.env.DATABASE_URL || "").trim();
+  if (appDb && config.ledger.databaseUrl.trim() === appDb) {
+    throw new Error(
+      "Refusing to run: MIGRATION_DATABASE_URL equals the app's DATABASE_URL. The app DB gets restored/wiped, " +
+        "which destroys the manifest. Use a SEPARATE dedicated Neon project for MIGRATION_DATABASE_URL."
+    );
+  }
 }
