@@ -18,6 +18,51 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-13 — NF Bulk 50-row trial VERIFIED CLEAN ✅ (full load paused for document-upload design)
+
+**The 50-row trial passed end-to-end.** 50 rows → 50 created, **0 skipped**, 0 carriers recorded raw,
+8 lawsuits / 22 aggregated / 28 standalone, 38 patients (all pre-2025 quarantined). Verified in the UI:
+
+- **Insurers** all resolve to canonical names (Travelers Property Casualty Company of America, Motor Vehicle
+  Accident Indemnification Corporation, Metropolitan General, ESIS…) — the legacy-map "number" bug is gone.
+- **Claim numbers** now visible (19-2628593, IE17241, 0615323090101035…). Root cause was a bug in the SHARED
+  creator: `lib/import/createMatters.ts` wrote only `claim_number_raw`, but the UI/search read
+  `claim_number_normalized`. **Fixed for ALL import paths** (Dow/Carisk/Other/bulk). Dow+Carisk data was all
+  test data so no backfill was needed, but `scripts/backfill-claim-number-normalized.ts` exists if ever needed.
+- **Denial reasons** resolve to the canonical registry — `Medical Necessity (Peer Review)`, `Fee Schedule`,
+  `No-Show (IME)`, multi-value handled. No more shout-case `FEE SCHEDULE`.
+- **Courts** Title Case; **stage** blank; **Final Status** Closed; **lawsuits** born Closed; **`-legacy`**
+  renders on both matter and lawsuit numbers (badges + lists).
+
+**FINANCIAL MODEL — LOCKED (decided from the data, do not re-litigate):**
+Source identities (verified over 40k rows): `Total Payment Received = Voluntary + Collection` (100%), and
+`Suit Balance = Claim − Voluntary` (99.2%). The old system tracked **only one balance: the PRE-SUIT /
+sued-for amount** — collections never reduce it. There is NO "Claim − all payments" column; computing one
+would invent a figure and produce **negative balances in ~2.8% of rows** (worst −$14,457) because no-fault
+collections include interest + fees and routinely exceed the bill.
+→ **DECISION: `balance_presuit` = the sheet's Suit Balance, faithfully (fallback Claim when blank).**
+This is what the importer already does. So a matter showing Claim $4,118.16 / Payments $1,146.67 /
+Balance $4,118.16 is **CORRECT** — Balance is the sued-for amount; the Collection sits at the lawsuit level.
+
+**THREE populations in the sheet** (from 30k rows) — the "is it a lawsuit" indicator is Court Name /
+Index-AAA / Date AAA Arb Filed / Defendant being populated (NOT the Packet ID):
+  - PKT + suit fields = 14,061 → aggregated lawsuit members (dotted lawsuit created)
+  - **No PKT + suit fields = 6,507 → SINGLE-MATTER LAWSUITS** (sued alone; no PKT, no dotted number)
+  - No PKT + no suit fields = 9,419 → never sued (pre-suit)
+Already handled correctly by the existing rules: single-matter lawsuits keep Collection on the individual
+matter (no dotted file), and their lawsuit-level fields go into the matter's NOTES.
+
+**⏸ PAUSED — the full ~264k load has NOT been run.** Trial batch deleted; DB is clean.
+Two things before the full load:
+  1. **PERF/RESUMABILITY RISK:** the load is ONE HTTP request. The lawsuit phase creates each packet
+     sequentially (sequence-counter upsert + insert + member update ≈ 3 round-trips each) — with tens of
+     thousands of packets that's 100k+ sequential Neon round-trips, plausibly hours, and one failure loses
+     the run. Options: time a 5,000-row trial to measure the rate, and/or make the job resumable+idempotent
+     (dedupe on `old_matter_number`) and batch the lawsuit creation.
+  2. **NEXT UP: DOCUMENT UPLOAD design** (user paused the load to discuss this). Recall the bulk import is
+     deliberately LAZY-Clio — it creates zero Clio matters/folders. Docs will be added to most of these
+     legacy files later, so the doc-upload path is what determines when/how Clio folders get created.
+
 ### 2026-07-10 (later 2) — More trial fixes; PAUSED mid-debug of first 50 (resume here)
 
 Continued reviewing the 50-row trial. Fixes (all bulk-only unless noted):

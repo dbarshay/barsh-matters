@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { allocateMatterNumbers } from "@/lib/matterNumbering";
 import { createPatient } from "@/lib/patientResolution";
 import { BARSH_IMPORT_DEFAULT_MATTER_STATUS } from "@/lib/matterStatusOptions";
+import { normalizeClaimNumber } from "@/lib/claimIndex";
 
 // Shared matter-creation used by BOTH the Dow confirm route and the reconcile-commit route, so
 // created matters are identical regardless of path. Given already-resolved rows (carrier entity +
@@ -72,6 +73,9 @@ export async function createMattersFromStaged(
     matter_id: nums.matterIds[i],
     display_number: nums.displayNumbers[i],
     claim_number_raw: r.staged.claim_number_raw,
+    // The UI/search read claim_number_normalized (never claim_number_raw) — without this the claim
+    // number is stored but renders blank on the matter. Applies to every import path (Dow/Carisk/Other/bulk).
+    claim_number_normalized: r.staged.claim_number_raw ? normalizeClaimNumber(r.staged.claim_number_raw) : null,
     patient_name: r.staged.patient_name,
     patient_id: resolvedPatientId(r),
     insurer_name: r.carrierEntityId ? carrierNameById.get(r.carrierEntityId) ?? null : null,

@@ -1,0 +1,124 @@
+// Resumable ledger + manifest, in Postgres. Two tables (created on demand, additive — no app schema
+// change): legacy_case (per-case progress) and legacy_document (the manifest BM will read). Everything is
+// keyed by Atlas case_id, which equals BM's old_matter_number.
+import { Pool } from "pg";
+import { config, assertLedger } from "./config";
+
+let pool: Pool | null = null;
+export function db(): Pool {
+  if (!pool) {
+    assertLedger();
+    pool = new Pool({ connectionString: config.ledger.databaseUrl });
+  }
+  return pool;
+}
+
+export async function initSchema() {
+  await db().query(`
+    CREATE TABLE IF NOT EXISTS legacy_case (
+      case_id      TEXT PRIMARY KEY,
+      status       TEXT NOT NULL DEFAULT 'pending',   -- pending | listed | done | error
+      priority     INTEGER NOT NULL DEFAULT 0,        -- higher = processed first (e.g. open matters)
+      file_count   INTEGER,
+      done_count   INTEGER NOT NULL DEFAULT 0,
+      error        TEXT,
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    ALTER TABLE legacy_case ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS legacy_document (
+      id            BIGSERIAL PRIMARY KEY,
+      case_id       TEXT NOT NULL,
+      atlas_file_id BIGINT NOT NULL,
+      folder_path   TEXT,
+      file_name     TEXT NOT NULL,
+      byte_size     BIGINT,
+      sha256        TEXT,
+      blob_key      TEXT,
+      status        TEXT NOT NULL DEFAULT 'pending',   -- pending | stored | error
+      error         TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (case_id, atlas_file_id)
+    );
+    CREATE INDEX IF NOT EXISTS legacy_document_case_idx ON legacy_document (case_id);
+    CREATE INDEX IF NOT EXISTS legacy_document_status_idx ON legacy_document (status);
+    CREATE INDEX IF NOT EXISTS legacy_document_sha_idx ON legacy_document (sha256);
+  `);
+}
+
+export async function upsertCases(ids: string[], priority = 0) {
+  if (!ids.length) return;
+  const CHUNK = 1000;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    const p = `$${slice.length + 1}`;
+    const values = slice.map((_, j) => `($${j + 1}, ${p})`).join(",");
+    await db().query(
+      `INSERT INTO legacy_case (case_id, priority) VALUES ${values}
+       ON CONFLICT (case_id) DO UPDATE SET priority = GREATEST(legacy_case.priority, EXCLUDED.priority)`,
+      [...slice, priority]
+    );
+  }
+}
+
+// Newest-first: higher priority first (open matters seeded with --priority), then Case_Id DESC (highest
+// 445YY-NNNNNN = most recent). Set newestFirst=false for oldest-first.
+export async function nextCases(limit: number, newestFirst = true): Promise<string[]> {
+  const dir = newestFirst ? "DESC" : "ASC";
+  const r = await db().query(
+    `SELECT case_id FROM legacy_case WHERE status IN ('pending','listed','error')
+     ORDER BY priority DESC, case_id ${dir} LIMIT $1`,
+    [limit]
+  );
+  return r.rows.map((x) => x.case_id as string);
+}
+
+export async function setCase(caseId: string, patch: { status?: string; file_count?: number; done_count?: number; error?: string | null }) {
+  await db().query(
+    `UPDATE legacy_case SET status=COALESCE($2,status), file_count=COALESCE($3,file_count),
+       done_count=COALESCE($4,done_count), error=$5, updated_at=now() WHERE case_id=$1`,
+    [caseId, patch.status ?? null, patch.file_count ?? null, patch.done_count ?? null, patch.error ?? null]
+  );
+}
+
+export async function upsertDocuments(caseId: string, docs: { atlasFileId: number; folderPath: string; fileName: string }[]) {
+  for (const d of docs) {
+    await db().query(
+      `INSERT INTO legacy_document (case_id, atlas_file_id, folder_path, file_name)
+       VALUES ($1,$2,$3,$4) ON CONFLICT (case_id, atlas_file_id) DO NOTHING`,
+      [caseId, d.atlasFileId, d.folderPath, d.fileName]
+    );
+  }
+}
+
+export async function pendingDocsForCase(caseId: string) {
+  const r = await db().query(
+    `SELECT id, atlas_file_id, folder_path, file_name FROM legacy_document WHERE case_id=$1 AND status <> 'stored' ORDER BY id`,
+    [caseId]
+  );
+  return r.rows as { id: string; atlas_file_id: string; folder_path: string; file_name: string }[];
+}
+
+export async function markDocStored(id: string, patch: { byte_size: number; sha256: string; blob_key: string }) {
+  await db().query(`UPDATE legacy_document SET status='stored', byte_size=$2, sha256=$3, blob_key=$4, error=NULL WHERE id=$1`, [
+    id,
+    patch.byte_size,
+    patch.sha256,
+    patch.blob_key,
+  ]);
+}
+
+export async function markDocError(id: string, error: string) {
+  await db().query(`UPDATE legacy_document SET status='error', error=$2 WHERE id=$1`, [id, error.slice(0, 500)]);
+}
+
+/** Dedup helper: has this exact content already been stored (any case)? Returns its blob_key if so. */
+export async function blobKeyForHash(sha256: string): Promise<string | null> {
+  const r = await db().query(`SELECT blob_key FROM legacy_document WHERE sha256=$1 AND status='stored' AND blob_key IS NOT NULL LIMIT 1`, [sha256]);
+  return r.rows[0]?.blob_key ?? null;
+}
+
+export async function statusReport() {
+  const cases = await db().query(`SELECT status, count(*)::int n FROM legacy_case GROUP BY status`);
+  const docs = await db().query(`SELECT status, count(*)::int n, COALESCE(sum(byte_size),0)::bigint bytes FROM legacy_document GROUP BY status`);
+  return { cases: cases.rows, docs: docs.rows };
+}

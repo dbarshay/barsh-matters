@@ -10,6 +10,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
+import LegacyDocsPanel from "@/app/components/LegacyDocsPanel";
 import BarshModal from "@/app/components/BarshModal";
 import { documentDeliverySafetyNote, resolvePrintableUrl, type DocumentDeliveryContext } from "@/lib/documents/delivery";
 import FolderTree, { type FiledDoc } from "@/components/documents/FolderTree";
@@ -8406,6 +8407,12 @@ function openClaimAmountEditDialog() {
         }
       />
 
+      {/* Legacy documents migrated from LawSpades → Azure (self-hides on non-legacy matters). */}
+      {Number(matter?.matterId ?? matterId) > 0 && (
+        <div style={{ maxWidth: 1200, margin: "14px auto 0", padding: "0 14px" }}>
+          <LegacyDocsPanel matterId={Number(matter?.matterId ?? matterId)} />
+        </div>
+      )}
 
 {matterAuditHistoryPopupOpen && (
         <div

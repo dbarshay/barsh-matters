@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { isImportEnabled, IMPORT_DISABLED_MESSAGE } from "@/lib/import/importConfig";
 import { parseSheetToObjects } from "@/lib/import/xlsxParse";
-import { mapBulkRows, bulkExtraFields, type BulkMapping, type BulkFixed, type StagedBulkMatter } from "@/lib/import/bulkAdapter";
+import { mapBulkRows, bulkExtraFields, normalizeTitleCase, type BulkMapping, type BulkFixed, type StagedBulkMatter } from "@/lib/import/bulkAdapter";
 import { resolveBulkCarrier } from "@/lib/import/bulkCarrierResolution";
 import { resolveReferenceEntity } from "@/lib/referenceResolution";
 import { patientMatchKey, toFirstLastProperCase } from "@/lib/patientResolution";
@@ -94,6 +94,19 @@ export async function POST(request: Request) {
   const defendantByRaw = new Map<string, { entityId: string | null; name: string }>();
   for (const d of new Set(creatable.map((s) => s.defendant).filter(Boolean))) defendantByRaw.set(d, await lenient(d, "adversary_attorney"));
 
+  // Denial reasons: the sheet stores them shout-case and comma-joined ("FEE SCHEDULE",
+  // "Fee Schedule Denial, Peer Review"). Resolve each part to the canonical denial_reason registry;
+  // fall back to Title Case so casing is never inconsistent.
+  const denialByRaw = new Map<string, string>();
+  for (const d of new Set(creatable.map((s) => s.denial_reason).filter(Boolean))) {
+    const parts: string[] = [];
+    for (const p of d.split(",").map((t) => t.trim()).filter(Boolean)) {
+      const r = await resolveReferenceEntity(p, "denial_reason");
+      parts.push(r.status === "matched" ? r.displayName : normalizeTitleCase(p));
+    }
+    denialByRaw.set(d, parts.join(", "));
+  }
+
   // ---- 3) Aggregation: a matter is in a lawsuit only if its packet has >=2 members.
   const packetSize = new Map<string, number>();
   for (const s of creatable) if (s.packet_key) packetSize.set(s.packet_key, (packetSize.get(s.packet_key) ?? 0) + 1);
@@ -130,6 +143,7 @@ export async function POST(request: Request) {
       providerDisplayName: providerName,
       extra: {
         ...bulkExtraFields(s),
+        denial_reason: (s.denial_reason && denialByRaw.get(s.denial_reason)) || s.denial_reason || null,
         insurer_name: car?.displayName || s.carrier_raw || null,
         payment_voluntary: payment,
         payment_amount: payment,
