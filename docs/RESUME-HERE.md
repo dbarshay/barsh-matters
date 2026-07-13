@@ -18,6 +18,77 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-13 (evening) — Migration hardening: loop fix, auth blowup, file-ID cache, integrity audit
+
+**The full sweep is RUNNING** on the VM (tmux session **`migrate`** — note: NOT `migrated`, that was a decoy
+session holding a dead run; killed). Scripts live **FLAT** in `~/atlas-migration/` on the VM (`extract.ts`),
+NOT in a `scripts/atlas-migration/` subdir like the repo — scp to `azureuser@20.83.169.218:~/atlas-migration/`.
+
+**Live numbers (end of session):** 9,675 / 555,499 cases done; **1,292,118 docs stored**; doc error rate
+**0.71%** (steady); ~57 cases/min, ~209 docs/sec. ETA ~2 days for the open matters, ~4.6 days for the closed
+backlog (≈2.3 if concurrency is doubled) ⇒ **~4.5–6.6 days total**.
+
+**Four bugs found and fixed (all committed):**
+1. **Infinite re-processing loop** (`da1d793`). `nextCases()` kept `status='error'` cases eligible forever;
+   they sort to the top (newest `case_id`), so once ~500 accumulated they filled every batch and the sweep
+   stopped reaching NEW cases — spinning at 97% CPU, storing nothing, and pounding Atlas into MORE 500s.
+   Fix: `legacy_case.attempts` + `MAX_CASE_ATTEMPTS` (default 3), then error cases step aside (their docs
+   stay queued for `--retry-errors`). `run()` now also HALTS if a full batch stores zero documents.
+2. **Refresh-token revocation — THE BIG ONE** (`3e11b1d`). The refresh token is **single-use and rotates**.
+   At the 4h expiry EVERY worker 401s at once; the old code's 3-second "coalesce" let several fire concurrent
+   refreshes, which **replayed a consumed token → IdentityServer revoked the entire token family** and auth
+   died mid-run. Fix: true **single-flight refresh** (a `tokenGen` counter + one shared in-flight promise) plus
+   backoff on 429/502/503/504. **NEVER run a second Atlas-touching process against the same login** — it
+   recreates this exact failure (the in-process mutex can't coordinate across processes).
+   *Recovery procedure, if it ever happens again:* log into LawSpades → DevTools → Network → filter `token` →
+   the **`GetAccessToken`** XHR → Response has `access_token` + `refresh_token`. Put them in `.env` as
+   `ATLAS_TOKEN` / `ATLAS_REFRESH_TOKEN`, **`rm -f .refresh-token`** (it holds the revoked token and takes
+   precedence over `.env` — skipping this sends you straight back into the 401 wall), then reset the poisoned
+   rows (`update legacy_case set status='pending', attempts=0, error=null where error like '%401%'`, same for
+   `legacy_document`) so the outage doesn't permanently skip those cases. Then `--run`.
+3. **Per-case `cached` counter** (`d22d8e6`) — a module-level counter was stolen by concurrently-running cases.
+4. Stale ledger DB / app-DB fallback guard shipped to the VM (`config.ts`).
+
+**The file-ID cache — the big win** (`de41b77`). Atlas serves the **same physical file under many cases**
+(adjacent case numbers are usually the *same patient, different claims*). Before downloading, `storeDoc` now
+checks whether that `atlas_file_id` is already stored and, if so, points the new row at the existing blob and
+**skips the fetch entirely**. Measured: **46% of all downloads are avoidable** (and climbing as the cache warms).
+Whole cases now complete with zero downloads (`236 files, 236 stored, 0 failed (236 cached)`). Doubled
+throughput AND cut Atlas request volume ~46% (fewer 500s, quieter footprint).
+
+**SAFETY — why the cache is sound, and how it stays sound** (`8ab993d`). It rests on `atlas_file_id → content`
+being 1:1. That was **measured, not assumed**: across 311,813 ID-duplicate downloads (taken before the cache
+existed), **zero** file IDs produced a different sha256. But a cache hit is a hash we no longer check, so
+`AUDIT_CACHE_RATE` (default **1%**) re-downloads a random sample of cache hits and verifies the content hash
+matches the blob being reused. A mismatch would mean documents could be attached to the **wrong matter**, so it
+throws `CacheIntegrityError`, which is deliberately **never swallowed** by the per-doc/per-case handlers — it
+**HALTS the run**. If you ever see it: do not restart, scope the blast radius first.
+*Rejected:* deduping pre-download on filename+size. Atlas's tree exposes **no hash and no size** (fields are
+`id, name, parent_id, parent_name, icon, node_level, expanded, friendly_name, ImageId, items, created_*`), and
+name+size is a coincidence signal, not identity — two bills for the same patient (same template, same byte
+count, different DOS/amount) would silently misfile onto the wrong claim.
+
+**Dedup findings — storage is ~8x smaller than `--status` suggests.** `--status` sums **logical** bytes and
+counts deduped files repeatedly. Real figures: **8.66x content dedup**, so 544 GB logical ≈ **63 GB actually in
+Azure**. Full-corpus projection: **~3–4 TB, not 24 TB** ⇒ **~$300–400/yr** on Cool tier (earlier ~$2.6k estimate
+was wrong — it was based on logical size).
+
+**New pipeline modes** (`5b6deee`): `--retry-errors` (refetch stuck docs at low concurrency to drain the
+*transient* Atlas 500s; whatever still fails is genuinely unservable), `--report-failures --out f.csv` (the
+permanent-failure list — **spot-check these in LawSpades WHILE ACCESS REMAINS**), `--reconcile`.
+
+**⚠️ NEXT (two reminders are scheduled in the desktop app):**
+- **Tue 7/14 9am** — check status; if the open matters (`priority=10`) have drained, restart the closed backlog
+  with `CASE_CONCURRENCY=8 FILE_CONCURRENCY=10` (closed docs matter less; a higher error rate is an acceptable
+  trade there). If throughput does NOT scale with the dial and errors spike, that's **per-account throttling** —
+  and *then* a second worker on one of the other LawSpades logins (plus a priority filter so the two take
+  disjoint case sets) becomes the right tool. Not before.
+- **Mon 7/20 9am** — once the sweep finishes: `RETRY_CONCURRENCY=2 --retry-errors`, then `--report-failures`.
+
+**Clio→Azure (active docs):** scoped in `docs/clio-to-azure-active-docs.md` — BM is pre-launch, so no dual-write
+and no cutover; just build Azure as the backend and delete the Clio wiring. **User has put this ON HOLD.**
+
+
 ### 2026-07-13 — Atlas→Azure legacy-document MIGRATION + BM "Legacy Docs" viewer (in flight)
 
 **Context:** LawSpades / "445 ATLAS" (the old case-management system) is being decommissioned. We're
@@ -34,17 +105,22 @@ them per-matter inside BM — with Atlas out of the loop afterward. Case_Id == B
   auth). `atlasClient.ts` does this automatically on 401 and **persists the rotating refresh token** to
   `.refresh-token` so multi-day runs are hands-off. (The `/refreshtoken` path in old code was wrong — abandoned.)
 - **Storage:** Azure Blob **Cool** tier, container `atlas-legacy-docs`, content-addressed `by-hash/<xx>/<sha256>`
-  (dedups shared sibling docs). Resumable/idempotent **ledger** (`legacy_case` + `legacy_document`) in the SAME
-  Neon DB the app uses. Newest/open-first via `priority DESC, case_id DESC`.
+  (dedups shared sibling docs). Resumable/idempotent **ledger** (`legacy_case` + `legacy_document`) — ⚠️ this
+  entry says "SAME Neon DB the app uses", which was the bug: it now lives in a **SEPARATE dedicated Neon DB**
+  (see item 1 under OPEN/NEXT). Newest/open-first via `priority DESC, case_id DESC`.
 - **Case lists:** `open-matters.csv` (175,219) + `closed-matters.csv` (380,280) = **555,499 cases** (from the
-  LawSpades "Open/Closed file numbers" exports, in the Workspace folder). ~55 docs/case ⇒ ~30M files, ~15 TB.
-- **Measured throughput: ~183 docs/sec** (well past the 106/s calibration). Est. full run **~2–3.5 days**.
+  LawSpades "Open/Closed file numbers" exports, in the Workspace folder).
+- ⚠️ **The ~15 TB / ~2–3.5 day estimates below are SUPERSEDED** — see the 2026-07-13 (evening) entry above.
+  Actual: **~3–4 TB** after 8.66x content dedup (logical size is ~8x larger and misleading), and **~4.5–6.6 days**.
 - Helper scripts: `scripts/bulk-cleanup.ts`, `scripts/backfill-claim-number-normalized.ts`.
 
 **Infra (Azure, managed by dbarshay):** storage account **brllegacydocs** (East US, LRS) + VM **legacy-migrator**
-(D4s_v3, East US, Ubuntu 24.04, IP **20.83.169.218**, SSH key `~/Desktop/legacy-migrator_key.pem`). Pipeline in
-`~/atlas-migration` on the VM, runs in tmux session **`migrated`**. `.env` there has ATLAS_TOKEN/REFRESH_TOKEN/
-CLIENT_SECRET, AZURE_STORAGE_CONNECTION_STRING, MIGRATION_DATABASE_URL (= app Neon), DRY_RUN=0, LIMIT_CASES=0.
+(D4s_v3, East US, Ubuntu 24.04, IP **20.83.169.218**). SSH from the Mac is now by **key** (`~/.ssh/id_ed25519`,
+added to the VM's `authorized_keys`): `ssh azureuser@20.83.169.218`. Pipeline in `~/atlas-migration` on the VM
+(scripts are **FLAT** there, not under `scripts/atlas-migration/`), runs in tmux session **`migrate`**
+(detach: Ctrl+B then D — never Ctrl+C). `.env` there has ATLAS_TOKEN/REFRESH_TOKEN/CLIENT_SECRET,
+AZURE_STORAGE_CONNECTION_STRING, MIGRATION_DATABASE_URL (= the **dedicated** ledger Neon DB), DRY_RUN=0,
+LIMIT_CASES=0.
 Run order: `--enumerate --from-csv closed-matters.csv` → `--enumerate --from-csv open-matters.csv --priority 10`
 → `--run` (in tmux, detach Ctrl+B D). Monitor: `npx tsx extract.ts --status`.
 
