@@ -39,6 +39,7 @@ export async function initSchema() {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
       UNIQUE (case_id, atlas_file_id)
     );
+    ALTER TABLE legacy_document ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;
     CREATE INDEX IF NOT EXISTS legacy_document_case_idx ON legacy_document (case_id);
     CREATE INDEX IF NOT EXISTS legacy_document_status_idx ON legacy_document (status);
     CREATE INDEX IF NOT EXISTS legacy_document_sha_idx ON legacy_document (sha256);
@@ -108,7 +109,50 @@ export async function markDocStored(id: string, patch: { byte_size: number; sha2
 }
 
 export async function markDocError(id: string, error: string) {
-  await db().query(`UPDATE legacy_document SET status='error', error=$2 WHERE id=$1`, [id, error.slice(0, 500)]);
+  await db().query(`UPDATE legacy_document SET status='error', error=$2, attempts=attempts+1 WHERE id=$1`, [id, error.slice(0, 500)]);
+}
+
+/** Docs stuck in error, for the targeted low-concurrency retry pass (--retry-errors). */
+export async function errorDocs(limit: number, maxAttempts = 0) {
+  const r = await db().query(
+    `SELECT id, case_id, atlas_file_id, folder_path, file_name, attempts FROM legacy_document
+     WHERE status='error' ${maxAttempts ? "AND attempts < " + Number(maxAttempts) : ""}
+     ORDER BY attempts ASC, id ASC LIMIT $1`,
+    [limit]
+  );
+  return r.rows as { id: string; case_id: string; atlas_file_id: string; folder_path: string; file_name: string; attempts: number }[];
+}
+
+/** Re-derive legacy_case.status from its documents (a case is 'done' once every doc is stored). */
+export async function reconcileCases() {
+  const r = await db().query(`
+    WITH agg AS (
+      SELECT case_id,
+             count(*) FILTER (WHERE status <> 'stored')::int AS bad,
+             count(*) FILTER (WHERE status = 'stored')::int  AS good
+      FROM legacy_document GROUP BY case_id
+    )
+    UPDATE legacy_case c
+       SET status = CASE WHEN a.bad = 0 THEN 'done' ELSE 'error' END,
+           done_count = a.good,
+           error = CASE WHEN a.bad = 0 THEN NULL ELSE a.bad || ' files failed' END,
+           updated_at = now()
+      FROM agg a WHERE a.case_id = c.case_id AND c.status <> 'pending'
+    RETURNING c.case_id, c.status
+  `);
+  return {
+    done: r.rows.filter((x: any) => x.status === "done").length,
+    stillError: r.rows.filter((x: any) => x.status === "error").length,
+  };
+}
+
+/** Every doc Atlas would not give us — the permanent-failure list (--report-failures). */
+export async function failureRows() {
+  const r = await db().query(
+    `SELECT case_id, folder_path, file_name, atlas_file_id, attempts, error
+     FROM legacy_document WHERE status='error' ORDER BY case_id, folder_path, file_name`
+  );
+  return r.rows as any[];
 }
 
 /** Dedup helper: has this exact content already been stored (any case)? Returns its blob_key if so. */

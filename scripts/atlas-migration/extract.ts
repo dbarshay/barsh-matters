@@ -3,6 +3,8 @@
 //   npx tsx scripts/atlas-migration/extract.ts --enumerate --from-csv cases.csv   # stage 1: seed case list
 //   npx tsx scripts/atlas-migration/extract.ts --enumerate --from-atlas           # stage 1: via Atlas search
 //   npx tsx scripts/atlas-migration/extract.ts --run                              # stages 2-5
+//   npx tsx scripts/atlas-migration/extract.ts --retry-errors                     # slow retry of stuck docs
+//   npx tsx scripts/atlas-migration/extract.ts --report-failures                  # CSV of unrecoverable docs
 //   npx tsx scripts/atlas-migration/extract.ts --status                           # progress report
 //
 // Start with DRY_RUN=1 LIMIT_CASES=5 to validate the tree walk + fetch before writing to storage.
@@ -25,13 +27,18 @@ import {
   markDocError,
   blobKeyForHash,
   statusReport,
+  errorDocs,
+  reconcileCases,
+  failureRows,
   db,
 } from "./ledger";
+import { writeFileSync } from "fs";
 import { sha256, blobKeyFor, uploadBlob } from "./azureStore";
 
 const args = process.argv.slice(2);
 const has = (f: string) => args.includes(f);
 const val = (f: string) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : undefined; };
+const num = (v: string | undefined, d: number) => (v && Number.isFinite(Number(v)) ? Number(v) : d);
 
 // Simple concurrency pool.
 async function pool<T>(items: T[], limit: number, fn: (t: T) => Promise<void>) {
@@ -69,6 +76,29 @@ async function enumerate() {
   console.log(`Enumerated ${ids.length} cases into legacy_case${priority ? ` (priority ${priority})` : ""}.`);
 }
 
+type LedgerDoc = { id: string; atlas_file_id: string; folder_path: string; file_name: string };
+
+/** Download → hash → dedup → upload → mark stored. Shared by the main run and the retry pass. */
+async function storeDoc(doc: LedgerDoc, caseId: string): Promise<boolean> {
+  try {
+    const buf = await fetchFileBytes(
+      { atlasFileId: Number(doc.atlas_file_id), fileName: doc.file_name, folderPath: doc.folder_path },
+      caseId
+    );
+    const hash = sha256(buf);
+    let key = await blobKeyForHash(hash); // dedup: reuse existing blob if identical content seen
+    if (!key) {
+      key = blobKeyFor(caseId, doc.folder_path, doc.file_name, hash);
+      await uploadBlob(key, buf, contentType(doc.file_name));
+    }
+    await markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key });
+    return true;
+  } catch (e: any) {
+    await markDocError(doc.id, e?.message || String(e));
+    return false;
+  }
+}
+
 async function processCase(caseId: string) {
   try {
     // Stage 2: list files (idempotent).
@@ -81,22 +111,7 @@ async function processCase(caseId: string) {
     const pending = await pendingDocsForCase(caseId);
     let done = 0;
     await pool(pending, config.run.fileConcurrency, async (doc) => {
-      try {
-        const buf = await fetchFileBytes(
-          { atlasFileId: Number(doc.atlas_file_id), fileName: doc.file_name, folderPath: doc.folder_path },
-          caseId
-        );
-        const hash = sha256(buf);
-        let key = await blobKeyForHash(hash); // dedup: reuse existing blob if identical content seen
-        if (!key) {
-          key = blobKeyFor(caseId, doc.folder_path, doc.file_name, hash);
-          await uploadBlob(key, buf, contentType(doc.file_name));
-        }
-        await markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key });
-        done++;
-      } catch (e: any) {
-        await markDocError(doc.id, e?.message || String(e));
-      }
+      if (await storeDoc(doc, caseId)) done++;
     });
 
     const total = await pendingDocsForCase(caseId);
@@ -124,6 +139,55 @@ async function run() {
   console.log(`Run complete. Processed ${processed} cases this pass.${config.run.dryRun ? " (DRY RUN — no uploads)" : ""}`);
 }
 
+// Targeted retry over documents stuck in 'error'. Atlas returns HTTP 500 for two different reasons:
+//   (a) TRANSIENT — it buckles under our request rate; a slow, low-concurrency refetch succeeds.
+//   (b) PERMANENT — broken/cross-org file references Atlas will never serve, however many times we ask.
+// Running this pass at concurrency 1-2 drains (a), so whatever still fails is the true (b) set.
+//   RETRY_CONCURRENCY=2 MAX_ATTEMPTS=4 npx tsx scripts/atlas-migration/extract.ts --retry-errors
+async function retryErrors() {
+  await initSchema();
+  const conc = num(process.env.RETRY_CONCURRENCY, 2);
+  const maxAttempts = num(process.env.MAX_ATTEMPTS, 0); // 0 = retry regardless of prior attempts
+  const batch = num(process.env.RETRY_BATCH, 500);
+  let recovered = 0;
+  let stillFailing = 0;
+  for (;;) {
+    const docs = await errorDocs(batch, maxAttempts);
+    if (!docs.length) break;
+    await pool(docs, conc, async (d) => {
+      const ok = await storeDoc(d, d.case_id);
+      if (ok) {
+        recovered++;
+        console.log(`  RECOVERED ${d.case_id} "${d.file_name}"`);
+      } else {
+        stillFailing++;
+      }
+    });
+    console.log(`  ...pass: ${recovered} recovered, ${stillFailing} still failing`);
+    if (docs.length < batch) break;
+    if (maxAttempts === 0) break; // without an attempts ceiling, one sweep only (else we'd loop forever)
+  }
+  const rc = await reconcileCases();
+  console.log(`\nRetry complete. ${recovered} recovered, ${stillFailing} still failing.`);
+  console.log(`Cases reconciled: ${rc.done} now done, ${rc.stillError} still have failures.`);
+  console.log(`Next: --report-failures to dump the permanent list.`);
+}
+
+// Dump every doc Atlas refused to serve, so they can be spot-checked in LawSpades before it goes dark.
+async function reportFailures() {
+  await initSchema();
+  const rows = await failureRows();
+  const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [
+    "case_id,folder_path,file_name,atlas_file_id,attempts,error",
+    ...rows.map((r) => [r.case_id, r.folder_path, r.file_name, r.atlas_file_id, r.attempts, r.error].map(esc).join(",")),
+  ].join("\n");
+  const out = val("--out") || "atlas-failures.csv";
+  writeFileSync(out, csv);
+  const byCase = new Set(rows.map((r) => r.case_id));
+  console.log(`Wrote ${rows.length} failed documents across ${byCase.size} cases → ${out}`);
+}
+
 async function status() {
   await initSchema();
   const r = await statusReport();
@@ -135,8 +199,14 @@ async function status() {
   try {
     if (has("--enumerate")) await enumerate();
     else if (has("--run")) await run();
+    else if (has("--retry-errors")) await retryErrors();
+    else if (has("--report-failures")) await reportFailures();
+    else if (has("--reconcile")) console.log("Reconciled:", await reconcileCases());
     else if (has("--status")) await status();
-    else console.log("Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --status");
+    else
+      console.log(
+        "Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --retry-errors | --report-failures [--out f.csv] | --reconcile | --status"
+      );
   } catch (e: any) {
     const msg = e?.message || String(e);
     if (/relation .* does not exist|does not exist/i.test(msg)) {
