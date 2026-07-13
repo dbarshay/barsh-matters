@@ -58,10 +58,15 @@ Run order: `--enumerate --from-csv closed-matters.csv` → `--enumerate --from-c
   (set) and `npm i @azure/storage-blob` (done). No Prisma migration.
 
 **⚠️ OPEN / NEXT:**
-1. **`legacy_case does not exist` crash — recurred mid-run twice.** Ledger table dropped underneath the run;
-   `legacy_document` stays intact. Restart = re-enumerate (recreates table, fast-skips done cases, no
-   re-download) + `--run`. **If it keeps recurring, switch MIGRATION_DATABASE_URL to Neon's DIRECT (unpooled)
-   endpoint** (remove `-pooler` from host) — pooler is the prime suspect for long jobs. ROOT CAUSE UNCONFIRMED.
+1. **`legacy_case does not exist` crash — RESOLVED.** Root cause: the ledger lived in the **app's** Neon DB,
+   and the local-index **backup/restore** tooling reverts that DB from snapshots, dropping the raw ledger
+   tables (Prisma-model registration did NOT help — a snapshot restore drops the data anyway). **Fix: the
+   manifest now lives in a SEPARATE dedicated Neon DB** (`barsh-legacy-docs`, Neon `royal-pond-33623728`,
+   host `ep-hidden-bird-atp8us2t`) that nothing else touches. `MIGRATION_DATABASE_URL` on the VM + Vercel env
+   `LEGACY_DOCS_DATABASE_URL` both point at it; `lib/legacyDocs.ts` reads it via a dedicated pg pool
+   (commit b021e4c). Pipeline now GUARDS against using the app DB and halts clearly if tables vanish
+   (commit ec012e0). Verified end-to-end (viewer served `44526-832364` from the dedicated DB). ⚠️ scp the
+   updated `config.ts`/`extract.ts` guard to the VM when convenient.
 2. **Final reconcile pass** for `error`-status cases/docs (transient Atlas 500s) once the run drains.
 3. **Run the full bulk MATTER import** (the NF closed importer, now fully built) so BM matters exist with
    `old_matter_number` — only then does the Legacy Docs panel light up on a real matter. Open matters (175k)
