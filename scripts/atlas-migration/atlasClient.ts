@@ -1,5 +1,7 @@
-// Thin client over the Atlas (LawSpades) REST API. All endpoints confirmed. Handles hourly JWT expiry
-// with a two-layer refresh (POST /refreshtoken, then a re-readable token file) so multi-day runs don't stall.
+// Thin client over the Atlas (LawSpades) REST API. All endpoints confirmed. Handles 4-hour JWT expiry with a
+// two-layer refresh (OAuth2 refresh_token grant, then a re-readable token file) so multi-day runs don't
+// stall — with SINGLE-FLIGHT refresh, because the refresh token rotates and concurrent refreshes would
+// invalidate each other. Also backs off on 429/5xx-overload, which is what higher concurrency provokes.
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { config, assertAtlas } from "./config";
 
@@ -12,7 +14,18 @@ export type AtlasFileLeaf = {
 // Mutable in-memory creds (start from env, updated by refresh).
 let currentToken = config.atlas.token;
 let currentRefresh = config.atlas.refreshToken;
-let refreshingAt = 0;
+
+// Single-flight refresh state. The Atlas refresh token ROTATES (each one is single-use), so two concurrent
+// refreshes are actively destructive: the first invalidates the token the second is holding, and we can end
+// up persisting a dead token — breaking auth for the whole run, not just one file. At the 4-hour expiry
+// every in-flight worker 401s at the same instant (up to CASE_CONCURRENCY * FILE_CONCURRENCY of them), so
+// this must be exact, not best-effort.
+//
+//   tokenGen        — bumped on every successful refresh. A request that 401'd with an OLD generation
+//                     doesn't need a refresh at all; someone else already got a new token, so just retry.
+//   refreshInFlight — the ONE in-flight refresh promise. Everyone else awaits it instead of starting theirs.
+let tokenGen = 0;
+let refreshInFlight: Promise<boolean> | null = null;
 
 // Prefer a persisted (rotated) refresh token over the .env one, so restarts continue the chain.
 if (config.atlas.refreshTokenFile && existsSync(config.atlas.refreshTokenFile)) {
@@ -90,28 +103,64 @@ function reloadFromFile(): boolean {
   return false;
 }
 
-async function refresh(): Promise<boolean> {
-  // Coalesce concurrent refreshes (many in-flight requests may 401 at once).
-  const now = Date.now();
-  if (now - refreshingAt < 3000) {
-    await new Promise((r) => setTimeout(r, 1500));
-    return true;
-  }
-  refreshingAt = now;
-  return (await refreshViaEndpoint()) || reloadFromFile();
+/**
+ * Single-flight token refresh.
+ *
+ * `seenGen` is the token generation the caller USED for the request that 401'd. If the generation has since
+ * moved on, another worker already refreshed while our request was in flight — there is nothing to do but
+ * retry with the new token. Otherwise exactly one caller performs the refresh and every other caller awaits
+ * that same promise. This is what makes a rotating refresh token safe under concurrency: one POST, one
+ * rotation, one persisted token.
+ */
+async function refresh(seenGen: number): Promise<boolean> {
+  if (tokenGen !== seenGen) return true; // somebody else already refreshed — just retry with the new token
+  if (refreshInFlight) return refreshInFlight; // a refresh is running — join it rather than racing it
+  refreshInFlight = (async () => {
+    try {
+      const ok = (await refreshViaEndpoint()) || reloadFromFile();
+      if (ok) tokenGen++; // publish the new token to everyone waiting/arriving
+      return ok;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
 }
 
-async function api(path: string, init?: RequestInit, _retried = false): Promise<Response> {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Transient-failure retries. Raising concurrency provokes exactly these: 429 (rate limited) and 502/503/504
+ * (server overloaded). They are NOT permanent — backing off and retrying usually succeeds, and doing so here
+ * is far cheaper than failing the doc and recovering it in a whole separate --retry-errors pass.
+ * NOTE: a plain 500 is deliberately NOT retried here — for Atlas that usually means an unservable file
+ * (broken cross-org reference), so retrying in-line would just burn time. Those go to the ledger.
+ */
+const RETRYABLE = new Set([429, 502, 503, 504]);
+const MAX_TRANSIENT_RETRIES = Number(process.env.HTTP_RETRIES || 3);
+
+async function api(path: string, init?: RequestInit, _retried = false, _attempt = 0): Promise<Response> {
   assertAtlas();
   const url = path.startsWith("http") ? path : `${config.atlas.apiBase}${path}`;
+  const gen = tokenGen; // capture BEFORE the request, so we can tell whether a refresh happened meanwhile
   const res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers || {}) } });
+
   if (res.status === 401 && !_retried) {
-    if (await refresh()) return api(path, init, true);
+    if (await refresh(gen)) return api(path, init, true, _attempt);
     throw new Error(
       "Atlas 401 and refresh failed. Drop a fresh token into ATLAS_TOKEN_FILE (localStorage.token from a " +
         "logged-in tab) — the run resumes automatically; nothing is lost."
     );
   }
+
+  if (RETRYABLE.has(res.status) && _attempt < MAX_TRANSIENT_RETRIES) {
+    // Honor Retry-After when the server sends it; otherwise exponential backoff with jitter.
+    const ra = Number(res.headers.get("retry-after"));
+    const wait = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 2 ** _attempt * 1000 + Math.random() * 500;
+    await sleep(wait);
+    return api(path, init, _retried, _attempt + 1);
+  }
+
   return res;
 }
 
