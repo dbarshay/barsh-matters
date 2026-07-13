@@ -18,6 +18,58 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-13 — Atlas→Azure legacy-document MIGRATION + BM "Legacy Docs" viewer (in flight)
+
+**Context:** LawSpades / "445 ATLAS" (the old case-management system) is being decommissioned. We're
+extracting **every document for every case (open + closed)** out of it and into Azure Blob, then serving
+them per-matter inside BM — with Atlas out of the loop afterward. Case_Id == BM `old_matter_number`.
+
+**Extraction pipeline — `scripts/atlas-migration/` (standalone; runs on a VM, NOT part of the Next app):**
+- Reverse-engineered the Atlas REST API (`https://api.lawspades.com/AtlasAPI/api`, JWT bearer). Key endpoints:
+  document tree `GET /case/{caseId}/document/node/false`; single file `GET /case/{caseId}/document/file/{fileId}/view`
+  (raw bytes). Packets (`445-PKT…`) have **no** separate docs — a packet's docs are just its member cases',
+  so individual Case_Ids capture 100%.
+- **Auth/refresh:** access token lives 4h; refresh is an **OAuth2 refresh_token grant** against IdentityServer
+  `https://identity.greenbills.health/core/connect/token` (client_id `ATLAS`, client_secret `secret`, Basic
+  auth). `atlasClient.ts` does this automatically on 401 and **persists the rotating refresh token** to
+  `.refresh-token` so multi-day runs are hands-off. (The `/refreshtoken` path in old code was wrong — abandoned.)
+- **Storage:** Azure Blob **Cool** tier, container `atlas-legacy-docs`, content-addressed `by-hash/<xx>/<sha256>`
+  (dedups shared sibling docs). Resumable/idempotent **ledger** (`legacy_case` + `legacy_document`) in the SAME
+  Neon DB the app uses. Newest/open-first via `priority DESC, case_id DESC`.
+- **Case lists:** `open-matters.csv` (175,219) + `closed-matters.csv` (380,280) = **555,499 cases** (from the
+  LawSpades "Open/Closed file numbers" exports, in the Workspace folder). ~55 docs/case ⇒ ~30M files, ~15 TB.
+- **Measured throughput: ~183 docs/sec** (well past the 106/s calibration). Est. full run **~2–3.5 days**.
+- Helper scripts: `scripts/bulk-cleanup.ts`, `scripts/backfill-claim-number-normalized.ts`.
+
+**Infra (Azure, managed by dbarshay):** storage account **brllegacydocs** (East US, LRS) + VM **legacy-migrator**
+(D4s_v3, East US, Ubuntu 24.04, IP **20.83.169.218**, SSH key `~/Desktop/legacy-migrator_key.pem`). Pipeline in
+`~/atlas-migration` on the VM, runs in tmux session **`migrated`**. `.env` there has ATLAS_TOKEN/REFRESH_TOKEN/
+CLIENT_SECRET, AZURE_STORAGE_CONNECTION_STRING, MIGRATION_DATABASE_URL (= app Neon), DRY_RUN=0, LIMIT_CASES=0.
+Run order: `--enumerate --from-csv closed-matters.csv` → `--enumerate --from-csv open-matters.csv --priority 10`
+→ `--run` (in tmux, detach Ctrl+B D). Monitor: `npx tsx extract.ts --status`.
+
+**BM "Legacy Docs" viewer — SHIPPED (commit d3de7a6, deployed):** additive, self-hides on non-legacy matters.
+- `lib/legacyDocs.ts` — reads the manifest via **raw SQL** (no Prisma model, no schema conflict), groups a
+  matter's docs by their LawSpades folder, mints ~15-min Azure **SAS** links, logs every open to
+  `legacy_doc_access_log` (auto-creates). `GET /api/matters/legacy-docs` (tree) + `POST …/link` (SAS + audit).
+- `app/components/LegacyDocsPanel.tsx` on the matter page. Serving model: **SAS links + BM-side access log**
+  (fast, no Vercel proxy, private container). **Verified end-to-end** against `44526-832351` (172 files, correct
+  folder tree). Deploy needs Vercel env `AZURE_STORAGE_CONNECTION_STRING` + `AZURE_BLOB_CONTAINER=atlas-legacy-docs`
+  (set) and `npm i @azure/storage-blob` (done). No Prisma migration.
+
+**⚠️ OPEN / NEXT:**
+1. **`legacy_case does not exist` crash — recurred mid-run twice.** Ledger table dropped underneath the run;
+   `legacy_document` stays intact. Restart = re-enumerate (recreates table, fast-skips done cases, no
+   re-download) + `--run`. **If it keeps recurring, switch MIGRATION_DATABASE_URL to Neon's DIRECT (unpooled)
+   endpoint** (remove `-pooler` from host) — pooler is the prime suspect for long jobs. ROOT CAUSE UNCONFIRMED.
+2. **Final reconcile pass** for `error`-status cases/docs (transient Atlas 500s) once the run drains.
+3. **Run the full bulk MATTER import** (the NF closed importer, now fully built) so BM matters exist with
+   `old_matter_number` — only then does the Legacy Docs panel light up on a real matter. Open matters (175k)
+   also need importing into BM eventually.
+4. **SECURITY:** the Neon `DATABASE_URL` password and the Atlas tokens appeared in chat during setup — rotate
+   the Neon password (and treat Atlas creds as burned) before go-live; already on the HIPAA rotate list above.
+
+
 ### 2026-07-13 — NF Bulk 50-row trial VERIFIED CLEAN ✅ (full load paused for document-upload design)
 
 **The 50-row trial passed end-to-end.** 50 rows → 50 created, **0 skipped**, 0 carriers recorded raw,
