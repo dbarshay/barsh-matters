@@ -30,6 +30,7 @@ import {
   errorDocs,
   reconcileCases,
   failureRows,
+  bumpCaseAttempt,
   db,
 } from "./ledger";
 import { writeFileSync } from "fs";
@@ -99,8 +100,10 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<boolean> {
   }
 }
 
-async function processCase(caseId: string) {
+/** Returns the number of NEW documents stored, so run() can detect a stalled (no-progress) sweep. */
+async function processCase(caseId: string): Promise<number> {
   try {
+    await bumpCaseAttempt(caseId); // bounded retries — see nextCases(): unbounded retries spin the sweep
     // Stage 2: list files (idempotent).
     const tree = await getCaseDocumentTree(caseId);
     const leaves = flattenFileLeaves(tree);
@@ -117,26 +120,43 @@ async function processCase(caseId: string) {
     const total = await pendingDocsForCase(caseId);
     await setCase(caseId, { status: total.length === 0 ? "done" : "error", done_count: done, error: total.length ? `${total.length} files failed` : null });
     console.log(`  ${caseId}: ${leaves.length} files, ${done} stored, ${total.length} failed`);
+    return done;
   } catch (e: any) {
     await setCase(caseId, { status: "error", error: e?.message || String(e) });
     console.log(`  ${caseId}: CASE ERROR — ${e?.message || e}`);
+    return 0;
   }
 }
 
 async function run() {
   await initSchema();
   const batchSize = config.run.limitCases || 10_000;
+  const maxCaseAttempts = num(process.env.MAX_CASE_ATTEMPTS, 3);
   let processed = 0;
+  let storedThisRun = 0;
   for (;;) {
     const remaining = config.run.limitCases ? config.run.limitCases - processed : batchSize;
     if (remaining <= 0) break;
-    const cases = await nextCases(Math.min(remaining, 500), config.run.newestFirst);
+    const cases = await nextCases(Math.min(remaining, 500), config.run.newestFirst, maxCaseAttempts);
     if (!cases.length) break;
-    await pool(cases, config.run.caseConcurrency, processCase);
+    const before = storedThisRun;
+    await pool(cases, config.run.caseConcurrency, async (c) => {
+      storedThisRun += await processCase(c);
+    });
     processed += cases.length;
+    // Safety net: if a whole batch of 500 cases stored ZERO new documents, we are almost certainly
+    // re-chewing cases we cannot make progress on. Stop rather than spin (and rather than keep pounding
+    // Atlas, which only produces more 500s). Run --retry-errors / --status to see where things stand.
+    if (storedThisRun === before && cases.length >= 50) {
+      console.log(`\n*** STALLED: processed ${cases.length} cases and stored 0 new documents. Stopping. ***`);
+      console.log(`*** Nothing is lost — failed docs stay in the ledger. Check: --status, then --retry-errors. ***\n`);
+      break;
+    }
     if (config.run.limitCases && processed >= config.run.limitCases) break;
   }
-  console.log(`Run complete. Processed ${processed} cases this pass.${config.run.dryRun ? " (DRY RUN — no uploads)" : ""}`);
+  console.log(
+    `Run complete. Processed ${processed} cases, stored ${storedThisRun} new documents this pass.${config.run.dryRun ? " (DRY RUN — no uploads)" : ""}`
+  );
 }
 
 // Targeted retry over documents stuck in 'error'. Atlas returns HTTP 500 for two different reasons:

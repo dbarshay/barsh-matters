@@ -25,6 +25,7 @@ export async function initSchema() {
       updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     ALTER TABLE legacy_case ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE legacy_case ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;
     CREATE TABLE IF NOT EXISTS legacy_document (
       id            BIGSERIAL PRIMARY KEY,
       case_id       TEXT NOT NULL,
@@ -63,14 +64,29 @@ export async function upsertCases(ids: string[], priority = 0) {
 
 // Newest-first: higher priority first (open matters seeded with --priority), then Case_Id DESC (highest
 // 445YY-NNNNNN = most recent). Set newestFirst=false for oldest-first.
-export async function nextCases(limit: number, newestFirst = true): Promise<string[]> {
+//
+// CRITICAL: an 'error' case must NOT stay eligible forever. A case with even one unservable file (Atlas
+// 500s on broken cross-org refs) keeps status='error'; if that kept it in the candidate set, it would sort
+// straight back to the top (newest case_id first) and be re-selected every pass. Once ~`limit` such cases
+// accumulate they fill the whole batch, the sweep stops reaching NEW cases, and the run spins forever —
+// re-downloading nothing, storing nothing, and hammering Atlas into producing MORE 500s. (This is exactly
+// what happened on the first full run.) So error cases get `maxAttempts` tries and then step aside; their
+// failed docs remain in legacy_document and are collected later by `--retry-errors`.
+export async function nextCases(limit: number, newestFirst = true, maxAttempts = 3): Promise<string[]> {
   const dir = newestFirst ? "DESC" : "ASC";
   const r = await db().query(
-    `SELECT case_id FROM legacy_case WHERE status IN ('pending','listed','error')
-     ORDER BY priority DESC, case_id ${dir} LIMIT $1`,
-    [limit]
+    `SELECT case_id FROM legacy_case
+      WHERE status IN ('pending','listed')
+         OR (status = 'error' AND attempts < $2)
+      ORDER BY priority DESC, case_id ${dir} LIMIT $1`,
+    [limit, maxAttempts]
   );
   return r.rows.map((x) => x.case_id as string);
+}
+
+/** Count a processing attempt against a case, so a permanently-broken case can't spin the sweep forever. */
+export async function bumpCaseAttempt(caseId: string) {
+  await db().query(`UPDATE legacy_case SET attempts = attempts + 1 WHERE case_id = $1`, [caseId]);
 }
 
 export async function setCase(caseId: string, patch: { status?: string; file_count?: number; done_count?: number; error?: string | null }) {
