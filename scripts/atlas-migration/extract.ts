@@ -81,6 +81,22 @@ async function enumerate() {
 type LedgerDoc = { id: string; atlas_file_id: string; folder_path: string; file_name: string };
 
 let skippedFetches = 0; // run-wide total of documents satisfied from the file-ID cache (no download at all)
+let auditsRun = 0;
+let auditsPassed = 0;
+
+// Continuous verification of the file-ID cache.
+//
+// The cache assumes atlas_file_id -> content is 1:1. That was MEASURED, not guessed: before the cache
+// existed we downloaded every duplicate independently, and across 311,813 ID-duplicate downloads not one
+// produced a different sha256. But a cache hit is a download we don't perform, which means it is also a
+// hash we no longer check — so from here on the invariant would be trusted, not tested, across ~46M docs.
+//
+// So: audit a random sample of cache hits. Re-download the file, hash it, and confirm it matches the blob
+// we were about to reuse. A mismatch means Atlas scoped that file ID per-case and we would be attaching the
+// WRONG DOCUMENT to a client's matter — so it does not warn, it HALTS the run.
+const AUDIT_RATE = Number(process.env.AUDIT_CACHE_RATE ?? 0.01); // 1% of cache hits; 0 disables
+
+class CacheIntegrityError extends Error {}
 
 /**
  * Download → hash → dedup → upload → mark stored. Shared by the main run and the retry pass.
@@ -96,6 +112,30 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<StoreResult> {
     // Safe because atlas_file_id → content is 1:1 (verified: 0 conflicts across 770k stored rows).
     const known = await storedDocByFileId(doc.atlas_file_id);
     if (known) {
+      // Sample-audit: prove the invariant still holds instead of assuming it.
+      if (AUDIT_RATE > 0 && Math.random() < AUDIT_RATE) {
+        const buf = await fetchFileBytes(
+          { atlasFileId: Number(doc.atlas_file_id), fileName: doc.file_name, folderPath: doc.folder_path },
+          caseId
+        );
+        const actual = sha256(buf);
+        auditsRun++;
+        if (actual !== known.sha256) {
+          // Do NOT recover from this. If file IDs are not globally content-stable, every cache hit we have
+          // already taken is suspect, and we may be misfiling client documents. Stop the world.
+          throw new CacheIntegrityError(
+            `CACHE INTEGRITY FAILURE — atlas_file_id ${doc.atlas_file_id} returned DIFFERENT content ` +
+              `under case ${caseId} ("${doc.file_name}").\n` +
+              `  expected sha256: ${known.sha256} (stored, blob ${known.blob_key})\n` +
+              `  actual   sha256: ${actual}\n` +
+              `File IDs are NOT globally content-stable. The file-ID cache is UNSAFE and documents reused ` +
+              `from it may be attached to the wrong matter. Set AUDIT_CACHE_RATE=1 and re-verify, or disable ` +
+              `the cache, before trusting any cached row.`
+          );
+        }
+        auditsPassed++;
+      }
+
       await markDocStored(doc.id, {
         byte_size: Number(known.byte_size),
         sha256: known.sha256,
@@ -118,6 +158,7 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<StoreResult> {
     await markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key });
     return "stored";
   } catch (e: any) {
+    if (e instanceof CacheIntegrityError) throw e; // never swallow — this must halt the run, not fail a file
     await markDocError(doc.id, e?.message || String(e));
     return "error";
   }
@@ -151,6 +192,7 @@ async function processCase(caseId: string): Promise<number> {
     );
     return done;
   } catch (e: any) {
+    if (e instanceof CacheIntegrityError) throw e; // propagate past the per-case handler and stop the run
     await setCase(caseId, { status: "error", error: e?.message || String(e) });
     console.log(`  ${caseId}: CASE ERROR — ${e?.message || e}`);
     return 0;
@@ -187,6 +229,9 @@ async function run() {
     `Run complete. Processed ${processed} cases, stored ${storedThisRun} new documents this pass ` +
       `(${skippedFetches} served from the file-ID cache — no download).${config.run.dryRun ? " (DRY RUN — no uploads)" : ""}`
   );
+  if (auditsRun) {
+    console.log(`Cache audit: ${auditsPassed}/${auditsRun} sampled cache hits re-downloaded and verified byte-identical.`);
+  }
 }
 
 // Targeted retry over documents stuck in 'error'. Atlas returns HTTP 500 for two different reasons:
@@ -259,6 +304,16 @@ async function status() {
       );
   } catch (e: any) {
     const msg = e?.message || String(e);
+    if (e instanceof CacheIntegrityError) {
+      console.error("\n" + "!".repeat(100));
+      console.error("*** RUN HALTED: FILE-ID CACHE INTEGRITY FAILURE — POSSIBLE MISFILED DOCUMENTS ***");
+      console.error("!".repeat(100));
+      console.error(msg);
+      console.error("\nDo NOT trust cached rows until this is understood. Re-run with AUDIT_CACHE_RATE=1 to");
+      console.error("verify every cache hit, or AUDIT_CACHE_RATE=0 plus a cache-disabled build to re-fetch.\n");
+      process.exitCode = 2;
+      return;
+    }
     if (/relation .* does not exist|does not exist/i.test(msg)) {
       console.error("\n*** LEDGER TABLES MISSING — the ledger database was reset/dropped underneath the run. ***");
       console.error("*** Cause: MIGRATION_DATABASE_URL points at a DB that a backup/restore reverts (e.g. the app DB). ***");
