@@ -80,10 +80,16 @@ async function enumerate() {
 
 type LedgerDoc = { id: string; atlas_file_id: string; folder_path: string; file_name: string };
 
-let skippedFetches = 0; // documents satisfied from the file-ID cache (no download at all)
+let skippedFetches = 0; // run-wide total of documents satisfied from the file-ID cache (no download at all)
 
-/** Download → hash → dedup → upload → mark stored. Shared by the main run and the retry pass. */
-async function storeDoc(doc: LedgerDoc, caseId: string): Promise<boolean> {
+/**
+ * Download → hash → dedup → upload → mark stored. Shared by the main run and the retry pass.
+ * Returns which path was taken so the CALLER can count per-case: a module-level counter cannot be used for
+ * per-case stats, since cases run concurrently and would steal each other's numbers.
+ */
+type StoreResult = "stored" | "cached" | "error";
+
+async function storeDoc(doc: LedgerDoc, caseId: string): Promise<StoreResult> {
   try {
     // Fast path: Atlas serves the same physical file under many cases (~40% of all documents). If we have
     // already stored this atlas_file_id, point this row at the existing blob and skip the download entirely.
@@ -96,7 +102,7 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<boolean> {
         blob_key: known.blob_key,
       });
       skippedFetches++;
-      return true;
+      return "cached";
     }
 
     const buf = await fetchFileBytes(
@@ -110,16 +116,15 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<boolean> {
       await uploadBlob(key, buf, contentType(doc.file_name));
     }
     await markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key });
-    return true;
+    return "stored";
   } catch (e: any) {
     await markDocError(doc.id, e?.message || String(e));
-    return false;
+    return "error";
   }
 }
 
 /** Returns the number of NEW documents stored, so run() can detect a stalled (no-progress) sweep. */
 async function processCase(caseId: string): Promise<number> {
-  const skippedAtStart = skippedFetches;
   try {
     await bumpCaseAttempt(caseId); // bounded retries — see nextCases(): unbounded retries spin the sweep
     // Stage 2: list files (idempotent).
@@ -130,14 +135,17 @@ async function processCase(caseId: string): Promise<number> {
 
     // Stages 3-5: download → hash → dedup → upload → manifest.
     const pending = await pendingDocsForCase(caseId);
-    let done = 0;
+    let done = 0; // stored this pass (downloaded OR served from cache)
+    let cached = 0; // of which: satisfied from the file-ID cache, no download. Counted LOCALLY — a shared
+    //                counter would be corrupted by the other cases running concurrently.
     await pool(pending, config.run.fileConcurrency, async (doc) => {
-      if (await storeDoc(doc, caseId)) done++;
+      const r = await storeDoc(doc, caseId);
+      if (r === "cached") cached++;
+      if (r !== "error") done++;
     });
 
     const total = await pendingDocsForCase(caseId);
     await setCase(caseId, { status: total.length === 0 ? "done" : "error", done_count: done, error: total.length ? `${total.length} files failed` : null });
-    const cached = skippedFetches - skippedAtStart;
     console.log(
       `  ${caseId}: ${leaves.length} files, ${done} stored, ${total.length} failed${cached ? ` (${cached} cached)` : ""}`
     );
@@ -197,10 +205,10 @@ async function retryErrors() {
     const docs = await errorDocs(batch, maxAttempts);
     if (!docs.length) break;
     await pool(docs, conc, async (d) => {
-      const ok = await storeDoc(d, d.case_id);
-      if (ok) {
+      const r = await storeDoc(d, d.case_id);
+      if (r !== "error") {
         recovered++;
-        console.log(`  RECOVERED ${d.case_id} "${d.file_name}"`);
+        console.log(`  RECOVERED ${d.case_id} "${d.file_name}"${r === "cached" ? " (from cache)" : ""}`);
       } else {
         stillFailing++;
       }
