@@ -44,6 +44,8 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS legacy_document_case_idx ON legacy_document (case_id);
     CREATE INDEX IF NOT EXISTS legacy_document_status_idx ON legacy_document (status);
     CREATE INDEX IF NOT EXISTS legacy_document_sha_idx ON legacy_document (sha256);
+    -- Supports storedDocByFileId(): the pre-download cache lookup, run once per document.
+    CREATE INDEX IF NOT EXISTS legacy_document_fileid_idx ON legacy_document (atlas_file_id);
   `);
 }
 
@@ -175,6 +177,26 @@ export async function failureRows() {
 export async function blobKeyForHash(sha256: string): Promise<string | null> {
   const r = await db().query(`SELECT blob_key FROM legacy_document WHERE sha256=$1 AND status='stored' AND blob_key IS NOT NULL LIMIT 1`, [sha256]);
   return r.rows[0]?.blob_key ?? null;
+}
+
+/**
+ * PRE-DOWNLOAD dedup: has this exact Atlas file (by atlas_file_id) already been stored under ANY case?
+ *
+ * Atlas serves the same physical file under many cases (shared packet-level docs, the same AOB/IME/fax PDFs
+ * referenced across matters) — measured at ~40% of all documents. blobKeyForHash() dedups by CONTENT, but
+ * only after paying to download the bytes. This dedups by IDENTITY, so we skip the download entirely.
+ *
+ * SAFETY: this is only sound because atlas_file_id → content is 1:1. Verified against 770,128 stored rows:
+ * ZERO file IDs mapped to more than one sha256. If Atlas ever scoped IDs per-case, reusing a blob would
+ * attach the WRONG document to a client's matter — so if that invariant is ever in doubt, delete this.
+ */
+export async function storedDocByFileId(atlasFileId: string | number) {
+  const r = await db().query(
+    `SELECT byte_size, sha256, blob_key FROM legacy_document
+      WHERE atlas_file_id=$1 AND status='stored' AND blob_key IS NOT NULL LIMIT 1`,
+    [atlasFileId]
+  );
+  return (r.rows[0] as { byte_size: string; sha256: string; blob_key: string } | undefined) ?? null;
 }
 
 export async function statusReport() {
