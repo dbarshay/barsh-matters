@@ -1425,40 +1425,7 @@ model OcrEntityDefault {
   @@index([entityType, entityKey])
 }
 
-// --- Legacy-document migration manifest (LawSpades → Azure) ---
-// These were originally created as raw-SQL tables by scripts/atlas-migration. Registering them as Prisma
-// models brings them under the backup/restore + schema tooling so they STOP getting dropped and are backed
-// up (the manifest is the only link between hash-named Azure blobs and their cases — losing it is fatal).
-// Field shapes mirror the pipeline's CREATE TABLE exactly (see scripts/atlas-migration/ledger.ts).
-model LegacyCase {
-  caseId    String   @id @map("case_id")
-  status    String   @default("pending") // pending | listed | done | error
-  priority  Int      @default(0) // higher = processed first (open matters)
-  fileCount Int?     @map("file_count")
-  doneCount Int      @default(0) @map("done_count")
-  error     String?
-  updatedAt DateTime @default(now()) @map("updated_at")
-
-  @@map("legacy_case")
-}
-
-model LegacyDocument {
-  id          BigInt   @id @default(autoincrement())
-  caseId      String   @map("case_id")
-  atlasFileId BigInt   @map("atlas_file_id")
-  folderPath  String?  @map("folder_path")
-  fileName    String   @map("file_name")
-  byteSize    BigInt?  @map("byte_size")
-  sha256      String?
-  blobKey     String?  @map("blob_key")
-  status      String   @default("pending") // pending | stored | error
-  error       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@unique([caseId, atlasFileId])
-  @@index([caseId])
-  @@index([status])
-  @@index([sha256])
-  @@map("legacy_document")
-}
+// NOTE: the legacy-document migration manifest (legacy_case + legacy_document) intentionally lives in a
+// SEPARATE dedicated database (LEGACY_DOCS_DATABASE_URL), NOT here — the app DB's backup/restore tooling
+// kept wiping raw tables it doesn't manage. The viewer reads it via a dedicated pool (lib/legacyDocs.ts).
 
