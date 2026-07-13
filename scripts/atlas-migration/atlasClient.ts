@@ -164,12 +164,42 @@ async function api(path: string, init?: RequestInit, _retried = false, _attempt 
   return res;
 }
 
+// One-shot diagnostic: dump the RAW tree JSON so we can see exactly which metadata Atlas gives us per file.
+// The question we're answering: does a file node carry a CONTENT HASH / checksum (an identity signal — safe
+// to dedup on, like atlas_file_id) or merely a size (a coincidence signal — NOT safe: two different bills
+// for the same patient, same template, same byte count would silently misfile onto the wrong claim).
+// Enable with ATLAS_DEBUG_TREE=1. Uses the running process's own auth — no extra Atlas login, so it cannot
+// rotate the refresh token out from under the sweep.
+let dumpedTree = false;
+
 /** CONFIRMED: full document tree for a case, including file leaves. */
 export async function getCaseDocumentTree(caseId: string): Promise<any[]> {
   const res = await api(`/case/${encodeURIComponent(caseId)}/document/node/false`);
   if (!res.ok) throw new Error(`document tree ${caseId}: HTTP ${res.status}`);
   const json = await res.json();
-  return Array.isArray(json) ? json : json?.items || json?.data || [];
+  const tree = Array.isArray(json) ? json : json?.items || json?.data || [];
+
+  if (process.env.ATLAS_DEBUG_TREE === "1" && !dumpedTree && tree.length) {
+    dumpedTree = true;
+    // Find a FILE leaf (not a folder) and print every field it has, verbatim.
+    const findLeaf = (nodes: any[]): any => {
+      for (const n of nodes || []) {
+        const kids = Array.isArray(n?.items) ? n.items : [];
+        if (!kids.length && (n?.id ?? n?.ImageId)) return n;
+        const hit = findLeaf(kids);
+        if (hit) return hit;
+      }
+      return null;
+    };
+    const leaf = findLeaf(tree);
+    console.log("\n=== ATLAS_DEBUG_TREE: raw FILE-LEAF node from case " + caseId + " ===");
+    console.log(JSON.stringify(leaf, null, 2));
+    console.log("=== field names: " + (leaf ? Object.keys(leaf).join(", ") : "(no leaf found)"));
+    console.log("=== looking for: any hash/checksum/md5/sha/etag field (safe to dedup on),");
+    console.log("=== vs. only size/length/date (NOT safe — coincidence, not identity)\n");
+  }
+
+  return tree;
 }
 
 const FILE_RE = /\.(pdf|docx?|xlsx?|tiff?|jpe?g|png|gif|msg|eml|txt|rtf)$/i;
