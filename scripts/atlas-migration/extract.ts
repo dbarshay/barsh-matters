@@ -87,6 +87,23 @@ async function enumerate() {
 type LedgerDoc = { id: string; atlas_file_id: string; folder_path: string; file_name: string };
 
 let skippedFetches = 0; // run-wide total of documents satisfied from the file-ID cache (no download at all)
+
+// PHASE_TIMING=1 accumulates where wall-time goes, summed across all workers. Ratios (not absolutes) reveal
+// the bottleneck: if `tree` dominates → Atlas tree-fetch bound (→ one-per-packet); if the DB buckets
+// (upsert/lookup/mark) dominate → still DB round-trip bound (→ batch those); if `download` → Atlas download.
+const T = { tree: 0, upsert: 0, lookup: 0, download: 0, upload: 0, markStored: 0, markAssumed: 0 };
+const timingOn = process.env.PHASE_TIMING === "1";
+async function timed<R>(k: keyof typeof T, fn: () => Promise<R>): Promise<R> {
+  if (!timingOn) return fn();
+  const t = Date.now();
+  try { return await fn(); } finally { T[k] += Date.now() - t; }
+}
+function printTiming() {
+  if (!timingOn) return;
+  const total = Object.values(T).reduce((s, x) => s + x, 0) || 1;
+  const pct = Object.fromEntries(Object.entries(T).map(([k, v]) => [k, (100 * v / total).toFixed(0) + "%"]));
+  console.log(`  [timing] ${JSON.stringify(pct)} (sum ${(total / 1000).toFixed(0)}s across workers)`);
+}
 let auditsRun = 0;
 let auditsPassed = 0;
 
@@ -116,7 +133,7 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<StoreResult> {
     // Fast path: Atlas serves the same physical file under many cases (~40% of all documents). If we have
     // already stored this atlas_file_id, point this row at the existing blob and skip the download entirely.
     // Safe because atlas_file_id → content is 1:1 (verified: 0 conflicts across 770k stored rows).
-    const known = await storedDocByFileId(doc.atlas_file_id);
+    const known = await timed("lookup", () => storedDocByFileId(doc.atlas_file_id));
     if (known) {
       // Sample-audit: prove the invariant still holds instead of assuming it.
       if (AUDIT_RATE > 0 && Math.random() < AUDIT_RATE) {
@@ -151,17 +168,17 @@ async function storeDoc(doc: LedgerDoc, caseId: string): Promise<StoreResult> {
       return "cached";
     }
 
-    const buf = await fetchFileBytes(
+    const buf = await timed("download", () => fetchFileBytes(
       { atlasFileId: Number(doc.atlas_file_id), fileName: doc.file_name, folderPath: doc.folder_path },
       caseId
-    );
+    ));
     const hash = sha256(buf);
     let key = await blobKeyForHash(hash); // dedup: reuse existing blob if identical content seen
     if (!key) {
       key = blobKeyFor(caseId, doc.folder_path, doc.file_name, hash);
-      await uploadBlob(key, buf, contentType(doc.file_name));
+      await timed("upload", () => uploadBlob(key!, buf, contentType(doc.file_name)));
     }
-    await markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key });
+    await timed("markStored", () => markDocStored(doc.id, { byte_size: buf.length, sha256: hash, blob_key: key! }));
     return "stored";
   } catch (e: any) {
     if (e instanceof CacheIntegrityError) throw e; // never swallow — this must halt the run, not fail a file
@@ -175,9 +192,9 @@ async function processCase(caseId: string): Promise<number> {
   try {
     await bumpCaseAttempt(caseId); // bounded retries — see nextCases(): unbounded retries spin the sweep
     // Stage 2: list files (idempotent).
-    const tree = await getCaseDocumentTree(caseId);
+    const tree = await timed("tree", () => getCaseDocumentTree(caseId));
     const leaves = flattenFileLeaves(tree);
-    await upsertDocuments(caseId, leaves);
+    await timed("upsert", () => upsertDocuments(caseId, leaves));
     await setCase(caseId, { status: "listed", file_count: leaves.length });
 
     // Stages 3-5: download → hash → dedup → upload → manifest.
@@ -208,9 +225,9 @@ async function processCase(caseId: string): Promise<number> {
       if (known) {
         // Assume all same-named siblings share the first's content; mark them in ONE batched UPDATE
         // (a per-doc loop is thousands of sequential DB round-trips on high-assumed cases).
-        await markDocsAssumedBatch(rest.map((d) => d.id), {
+        await timed("markAssumed", () => markDocsAssumedBatch(rest.map((d) => d.id), {
           byte_size: Number(known.byte_size), sha256: known.sha256, blob_key: known.blob_key,
-        });
+        }));
         done += rest.length; assumed += rest.length;
       } else {
         // First failed or left no blob — don't assume; download each sibling on its own.
@@ -253,6 +270,7 @@ async function run() {
       storedThisRun += await processCase(c);
     });
     processed += cases.length;
+    printTiming();
     // Safety net: if a whole batch of 500 cases stored ZERO new documents, we are almost certainly
     // re-chewing cases we cannot make progress on. Stop rather than spin (and rather than keep pounding
     // Atlas, which only produces more 500s). Run --retry-errors / --status to see where things stand.
