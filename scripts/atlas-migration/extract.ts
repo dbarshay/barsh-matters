@@ -303,6 +303,49 @@ async function reportFailures() {
   console.log(`Wrote ${rows.length} failed documents across ${byCase.size} cases → ${out}`);
 }
 
+// Settle whether a size-verified skip could actually be FAST: does Atlas support HEAD, does it return
+// content-length, and is a HEAD meaningfully cheaper than a full GET? Raw fetches with an explicit token and
+// NO auto-refresh — so it can never rotate the refresh token out from under the running sweep.
+//   PROBE_TOKEN=<fresh access_token from a browser login> npx tsx extract.ts --probe-head
+async function probeHead() {
+  await initSchema();
+  const token = process.env.PROBE_TOKEN || config.atlas.token;
+  if (!token) throw new Error("Set PROBE_TOKEN=<a fresh access_token> (from a LawSpades browser login).");
+  const base = config.atlas.apiBase;
+  // Known-good, reasonably large files, so GET body time is meaningful.
+  const r = await db().query(
+    `SELECT case_id, atlas_file_id, file_name, byte_size FROM legacy_document
+      WHERE status='stored' AND byte_size > 200000 ORDER BY random() LIMIT 6`
+  );
+  if (!r.rows.length) throw new Error("No stored docs to probe.");
+  const time = async (fn: () => Promise<any>) => { const t = Date.now(); const v = await fn().catch((e: any) => ({ err: e?.message })); return { ms: Date.now() - t, v }; };
+  const headMs: number[] = [];
+  const getMs: number[] = [];
+  let headWorks = true;
+  let headHasLen = true;
+  for (const d of r.rows) {
+    const url = `${base}/case/${encodeURIComponent(d.case_id)}/document/file/${d.atlas_file_id}/view`;
+    const h = await time(() => fetch(url, { method: "HEAD", headers: { Authorization: `Bearer ${token}` } }));
+    const g = await time(() => fetch(url, { headers: { Authorization: `Bearer ${token}` } }).then(async (res: any) => ({ status: res.status, bytes: (await res.arrayBuffer()).byteLength })));
+    const hStatus = h.v?.status ?? h.v?.err;
+    const hLen = h.v?.headers?.get?.("content-length");
+    if (h.v?.status !== 200) headWorks = false;
+    if (!hLen) headHasLen = false;
+    headMs.push(h.ms);
+    getMs.push(g.ms);
+    console.log(
+      `${d.file_name.slice(0, 34).padEnd(34)} | HEAD ${String(hStatus).padStart(3)} ${String(h.ms).padStart(5)}ms len=${hLen ?? "—"} ` +
+        `| GET ${String(g.v?.status ?? g.v?.err).padStart(3)} ${String(g.ms).padStart(5)}ms ${g.v?.bytes ?? "?"}b`
+    );
+  }
+  const avg = (a: number[]) => Math.round(a.reduce((s, x) => s + x, 0) / a.length);
+  console.log(`\nHEAD supported: ${headWorks ? "YES" : "NO"} | returns content-length: ${headHasLen ? "YES" : "NO"}`);
+  console.log(`avg HEAD ${avg(headMs)}ms vs avg GET ${avg(getMs)}ms → HEAD is ${(avg(getMs) / Math.max(1, avg(headMs))).toFixed(1)}x ${avg(headMs) < avg(getMs) ? "faster" : "NOT faster"}`);
+  console.log(headWorks && headHasLen && avg(headMs) < avg(getMs) * 0.6
+    ? "VERDICT: size-verified skip is worth building — HEAD is cheap and gives us the size."
+    : "VERDICT: HEAD does not buy enough — a size-verified skip would not meaningfully speed things up.");
+}
+
 async function status() {
   await initSchema();
   const r = await statusReport();
@@ -338,6 +381,7 @@ async function docTypes() {
     else if (has("--retry-errors")) await retryErrors();
     else if (has("--report-failures")) await reportFailures();
     else if (has("--reconcile")) console.log("Reconciled:", await reconcileCases());
+    else if (has("--probe-head")) await probeHead();
     else if (has("--status")) await status();
     else if (has("--doc-types")) await docTypes();
     else
