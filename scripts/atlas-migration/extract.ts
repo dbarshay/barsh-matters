@@ -25,6 +25,10 @@ import {
   pendingDocsForCase,
   markDocStored,
   markDocError,
+  markDocAssumed,
+  assumedDocs,
+  clearAssumed,
+  assumedCount,
   blobKeyForHash,
   storedDocByFileId,
   statusReport,
@@ -178,19 +182,48 @@ async function processCase(caseId: string): Promise<number> {
 
     // Stages 3-5: download → hash → dedup → upload → manifest.
     const pending = await pendingDocsForCase(caseId);
-    let done = 0; // stored this pass (downloaded OR served from cache)
-    let cached = 0; // of which: satisfied from the file-ID cache, no download. Counted LOCALLY — a shared
-    //                counter would be corrupted by the other cases running concurrently.
-    await pool(pending, config.run.fileConcurrency, async (doc) => {
-      const r = await storeDoc(doc, caseId);
+    let done = 0; // stored this pass (downloaded, cache-served, OR assumed)
+    let cached = 0; // of which: file-ID cache hits (no download)
+    let assumed = 0; // of which: within-case (case,file_name) skips (no download, verified later)
+
+    // WITHIN-CASE DEDUP: group by file_name. Same case + same filename is assumed same content (measured
+    // safe on size: 0 collisions; the ~0.017% that differ are caught by --verify-skips). We download the
+    // FIRST of each name and point the rest at its blob WITHOUT downloading — faster AND fewer Atlas
+    // requests (both shrink the LawSpades-cutoff exposure window). Set WITHIN_CASE_DEDUP=0 to disable.
+    const dedup = process.env.WITHIN_CASE_DEDUP !== "0";
+    const groups = new Map<string, typeof pending>();
+    for (const d of pending) {
+      const key = dedup ? d.file_name : String(d.id);
+      const g = groups.get(key);
+      if (g) g.push(d); else groups.set(key, [d]);
+    }
+
+    await pool([...groups.values()], config.run.fileConcurrency, async (group) => {
+      const [first, ...rest] = group;
+      const r = await storeDoc(first, caseId);
       if (r === "cached") cached++;
       if (r !== "error") done++;
+      if (!rest.length) return;
+      const known = r !== "error" ? await storedDocByFileId(first.atlas_file_id) : null;
+      for (const d of rest) {
+        if (known) {
+          // Assume same content as the first same-named file; point at its blob, mark for later verify.
+          await markDocAssumed(d.id, { byte_size: Number(known.byte_size), sha256: known.sha256, blob_key: known.blob_key });
+          done++; assumed++;
+        } else {
+          // First failed or left no blob — don't assume; download this one on its own.
+          const rr = await storeDoc(d, caseId);
+          if (rr === "cached") cached++;
+          if (rr !== "error") done++;
+        }
+      }
     });
 
     const total = await pendingDocsForCase(caseId);
     await setCase(caseId, { status: total.length === 0 ? "done" : "error", done_count: done, error: total.length ? `${total.length} files failed` : null });
+    const extra = [cached ? `${cached} cached` : "", assumed ? `${assumed} assumed` : ""].filter(Boolean).join(", ");
     console.log(
-      `  ${caseId}: ${leaves.length} files, ${done} stored, ${total.length} failed${cached ? ` (${cached} cached)` : ""}`
+      `  ${caseId}: ${leaves.length} files, ${done} stored, ${total.length} failed${extra ? ` (${extra})` : ""}`
     );
     return done;
   } catch (e: any) {
@@ -288,6 +321,52 @@ async function retryErrors() {
   console.log(`Cases reconciled: ${rc.done} now done, ${rc.stillError} still have failures. Next: --report-failures.`);
 }
 
+// DEFERRED verification of the within-case skips. Run at the END, only if LawSpades access survives — it
+// re-downloads each assumed doc (the only way to check, since Atlas has no HEAD), hashes it, and either
+// confirms it (clears the flag) or FIXES a misfile (stores the real content, repoints the row). Catches
+// 100% of misfiles because every (case,file_name) collision differs in size/content. Safe to Ctrl-C and
+// re-run; unverifiable docs (Atlas errors) stay flagged for a later pass.
+//   VERIFY_CONCURRENCY=4 npx tsx scripts/atlas-migration/extract.ts --verify-skips
+async function verifySkips() {
+  await initSchema();
+  const conc = num(process.env.VERIFY_CONCURRENCY, 4);
+  const batch = num(process.env.VERIFY_BATCH, 500);
+  const start = await assumedCount();
+  console.log(`Verifying ${start.toLocaleString()} assumed (within-case skip) documents…`);
+  let checked = 0, confirmed = 0, fixed = 0, unverifiable = 0;
+  for (;;) {
+    const docs = await assumedDocs(batch);
+    if (!docs.length) break;
+    await pool(docs, conc, async (d) => {
+      try {
+        const buf = await fetchFileBytes(
+          { atlasFileId: Number(d.atlas_file_id), fileName: d.file_name, folderPath: d.folder_path },
+          d.case_id
+        );
+        const actual = sha256(buf);
+        checked++;
+        if (actual === d.sha256) {
+          await clearAssumed(d.id); // assumption held — same content
+          confirmed++;
+        } else {
+          // MISFILE: the assumed content was wrong. Store the real bytes and repoint this row.
+          let key = await blobKeyForHash(actual);
+          if (!key) { key = blobKeyFor(d.case_id, d.folder_path, d.file_name, actual); await uploadBlob(key, buf, contentType(d.file_name)); }
+          await markDocStored(d.id, { byte_size: buf.length, sha256: actual, blob_key: key });
+          await clearAssumed(d.id);
+          fixed++;
+          console.log(`  FIXED misfile: ${d.case_id} "${d.file_name}" — assumed wrong content, corrected.`);
+        }
+      } catch {
+        unverifiable++; // Atlas error — leave assumed, a later --verify-skips run will retry it
+      }
+    });
+    console.log(`  …${checked.toLocaleString()} checked: ${confirmed} confirmed, ${fixed} FIXED, ${unverifiable} unverifiable`);
+    if (docs.length < batch) break;
+  }
+  console.log(`\nVerify-skips complete. ${confirmed.toLocaleString()} confirmed correct, ${fixed} misfiles fixed, ${unverifiable} could not be verified (still flagged).`);
+}
+
 // Dump every doc Atlas refused to serve, so they can be spot-checked in LawSpades before it goes dark.
 async function reportFailures() {
   await initSchema();
@@ -351,6 +430,8 @@ async function status() {
   const r = await statusReport();
   console.log("Cases:", r.cases);
   console.log("Docs :", r.docs.map((d: any) => ({ ...d, gb: (Number(d.bytes) / 1e9).toFixed(2) })));
+  const assumed = await assumedCount();
+  if (assumed) console.log(`Assumed (within-case skips awaiting --verify-skips): ${assumed.toLocaleString()}`);
 }
 
 // Breakdown of stored documents by file extension (what kinds of docs the archive contains).
@@ -381,12 +462,13 @@ async function docTypes() {
     else if (has("--retry-errors")) await retryErrors();
     else if (has("--report-failures")) await reportFailures();
     else if (has("--reconcile")) console.log("Reconciled:", await reconcileCases());
+    else if (has("--verify-skips")) await verifySkips();
     else if (has("--probe-head")) await probeHead();
     else if (has("--status")) await status();
     else if (has("--doc-types")) await docTypes();
     else
       console.log(
-        "Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --retry-errors | --report-failures [--out f.csv] | --reconcile | --status | --doc-types"
+        "Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --retry-errors | --verify-skips | --report-failures [--out f.csv] | --reconcile | --status | --doc-types"
       );
   } catch (e: any) {
     const msg = e?.message || String(e);

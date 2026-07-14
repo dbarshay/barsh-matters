@@ -41,7 +41,12 @@ export async function initSchema() {
       UNIQUE (case_id, atlas_file_id)
     );
     ALTER TABLE legacy_document ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;
+    -- 'assumed' = stored WITHOUT downloading, by the within-case (case,file_name) skip: we pointed it at a
+    -- sibling's blob on the assumption same case + same filename = same content. Provable-safe on size
+    -- (0 collisions), but not verified at skip time. --verify-skips re-downloads these and confirms/fixes.
+    ALTER TABLE legacy_document ADD COLUMN IF NOT EXISTS assumed BOOLEAN NOT NULL DEFAULT false;
     CREATE INDEX IF NOT EXISTS legacy_document_case_idx ON legacy_document (case_id);
+    CREATE INDEX IF NOT EXISTS legacy_document_assumed_idx ON legacy_document (assumed) WHERE assumed;
     CREATE INDEX IF NOT EXISTS legacy_document_status_idx ON legacy_document (status);
     CREATE INDEX IF NOT EXISTS legacy_document_sha_idx ON legacy_document (sha256);
     -- Supports storedDocByFileId(): the pre-download cache lookup, run once per document.
@@ -128,6 +133,35 @@ export async function markDocStored(id: string, patch: { byte_size: number; sha2
 
 export async function markDocError(id: string, error: string) {
   await db().query(`UPDATE legacy_document SET status='error', error=$2, attempts=attempts+1 WHERE id=$1`, [id, error.slice(0, 500)]);
+}
+
+/** Within-case skip: mark a doc stored by ASSUMPTION (no download), pointing at a sibling's blob. The
+ *  deferred --verify-skips pass re-downloads it and either confirms (clears the flag) or fixes a misfile. */
+export async function markDocAssumed(id: string, patch: { byte_size: number; sha256: string; blob_key: string }) {
+  await db().query(
+    `UPDATE legacy_document SET status='stored', assumed=true, byte_size=$2, sha256=$3, blob_key=$4, error=NULL WHERE id=$1`,
+    [id, patch.byte_size, patch.sha256, patch.blob_key]
+  );
+}
+
+/** Assumed (skip-stored, unverified) docs, for --verify-skips. Includes the assumed sha256 to compare against. */
+export async function assumedDocs(limit: number) {
+  const r = await db().query(
+    `SELECT id, case_id, atlas_file_id, folder_path, file_name, sha256 FROM legacy_document
+      WHERE status='stored' AND assumed=true ORDER BY id LIMIT $1`,
+    [limit]
+  );
+  return r.rows as { id: string; case_id: string; atlas_file_id: string; folder_path: string; file_name: string; sha256: string }[];
+}
+
+/** Clear the assumed flag once a skip has been verified (or fixed). */
+export async function clearAssumed(id: string) {
+  await db().query(`UPDATE legacy_document SET assumed=false WHERE id=$1`, [id]);
+}
+
+export async function assumedCount(): Promise<number> {
+  const r = await db().query(`SELECT count(*)::int n FROM legacy_document WHERE status='stored' AND assumed=true`);
+  return r.rows[0].n as number;
 }
 
 /** Docs stuck in error, for the targeted low-concurrency retry pass (--retry-errors). */
