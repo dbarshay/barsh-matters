@@ -28,7 +28,9 @@ import {
   blobKeyForHash,
   storedDocByFileId,
   statusReport,
-  errorDocs,
+  distinctErrorFileIds,
+  errorFileStats,
+  propagateStoredByFileId,
   reconcileCases,
   failureRows,
   bumpCaseAttempt,
@@ -234,38 +236,56 @@ async function run() {
   }
 }
 
-// Targeted retry over documents stuck in 'error'. Atlas returns HTTP 500 for two different reasons:
-//   (a) TRANSIENT — it buckles under our request rate; a slow, low-concurrency refetch succeeds.
+// Targeted retry over documents stuck in 'error'. Atlas returns HTTP 500 for two reasons:
+//   (a) TRANSIENT — it buckled under our request rate; a slow, low-concurrency refetch succeeds.
 //   (b) PERMANENT — broken/cross-org file references Atlas will never serve, however many times we ask.
-// Running this pass at concurrency 1-2 drains (a), so whatever still fails is the true (b) set.
-//   RETRY_CONCURRENCY=2 MAX_ATTEMPTS=4 npx tsx scripts/atlas-migration/extract.ts --retry-errors
+//
+// DEDUPED BY FILE: the error rows are dominated by a small set of files that Atlas serves under thousands of
+// cases and 500s on every time (e.g. one `_ATT_Letter_` PDF accounted for 7,140 error rows). So we retry each
+// DISTINCT atlas_file_id ONCE; on success, propagate the blob to every sibling row without re-downloading; on
+// failure, leave the siblings alone rather than re-failing them thousands of times. Re-run it a couple times
+// at low concurrency to drain (a); whatever distinct files still fail are the true (b) set.
+//   RETRY_CONCURRENCY=2 npx tsx scripts/atlas-migration/extract.ts --retry-errors
 async function retryErrors() {
   await initSchema();
   const conc = num(process.env.RETRY_CONCURRENCY, 2);
-  const maxAttempts = num(process.env.MAX_ATTEMPTS, 0); // 0 = retry regardless of prior attempts
   const batch = num(process.env.RETRY_BATCH, 500);
-  let recovered = 0;
-  let stillFailing = 0;
+  const stats = await errorFileStats();
+  console.log(`Error backlog: ${stats.rows.toLocaleString()} rows across ${stats.files.toLocaleString()} DISTINCT files ` +
+    `(${(stats.rows / Math.max(1, stats.files)).toFixed(1)}x sharing) — retrying each distinct file once.`);
+
+  let filesRecovered = 0;
+  let rowsRecovered = 0;
+  let filesStillFailing = 0;
   for (;;) {
-    const docs = await errorDocs(batch, maxAttempts);
-    if (!docs.length) break;
-    await pool(docs, conc, async (d) => {
-      const r = await storeDoc(d, d.case_id);
+    const files = await distinctErrorFileIds(batch);
+    if (!files.length) break;
+    await pool(files, conc, async (d) => {
+      const r = await storeDoc(d, d.case_id); // stores the representative row + uploads the blob
       if (r !== "error") {
-        recovered++;
-        console.log(`  RECOVERED ${d.case_id} "${d.file_name}"${r === "cached" ? " (from cache)" : ""}`);
+        filesRecovered++;
+        // Point every OTHER case that references this now-recovered file at the same blob — no re-download.
+        const known = await storedDocByFileId(d.atlas_file_id);
+        const siblings = known
+          ? await propagateStoredByFileId(d.atlas_file_id, {
+              byte_size: Number(known.byte_size),
+              sha256: known.sha256,
+              blob_key: known.blob_key,
+            })
+          : 0;
+        rowsRecovered += 1 + siblings;
+        if (siblings > 50) console.log(`  RECOVERED file ${d.atlas_file_id} "${d.file_name}" → +${siblings} shared rows`);
       } else {
-        stillFailing++;
+        filesStillFailing++;
       }
     });
-    console.log(`  ...pass: ${recovered} recovered, ${stillFailing} still failing`);
-    if (docs.length < batch) break;
-    if (maxAttempts === 0) break; // without an attempts ceiling, one sweep only (else we'd loop forever)
+    console.log(`  ...pass: ${filesRecovered} distinct files recovered (${rowsRecovered.toLocaleString()} rows), ${filesStillFailing} files still failing`);
+    if (files.length < batch) break;
   }
   const rc = await reconcileCases();
-  console.log(`\nRetry complete. ${recovered} recovered, ${stillFailing} still failing.`);
-  console.log(`Cases reconciled: ${rc.done} now done, ${rc.stillError} still have failures.`);
-  console.log(`Next: --report-failures to dump the permanent list.`);
+  console.log(`\nRetry complete. ${filesRecovered} distinct files recovered → ${rowsRecovered.toLocaleString()} document rows.`);
+  console.log(`${filesStillFailing} distinct files still failing (Atlas will not serve them). Run again to drain transients, or:`);
+  console.log(`Cases reconciled: ${rc.done} now done, ${rc.stillError} still have failures. Next: --report-failures.`);
 }
 
 // Dump every doc Atlas refused to serve, so they can be spot-checked in LawSpades before it goes dark.
@@ -290,6 +310,27 @@ async function status() {
   console.log("Docs :", r.docs.map((d: any) => ({ ...d, gb: (Number(d.bytes) / 1e9).toFixed(2) })));
 }
 
+// Breakdown of stored documents by file extension (what kinds of docs the archive contains).
+async function docTypes() {
+  await initSchema();
+  const r = await db().query(`
+    SELECT lower(coalesce(nullif(regexp_replace(file_name, '^.*\\.', ''), file_name), '(none)')) AS ext,
+           count(*)::int AS files,
+           count(DISTINCT sha256)::int AS unique_files,
+           coalesce(sum(byte_size),0)::bigint AS bytes
+      FROM legacy_document WHERE status='stored'
+     GROUP BY 1 ORDER BY files DESC LIMIT 40`);
+  console.log("Stored documents by extension:");
+  console.table(
+    r.rows.map((x: any) => ({
+      ext: x.ext,
+      files: Number(x.files).toLocaleString(),
+      unique: Number(x.unique_files).toLocaleString(),
+      gb: (Number(x.bytes) / 1e9).toFixed(2),
+    }))
+  );
+}
+
 (async () => {
   try {
     if (has("--enumerate")) await enumerate();
@@ -298,9 +339,10 @@ async function status() {
     else if (has("--report-failures")) await reportFailures();
     else if (has("--reconcile")) console.log("Reconciled:", await reconcileCases());
     else if (has("--status")) await status();
+    else if (has("--doc-types")) await docTypes();
     else
       console.log(
-        "Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --retry-errors | --report-failures [--out f.csv] | --reconcile | --status"
+        "Usage: --enumerate (--from-csv <f> | --from-atlas) | --run | --retry-errors | --report-failures [--out f.csv] | --reconcile | --status | --doc-types"
       );
   } catch (e: any) {
     const msg = e?.message || String(e);

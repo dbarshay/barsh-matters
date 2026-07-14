@@ -141,6 +141,51 @@ export async function errorDocs(limit: number, maxAttempts = 0) {
   return r.rows as { id: string; case_id: string; atlas_file_id: string; folder_path: string; file_name: string; attempts: number }[];
 }
 
+/**
+ * DISTINCT failing files for the deduped retry (--retry-errors). Atlas serves the same physical file under
+ * thousands of cases, and a broken one (e.g. an unservable `_ATT_Letter_` PDF) fails in every case that
+ * references it — so the error rows are dominated by a small set of distinct-but-repeated files. We retry
+ * each distinct atlas_file_id ONCE (one representative row); on success `propagateStoredByFileId` fixes all
+ * the siblings without re-fetching. Turns a multi-million-attempt cleanup into one sized by distinct files.
+ */
+export async function distinctErrorFileIds(limit: number) {
+  const r = await db().query(
+    `SELECT DISTINCT ON (atlas_file_id) id, case_id, atlas_file_id, folder_path, file_name
+       FROM legacy_document WHERE status='error'
+      ORDER BY atlas_file_id, id LIMIT $1`,
+    [limit]
+  );
+  return r.rows as { id: string; case_id: string; atlas_file_id: string; folder_path: string; file_name: string }[];
+}
+
+/** How many DISTINCT files are in error (vs. how many error rows) — sizes the deduped cleanup. */
+export async function errorFileStats() {
+  const r = await db().query(
+    `SELECT count(*)::int rows, count(DISTINCT atlas_file_id)::int files FROM legacy_document WHERE status='error'`
+  );
+  return r.rows[0] as { rows: number; files: number };
+}
+
+/** After one representative of a broken-then-recovered file stores, point every OTHER error row that shares
+ *  its atlas_file_id at the same blob — no re-download. Returns how many sibling rows were fixed. */
+export async function propagateStoredByFileId(
+  atlasFileId: string | number,
+  patch: { byte_size: number; sha256: string; blob_key: string }
+): Promise<number> {
+  const r = await db().query(
+    `UPDATE legacy_document SET status='stored', byte_size=$2, sha256=$3, blob_key=$4, error=NULL
+      WHERE atlas_file_id=$1 AND status='error'`,
+    [atlasFileId, patch.byte_size, patch.sha256, patch.blob_key]
+  );
+  return r.rowCount ?? 0;
+}
+
+/**
+ * DISTINCT failing files, for the deduped retry pass.
+ *
+ * Failures are dominated by a small set of SHARED documents: Atlas serves the same file under thousands of
+ * cases, and when it 500s on one it 500s on all of them. Measured: a single `_ATT_Letter_`
+
 /** Re-derive legacy_case.status from its documents (a case is 'done' once every doc is stored). */
 export async function reconcileCases() {
   const r = await db().query(`
