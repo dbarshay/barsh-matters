@@ -170,7 +170,7 @@ async function api(path: string, init?: RequestInit, _retried = false, _attempt 
 // for the same patient, same template, same byte count would silently misfile onto the wrong claim).
 // Enable with ATLAS_DEBUG_TREE=1. Uses the running process's own auth — no extra Atlas login, so it cannot
 // rotate the refresh token out from under the sweep.
-let dumpedTree = false;
+let dumpedTree = 0;
 
 /** CONFIRMED: full document tree for a case, including file leaves. */
 export async function getCaseDocumentTree(caseId: string): Promise<any[]> {
@@ -179,24 +179,44 @@ export async function getCaseDocumentTree(caseId: string): Promise<any[]> {
   const json = await res.json();
   const tree = Array.isArray(json) ? json : json?.items || json?.data || [];
 
-  if (process.env.ATLAS_DEBUG_TREE === "1" && !dumpedTree && tree.length) {
-    dumpedTree = true;
-    // Find a FILE leaf (not a folder) and print every field it has, verbatim.
-    const findLeaf = (nodes: any[]): any => {
+  if (process.env.ATLAS_DEBUG_TREE === "1" && dumpedTree < 3 && tree.length) {
+    dumpedTree++;
+    // Collect ALL file leaves in this case, so we can inspect candidate request-free discriminators
+    // (friendly_name, created_date, created_by) — and, crucially, whether SAME-filename leaves within one
+    // case carry DIFFERENT values for those fields (which is what a real content discriminator would do).
+    const leaves: any[] = [];
+    const collect = (nodes: any[]) => {
       for (const n of nodes || []) {
         const kids = Array.isArray(n?.items) ? n.items : [];
-        if (!kids.length && (n?.id ?? n?.ImageId)) return n;
-        const hit = findLeaf(kids);
-        if (hit) return hit;
+        if (!kids.length && (n?.id ?? n?.ImageId)) leaves.push(n);
+        else collect(kids);
       }
-      return null;
     };
-    const leaf = findLeaf(tree);
-    console.log("\n=== ATLAS_DEBUG_TREE: raw FILE-LEAF node from case " + caseId + " ===");
-    console.log(JSON.stringify(leaf, null, 2));
-    console.log("=== field names: " + (leaf ? Object.keys(leaf).join(", ") : "(no leaf found)"));
-    console.log("=== looking for: any hash/checksum/md5/sha/etag field (safe to dedup on),");
-    console.log("=== vs. only size/length/date (NOT safe — coincidence, not identity)\n");
+    collect(tree);
+    console.log(`\n=== ATLAS_DEBUG_TREE (${dumpedTree}/3): case ${caseId} — ${leaves.length} file leaves ===`);
+    if (leaves[0]) console.log("full first leaf:", JSON.stringify(leaves[0], null, 2));
+    const pick = (n: any) => ({
+      id: n.id ?? n.ImageId,
+      name: n.name ?? n.text,
+      friendly_name: n.friendly_name,
+      created_date: n.created_date ?? n.created,
+      created_by: n.created_by,
+    });
+    console.log("first up-to-12 leaves (identity-relevant fields):");
+    console.table(leaves.slice(0, 12).map(pick));
+    // Highlight same-NAME pairs: do their friendly_name/created_date differ? (a discriminator would)
+    const byName: Record<string, any[]> = {};
+    for (const n of leaves) (byName[String(n.name ?? n.text)] ||= []).push(n);
+    const dupNames = Object.entries(byName).filter(([, v]) => v.length > 1).slice(0, 5);
+    if (dupNames.length) {
+      console.log("SAME-FILENAME groups in this case (the collision-relevant set):");
+      for (const [name, group] of dupNames) {
+        console.log(`  "${name}" ×${group.length}:`, group.map(pick).map((x) => ({ id: x.id, cdate: x.created_date, fname: x.friendly_name })));
+      }
+    } else {
+      console.log("(no same-filename groups in this case)");
+    }
+    console.log("");
   }
 
   return tree;
