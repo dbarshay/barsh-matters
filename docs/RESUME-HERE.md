@@ -18,6 +18,40 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-14 (evening) — Template builder fixes + new Settlement merge fields
+
+All in `lib/documents/templateTokenResolver.ts` (preview + generation share this resolver) and
+`src/lib/templates/template-builder-merge-field-library.ts` (the builder's field catalog). Committed + pushed.
+
+**Bugs fixed (preview diverged from the real packet generator):**
+- **Court address blank** — resolver now reads embedded `opts.selectedCourtDetails` first (venue picker), then a
+  reference entity of type **`court_venue`** (was searching `["court","venue"]` — never matched). Court address
+  keys use a `court`-prefixed convention: `courtAddressLine1/courtCity/courtState/courtZip` (+ generic fallbacks).
+  ⚠️ `court.street` key was a best-guess from the phase48f design doc — VERIFY it populates after deploy; if still
+  blank, hit `/api/admin/document-templates/example-preview-debug?matter=<id>` and match the real key.
+- **Insurer/patient/provider blank at lawsuit level** — a lawsuit sample (YYYY.MM.NNNNNN) passes only
+  masterLawsuitId, so no claim loaded. Now loads a **representative member claim** and resolves the SHARED
+  identity fields (insurer, patient, provider, claim number, date of loss). Per-claim financials (balance, DOS,
+  billed amount, denial reason) stay blank at lawsuit level — no single value.
+- **Matter File Number** now resolves per sample: lawsuit number at lawsuit level, BRL number at individual level.
+- Broadened street pick keys (address_line_1/streetAddress/street_address) for insurer/adversary too.
+
+**NEW "Settlement" merge-field category:**
+- Settled-with contact: `settledWith.name/email/fax/phone/company`. Name comes from the latest non-voided
+  `LocalSettlementRecord.settledWith`; contact info from `ReferenceEntity` type **`individual`** (the Settlement
+  Contacts list the name picker uses — `/api/reference-data/contact-search?type=individual`), matched BY NAME
+  (the name is picked from the list = exact displayName, so reliable). Contact **ID is not persisted** on the
+  settlement record, only the name — if duplicate contact names ever exist, switch to persisting
+  `settledWithContactId` + ID lookup.
+- Settlement record fields: `settlement.date/paymentExpectedDate/grossAmount/interestAmount/allocatedTotal/
+  totalFee/providerNet/allocationMode` from `LocalSettlementRecord`.
+- ⚠️ **Emails not yet seeded** into `details.email` on the individual reference entities (seed had phone/fax, no
+  email). `settledWith.email` reads `details.email` — it will resolve automatically once the user populates emails
+  there. OFFERED to write a name→email bulk-update script (a sibling to `scripts/build-settledwith-seed.mjs`);
+  user said "do the emails later." Emails are the firm's primary settlement comms channel.
+- Settlement fields only show values for a sample that has actually been settled (has a LocalSettlementRecord).
+
+
 ### 2026-07-14 — Within-case dedup skip + BATCHED DB writes (throughput ~2x); ATT_Letter breakage explained
 
 **CURRENT RUN CONFIG (what the sweep should be running):**
