@@ -8,7 +8,9 @@ let pool: Pool | null = null;
 export function db(): Pool {
   if (!pool) {
     assertLedger();
-    pool = new Pool({ connectionString: config.ledger.databaseUrl });
+    // Default pool max is 10; with CASE_CONCURRENCY up to ~10 (each doing DB work) that starves workers.
+    // Bump it so concurrency isn't capped by the pool. Override with PG_POOL_MAX.
+    pool = new Pool({ connectionString: config.ledger.databaseUrl, max: Number(process.env.PG_POOL_MAX || 24) });
   }
   return pool;
 }
@@ -105,11 +107,23 @@ export async function setCase(caseId: string, patch: { status?: string; file_cou
 }
 
 export async function upsertDocuments(caseId: string, docs: { atlasFileId: number; folderPath: string; fileName: string }[]) {
-  for (const d of docs) {
+  // BATCHED multi-row insert. A per-doc loop was the sweep's real DB bottleneck: a 3,753-file case fired
+  // 3,753 sequential INSERTs before any downloading. Chunk to stay well under Postgres' 65,535-param cap.
+  if (!docs.length) return;
+  const CHUNK = 800; // 4 params/row → 3,200 params/chunk
+  for (let i = 0; i < docs.length; i += CHUNK) {
+    const slice = docs.slice(i, i + CHUNK);
+    const values: string[] = [];
+    const params: any[] = [];
+    let p = 1;
+    for (const d of slice) {
+      values.push(`($${p++},$${p++},$${p++},$${p++})`);
+      params.push(caseId, d.atlasFileId, d.folderPath, d.fileName);
+    }
     await db().query(
       `INSERT INTO legacy_document (case_id, atlas_file_id, folder_path, file_name)
-       VALUES ($1,$2,$3,$4) ON CONFLICT (case_id, atlas_file_id) DO NOTHING`,
-      [caseId, d.atlasFileId, d.folderPath, d.fileName]
+       VALUES ${values.join(",")} ON CONFLICT (case_id, atlas_file_id) DO NOTHING`,
+      params
     );
   }
 }
