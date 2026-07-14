@@ -25,7 +25,7 @@ import {
   pendingDocsForCase,
   markDocStored,
   markDocError,
-  markDocAssumed,
+  markDocsAssumedBatch,
   assumedDocs,
   clearAssumed,
   assumedCount,
@@ -205,13 +205,16 @@ async function processCase(caseId: string): Promise<number> {
       if (r !== "error") done++;
       if (!rest.length) return;
       const known = r !== "error" ? await storedDocByFileId(first.atlas_file_id) : null;
-      for (const d of rest) {
-        if (known) {
-          // Assume same content as the first same-named file; point at its blob, mark for later verify.
-          await markDocAssumed(d.id, { byte_size: Number(known.byte_size), sha256: known.sha256, blob_key: known.blob_key });
-          done++; assumed++;
-        } else {
-          // First failed or left no blob — don't assume; download this one on its own.
+      if (known) {
+        // Assume all same-named siblings share the first's content; mark them in ONE batched UPDATE
+        // (a per-doc loop is thousands of sequential DB round-trips on high-assumed cases).
+        await markDocsAssumedBatch(rest.map((d) => d.id), {
+          byte_size: Number(known.byte_size), sha256: known.sha256, blob_key: known.blob_key,
+        });
+        done += rest.length; assumed += rest.length;
+      } else {
+        // First failed or left no blob — don't assume; download each sibling on its own.
+        for (const d of rest) {
           const rr = await storeDoc(d, caseId);
           if (rr === "cached") cached++;
           if (rr !== "error") done++;

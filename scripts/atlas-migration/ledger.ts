@@ -144,6 +144,18 @@ export async function markDocAssumed(id: string, patch: { byte_size: number; sha
   );
 }
 
+/** Batch version of markDocAssumed: all siblings in a (case,file_name) group share ONE blob, so mark them
+ *  in a single UPDATE instead of N round-trips. Critical for high-assumed cases (thousands of siblings) —
+ *  a per-doc loop there is thousands of sequential Postgres round-trips and becomes the bottleneck. */
+export async function markDocsAssumedBatch(ids: string[], patch: { byte_size: number; sha256: string; blob_key: string }) {
+  if (!ids.length) return;
+  await db().query(
+    `UPDATE legacy_document SET status='stored', assumed=true, byte_size=$2, sha256=$3, blob_key=$4, error=NULL
+      WHERE id = ANY($1::bigint[])`,
+    [ids, patch.byte_size, patch.sha256, patch.blob_key]
+  );
+}
+
 /** Assumed (skip-stored, unverified) docs, for --verify-skips. Includes the assumed sha256 to compare against. */
 export async function assumedDocs(limit: number) {
   const r = await db().query(
