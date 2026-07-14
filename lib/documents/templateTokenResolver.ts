@@ -313,13 +313,15 @@ export async function resolveTemplateTokenBaseValues(params: {
       courtDetails = flattenReferenceDetails(courtEntity?.details);
     }
     if (courtName || Object.keys(courtDetails).length) {
-      text("court.name", pick(courtDetails, ["shortName", "name"]) || courtName);
-      text("court.longName1", pick(courtDetails, ["longName1", "longName"]));
-      text("court.longName2", pick(courtDetails, ["longName2"]));
-      text("court.street", joinNonEmpty([pick(courtDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["addressLine2", "address_line_2"])], ", "));
-      text("court.city", pick(courtDetails, ["city"]));
-      text("court.state", pick(courtDetails, ["state"]));
-      text("court.zipcode", pick(courtDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
+      // Court details use a `court`-prefixed key convention (courtAddressLine1/courtCity/courtState/courtZip)
+      // in addition to the generic keys — include both so it resolves whichever the stored data uses.
+      text("court.name", pick(courtDetails, ["shortName", "name", "courtName"]) || courtName);
+      text("court.longName1", pick(courtDetails, ["longName1", "longName", "courtLongName1"]));
+      text("court.longName2", pick(courtDetails, ["longName2", "courtLongName2"]));
+      text("court.street", joinNonEmpty([pick(courtDetails, ["courtAddressLine1", "addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["courtAddressLine2", "addressLine2", "address_line_2"])], ", "));
+      text("court.city", pick(courtDetails, ["courtCity", "city"]));
+      text("court.state", pick(courtDetails, ["courtState", "state"]));
+      text("court.zipcode", pick(courtDetails, ["courtZip", "courtZipcode", "courtZipCode", "zip", "zipcode", "zipCode", "postalCode"]));
     }
   }
 
