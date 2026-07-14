@@ -185,32 +185,48 @@ export async function resolveTemplateTokenBaseValues(params: {
     }
   }
 
-  text("matter.fileNumber", claim?.display_number || displayNumber);
+  // Lawsuit-level context has no single matter, but a packet's members share one patient, provider, and
+  // insurer (packets are one patient / one provider). Load a representative member claim so those SHARED
+  // identity fields resolve — mirroring how the packet generator derives insurer/patient/provider from
+  // members. Per-claim fields (balances, DOS, denial reason, claim number) stay blank: no single value.
+  let isRepresentativeClaim = false;
+  if (!claim && masterLawsuitId) {
+    claim = await prisma.claimIndex
+      .findFirst({ where: { master_lawsuit_id: masterLawsuitId }, orderBy: { display_number: "asc" } })
+      .catch(() => null);
+    isRepresentativeClaim = !!claim;
+  }
+
+  text("matter.fileNumber", (isRepresentativeClaim ? "" : claim?.display_number) || displayNumber);
 
   if (claim) {
     if (!masterLawsuitId) masterLawsuitId = clean(claim.master_lawsuit_id);
 
+    // Shared identity fields — valid whether from an individual matter OR a lawsuit's representative member.
     text("matter.providerName", normalizeProviderName(claim.client_name || claim.provider_name));
     text("matter.patientName", claim.patient_name);
-    money("matter.billedAmount", claim.claim_amount);
-
-    text("claim.number", claim.claim_number_raw || claim.claim_number_normalized);
-    date("claim.dateOfLoss", claim.date_of_loss);
-
-    const dosStart = clean(claim.dos_start);
-    const dosEnd = clean(claim.dos_end);
-    if (dosStart && dosEnd && dosStart !== dosEnd) {
-      // A range is pre-formatted text; date modifiers do not apply.
-      values["claim.dateOfService"] = { raw: `${dosStart} – ${dosEnd}`, type: "text" };
-    } else {
-      date("claim.dateOfService", dosStart || dosEnd);
-    }
-
-    text("claim.denialReason", claim.denial_reason);
-    money("claim.balance", claim.balance_presuit);
-    money("claim.payments", claim.payment_voluntary);
-
     text("insurer.name", claim.insurer_name);
+
+    // Per-claim fields — only for an individual matter, not a lawsuit's representative member (they vary by
+    // member and have no single lawsuit-level value).
+    if (!isRepresentativeClaim) {
+      money("matter.billedAmount", claim.claim_amount);
+      text("claim.number", claim.claim_number_raw || claim.claim_number_normalized);
+      date("claim.dateOfLoss", claim.date_of_loss);
+
+      const dosStart = clean(claim.dos_start);
+      const dosEnd = clean(claim.dos_end);
+      if (dosStart && dosEnd && dosStart !== dosEnd) {
+        // A range is pre-formatted text; date modifiers do not apply.
+        values["claim.dateOfService"] = { raw: `${dosStart} – ${dosEnd}`, type: "text" };
+      } else {
+        date("claim.dateOfService", dosStart || dosEnd);
+      }
+
+      text("claim.denialReason", claim.denial_reason);
+      money("claim.balance", claim.balance_presuit);
+      money("claim.payments", claim.payment_voluntary);
+    }
 
     // 3a. Insurer reference address (by insurer name)
     const insurerEntity = await findReferenceEntityByName(
