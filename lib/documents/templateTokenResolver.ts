@@ -91,7 +91,7 @@ function joinNonEmpty(parts: Array<string | null | undefined>, sep: string): str
 // addressee blocks by placing the structured tokens on separate lines.
 function composeAddress(details: Record<string, any>): string {
   const street = joinNonEmpty(
-    [pick(details, ["addressLine1", "street", "address"]), pick(details, ["addressLine2"])],
+    [pick(details, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(details, ["addressLine2", "address_line_2"])],
     ", ",
   );
   const city = pick(details, ["city"]);
@@ -197,22 +197,25 @@ export async function resolveTemplateTokenBaseValues(params: {
     isRepresentativeClaim = !!claim;
   }
 
-  text("matter.fileNumber", (isRepresentativeClaim ? "" : claim?.display_number) || displayNumber);
+  // File number resolves to the SAMPLE's own identifier: the lawsuit number at lawsuit level, the BRL matter
+  // number at individual level.
+  text("matter.fileNumber", (isRepresentativeClaim ? masterLawsuitId : claim?.display_number) || displayNumber || masterLawsuitId);
 
   if (claim) {
     if (!masterLawsuitId) masterLawsuitId = clean(claim.master_lawsuit_id);
 
     // Shared identity fields — valid whether from an individual matter OR a lawsuit's representative member.
+    // Claim number and date of loss are shared too: a packet is one patient / one accident / one insurer claim.
     text("matter.providerName", normalizeProviderName(claim.client_name || claim.provider_name));
     text("matter.patientName", claim.patient_name);
     text("insurer.name", claim.insurer_name);
+    text("claim.number", claim.claim_number_raw || claim.claim_number_normalized);
+    date("claim.dateOfLoss", claim.date_of_loss);
 
     // Per-claim fields — only for an individual matter, not a lawsuit's representative member (they vary by
     // member and have no single lawsuit-level value).
     if (!isRepresentativeClaim) {
       money("matter.billedAmount", claim.claim_amount);
-      text("claim.number", claim.claim_number_raw || claim.claim_number_normalized);
-      date("claim.dateOfLoss", claim.date_of_loss);
 
       const dosStart = clean(claim.dos_start);
       const dosEnd = clean(claim.dos_end);
@@ -234,7 +237,7 @@ export async function resolveTemplateTokenBaseValues(params: {
       claim.insurer_name,
     );
     const insurerDetails = flattenReferenceDetails(insurerEntity?.details);
-    text("insurer.street", joinNonEmpty([pick(insurerDetails, ["addressLine1", "street", "address"]), pick(insurerDetails, ["addressLine2"])], ", "));
+    text("insurer.street", joinNonEmpty([pick(insurerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(insurerDetails, ["addressLine2", "address_line_2"])], ", "));
     text("insurer.city", pick(insurerDetails, ["city"]));
     text("insurer.state", pick(insurerDetails, ["state"]));
     text("insurer.zipcode", pick(insurerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
@@ -293,7 +296,7 @@ export async function resolveTemplateTokenBaseValues(params: {
       adversaryDetails = flattenReferenceDetails(adversaryEntity?.details);
     }
     const adv = adversaryDetails || {};
-    text("adversaryAttorney.street", joinNonEmpty([pick(adv, ["addressLine1", "street", "address"]), pick(adv, ["addressLine2"])], ", "));
+    text("adversaryAttorney.street", joinNonEmpty([pick(adv, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(adv, ["addressLine2", "address_line_2"])], ", "));
     text("adversaryAttorney.city", pick(adv, ["city"]));
     text("adversaryAttorney.state", pick(adv, ["state"]));
     text("adversaryAttorney.zipcode", pick(adv, ["zip", "zipcode", "zipCode", "postalCode"]));
@@ -313,7 +316,7 @@ export async function resolveTemplateTokenBaseValues(params: {
       text("court.name", pick(courtDetails, ["shortName", "name"]) || courtName);
       text("court.longName1", pick(courtDetails, ["longName1", "longName"]));
       text("court.longName2", pick(courtDetails, ["longName2"]));
-      text("court.street", joinNonEmpty([pick(courtDetails, ["addressLine1", "street", "address"]), pick(courtDetails, ["addressLine2"])], ", "));
+      text("court.street", joinNonEmpty([pick(courtDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["addressLine2", "address_line_2"])], ", "));
       text("court.city", pick(courtDetails, ["city"]));
       text("court.state", pick(courtDetails, ["state"]));
       text("court.zipcode", pick(courtDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
