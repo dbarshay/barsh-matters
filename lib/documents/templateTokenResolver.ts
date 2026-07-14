@@ -325,6 +325,37 @@ export async function resolveTemplateTokenBaseValues(params: {
     }
   }
 
+  // 5. Settlement record + settled-with — keyed by masterLawsuitId, so it resolves for BOTH lawsuit and
+  // individual samples that belong to a settled lawsuit. Source of truth: the latest non-voided
+  // LocalSettlementRecord (what the settlement dialog writes). The settled-with party's contact info
+  // (email/fax/phone/company) comes from the "individual" reference list (Settlement Contacts) — note fax
+  // may be sparsely seeded, so it can legitimately come back blank.
+  if (masterLawsuitId) {
+    const settlement = await prisma.localSettlementRecord
+      .findFirst({ where: { masterLawsuitId, voided: false }, orderBy: { recordedAt: "desc" } })
+      .catch(() => null);
+
+    const settledWithName = clean(settlement?.settledWith) || clean(claim?.settled_with);
+    text("settledWith.name", settledWithName);
+    if (settledWithName) {
+      const swEntity = await findReferenceEntityByName(["individual"], settledWithName);
+      const sw = flattenReferenceDetails(swEntity?.details);
+      text("settledWith.email", pick(sw, ["email"]));
+      text("settledWith.fax", pick(sw, ["fax", "faxNumber", "fax_number"]));
+      text("settledWith.phone", pick(sw, ["phone", "phoneNumber", "phone_number"]));
+      text("settledWith.company", pick(sw, ["company"]));
+    }
+
+    date("settlement.date", settlement?.settlementDate);
+    date("settlement.paymentExpectedDate", settlement?.paymentExpectedDate);
+    text("settlement.allocationMode", settlement?.allocationMode);
+    money("settlement.grossAmount", settlement?.grossSettlementAmount);
+    money("settlement.interestAmount", settlement?.interestAmountTotal);
+    money("settlement.allocatedTotal", settlement?.allocatedSettlementTotal);
+    money("settlement.totalFee", settlement?.totalFee);
+    money("settlement.providerNet", settlement?.providerNetTotal);
+  }
+
   return {
     values,
     context: {
