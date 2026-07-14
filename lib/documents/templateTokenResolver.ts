@@ -318,7 +318,9 @@ export async function resolveTemplateTokenBaseValues(params: {
       text("court.name", pick(courtDetails, ["shortName", "name", "courtName"]) || courtName);
       text("court.longName1", pick(courtDetails, ["longName1", "longName", "courtLongName1"]));
       text("court.longName2", pick(courtDetails, ["longName2", "courtLongName2"]));
-      text("court.street", joinNonEmpty([pick(courtDetails, ["courtAddressLine1", "addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["courtAddressLine2", "addressLine2", "address_line_2"])], ", "));
+      // `addressStreet` is the actual stored key (confirmed from the Edit Court dialog rendering); keep the
+      // others as fallbacks. Court reference data has no zip field, so court.zipcode stays blank by design.
+      text("court.street", joinNonEmpty([pick(courtDetails, ["addressStreet", "courtAddressLine1", "addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["addressStreet2", "courtAddressLine2", "addressLine2", "address_line_2"])], ", "));
       text("court.city", pick(courtDetails, ["courtCity", "city"]));
       text("court.state", pick(courtDetails, ["courtState", "state"]));
       text("court.zipcode", pick(courtDetails, ["courtZip", "courtZipcode", "courtZipCode", "zip", "zipcode", "zipCode", "postalCode"]));
