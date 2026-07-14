@@ -18,6 +18,56 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-14 — Within-case dedup skip + BATCHED DB writes (throughput ~2x); ATT_Letter breakage explained
+
+**CURRENT RUN CONFIG (what the sweep should be running):**
+```
+cd ~/atlas-migration
+MAX_CASE_ATTEMPTS=1 CASE_CONCURRENCY=10 FILE_CONCURRENCY=8 npx tsx extract.ts --run
+```
+tmux session `migrate` on VM `legacy-migrator` (`ssh azureuser@20.83.169.218`). Scripts FLAT in `~/atlas-migration/`.
+
+**Status at end of session:** 68,799 / 555,499 cases done (12.4%); 35.1M docs stored (~14 TB *logical*; real
+Azure footprint is far smaller after dedup); doc error rate **2.74%**. **~168 cases/min, ~1,400 docs/sec** —
+up ~1.85–2.2x after the batch fix below. ETA ~2–2.4 days.
+
+**Within-case dedup skip (commit 634ed13), ON by default (`WITHIN_CASE_DEDUP=1`).** Groups a case's leaves by
+`file_name`; downloads the FIRST of each name, points the rest at its blob WITHOUT downloading, marking them
+**`assumed`** (new `legacy_document.assumed` column). Safe: `(case,file_name,size)` = **0** collisions across
+21.8M rows; `(case,file_name)` alone = 112/17.7M (0.0006%), all **within-patient** (packets are one patient/one
+provider — confirmed), i.e. benign/sister-healed/caught-at-filing. **Live-verified** in LawSpades: a 59-member
+packet's same-named copies were byte-identical. Skipping **~80% of downloads** on packet-heavy cases. Deferred
+**`--verify-skips`** re-downloads assumed docs to confirm/fix (catches 100% since collisions differ in size) —
+run at END only if access survives; realistically **sample-audit**, not full re-download (assumed pile is ~most
+of the corpus).
+
+**THROUGHPUT FIX — the ceiling was DB writes, not downloads/concurrency (commit 25f2965).** With ~80% of
+downloads skipped the sweep went DB-bound; 6×8→10×8 did nothing (flat ~76 cases/min). Root cause:
+`upsertDocuments` did a **per-doc INSERT loop** (3,753-file case = 3,753 sequential INSERTs before downloading).
+Fix: **batched multi-row INSERT** (800/chunk) + **pg pool max 10→24** (`PG_POOL_MAX`) ⇒ **~2x** (76→168
+cases/min, 756→1,397 docs/sec). Also batched the assumed-write (commit 20014d8, `markDocsAssumedBatch`).
+**Lesson: docs/sec is the honest throughput metric; cases/min lies during small-case stretches.**
+
+**Packet structure (confirmed live in LawSpades UI+API):** `/document/node/false` for ANY member returns **all**
+members' docs, foldered by member case number. Same doc has the **SAME ImageId** across member views → file-ID
+cache already dedups that (no re-download). BUT some packets (e.g. Burgos, 59 members) **physically copy** each
+doc into every member folder with a **different** ImageId — that's what the file-ID cache misses and the
+within-case skip catches (verified identical). Source of the "~84% avoidable downloads." Atlas exposes **no
+HEAD, no content hash, no size** — so `(case,file_name)` is the safe request-free key and it's maxed.
+
+**`_ATT_Letter_` files = the error driver, NOT a real problem.** 92–93% of all errors are ATT letters. ~37% of
+all docs (10.7M rows) but ~82k **distinct** stored contents; a subset (~33k–49k distinct, growing) fail with a
+**deterministic Atlas HTTP 500 "An error has occurred"** — verified by direct authed fetch: broken **at the
+source** (unrenderable in LawSpades itself, all in `UNCATEGORIZED`). ~70% of distinct ATT letters migrated fine,
+~30% source-broken/unrecoverable. 785k+ error rows collapse to ~49k distinct → deduped `--retry-errors` hits
+each once at the end. Not data loss; nothing to fix.
+
+**⚠️ NEXT:** let the sweep finish (~2 days) → deduped `--retry-errors` (RETRY_CONCURRENCY=2) →
+`--report-failures --out atlas-failures.csv` (spot-check ATT letters in LawSpades while access remains) →
+`--verify-skips` (likely sample-audit) → then full bulk MATTER import so BM matters exist with
+`old_matter_number` and the Legacy Docs panel lights up.
+
+
 ### 2026-07-13 (evening) — Migration hardening: loop fix, auth blowup, file-ID cache, integrity audit
 
 **The full sweep is RUNNING** on the VM (tmux session **`migrate`** — note: NOT `migrated`, that was a decoy
