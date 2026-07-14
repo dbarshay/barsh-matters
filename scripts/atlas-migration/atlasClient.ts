@@ -229,10 +229,41 @@ export function flattenFileLeaves(tree: any[]): AtlasFileLeaf[] {
  * and `Content-Disposition: attachment; filename=...`. No CORS preflight server-side (that was a
  * browser-only artifact of the custom Authorization header). `fileId` == the tree leaf's `id`/`ImageId`.
  */
+let dumpedHeaders = 0;
 export async function fetchFileBytes(leaf: AtlasFileLeaf, caseId: string): Promise<Buffer> {
   const res = await api(`/case/${encodeURIComponent(caseId)}/document/file/${leaf.atlasFileId}/view`);
   if (!res.ok) throw new Error(`file ${leaf.atlasFileId} (${caseId} "${leaf.fileName}"): HTTP ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+
+  // ATLAS_DEBUG_HEADERS=1: dump the response headers of the first few real downloads (ZERO extra Atlas
+  // requests — these are downloads we're doing anyway). We're hunting for a server-provided CONTENT
+  // fingerprint — Content-MD5, a content-derived ETag, or Content-Digest — that we could match BEFORE
+  // pulling the body (via a cheap HEAD) to skip the 84% of downloads that are byte-dupes. Also prints the
+  // SHA-256 of the body so we can eyeball whether any header actually tracks content (an ETag that changes
+  // when the SHA does = content-derived = usable; one that doesn't = coincidence = unsafe).
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (process.env.ATLAS_DEBUG_HEADERS === "1" && dumpedHeaders < 5) {
+    dumpedHeaders++;
+    const { createHash } = await import("crypto");
+    const sha = createHash("sha256").update(buf).digest("hex");
+    const headers: Record<string, string> = {};
+    res.headers.forEach((v, k) => (headers[k] = v));
+    console.log(`\n=== ATLAS_DEBUG_HEADERS (${dumpedHeaders}/5): file ${leaf.atlasFileId} "${leaf.fileName}" ===`);
+    console.log("  bytes:", buf.length, "| sha256:", sha);
+    console.log("  response headers:", JSON.stringify(headers, null, 2));
+    console.log("  → want a header that tracks sha256 (Content-MD5 / content ETag / Content-Digest)\n");
+  }
+  return buf;
+}
+
+/**
+ * Cheap metadata-only probe: HEAD the file endpoint (no body) to see whether Atlas supports HEAD at all and
+ * what fingerprint headers it returns. Only used by --probe-head; NOT on the hot path.
+ */
+export async function headFile(atlasFileId: number, caseId: string): Promise<{ status: number; headers: Record<string, string> }> {
+  const res = await api(`/case/${encodeURIComponent(caseId)}/document/file/${atlasFileId}/view`, { method: "HEAD" });
+  const headers: Record<string, string> = {};
+  res.headers.forEach((v, k) => (headers[k] = v));
+  return { status: res.status, headers };
 }
 
 
