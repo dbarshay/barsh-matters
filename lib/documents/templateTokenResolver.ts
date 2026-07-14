@@ -283,11 +283,17 @@ export async function resolveTemplateTokenBaseValues(params: {
     text("adversaryAttorney.zipcode", pick(adv, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("adversary.fullAddressBlock", composeAddress(adv));
 
-    // Court (best-effort from a court reference entity keyed by venue/court name)
+    // Court — mirror the packet generator (app/api/documents/packet/route.ts): prefer the embedded
+    // `selectedCourtDetails` set by the venue picker, then fall back to a court reference entity. Two prior
+    // bugs made the preview show blanks while the real doc filled in: (1) no embedded-details path, and
+    // (2) the reference lookup used types ["court","venue"] but entities are stored as "court_venue".
     const courtName = clean(lawsuit.venue || lawsuit.venueSelection || opts.venue || opts.courtName);
-    if (courtName) {
-      const courtEntity = await findReferenceEntityByName(["court", "venue"], courtName);
-      const courtDetails = flattenReferenceDetails(courtEntity?.details);
+    let courtDetails: Record<string, any> = flattenReferenceDetails(opts.selectedCourtDetails);
+    if (!Object.keys(courtDetails).length && courtName) {
+      const courtEntity = await findReferenceEntityByName(["court_venue", "court", "venue"], courtName);
+      courtDetails = flattenReferenceDetails(courtEntity?.details);
+    }
+    if (courtName || Object.keys(courtDetails).length) {
       text("court.name", pick(courtDetails, ["shortName", "name"]) || courtName);
       text("court.longName1", pick(courtDetails, ["longName1", "longName"]));
       text("court.longName2", pick(courtDetails, ["longName2"]));
