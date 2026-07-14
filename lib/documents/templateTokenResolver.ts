@@ -335,15 +335,19 @@ export async function resolveTemplateTokenBaseValues(params: {
       .findFirst({ where: { masterLawsuitId, voided: false }, orderBy: { recordedAt: "desc" } })
       .catch(() => null);
 
-    const settledWithName = clean(settlement?.settledWith) || clean(claim?.settled_with);
-    text("settledWith.name", settledWithName);
-    if (settledWithName) {
-      const swEntity = await findReferenceEntityByName(["individual"], settledWithName);
+    const settledWithRaw = clean(settlement?.settledWith) || clean(claim?.settled_with);
+    if (settledWithRaw) {
+      const swEntity = await findReferenceEntityByName(["individual"], settledWithRaw);
       const sw = flattenReferenceDetails(swEntity?.details);
+      // The stored value can be the contact DISPLAY string ("Name <email>"). Prefer the entity's clean
+      // displayName; otherwise strip the trailing "<email>" so documents show just the name.
+      text("settledWith.name", clean(swEntity?.displayName) || settledWithRaw.replace(/\s*<[^>]*>\s*$/, ""));
       text("settledWith.email", pick(sw, ["email"]));
       text("settledWith.fax", pick(sw, ["fax", "faxNumber", "fax_number"]));
       text("settledWith.phone", pick(sw, ["phone", "phoneNumber", "phone_number"]));
       text("settledWith.company", pick(sw, ["company"]));
+    } else {
+      text("settledWith.name", "");
     }
 
     date("settlement.date", settlement?.settlementDate);
