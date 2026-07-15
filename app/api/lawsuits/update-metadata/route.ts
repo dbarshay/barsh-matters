@@ -259,6 +259,12 @@ export async function POST(req: NextRequest) {
       customAmountSought,
       indexAaaNumber: text(body?.indexAaaNumber),
       adversaryAttorney: text(body?.adversaryAttorney),
+      // Present-key check so master-info edits can clear it, while other save
+      // payloads (e.g. cost-entry saves) that omit the key preserve it.
+      adversaryAttorneyFileNo:
+        "adversaryAttorneyFileNo" in body
+          ? text(body.adversaryAttorneyFileNo)
+          : text(existingOptions.adversaryAttorneyFileNo),
       dateFiled: text(body?.dateFiled || existingOptions.dateFiled),
       selectedAdversaryAttorneyDetails:
         body?.selectedAdversaryAttorneyDetails && typeof body.selectedAdversaryAttorneyDetails === "object"

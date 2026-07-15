@@ -1789,6 +1789,10 @@ export default function FilteredMattersPage() {
     return masterInfoDisplayValue("adversaryAttorney", masterLocalMetadataValue("adversaryAttorney") || "—");
   }
 
+  function masterAdversaryAttorneyFileNoDisplayValue(): string {
+    return masterInfoDisplayValue("adversaryAttorneyFileNo", masterLocalMetadataValue("adversaryAttorneyFileNo") || "—");
+  }
+
   function masterCostEntryDateField(field: string): string {
   if (field === "filingFee") return "filingFeeEntryDate";
   if (field === "serviceFee") return "serviceFeeEntryDate";
@@ -1962,6 +1966,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       dateOfLoss: clean(options?.dateOfLoss),
       dateFiled: clean(options?.dateFiled),
       adversaryAttorney: clean(options?.adversaryAttorney),
+      adversaryAttorneyFileNo: clean(options?.adversaryAttorneyFileNo),
       selectedAdversaryAttorneyDetails: options?.selectedAdversaryAttorneyDetails || null,
       filingFee: clean(options?.filingFee),
       serviceFee: clean(options?.serviceFee),
@@ -2021,6 +2026,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       payload.adversaryAttorney = after;
       payload.selectedAdversaryAttorneyDetails = masterInfoSelectedContact?.details || null;
     }
+    if (field === "adversaryAttorneyFileNo") payload.adversaryAttorneyFileNo = after;
     if (field === "filingFee") payload.filingFee = after;
     if (field === "serviceFee") payload.serviceFee = after;
     if (field === "otherCourtCosts") payload.otherCourtCosts = after;
@@ -2165,6 +2171,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       "indexAaaNumber",
       "dateFiled",
       "adversaryAttorney",
+      "adversaryAttorneyFileNo",
       "filingFee",
       "serviceFee",
       "otherCourtCosts",
@@ -10300,7 +10307,9 @@ function masterDocumentPreviewText(value: unknown): string {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                        // Index/AAA and Date Filed shrunk to make room for the
+                        // Adversary Attorney File No. card on the same row.
+                        gridTemplateColumns: "0.8fr 1fr 1.1fr 1.1fr 0.75fr",
                         gap: 12,
                         alignItems: "stretch",
                       }}
@@ -10374,6 +10383,25 @@ function masterDocumentPreviewText(value: unknown): string {
                           type="button"
                           onClick={() => openMasterInfoEditDialog("adversaryAttorney", "Adversary Attorney", masterAdversaryAttorneyDisplayValue())}
                           title="Open Adversary Attorney edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#00346e",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Adversary Attorney File No.</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterAdversaryAttorneyFileNoDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("adversaryAttorneyFileNo", "Adversary Attorney File No.", masterAdversaryAttorneyFileNoDisplayValue())}
+                          title="Open Adversary Attorney File No. edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
                             borderColor: "#93c5fd",

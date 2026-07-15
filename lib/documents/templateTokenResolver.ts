@@ -292,6 +292,7 @@ export async function resolveTemplateTokenBaseValues(params: {
     // Adversary attorney (name + address)
     const adversaryName = clean(opts.adversaryAttorney);
     text("lawsuit.adversaryAttorney", adversaryName);
+    text("lawsuit.adversaryAttorneyFileNo", clean(opts.adversaryAttorneyFileNo));
     let adversaryDetails =
       opts.selectedAdversaryAttorneyDetails && typeof opts.selectedAdversaryAttorneyDetails === "object"
         ? (opts.selectedAdversaryAttorneyDetails as Record<string, any>)

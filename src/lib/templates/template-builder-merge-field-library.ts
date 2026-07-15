@@ -548,6 +548,15 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
   {
     kind: "canonical",
     category: "Lawsuit",
+    fieldLabel: "Adversary Attorney File No.",
+    mergeField: "{{lawsuit.adversaryAttorneyFileNo}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
+  },
+  {
+    kind: "canonical",
+    category: "Lawsuit",
     fieldLabel: "Adversary Street",
     mergeField: "{{adversaryAttorney.street}}",
     fieldType: "text",
