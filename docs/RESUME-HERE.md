@@ -18,6 +18,73 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-15 — Settlement stip template polish + Adversary File No. field; migration resume BLOCKED by Atlas degradation
+
+**Template / builder work (all committed locally on `main`; VERIFY PUSHED — `git log origin/main..HEAD`):**
+- `9824f4d` **"Production Ready" now clears the generation gate.** `finalize-preview` + `direct-finalize-preview`
+  `buildStoredDbDocxTemplateDocuments`: `wouldGenerate = canGenerate || productionTemplateReady`, so a Production
+  Ready stored template generates even when packet/matter validation says `canGenerate=false`. AND — the real gap —
+  Production Ready templates now route `sourceEndpoint` through **`generate-preview`** (fills merge fields + the
+  `{{#matters}}` loop) instead of the raw `stored-docx` passthrough (which returned the UNFILLED template). The
+  production path is `working-docx` → `generateDocumentBuffer` (just fetches `sourceEndpoint`, no fill of its own) →
+  so pointing Production Ready templates at `generate-preview` is what makes the delivery flow actually fill.
+- `d859ad0` repeating table rows (settlement matters table auto-expands) — the loop engine (`expandLoopRows`) lives
+  in `generate-preview/route.ts`; `\n` in a row value renders as a Word `<w:br/>`.
+- `4a98e83` **DOS normalized to MM/DD/YYYY** in the matters table — exported `formatDate` from
+  `templateTokenFormat.ts`, used in `templateTokenResolver.ts` for `row.dos`.
+- Resolver also now **stacks** patient (given / surname) and DOS (start / end) onto 2 lines via `\n`.
+- Template docx (`Stipulation-of-Settlement-TEMPLATE.docx`, built by `build_stip.py` — python-docx; npm `docx` is
+  403-blocked): 8-col matters table, **explicit `<w:tblGrid>` gridCol widths** (per-cell `tcW` is overridden under
+  fixed layout — must set gridCol) + `<w:noWrap/>` on File No / Balance so they don't wrap; File No widened. User has
+  the .docx to re-upload. Confirmed end-to-end: production delivery generated a correctly filled + auto-expanded stip.
+- `210c668` **NEW "Adversary Attorney File No." field** (lawsuit-level, beside Adversary Attorney). `app/matters/page.tsx`
+  (new card on the Lawsuit Information row, tuned 5-col grid `0.8fr 1fr 1.1fr 1.1fr 0.75fr` shrinking Index/AAA + Date
+  Filed; Edit button; free-form alphanumeric `text` kind). Persists to `lawsuitOptions.adversaryAttorneyFileNo` via
+  `update-metadata` (present-key check preserves on omitting saves, still clearable). Mergeable:
+  `{{lawsuit.adversaryAttorneyFileNo}}` (resolver + builder library). Typecheck clean. **It is lawsuit-level, one value
+  per lawsuit** (confirmed with user — different file number per matter, entered manually, NOT from the attorney ref).
+
+**Migration resume attempt — STOPPED; Atlas is degraded, do NOT run until it's genuinely fast again:**
+- Ledger state (unchanged, resumable): **187,000 cases done / 42,934 error / 325,565 pending**; **54,345,420 docs stored
+  (~20.9 TB logical)** / 2,725,151 doc error / 52,470 pending.
+- **Two VM fixes made tonight (live on the VM, NOT yet in the repo — port them or a re-scp will wipe them):**
+  1. **`atlasClient.ts` had NO fetch timeout** → a hung Atlas socket (huge packet-tree generation) blocked `fetch`
+     forever; at `CASE_CONCURRENCY=6` all workers parked = silent freeze. Patched on the VM via `patch-timeout.mjs`:
+     `signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 45000))`. **TODO: add this to the repo copy +
+     commit.**
+  2. **Refresh-token persistence was broken** → `refreshTokenFile` default `scripts/atlas-migration/.refresh-token`
+     doesn't exist on the FLAT VM, so the rotated token was never saved; every `npx tsx` restart replayed the stale
+     `.env` refresh token until IdentityServer **revoked the family** (the recurring 401 death, incl. probably the
+     overnight one). Fix applied in VM `.env`: **`ATLAS_REFRESH_TOKEN_FILE=/home/azureuser/atlas-migration/.refresh-token`**.
+     Lesson: **launch ONCE and leave it running** — restart-thrashing is what burns the token family.
+- **Error backlog understood (for a later `--retry-errors` pass, NOT a mass reset):** all 42,934 case errors are
+  `"N files failed"` (28k are just 1 file short — downstream of doc failures, parked correctly). Doc errors are
+  **95.5% `5xx`** (2.60M — server overload from earlier high-concurrency runs), 70k `403`, 52k `404`. The 5xx are
+  recoverable via deduped `--retry-errors` (targets error docs directly, dedupes by file-ID) — must run SEPARATE from
+  the main sweep (single-login rule).
+- **Why we stopped — Atlas is wounded, not us:** all evening it cycled outage → false "back up" → we resume → UI
+  crashes → degraded. **KEY user data point: earlier we pulled 10K+ file trees VERY fast; tonight a 4,275-file tree
+  took ~180s and light load crashed their UI** → this is a server-side capacity collapse, NOT tree size and NOT our
+  tuning (concurrency/timeout/order are irrelevant if their backend can't serve at speed). Not a targeted block
+  (no disabled login, no 403s on our account; a spinning login = their outage). (An in-session note that Atlas had
+  dropped the inline "view via icon" to download-only was RETRACTED — user was on the wrong screen; the viewer is
+  present and doc-serving is unchanged.)
+
+**TOMORROW — resume checklist (only when Atlas is genuinely FAST again):**
+1. Gauge readiness by **speed, not the UI**: `LIMIT_CASES=1 CASE_CONCURRENCY=1 FETCH_TIMEOUT_MS=180000 npx tsx extract.ts --run`
+   — a normal case's tree must snap back in seconds like before. Also confirm a single file `/view` download returns bytes.
+2. Ensure VM `.env` still has `ATLAS_REFRESH_TOKEN_FILE=...` and the `atlasClient.ts` timeout patch is present
+   (`grep AbortSignal.timeout atlasClient.ts`). Grab a **FRESH** token (family was revoked tonight):
+   DevTools → `GetAccessToken` → `ATLAS_TOKEN`/`ATLAS_REFRESH_TOKEN` in `.env`, then `rm -f ~/atlas-migration/.refresh-token`.
+3. Launch **ONCE**, gentle, in tmux `migrate`, and DON'T restart:
+   `MAX_CASE_ATTEMPTS=1 CASE_CONCURRENCY=1 FILE_CONCURRENCY=8 FETCH_TIMEOUT_MS=180000 npx tsx extract.ts --run` → Ctrl+B D.
+   Only nudge `CASE_CONCURRENCY` to 2–3 after it's clearly flowing. Monitor `--status` from a 2nd shell.
+4. VM has no `psql` — run ledger SQL via Node + `pg` (see tonight's `reset-poisoned.mjs` / `diag-errors.mjs` pattern).
+5. If Atlas ever shows **deliberate** restriction (disabled login, 403s on our account, `/view` gated/changed) →
+   stop scraping and formally invoke the **contractual right to your own data** with LawSpades.
+6. Port the two VM fixes into the repo (`scripts/atlas-migration/atlasClient.ts` timeout + `config.ts` refreshTokenFile
+   default that works on a flat layout) and commit, so a future scp doesn't regress them.
+
 ### 2026-07-14 (evening) — Template builder fixes + new Settlement merge fields
 
 All in `lib/documents/templateTokenResolver.ts` (preview + generation share this resolver) and
