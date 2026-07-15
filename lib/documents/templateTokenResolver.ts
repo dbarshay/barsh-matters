@@ -397,10 +397,24 @@ export async function resolveTemplateTokenBaseValues(params: {
       tInterest += numOrNull(r.interestAmount) ?? 0;
       tAtty += numOrNull(r.totalFee) ?? 0;
       tFiling += filing;
+      // Stack the patient name (first line = given name(s), second line = surname)
+      // and the dates of service (start over end) so those columns stay narrow and
+      // the File No / Balance columns keep enough width to render on one line.
+      // The fill engine turns "\n" into a Word line break inside the cell.
+      const patientStacked = (() => {
+        const full = clean(r.patient);
+        const sp = full.lastIndexOf(" ");
+        return sp > 0 ? `${full.slice(0, sp)}\n${full.slice(sp + 1)}` : full;
+      })();
+      const dosStacked = (() => {
+        const s = clean(r.dosStart), e = clean(r.dosEnd);
+        if (s && e) return s === e ? s : `${s}\n${e}`;
+        return s || e;
+      })();
       return {
         "row.fileNo": clean(r.displayNumber),
-        "row.patient": clean(r.patient),
-        "row.dos": [clean(r.dosStart), clean(r.dosEnd)].filter(Boolean).join(" - "),
+        "row.patient": patientStacked,
+        "row.dos": dosStacked,
         "row.balance": fmtMoney(r.claimAmount),
         "row.settledPrincipal": fmtMoney(r.allocatedSettlement),
         "row.interest": fmtMoney(r.interestAmount),

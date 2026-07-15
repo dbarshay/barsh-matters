@@ -86,16 +86,28 @@ async function buildStoredDbDocxTemplateDocuments(baseName: string, canGenerate:
           ? (template.metadata as any)
           : {};
 
+      // Production Ready templates are validated at the template level and
+      // should generate regardless of the broader direct-matter validation.
+      const productionTemplateReady =
+        Boolean(metadata.productionTemplateReady) || currentVersion.status === "production-ready";
+      const templateWouldGenerate = canGenerate || productionTemplateReady;
+
       return {
         key: template.key,
         label: template.label,
         filename: storedTemplateFilename(baseName, template),
-        sourceEndpoint: `/api/documents/templates/stored-docx?versionId=${encodeURIComponent(currentVersion.id)}`,
-        wouldGenerate: canGenerate,
-        wouldUploadToClio: canGenerate,
-        reason: canGenerate ? "" : "Direct matter validation blocks document generation.",
+        // Production Ready templates render through generate-preview (fills merge
+        // fields + repeating-row loops); other stored templates keep raw passthrough.
+        sourceEndpoint: productionTemplateReady
+          ? `/api/documents/templates/generate-preview?key=${encodeURIComponent(template.key)}&versionId=${encodeURIComponent(currentVersion.id)}`
+          : `/api/documents/templates/stored-docx?versionId=${encodeURIComponent(currentVersion.id)}`,
+        wouldGenerate: templateWouldGenerate,
+        wouldUploadToClio: templateWouldGenerate,
+        reason: templateWouldGenerate
+          ? ""
+          : "Direct matter validation blocks document generation.",
         availableNow: true,
-        status: canGenerate ? "ready-for-finalization" : "blocked",
+        status: templateWouldGenerate ? "ready-for-finalization" : "blocked",
         templateSource: "barsh-matters-db-template-repository",
         repositorySource: "barsh-matters-db",
         repositoryStatus: "stored-db-docx-template",
@@ -106,8 +118,7 @@ async function buildStoredDbDocxTemplateDocuments(baseName: string, canGenerate:
         storedDocxBytes: currentVersion.contentText
           ? Buffer.from(String(currentVersion.contentText), "base64").length
           : 0,
-        productionTemplateReady:
-          Boolean(metadata.productionTemplateReady) || currentVersion.status === "production-ready",
+        productionTemplateReady,
         finalProductionDocument: Boolean(metadata.finalProductionDocument),
         mergeFieldSet: currentVersion.mergeFieldSet || metadata.mergeFieldSet || "",
         mergeFields: template.mergeFields.map((field) => ({
