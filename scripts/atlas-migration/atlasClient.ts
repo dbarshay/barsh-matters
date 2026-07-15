@@ -143,7 +143,20 @@ async function api(path: string, init?: RequestInit, _retried = false, _attempt 
   assertAtlas();
   const url = path.startsWith("http") ? path : `${config.atlas.apiBase}${path}`;
   const gen = tokenGen; // capture BEFORE the request, so we can tell whether a refresh happened meanwhile
-  const res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers || {}) } });
+
+  // NETWORK-level failures ("fetch failed" / ECONNRESET / socket timeout) throw rather than return a status.
+  // Under high concurrency a slow Atlas causes these transiently — retry with backoff instead of failing the
+  // doc and (worse) letting a burst of them trip the stall detector and halt the whole run.
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers || {}) } });
+  } catch (e: any) {
+    if (_attempt < MAX_TRANSIENT_RETRIES) {
+      await sleep(2 ** _attempt * 1000 + Math.random() * 500);
+      return api(path, init, _retried, _attempt + 1);
+    }
+    throw e;
+  }
 
   if (res.status === 401 && !_retried) {
     if (await refresh(gen)) return api(path, init, true, _attempt);
