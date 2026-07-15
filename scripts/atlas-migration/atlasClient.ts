@@ -187,8 +187,17 @@ let dumpedTree = 0;
 
 /** CONFIRMED: full document tree for a case, including file leaves. */
 export async function getCaseDocumentTree(caseId: string): Promise<any[]> {
-  const res = await api(`/case/${encodeURIComponent(caseId)}/document/node/false`);
-  if (!res.ok) throw new Error(`document tree ${caseId}: HTTP ${res.status}`);
+  // A failed tree fetch loses the WHOLE case, and tree 500s are LOAD-INDUCED (a single request succeeds —
+  // Atlas just buckles generating big packet trees under concurrency), so retry aggressively on ANY non-ok,
+  // unlike file 500s which are usually a permanently-unservable file. Backoff with jitter.
+  const maxTries = Number(process.env.TREE_RETRIES || 5);
+  let res: Response;
+  for (let attempt = 0; ; attempt++) {
+    res = await api(`/case/${encodeURIComponent(caseId)}/document/node/false`);
+    if (res.ok) break;
+    if (attempt >= maxTries) throw new Error(`document tree ${caseId}: HTTP ${res.status}`);
+    await sleep(2 ** attempt * 1000 + Math.random() * 500);
+  }
   const json = await res.json();
   const tree = Array.isArray(json) ? json : json?.items || json?.data || [];
 
