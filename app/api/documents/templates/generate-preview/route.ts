@@ -291,7 +291,51 @@ function replaceTokenAcrossTextNodes(xml: string, token: string, value: string) 
   return replaceTokenInsideTextScope(xml, token, value);
 }
 
-async function replaceTokensInDocx(buffer: Buffer, tokenValues: Record<string, string>) {
+// Concatenated visible text of a table-row XML block (across split <w:t> runs), for marker detection.
+function rowTextContent(rowXml: string): string {
+  let text = "";
+  const re = /<w:t\b[^>]*>([\s\S]*?)<\/w:t>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(rowXml)) !== null) text += xmlUnescape(m[1] || "");
+  return text;
+}
+
+// REPEATING TABLE ROWS. A template table row that contains the loop markers {{#name}} … {{/name}} is the
+// "template row" for that named row-set (e.g. `matters`). We clone that <w:tr> once per item, fill its
+// {{row.*}} tokens from the item, and strip the markers — so the table auto-expands like the LawSpades stip.
+// Convention: put {{#matters}} in the first cell and {{/matters}} in the last cell of the SAME repeating row.
+function expandLoopRows(xml: string, loops: Record<string, Array<Record<string, string>>>): string {
+  let out = xml;
+  for (const [name, items] of Object.entries(loops || {})) {
+    const startMarker = `{{#${name}}}`;
+    const endMarker = `{{/${name}}}`;
+    const trRegex = /<w:tr\b[\s\S]*?<\/w:tr>/g;
+    let match: RegExpExecArray | null;
+    let templateRow: string | null = null;
+    while ((match = trRegex.exec(out)) !== null) {
+      if (rowTextContent(match[0]).includes(startMarker)) { templateRow = match[0]; break; }
+    }
+    if (!templateRow) continue;
+    let replacement = "";
+    for (const item of items || []) {
+      let clone = templateRow;
+      for (const [k, v] of Object.entries(item)) {
+        clone = replaceTokenAcrossTextNodes(clone, `{{${k}}}`, v).xml;
+      }
+      clone = replaceTokenAcrossTextNodes(clone, startMarker, "").xml;
+      clone = replaceTokenAcrossTextNodes(clone, endMarker, "").xml;
+      replacement += clone;
+    }
+    out = out.replace(templateRow, replacement);
+  }
+  return out;
+}
+
+async function replaceTokensInDocx(
+  buffer: Buffer,
+  tokenValues: Record<string, string>,
+  loops: Record<string, Array<Record<string, string>>> = {},
+) {
   const zip = await JSZip.loadAsync(buffer);
   const replacements = Object.entries(tokenValues).map(([token, value]) => ({ token, value, count: 0 }));
 
@@ -302,6 +346,9 @@ async function replaceTokensInDocx(buffer: Buffer, tokenValues: Record<string, s
     if (!file) continue;
 
     let xml = await file.async("string");
+
+    // Expand repeating table rows FIRST (so per-row {{row.*}} tokens are filled), then scalar tokens.
+    xml = expandLoopRows(xml, loops);
 
     for (const replacement of replacements) {
       const result = replaceTokenAcrossTextNodes(xml, replacement.token, replacement.value);
@@ -511,7 +558,7 @@ export async function GET(req: NextRequest) {
       unrecognizedTokens,
     };
 
-    const generated = await replaceTokensInDocx(sourceBuffer, tokenValues);
+    const generated = await replaceTokensInDocx(sourceBuffer, tokenValues, baseResolution.rows);
     const filename = `${safeFilename(template.label || template.key)} - Generated Preview.docx`;
 
     return new NextResponse(generated.buffer, {

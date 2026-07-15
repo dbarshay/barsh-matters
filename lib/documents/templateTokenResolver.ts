@@ -126,8 +126,15 @@ export async function resolveTemplateTokenBaseValues(params: {
   directMatterDisplayNumber?: string | null;
   masterLawsuitId?: string | null;
   signer?: ResolvedTokenSigner | null;
-}): Promise<{ values: Record<string, TokenBaseValue>; context: TemplateTokenContext }> {
+}): Promise<{ values: Record<string, TokenBaseValue>; context: TemplateTokenContext; rows: Record<string, Array<Record<string, string>>> }> {
   const values: Record<string, TokenBaseValue> = {};
+  // Repeating-table row-sets (e.g. `rows.matters` for the settlement stip): the fill engine clones a marked
+  // table row once per item. Pre-formatted to strings since loop cells don't run through the modifier system.
+  const rows: Record<string, Array<Record<string, string>>> = {};
+  const fmtMoney = (n: unknown) => {
+    const v = numOrNull(n);
+    return v === null ? "" : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
   const text = (key: string, raw: unknown) => {
     values[key] = { raw: clean(raw) || null, type: "text" };
   };
@@ -360,10 +367,59 @@ export async function resolveTemplateTokenBaseValues(params: {
     money("settlement.allocatedTotal", settlement?.allocatedSettlementTotal);
     money("settlement.totalFee", settlement?.totalFee);
     money("settlement.providerNet", settlement?.providerNetTotal);
+
+    // Per-matter table rows (the stip "matters" table). One LocalSettlementRow per member matter — same data
+    // the settlement dialog wrote. Filing fees are the summed court costs; per-row allocation lives in
+    // rowSnapshot when present, else 0 (the lawsuit-level total is settlement.filingFeesTotal below).
+    const settlementRows = settlement
+      ? await prisma.localSettlementRow
+          .findMany({ where: { settlementRecordId: settlement.id }, orderBy: { displayNumber: "asc" } })
+          .catch(() => [] as any[])
+      : [];
+    // Filing fees = summed court costs, applied to the FIRST case (matching the settlement dialog's logic).
+    // Prefer an explicit per-row value from the dialog snapshot; else put the lawsuit-level total on row 0.
+    const lopts = detailsObject(lawsuit?.lawsuitOptions);
+    const filingFeesTotal =
+      (numOrNull(lopts.indexFee ?? lopts.filingFee) ?? 0) +
+      (numOrNull(lopts.serviceFee) ?? 0) +
+      (numOrNull(lopts.otherCourtCosts ?? lopts.otherCourtFees) ?? 0);
+    const snapFiling = settlementRows.map((r: any) => {
+      const s = detailsObject(r.rowSnapshot);
+      return numOrNull(r.filingFees ?? s.filingFees ?? s.filing_fees ?? s.courtCosts ?? s.costs);
+    });
+    const hasSnapFiling = snapFiling.some((v) => v !== null);
+    const filingForRow = (i: number) => (hasSnapFiling ? snapFiling[i] ?? 0 : i === 0 ? filingFeesTotal : 0);
+    let tBalance = 0, tPrincipal = 0, tInterest = 0, tAtty = 0, tFiling = 0;
+    rows.matters = settlementRows.map((r: any, i: number) => {
+      const filing = filingForRow(i);
+      tBalance += numOrNull(r.claimAmount) ?? 0;
+      tPrincipal += numOrNull(r.allocatedSettlement) ?? 0;
+      tInterest += numOrNull(r.interestAmount) ?? 0;
+      tAtty += numOrNull(r.totalFee) ?? 0;
+      tFiling += filing;
+      return {
+        "row.fileNo": clean(r.displayNumber),
+        "row.patient": clean(r.patient),
+        "row.dos": [clean(r.dosStart), clean(r.dosEnd)].filter(Boolean).join(" - "),
+        "row.balance": fmtMoney(r.claimAmount),
+        "row.settledPrincipal": fmtMoney(r.allocatedSettlement),
+        "row.interest": fmtMoney(r.interestAmount),
+        "row.attyFees": fmtMoney(r.totalFee),
+        "row.filingFees": fmtMoney(filing),
+      };
+    });
+    // Column totals for the table's Total row.
+    text("total.balance", fmtMoney(tBalance));
+    text("total.settledPrincipal", fmtMoney(tPrincipal));
+    text("total.interest", fmtMoney(tInterest));
+    text("total.attyFees", fmtMoney(tAtty));
+    text("total.filingFees", fmtMoney(tFiling));
+    // (Lawsuit-level filing-fees total is already available as {{cost.total}} = index + service + other costs.)
   }
 
   return {
     values,
+    rows,
     context: {
       hasClaim: Boolean(claim),
       hasLawsuit: Boolean(lawsuit),

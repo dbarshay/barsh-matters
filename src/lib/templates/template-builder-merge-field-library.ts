@@ -272,6 +272,45 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
     aliases: ["allocation mode", "allocation method"],
   },
 
+  // Matters table (repeating rows). Put {{#matters}} in the first cell and {{/matters}} in the last cell of
+  // ONE table row; that row is cloned per matter. Use the {{row.*}} tokens in that row's cells, and the
+  // {{total.*}} tokens in a separate Total row.
+  {
+    kind: "canonical",
+    category: "Settlement",
+    subcategory: "Matters Table",
+    fieldLabel: "Matters loop START (first cell of repeating row)",
+    mergeField: "{{#matters}}",
+    fieldType: "text",
+    compatibleModifiers: [],
+    exampleOutput: "(repeats the row per matter)",
+    aliases: ["matters loop start", "begin matters"],
+  },
+  {
+    kind: "canonical",
+    category: "Settlement",
+    subcategory: "Matters Table",
+    fieldLabel: "Matters loop END (last cell of repeating row)",
+    mergeField: "{{/matters}}",
+    fieldType: "text",
+    compatibleModifiers: [],
+    exampleOutput: "(ends the repeating row)",
+    aliases: ["matters loop end", "end matters"],
+  },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — File No", mergeField: "{{row.fileNo}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "44525-690645", aliases: ["matter file no", "row file number"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Patient", mergeField: "{{row.patient}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "AUSTIN BURGOS", aliases: ["row patient"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Dates of Service", mergeField: "{{row.dos}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "01/28/2025 - 01/28/2025", aliases: ["row dates of service", "row dos"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Balance", mergeField: "{{row.balance}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$51.28", aliases: ["row balance"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Settled Principal", mergeField: "{{row.settledPrincipal}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$31.23", aliases: ["row settled principal"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Interest", mergeField: "{{row.interest}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$2.91", aliases: ["row interest"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Atty Fees", mergeField: "{{row.attyFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$6.83", aliases: ["row atty fees", "row attorney fees"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Row — Filing Fees", mergeField: "{{row.filingFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$41.20", aliases: ["row filing fees"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Balance", mergeField: "{{total.balance}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$4,077.78", aliases: ["total balance"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Settled Principal", mergeField: "{{total.settledPrincipal}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$2,483.65", aliases: ["total settled principal"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Interest", mergeField: "{{total.interest}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$231.82", aliases: ["total interest"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Atty Fees", mergeField: "{{total.attyFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$543.10", aliases: ["total atty fees"] },
+  { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Filing Fees", mergeField: "{{total.filingFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$163.75", aliases: ["total filing fees"] },
+
   {
     kind: "canonical",
     category: "Matter",
