@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getMatter } from "@/lib/claimIndex";
 import { normalizeProviderName } from "@/lib/providerNameCase";
+import { formatDate } from "@/lib/documents/templateTokenFormat";
 
 // Server-side resolution of canonical template merge-field tokens.
 //
@@ -407,7 +408,9 @@ export async function resolveTemplateTokenBaseValues(params: {
         return sp > 0 ? `${full.slice(0, sp)}\n${full.slice(sp + 1)}` : full;
       })();
       const dosStacked = (() => {
-        const s = clean(r.dosStart), e = clean(r.dosEnd);
+        // Normalize DOS to MM/DD/YYYY (matches the rest of the document's dates).
+        const s = clean(r.dosStart) ? formatDate(clean(r.dosStart)) : "";
+        const e = clean(r.dosEnd) ? formatDate(clean(r.dosEnd)) : "";
         if (s && e) return s === e ? s : `${s}\n${e}`;
         return s || e;
       })();

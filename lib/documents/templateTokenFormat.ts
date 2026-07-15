@@ -44,7 +44,7 @@ function parseDateParts(raw: string): { y: number; mo: number; d: number } | nul
   return null;
 }
 
-function formatDate(raw: string, fmt: string): string {
+export function formatDate(raw: string, fmt: string = "MM/DD/YYYY"): string {
   const parts = parseDateParts(raw);
   if (!parts) return String(raw).trim();
   const pad = (n: number) => String(n).padStart(2, "0");
