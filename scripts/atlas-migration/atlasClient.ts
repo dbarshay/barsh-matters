@@ -2,7 +2,8 @@
 // two-layer refresh (OAuth2 refresh_token grant, then a re-readable token file) so multi-day runs don't
 // stall — with SINGLE-FLIGHT refresh, because the refresh token rotates and concurrent refreshes would
 // invalidate each other. Also backs off on 429/5xx-overload, which is what higher concurrency provokes.
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname } from "path";
 import { config, assertAtlas } from "./config";
 
 export type AtlasFileLeaf = {
@@ -39,7 +40,16 @@ if (config.atlas.refreshTokenFile && existsSync(config.atlas.refreshTokenFile)) 
 
 function persistRefresh(rt: string) {
   try {
-    if (config.atlas.refreshTokenFile) writeFileSync(config.atlas.refreshTokenFile, rt, "utf8");
+    if (config.atlas.refreshTokenFile) {
+      // Ensure the parent dir exists. On a FLAT deployment (e.g. the VM runs the scripts
+      // directly from ~/atlas-migration, not under scripts/atlas-migration/), the default
+      // path's directory is missing and the write would silently fail — which meant the
+      // rotated refresh token was never persisted, so every restart replayed the stale
+      // .env token until IdentityServer revoked the whole family. Creating the dir makes
+      // persistence work regardless of layout.
+      mkdirSync(dirname(config.atlas.refreshTokenFile), { recursive: true });
+      writeFileSync(config.atlas.refreshTokenFile, rt, "utf8");
+    }
   } catch {
     /* non-fatal */
   }
@@ -149,7 +159,15 @@ async function api(path: string, init?: RequestInit, _retried = false, _attempt 
   // doc and (worse) letting a burst of them trip the stall detector and halt the whole run.
   let res: Response;
   try {
-    res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers || {}) } });
+    // Hard request timeout. Atlas can accept a connection and then hang indefinitely while it
+    // generates a huge packet tree; without this the fetch never returns, and under concurrency
+    // every worker parks on a hung request = silent whole-run freeze. On timeout this throws and
+    // the retry/backoff below takes over (and, if it stays hung, the case errors and is parked).
+    res = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 45000)),
+      headers: { ...authHeaders(), ...(init?.headers || {}) },
+    });
   } catch (e: any) {
     if (_attempt < MAX_TRANSIENT_RETRIES) {
       await sleep(2 ** _attempt * 1000 + Math.random() * 500);

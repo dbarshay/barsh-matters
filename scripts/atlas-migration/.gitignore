@@ -1,0 +1,4 @@
+# Local migration secrets / state — never commit
+.env
+.refresh-token
+*.refresh-token

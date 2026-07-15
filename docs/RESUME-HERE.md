@@ -47,15 +47,17 @@
 **Migration resume attempt — STOPPED; Atlas is degraded, do NOT run until it's genuinely fast again:**
 - Ledger state (unchanged, resumable): **187,000 cases done / 42,934 error / 325,565 pending**; **54,345,420 docs stored
   (~20.9 TB logical)** / 2,725,151 doc error / 52,470 pending.
-- **Two VM fixes made tonight (live on the VM, NOT yet in the repo — port them or a re-scp will wipe them):**
+- **Two VM fixes made tonight — now ALSO ported to the repo (committed `2026-07-15`), so a re-scp won't regress them:**
   1. **`atlasClient.ts` had NO fetch timeout** → a hung Atlas socket (huge packet-tree generation) blocked `fetch`
      forever; at `CASE_CONCURRENCY=6` all workers parked = silent freeze. Patched on the VM via `patch-timeout.mjs`:
-     `signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 45000))`. **TODO: add this to the repo copy +
-     commit.**
+     `signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 45000))`. **Now in the repo copy
+     (`scripts/atlas-migration/atlasClient.ts`), committed.**
   2. **Refresh-token persistence was broken** → `refreshTokenFile` default `scripts/atlas-migration/.refresh-token`
      doesn't exist on the FLAT VM, so the rotated token was never saved; every `npx tsx` restart replayed the stale
      `.env` refresh token until IdentityServer **revoked the family** (the recurring 401 death, incl. probably the
      overnight one). Fix applied in VM `.env`: **`ATLAS_REFRESH_TOKEN_FILE=/home/azureuser/atlas-migration/.refresh-token`**.
+     Repo now ALSO self-heals: `persistRefresh` `mkdirSync`s the token file's parent dir, so persistence works on a
+     flat layout even without the env override (committed). `.refresh-token` added to `.gitignore`.
      Lesson: **launch ONCE and leave it running** — restart-thrashing is what burns the token family.
 - **Error backlog understood (for a later `--retry-errors` pass, NOT a mass reset):** all 42,934 case errors are
   `"N files failed"` (28k are just 1 file short — downstream of doc failures, parked correctly). Doc errors are
@@ -82,8 +84,10 @@
 4. VM has no `psql` — run ledger SQL via Node + `pg` (see tonight's `reset-poisoned.mjs` / `diag-errors.mjs` pattern).
 5. If Atlas ever shows **deliberate** restriction (disabled login, 403s on our account, `/view` gated/changed) →
    stop scraping and formally invoke the **contractual right to your own data** with LawSpades.
-6. Port the two VM fixes into the repo (`scripts/atlas-migration/atlasClient.ts` timeout + `config.ts` refreshTokenFile
-   default that works on a flat layout) and commit, so a future scp doesn't regress them.
+6. ✅ DONE — the two VM fixes are now in the repo: `atlasClient.ts` fetch timeout (`FETCH_TIMEOUT_MS`, default 45s)
+   + `persistRefresh` `mkdirSync` so token persistence works on a flat layout, plus `.gitignore` for `.refresh-token`.
+   A future scp of the repo scripts onto the VM is now safe. (The VM `.env` still needs its `ATLAS_REFRESH_TOKEN_FILE`
+   + fresh tokens — those are runtime config, not code.)
 
 ### 2026-07-14 (evening) — Template builder fixes + new Settlement merge fields
 
