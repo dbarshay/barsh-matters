@@ -83,10 +83,16 @@ export async function upsertCases(ids: string[], priority = 0) {
 // failed docs remain in legacy_document and are collected later by `--retry-errors`.
 export async function nextCases(limit: number, newestFirst = true, maxAttempts = 3): Promise<string[]> {
   const dir = newestFirst ? "DESC" : "ASC";
+  // Optional priority filter. Open matters were seeded priority 10, closed matters priority 0.
+  // CASE_PRIORITY=0 processes ONLY closed matters (newest-first = newest closed cases first);
+  // CASE_PRIORITY=10 only open. Unset = all, with open matters leading (priority DESC) as before.
+  const pe = process.env.CASE_PRIORITY;
+  const priorityClause = pe !== undefined && pe !== "" ? `AND priority = ${Number(pe) || 0}` : "";
   const r = await db().query(
     `SELECT case_id FROM legacy_case
-      WHERE status IN ('pending','listed')
-         OR (status = 'error' AND attempts < $2)
+      WHERE (status IN ('pending','listed')
+         OR (status = 'error' AND attempts < $2))
+        ${priorityClause}
       ORDER BY priority DESC, case_id ${dir} LIMIT $1`,
     [limit, maxAttempts]
   );
