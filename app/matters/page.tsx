@@ -10244,17 +10244,16 @@ function masterDocumentPreviewText(value: unknown): string {
                     <div
                       style={{
                         display: "grid",
-                        // 6 cards on one row. Provider and Insurer get the most width (their names are
-                        // longest and shouldn't wrap); Patient is shrunk; Date of Loss is narrowest (a
-                        // date fits in little space), with that width given back to Provider/Insurer.
-                        gridTemplateColumns: "1.6fr 1.25fr 1.1fr 0.85fr 0.85fr 0.6fr",
+                        // 6 cards on one row, each column sized to its (no-wrap) content — so no title
+                        // or value wraps — then any extra width is shared evenly.
+                        gridTemplateColumns: "repeat(6, minmax(max-content, 1fr))",
                         gap: 12,
                         alignItems: "stretch",
                       }}
                     >
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Provider</span>
-                        <strong style={masterSummaryCardValueStyle}>
+                        <span style={claimRowTitleStyle}>Provider</span>
+                        <strong style={claimRowValueStyle}>
                           {clean(masterInfoDisplayValue("provider", masterProviderClientSummary)) && masterInfoDisplayValue("provider", masterProviderClientSummary) !== "—" ? (
                             <a
                               href={filteredUrl("provider", masterInfoDisplayValue("provider", masterProviderClientSummary))}
@@ -10270,8 +10269,8 @@ function masterDocumentPreviewText(value: unknown): string {
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Patient</span>
-                        <strong style={masterSummaryCardValueStyle}>
+                        <span style={claimRowTitleStyle}>Patient</span>
+                        <strong style={claimRowValueStyle}>
                           {clean(masterInfoDisplayValue("patient", clean((masterSettlementDetailRows as any[])[0]?.patient))) ? (
                             <a
                               href={filteredUrl("patient", masterInfoDisplayValue("patient", clean((masterSettlementDetailRows as any[])[0]?.patient)))}
@@ -10287,8 +10286,8 @@ function masterDocumentPreviewText(value: unknown): string {
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Insurer</span>
-                        <strong style={masterSummaryCardValueStyle}>
+                        <span style={claimRowTitleStyle}>Insurer</span>
+                        <strong style={claimRowValueStyle}>
                           {clean(masterInfoDisplayValue("insurer", masterInsurerSummary)) && masterInfoDisplayValue("insurer", masterInsurerSummary) !== "—" ? (
                             <a
                               href={filteredUrl("insurer", masterInfoDisplayValue("insurer", masterInsurerSummary))}
@@ -10304,8 +10303,8 @@ function masterDocumentPreviewText(value: unknown): string {
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Claim Number</span>
-                        <strong style={masterSummaryCardValueStyle}>
+                        <span style={claimRowTitleStyle}>Claim Number</span>
+                        <strong style={claimRowValueStyle}>
                           {masterClaimSummary.href ? (
                             <a
                               href={masterClaimSummary.href}
@@ -10321,13 +10320,13 @@ function masterDocumentPreviewText(value: unknown): string {
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Policy Number</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterPolicyNumberDisplayValue()}</strong>
+                        <span style={claimRowTitleStyle}>Policy Number</span>
+                        <strong style={claimRowValueStyle}>{masterPolicyNumberDisplayValue()}</strong>
                       </div>
 
                       <div style={masterInfoCardStyle}>
-                        <span style={masterSummaryCardTitleStyle}>Date of Loss</span>
-                        <strong style={masterSummaryCardValueStyle}>{masterDateOfLossDisplayValue()}</strong>
+                        <span style={claimRowTitleStyle}>Date of Loss</span>
+                        <strong style={claimRowValueStyle}>{masterDateOfLossDisplayValue()}</strong>
                       </div>
                     </div>
                   </section>
@@ -14564,6 +14563,12 @@ const masterSummaryCardValueStyle: React.CSSProperties = {
   fontWeight: 850,
   color: "#00346e",
 };
+
+// No-wrap variants for the Claim Information row (title + value stay on one line; the row's
+// grid sizes each column to its content). Not applied to sections with long-text cards
+// (Court / Adversary), which are meant to wrap in their narrower boxes.
+const claimRowTitleStyle: React.CSSProperties = { ...masterSummaryCardTitleStyle, whiteSpace: "nowrap" };
+const claimRowValueStyle: React.CSSProperties = { ...masterSummaryCardValueStyle, whiteSpace: "nowrap" };
 
 const masterInfoCardStyle: React.CSSProperties = {
   ...masterSummaryItemStyle,
