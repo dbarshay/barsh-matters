@@ -18,6 +18,36 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-16 — Migration RESUMED and running (root cause: open-case logjam, not Atlas degradation)
+
+**The migration is running again and storing docs.** The 2026-07-15 "Atlas is degraded" conclusion was
+**wrong** — corrected here:
+
+- **Root cause of the morning's "keeps stopping at the same spot":** only **43 open (priority 10) cases were
+  still pending**, and `nextCases` orders `priority DESC` — so those 43 stragglers led **every** run, hung on
+  their trees, and we Ctrl+C'd before they errored, so they stayed pending and led the next run too. The 325,475
+  pending **closed (priority 0)** cases were stuck behind them and never got reached.
+- **Fix:** parked the 43 stragglers (`UPDATE legacy_case SET status='error', attempts=999, error='manually
+  skipped: stuck open straggler' WHERE priority=10 AND status='pending'`), then ran **newest-first** → dropped
+  straight into the closed cases, which are healthy and servable — immediately storing `15/15`, `30/30`, even a
+  `1786-file` case, mostly `0 failed`. (Recover the 43 later: `UPDATE legacy_case SET status='pending',
+  attempts=0 WHERE error LIKE 'manually skipped%'`.)
+- **The HTTP 500s are permanent unservable files, NOT an outage.** Staff confirmed old cases show docs as links
+  that were never viewable/downloadable — Atlas's own UI 500s on them too (e.g. `44521-100045`). Servable cases
+  (e.g. `44525-725361`) download fine. So the 2.6M "5xx" doc backlog is largely permanent loss (a LawSpades
+  data-integrity issue worth raising with them — you may have a contractual right to the complete file).
+- **Current run config (in tmux `migrate` on the VM):**
+  `STALL_HALT_BATCHES=0 MAX_CASE_ATTEMPTS=1 CASE_CONCURRENCY=1 FILE_CONCURRENCY=8 FETCH_TIMEOUT_MS=8000 HTTP_RETRIES=0 npx tsx extract.ts --run`
+  (newest-first = newest closed first; 8s + no-retry skips slow/broken cases fast). Keep concurrency at 1 —
+  concurrency ≥3 makes Atlas buckle building trees (all time out). Progress this session: ~360k docs stored,
+  pending 325,475 → ~322,773.
+- **Repo commits (need `git push`):** `19304cf` fetch timeout + persist mkdir · `d3097ca` `STALL_HALT_BATCHES`
+  · `36b614f` `CASE_PRIORITY` filter. VM has the fetch-timeout + stall patches applied via `patch-*.mjs`; VM
+  `.env` has `ATLAS_REFRESH_TOKEN_FILE`. VM has no `psql` — run ledger SQL via Node + `pg` (see `*.mjs` helpers).
+- **TODO:** let the sweep drain the closed cases; then a follow-up pass for RECOVERABLE errors — the 8s-timeout
+  skips are servable-but-slow cases (rerun `CASE_PRIORITY=0`, longer `FETCH_TIMEOUT_MS`, concurrency 1) + deduped
+  `--retry-errors` for transient 5xx. Refresh token needs a fresh browser grab ~every 24h.
+
 ### 2026-07-15 — Settlement stip template polish + Adversary File No. field; migration resume BLOCKED by Atlas degradation
 
 **Template / builder work (all committed locally on `main`; VERIFY PUSHED — `git log origin/main..HEAD`):**
