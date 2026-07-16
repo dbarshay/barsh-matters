@@ -311,6 +311,16 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
   { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Atty Fees", mergeField: "{{total.attyFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$543.10", aliases: ["total atty fees"] },
   { kind: "canonical", category: "Settlement", subcategory: "Matters Table", fieldLabel: "Total — Filing Fees", mergeField: "{{total.filingFees}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$163.75", aliases: ["total filing fees"] },
 
+  // Sibling-matters table (repeating rows) — works on ANY lawsuit (not settlement-dependent). Put
+  // {{#siblings}} in the first cell and {{/siblings}} in the last cell of ONE table row (cloned per
+  // member matter); use {{row.*}} in that row and {{total.outstanding}} in a separate Total row.
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Siblings loop START (first cell of repeating row)", mergeField: "{{#siblings}}", fieldType: "text", compatibleModifiers: [], exampleOutput: "(repeats the row per sibling matter)" },
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Siblings loop END (last cell of repeating row)", mergeField: "{{/siblings}}", fieldType: "text", compatibleModifiers: [], exampleOutput: "(ends the repeating row)" },
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Row — Matter Number", mergeField: "{{row.matterNo}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "BRL_202500123", aliases: ["row matter number", "underlying matter number"] },
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Row — Dates of Service", mergeField: "{{row.dos}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "01/28/2025", aliases: ["row dos", "row dates of service"] },
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Row — Outstanding Amount", mergeField: "{{row.outstanding}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$562.25", aliases: ["row outstanding", "row outstanding amount"] },
+  { kind: "canonical", category: "Lawsuit", subcategory: "Sibling Matters Table", fieldLabel: "Total — Outstanding", mergeField: "{{total.outstanding}}", fieldType: "text", compatibleModifiers: TEXT_MODIFIERS, exampleOutput: "$1,261.75", aliases: ["total outstanding"] },
+
   {
     kind: "canonical",
     category: "Matter",

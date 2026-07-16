@@ -519,6 +519,29 @@ export async function resolveTemplateTokenBaseValues(params: {
     // (Lawsuit-level filing-fees total is already available as {{cost.total}} = index + service + other costs.)
   }
 
+  // Sibling-matters table ({{#siblings}} … {{/siblings}}). Works on ANY lawsuit (not settlement-dependent):
+  // one row per member claim of the lawsuit — the underlying matter number, dates of service, and the
+  // outstanding amount — with a Total (total.outstanding). Auto-expands to the number of siblings.
+  if (masterLawsuitId) {
+    const siblingClaims = await prisma.claimIndex
+      .findMany({ where: { master_lawsuit_id: masterLawsuitId }, orderBy: { display_number: "asc" } })
+      .catch(() => [] as any[]);
+    let tOutstanding = 0;
+    rows.siblings = siblingClaims.map((c: any) => {
+      const outstanding = numOrNull(c.balance_presuit) ?? numOrNull(c.balance_amount) ?? 0;
+      tOutstanding += outstanding;
+      const s = clean(c.dos_start) ? formatDate(clean(c.dos_start)) : "";
+      const e = clean(c.dos_end) ? formatDate(clean(c.dos_end)) : "";
+      const dos = s && e ? (s === e ? s : `${s}\n${e}`) : s || e;
+      return {
+        "row.matterNo": clean(c.display_number),
+        "row.dos": dos,
+        "row.outstanding": fmtMoney(outstanding),
+      };
+    });
+    text("total.outstanding", fmtMoney(tOutstanding));
+  }
+
   return {
     values,
     rows,
