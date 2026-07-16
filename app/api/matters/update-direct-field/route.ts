@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type DirectField = "claimAmount" | "dos" | "denialReason" | "status";
+type DirectField = "claimAmount" | "dos" | "denialReason" | "status" | "policyNumber";
 
 function textValue(value: unknown): string {
   return String(value ?? "").trim();
@@ -25,6 +25,7 @@ function labelForField(field: DirectField): string {
   if (field === "claimAmount") return "Claim Amount";
   if (field === "dos") return "Date of Service";
   if (field === "denialReason") return "Denial Reason";
+  if (field === "policyNumber") return "Policy Number";
   return "Status";
 }
 
@@ -40,6 +41,7 @@ function priorValueForField(existing: any, field: DirectField) {
 
   if (field === "denialReason") return existing?.denial_reason || null;
   if (field === "status") return existing?.matter_stage_name || existing?.status || null;
+  if (field === "policyNumber") return existing?.policy_number || null;
 
   return null;
 }
@@ -118,6 +120,11 @@ async function newValueForField(field: DirectField, body: any) {
     return value;
   }
 
+  if (field === "policyNumber") {
+    // Free-form alphanumeric; blank is allowed (clears the policy number).
+    return textValue(body?.policyNumber);
+  }
+
   throw new Error("Unsupported direct matter field.");
 }
 
@@ -159,6 +166,13 @@ function claimIndexUpdateData(field: DirectField, value: any, existing?: any) {
     return {
       matter_stage_name: String(value),
       status: String(value),
+      indexed_at: new Date(),
+    };
+  }
+
+  if (field === "policyNumber") {
+    return {
+      policy_number: String(value ?? ""),
       indexed_at: new Date(),
     };
   }
@@ -208,6 +222,13 @@ function clientMatterPatch(field: DirectField, value: any, updated: any) {
     };
   }
 
+  if (field === "policyNumber") {
+    return {
+      policyNumber: String(value ?? ""),
+      policy_number: String(value ?? ""),
+    };
+  }
+
   return {};
 }
 
@@ -224,7 +245,7 @@ export async function PATCH(request: Request) {
       return jsonError("Valid matterId is required.");
     }
 
-    const supported: DirectField[] = ["claimAmount", "dos", "denialReason", "status"];
+    const supported: DirectField[] = ["claimAmount", "dos", "denialReason", "status", "policyNumber"];
     if (!supported.includes(field)) {
       return jsonError("Unsupported direct matter field.");
     }
@@ -243,6 +264,7 @@ export async function PATCH(request: Request) {
         insurer_name: true,
         claim_number_raw: true,
         claim_number_normalized: true,
+        policy_number: true,
         master_lawsuit_id: true,
         claim_amount: true,
         payment_amount: true,
@@ -282,6 +304,7 @@ export async function PATCH(request: Request) {
           insurer_name: true,
           claim_number_raw: true,
           claim_number_normalized: true,
+          policy_number: true,
           master_lawsuit_id: true,
           dos_start: true,
           dos_end: true,
