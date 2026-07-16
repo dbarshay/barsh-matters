@@ -271,6 +271,8 @@ export async function resolveTemplateTokenBaseValues(params: {
 
     text("lawsuit.indexNumber", lawsuit.indexAaaNumber || opts.indexAaaNumber);
     date("lawsuit.dateFiled", opts.dateFiled);
+    date("lawsuit.dateServed", opts.dateServed);
+    date("lawsuit.dateServiceComplete", opts.dateServiceComplete);
     money("lawsuit.amount", lawsuit.amountSought);
 
     const indexFee = numOrNull(opts.indexFee ?? opts.filingFee);

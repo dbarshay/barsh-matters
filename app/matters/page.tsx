@@ -1785,6 +1785,18 @@ export default function FilteredMattersPage() {
     return formatMasterDateDisplay(masterLocalMetadataValue("dateFiled") || "—");
   }
 
+  function masterDateServedDisplayValue(): string {
+    const override = masterInfoOverrides.dateServed;
+    if (override !== undefined) return formatMasterDateDisplay(override);
+    return formatMasterDateDisplay(masterLocalMetadataValue("dateServed") || "—");
+  }
+
+  function masterDateServiceCompleteDisplayValue(): string {
+    const override = masterInfoOverrides.dateServiceComplete;
+    if (override !== undefined) return formatMasterDateDisplay(override);
+    return formatMasterDateDisplay(masterLocalMetadataValue("dateServiceComplete") || "—");
+  }
+
   function masterAdversaryAttorneyDisplayValue(): string {
     return masterInfoDisplayValue("adversaryAttorney", masterLocalMetadataValue("adversaryAttorney") || "—");
   }
@@ -1965,6 +1977,8 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       indexAaaNumber: clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber),
       dateOfLoss: clean(options?.dateOfLoss),
       dateFiled: clean(options?.dateFiled),
+      dateServed: clean(options?.dateServed),
+      dateServiceComplete: clean(options?.dateServiceComplete),
       adversaryAttorney: clean(options?.adversaryAttorney),
       adversaryAttorneyFileNo: clean(options?.adversaryAttorneyFileNo),
       selectedAdversaryAttorneyDetails: options?.selectedAdversaryAttorneyDetails || null,
@@ -2022,6 +2036,8 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     if (field === "indexAaaNumber") payload.indexAaaNumber = after;
     if (field === "dateOfLoss") payload.dateOfLoss = after;
     if (field === "dateFiled") payload.dateFiled = after;
+    if (field === "dateServed") payload.dateServed = after;
+    if (field === "dateServiceComplete") payload.dateServiceComplete = after;
     if (field === "adversaryAttorney") {
       payload.adversaryAttorney = after;
       payload.selectedAdversaryAttorneyDetails = masterInfoSelectedContact?.details || null;
@@ -2170,6 +2186,8 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       "status",
       "indexAaaNumber",
       "dateFiled",
+      "dateServed",
+      "dateServiceComplete",
       "adversaryAttorney",
       "adversaryAttorneyFileNo",
       "filingFee",
@@ -2198,7 +2216,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     if (field === "status") return "status";
     if (["provider", "patient", "insurer", "adversaryAttorney"].includes(field)) return "contact";
     if (["court", "venue", "venueSelection"].includes(field)) return "court";
-    if (["dateOfLoss", "dateFiled"].includes(field)) return "date";
+    if (["dateOfLoss", "dateFiled", "dateServed", "dateServiceComplete"].includes(field)) return "date";
     if (["filingFee", "serviceFee", "otherCourtCosts"].includes(field)) return "money";
 
     return "text";
@@ -2638,6 +2656,8 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       indexAaaNumber: clean(local?.indexAaaNumber) || clean(options?.indexAaaNumber),
       adversaryAttorney: clean(options?.adversaryAttorney),
       dateFiled: clean(options?.dateFiled) || clean(local?.dateFiled),
+      dateServed: clean(options?.dateServed) || clean(local?.dateServed),
+      dateServiceComplete: clean(options?.dateServiceComplete) || clean(local?.dateServiceComplete),
       status: clean(options?.status || options?.matterStatus || options?.workflowStatus),
       amountSoughtMode: clean(local?.amountSoughtMode) || clean(options?.amountSoughtMode),
       customAmountSought: clean(local?.customAmountSought) || clean(options?.customAmountSought),
@@ -10309,7 +10329,9 @@ function masterDocumentPreviewText(value: unknown): string {
                         display: "grid",
                         // Index/AAA and Date Filed shrunk to make room for the
                         // Adversary Attorney File No. card on the same row.
-                        gridTemplateColumns: "0.8fr 1fr 1.1fr 1.1fr 0.75fr",
+                        // Index/AAA, Adversary File No. and Date Filed shrunk to fit the three date
+                        // boxes (Date Filed / Served / Service Complete) on one row, all equal width.
+                        gridTemplateColumns: "0.7fr 1fr 1.15fr 0.8fr 0.75fr 0.75fr 0.75fr",
                         gap: 12,
                         alignItems: "stretch",
                       }}
@@ -10421,6 +10443,44 @@ function masterDocumentPreviewText(value: unknown): string {
                           type="button"
                           onClick={() => openMasterInfoEditDialog("dateFiled", "Date Filed", masterDateFiledDisplayValue())}
                           title="Open Date Filed edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#00346e",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Date Served</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterDateServedDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("dateServed", "Date Served", masterDateServedDisplayValue())}
+                          title="Open Date Served edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#00346e",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Date Service Complete</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterDateServiceCompleteDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("dateServiceComplete", "Date Service Complete", masterDateServiceCompleteDisplayValue())}
+                          title="Open Date Service Complete edit dialog."
                           style={{
                             ...masterInfoCardEditButtonStyle,
                             borderColor: "#93c5fd",
