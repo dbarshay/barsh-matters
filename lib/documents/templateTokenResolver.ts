@@ -123,6 +123,30 @@ function composeAddress(details: Record<string, any>): string {
   return joinNonEmpty([street, cityStateZip], "\n");
 }
 
+// Court records have no county field; the county lives in the long names, e.g.
+// longName1 "District Court of the County of Suffolk" or "…, County of Kings". Derive it:
+// prefer an explicit key, then "County of X" / "X County" in the long names, then the display
+// name ("Suffolk District- …" / "NY City Civil- Kings").
+function deriveCourtCounty(details: Record<string, any>, courtName: string): string {
+  const explicit = pick(details, ["county", "courtCounty", "court_county", "hidden_county", "countyName"]);
+  if (explicit) return titleCasePart(explicit);
+  const texts = [details.longName1, details.longName2, details.shortName, details.name, courtName]
+    .map((v) => clean(v))
+    .filter(Boolean);
+  for (const t of texts) {
+    let m = t.match(/County of ([A-Za-z][A-Za-z .'-]*?)(?:\s*(?:$|,|\n|—|-|\())/i) || t.match(/County of ([A-Za-z][A-Za-z .'-]*)$/i);
+    if (m) return titleCasePart(m[1].replace(/\s+the\s*$/i, "").trim());
+    m = t.match(/\b([A-Za-z][A-Za-z .'-]*?)\s+County\b/i);
+    if (m) return titleCasePart(m[1].trim());
+  }
+  const dn = clean(courtName || details.displayName);
+  let m = dn.match(/^([A-Za-z]+)\s+District\b/i);
+  if (m) return titleCasePart(m[1]);
+  m = dn.match(/^NY City Civil-\s*(.+)$/i);
+  if (m) return titleCasePart(m[1].trim());
+  return "";
+}
+
 async function findReferenceEntityByName(types: string[], name: string) {
   const normalized = normalizeName(name);
   if (!normalized) return null;
@@ -391,8 +415,8 @@ export async function resolveTemplateTokenBaseValues(params: {
       text("court.city", titleCasePart(pick(courtDetails, ["courtCity", "city"])));
       text("court.state", titleCasePart(pick(courtDetails, ["courtState", "state"])));
       text("court.zipcode", pick(courtDetails, ["courtZip", "courtZipcode", "courtZipCode", "zip", "zipcode", "zipCode", "postalCode"]));
-      // County — usually in the court's hidden import details (flattenReferenceDetails lifts hidden_*).
-      text("court.county", titleCasePart(pick(courtDetails, ["county", "courtCounty", "court_county", "hidden_county", "countyName"])));
+      // County — no dedicated field on court records; derived from the long names / display name.
+      text("court.county", deriveCourtCounty(courtDetails, courtName));
     }
   }
 
