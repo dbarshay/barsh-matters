@@ -602,6 +602,15 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
   {
     kind: "canonical",
     category: "Lawsuit",
+    fieldLabel: "Court County",
+    mergeField: "{{court.county}}",
+    fieldType: "text",
+    compatibleModifiers: TEXT_MODIFIERS,
+    exampleOutput: "—",
+  },
+  {
+    kind: "canonical",
+    category: "Lawsuit",
     fieldLabel: "Court Street",
     mergeField: "{{court.street}}",
     fieldType: "text",

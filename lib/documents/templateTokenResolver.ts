@@ -391,6 +391,8 @@ export async function resolveTemplateTokenBaseValues(params: {
       text("court.city", titleCasePart(pick(courtDetails, ["courtCity", "city"])));
       text("court.state", titleCasePart(pick(courtDetails, ["courtState", "state"])));
       text("court.zipcode", pick(courtDetails, ["courtZip", "courtZipcode", "courtZipCode", "zip", "zipcode", "zipCode", "postalCode"]));
+      // County — usually in the court's hidden import details (flattenReferenceDetails lifts hidden_*).
+      text("court.county", titleCasePart(pick(courtDetails, ["county", "courtCounty", "court_county", "hidden_county", "countyName"])));
     }
   }
 
