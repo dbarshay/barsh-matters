@@ -10247,7 +10247,7 @@ function masterDocumentPreviewText(value: unknown): string {
                         // 6 cards on one row. Provider and Insurer get the most width (their names are
                         // longest and shouldn't wrap); Patient is shrunk; Date of Loss is narrowest (a
                         // date fits in little space), with that width given back to Provider/Insurer.
-                        gridTemplateColumns: "1.6fr 0.75fr 1.6fr 0.85fr 0.85fr 0.6fr",
+                        gridTemplateColumns: "1.6fr 1.25fr 1.1fr 0.85fr 0.85fr 0.6fr",
                         gap: 12,
                         alignItems: "stretch",
                       }}
