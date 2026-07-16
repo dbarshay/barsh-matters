@@ -258,6 +258,12 @@ export async function resolveTemplateTokenBaseValues(params: {
     );
     const providerDetails = flattenReferenceDetails(providerEntity?.details);
     text("provider.taxId", pick(providerDetails, ["taxId", "tax_id", "federalTaxId", "ein", "EIN"]));
+    // Provider/client reference address (same details record as the tax id).
+    text("provider.street", joinNonEmpty([pick(providerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(providerDetails, ["addressLine2", "address_line_2"])], ", "));
+    text("provider.city", pick(providerDetails, ["city"]));
+    text("provider.state", pick(providerDetails, ["state"]));
+    text("provider.zipcode", pick(providerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
+    text("provider.fullAddressBlock", composeAddress(providerDetails));
   }
 
   // 4. Lawsuit (YYYY.MM.NNNNNN)
