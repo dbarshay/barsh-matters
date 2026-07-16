@@ -274,7 +274,9 @@ async function run() {
     // Safety net: if a whole batch of 500 cases stored ZERO new documents, we are almost certainly
     // re-chewing cases we cannot make progress on. Stop rather than spin (and rather than keep pounding
     // Atlas, which only produces more 500s). Run --retry-errors / --status to see where things stand.
-    if (storedThisRun === before && cases.length >= 50) {
+    // STALL_HALT_BATCHES=0 disables this halt, so the run plows through already-migrated /
+    // unservable-500 stretches (which legitimately store 0 new) and keeps migrating servable docs.
+    if (storedThisRun === before && cases.length >= 50 && num(process.env.STALL_HALT_BATCHES, 1) !== 0) {
       console.log(`\n*** STALLED: processed ${cases.length} cases and stored 0 new documents. Stopping. ***`);
       console.log(`*** Nothing is lost — failed docs stay in the ledger. Check: --status, then --retry-errors. ***\n`);
       break;
