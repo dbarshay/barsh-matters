@@ -274,6 +274,10 @@ export async function POST(req: NextRequest) {
         "dateServiceComplete" in body
           ? text(body.dateServiceComplete)
           : text(existingOptions.dateServiceComplete),
+      dateAnswerReceived:
+        "dateAnswerReceived" in body
+          ? text(body.dateAnswerReceived)
+          : text(existingOptions.dateAnswerReceived),
       selectedAdversaryAttorneyDetails:
         body?.selectedAdversaryAttorneyDetails && typeof body.selectedAdversaryAttorneyDetails === "object"
           ? body.selectedAdversaryAttorneyDetails

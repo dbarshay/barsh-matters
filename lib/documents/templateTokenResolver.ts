@@ -273,6 +273,28 @@ export async function resolveTemplateTokenBaseValues(params: {
     date("lawsuit.dateFiled", opts.dateFiled);
     date("lawsuit.dateServed", opts.dateServed);
     date("lawsuit.dateServiceComplete", opts.dateServiceComplete);
+    // Date Answer Received: the lawsuit-row override if set, else derived live from the Answer's upload
+    // date in Litigation → Pleadings/Receipts (the FiledDocument createdAt = the received date).
+    let answerReceived = clean(opts.dateAnswerReceived);
+    if (!answerReceived && masterLawsuitId) {
+      const answerDoc = await prisma.filedDocument
+        .findFirst({
+          where: {
+            masterLawsuitId,
+            folderKey: "litigation.pleadings_receipts",
+            titleKey: "answer",
+            status: "active",
+          },
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        })
+        .catch(() => null);
+      if (answerDoc?.createdAt) {
+        const d = answerDoc.createdAt;
+        answerReceived = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
+    }
+    date("lawsuit.dateAnswerReceived", answerReceived);
     money("lawsuit.amount", lawsuit.amountSought);
 
     const indexFee = numOrNull(opts.indexFee ?? opts.filingFee);

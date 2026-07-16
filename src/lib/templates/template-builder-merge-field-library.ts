@@ -629,6 +629,15 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
   {
     kind: "canonical",
     category: "Lawsuit",
+    fieldLabel: "Date Answer Received",
+    mergeField: "{{lawsuit.dateAnswerReceived}}",
+    fieldType: "date",
+    compatibleModifiers: DATE_MODIFIERS,
+    exampleOutput: "—",
+  },
+  {
+    kind: "canonical",
+    category: "Lawsuit",
     fieldLabel: "Lawsuit Amount",
     mergeField: "{{lawsuit.amount}}",
     fieldType: "currency",

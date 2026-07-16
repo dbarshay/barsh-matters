@@ -1797,6 +1797,13 @@ export default function FilteredMattersPage() {
     return formatMasterDateDisplay(masterLocalMetadataValue("dateServiceComplete") || "—");
   }
 
+  function masterDateAnswerReceivedDisplayValue(): string {
+    const override = masterInfoOverrides.dateAnswerReceived;
+    if (override !== undefined) return formatMasterDateDisplay(override);
+    // Auto-derived (materialized into lawsuitOptions from the Answer's upload date), or a manual override.
+    return formatMasterDateDisplay(masterLocalMetadataValue("dateAnswerReceived") || "—");
+  }
+
   function masterAdversaryAttorneyDisplayValue(): string {
     return masterInfoDisplayValue("adversaryAttorney", masterLocalMetadataValue("adversaryAttorney") || "—");
   }
@@ -1979,6 +1986,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       dateFiled: clean(options?.dateFiled),
       dateServed: clean(options?.dateServed),
       dateServiceComplete: clean(options?.dateServiceComplete),
+      dateAnswerReceived: clean(options?.dateAnswerReceived),
       adversaryAttorney: clean(options?.adversaryAttorney),
       adversaryAttorneyFileNo: clean(options?.adversaryAttorneyFileNo),
       selectedAdversaryAttorneyDetails: options?.selectedAdversaryAttorneyDetails || null,
@@ -2038,6 +2046,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     if (field === "dateFiled") payload.dateFiled = after;
     if (field === "dateServed") payload.dateServed = after;
     if (field === "dateServiceComplete") payload.dateServiceComplete = after;
+    if (field === "dateAnswerReceived") payload.dateAnswerReceived = after;
     if (field === "adversaryAttorney") {
       payload.adversaryAttorney = after;
       payload.selectedAdversaryAttorneyDetails = masterInfoSelectedContact?.details || null;
@@ -2188,6 +2197,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       "dateFiled",
       "dateServed",
       "dateServiceComplete",
+      "dateAnswerReceived",
       "adversaryAttorney",
       "adversaryAttorneyFileNo",
       "filingFee",
@@ -2216,7 +2226,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
     if (field === "status") return "status";
     if (["provider", "patient", "insurer", "adversaryAttorney"].includes(field)) return "contact";
     if (["court", "venue", "venueSelection"].includes(field)) return "court";
-    if (["dateOfLoss", "dateFiled", "dateServed", "dateServiceComplete"].includes(field)) return "date";
+    if (["dateOfLoss", "dateFiled", "dateServed", "dateServiceComplete", "dateAnswerReceived"].includes(field)) return "date";
     if (["filingFee", "serviceFee", "otherCourtCosts"].includes(field)) return "money";
 
     return "text";
@@ -2658,6 +2668,7 @@ function masterMetadataMoneyDisplayValue(field: "filingFee" | "serviceFee" | "ot
       dateFiled: clean(options?.dateFiled) || clean(local?.dateFiled),
       dateServed: clean(options?.dateServed) || clean(local?.dateServed),
       dateServiceComplete: clean(options?.dateServiceComplete) || clean(local?.dateServiceComplete),
+      dateAnswerReceived: clean(options?.dateAnswerReceived) || clean(local?.dateAnswerReceived),
       status: clean(options?.status || options?.matterStatus || options?.workflowStatus),
       amountSoughtMode: clean(local?.amountSoughtMode) || clean(options?.amountSoughtMode),
       customAmountSought: clean(local?.customAmountSought) || clean(options?.customAmountSought),
@@ -10329,9 +10340,9 @@ function masterDocumentPreviewText(value: unknown): string {
                         display: "grid",
                         // Index/AAA and Date Filed shrunk to make room for the
                         // Adversary Attorney File No. card on the same row.
-                        // Index/AAA, Adversary File No. and Date Filed shrunk to fit the three date
-                        // boxes (Date Filed / Served / Service Complete) on one row, all equal width.
-                        gridTemplateColumns: "0.7fr 1fr 1.15fr 0.8fr 0.75fr 0.75fr 0.75fr",
+                        // Four equal date boxes (Filed / Served / Service Complete / Answer Received) on
+                        // one row; Index/AAA and Adversary File No. shrunk to fit.
+                        gridTemplateColumns: "0.65fr 0.95fr 1.1fr 0.75fr 0.72fr 0.72fr 0.72fr 0.72fr",
                         gap: 12,
                         alignItems: "stretch",
                       }}
@@ -10481,6 +10492,25 @@ function masterDocumentPreviewText(value: unknown): string {
                           type="button"
                           onClick={() => openMasterInfoEditDialog("dateServiceComplete", "Date Service Complete", masterDateServiceCompleteDisplayValue())}
                           title="Open Date Service Complete edit dialog."
+                          style={{
+                            ...masterInfoCardEditButtonStyle,
+                            borderColor: "#93c5fd",
+                            background: "#ffffff",
+                            color: "#00346e",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Date Answer Received</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterDateAnswerReceivedDisplayValue()}</strong>
+                        <button
+                          type="button"
+                          onClick={() => openMasterInfoEditDialog("dateAnswerReceived", "Date Answer Received", masterDateAnswerReceivedDisplayValue())}
+                          title="Auto-derived from the Answer's upload date in Litigation → Pleadings/Receipts; editable to override."
                           style={{
                             ...masterInfoCardEditButtonStyle,
                             borderColor: "#93c5fd",

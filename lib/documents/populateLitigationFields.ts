@@ -34,6 +34,65 @@ export type PopulateLitigationResult = {
  * If the matter belongs to a lawsuit, fill the lawsuit's Index Number and/or Date Filed from the scan —
  * but only the fields that are blank today. Returns what (if anything) was populated. Never throws.
  */
+function toIsoDate(value: Date | string): string | null {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Derive a lawsuit's "Date Answer Received" from the upload date of the Answer filed into
+ * Litigation → Pleadings/Receipts (`folderKey=litigation.pleadings_receipts`, `titleKey=answer`).
+ * The upload timestamp IS the received date (per the operator). Writes lawsuitOptions.dateAnswerReceived
+ * ONLY when it is currently blank, so a manual override on the lawsuit row is never clobbered by a later
+ * filing. Best-effort — never throws, never blocks the filing.
+ */
+export async function populateAnswerReceivedDate(
+  prisma: unknown,
+  input: { masterLawsuitId: string; filedAt: Date | string; actorEmail?: string | null },
+): Promise<{ populated: boolean; date?: string }> {
+  const db = asDb(prisma);
+  try {
+    const masterLawsuitId = (input.masterLawsuitId ?? "").trim();
+    if (!masterLawsuitId) return { populated: false };
+    const iso = toIsoDate(input.filedAt);
+    if (!iso) return { populated: false };
+
+    const lawsuit = await db.lawsuit.findUnique({
+      where: { masterLawsuitId },
+      select: { lawsuitOptions: true },
+    });
+    if (!lawsuit) return { populated: false };
+
+    const options =
+      lawsuit.lawsuitOptions && typeof lawsuit.lawsuitOptions === "object"
+        ? (lawsuit.lawsuitOptions as Record<string, any>)
+        : {};
+    if (!blank(options.dateAnswerReceived)) return { populated: false }; // never override an existing value
+
+    const nextOptions = { ...options, dateAnswerReceived: iso, source: "answer-filed-derive" };
+    await db.lawsuit.update({ where: { masterLawsuitId }, data: { lawsuitOptions: nextOptions } });
+
+    try {
+      await db.auditLog?.create?.({
+        data: {
+          action: "lawsuit.date-answer-received.derive-from-filing",
+          summary: `Set Date Answer Received = ${iso} on lawsuit ${masterLawsuitId} from the filed Answer's upload date (was blank).`,
+          entityType: "lawsuit",
+          masterLawsuitId,
+          details: { dateAnswerReceived: iso },
+          actorEmail: input.actorEmail ?? null,
+        },
+      });
+    } catch {
+      /* audit is best-effort */
+    }
+    return { populated: true, date: iso };
+  } catch {
+    return { populated: false };
+  }
+}
+
 export async function populateEmptyLawsuitLitigationFields(
   prisma: unknown,
   input: PopulateLitigationInput,

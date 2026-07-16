@@ -10,6 +10,7 @@ import {
   isTitleAllowed,
   FREEHAND_TITLE_KEY,
 } from "@/lib/documents/folderTaxonomy";
+import { populateAnswerReceivedDate } from "@/lib/documents/populateLitigationFields";
 
 export type FileDocumentInput = {
   /** Exactly one of matterId (individual matter) or masterLawsuitId (lawsuit file) must be set. */
@@ -150,6 +151,17 @@ export async function fileDocument(db: any, input: FileDocumentInput): Promise<F
     });
     return doc;
   });
+
+  // Derive the lawsuit's "Date Answer Received" from an Answer filed into Litigation → Pleadings/Receipts.
+  // The upload timestamp is the received date (per the operator). Best-effort, only fills when blank so a
+  // manual override on the lawsuit row is preserved; never throws.
+  if (masterLawsuitId && folderKey === "litigation.pleadings_receipts" && titleKey === "answer") {
+    await populateAnswerReceivedDate(db, {
+      masterLawsuitId,
+      filedAt: (created as { createdAt?: Date })?.createdAt ?? new Date(),
+      actorEmail: input.actorEmail ?? null,
+    });
+  }
 
   return { ok: true, document: created };
 }
