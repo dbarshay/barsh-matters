@@ -18,6 +18,57 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-16 (afternoon) — Merge-field batch: provider/insurer contact, court county, Policy Number, sibling table
+
+All committed on `main` (push with `git push origin main`; commits `616c45f` → `028c837`). Migration status at
+end of day below.
+
+**Root-cause fix (was silently broken):** the resolver's PROVIDER lookup searched entity types
+`["provider","client","company"]`, but providers are type **`provider_client`** (see `referenceData.ts`
+`REFERENCE_ENTITY_TYPES`). So the entire provider reference block resolved blank for every doc (address, tax id,
+phone, email). Fixed by adding `provider_client` to the lookup (`388b58e`). Insurer (`insurer_company`), adversary
+(`adversary_attorney`), court (`court_venue`), settled-with (`individual`) already used their correct types.
+
+**New merge fields (all in `templateTokenResolver.ts` + builder library):**
+- Provider address: `{{provider.street/city/state/zipcode/fullAddressBlock}}` — the address lives in the provider
+  record's `_hiddenImportFields` (hidden_street/city/state/zipcode); `flattenReferenceDetails` already lifts + strips
+  the `hidden_` prefix. Provider + insurer contact: `{{provider.phone}} {{provider.email}} {{insurer.phone}}
+  {{insurer.email}}`.
+- **Phone/Email are now enterable** in the admin reference-data editor (dedicated fields → `details.phone` /
+  `details.email`, the keys the tokens read; works for every reference type). `dc693f0`.
+- **Address casing normalized** (`titleCasePart`): imported ALL-CAPS → proper case for provider/insurer/adversary/
+  court street/city/state + every `*.fullAddressBlock` ("NEW YORK"→"New York", "PO BOX 4652"→"PO Box 4652",
+  "123 E 42ND ST"→"123 E 42nd St", McDonald/O'Brien). Shared `titleCasePart`/`KEEP_UPPER` in the resolver.
+- `{{court.county}}` — courts have NO county field; derived from `longName1` ("...County of Suffolk" / "Nassau
+  County...") else the display-name prefix/suffix ("Suffolk District- …" / "NY City Civil- Kings"). `deriveCourtCounty`.
+- `{{claim.policyNumber}}` + `{{lawsuit.policyNumber}}` from `ClaimIndex.policy_number` (shared across siblings).
+
+**Policy Number (full feature):** individual-matter EDITABLE card (between Claim Number and Date of Loss) →
+`update-direct-field` now supports `field:"policyNumber"` → `ClaimIndex.policy_number` (`32c7252`); lawsuit READ-ONLY
+card (shared value from member rows). `c12d1e9`. The lawsuit "Claim Information" summary row was re-tuned so nothing
+wraps — row-local `claimRowTitleStyle`/`claimRowValueStyle` (no-wrap) + `repeat(6, minmax(max-content, 1fr))` so
+each box sizes to content. (Shared card styles left alone so Court/Adversary still wrap in the Lawsuit Info row.)
+
+**Sibling-matters auto-expanding table (`028c837`)** — for lawsuit docs. `{{#siblings}} … {{/siblings}}` loop built
+from the lawsuit's member `ClaimIndex` rows (by `master_lawsuit_id`), so it works at LAWSUIT-level generation on ANY
+lawsuit (not settlement-dependent). Row tokens: `{{row.matterNo}}` (BRL number), `{{row.dos}}` (dates of service,
+stacked range), `{{row.outstanding}}` (`balance_presuit`), plus `{{total.outstanding}}`. Same expand engine as the
+settlement stip. Sample template built + verified (3-sibling fill rendered correctly):
+`Lawsuit-Sibling-Matters-Schedule-TEMPLATE.docx` (build script `build_siblings.py`; python-docx, fixed layout,
+no-wrap on Matter No / Outstanding). Given to the user to upload + test against 2026.06.00011.
+
+**Also today (lawsuit-info row fields, from the 07-15 carry-over — now all deployed-worthy):** Adversary Attorney
+File No., Date Served, Date Service Complete, Date Answer Received (auto-derived from the filed Answer's upload
+date). Lawsuit Information row is a two-row grid (4 info + 4 date boxes).
+
+**MIGRATION at end of day:** running gently in tmux `migrate` on the VM (`CASE_CONCURRENCY=1 FILE_CONCURRENCY=8
+FETCH_TIMEOUT_MS=8000 HTTP_RETRIES=0 STALL_HALT_BATCHES=0`, newest-first = newest closed). **218,504 done /
+287,387 pending closed cases; 59.3M docs stored (~23.1 TB); ~5,400 cases/hr (~90/min) → ~2 days to finish.**
+Measure pace with `pace.mjs` (uses `legacy_document.created_at`). **Refresh token needs a fresh browser grab ~once
+a day** or the run stalls overnight — grab from DevTools `GetAccessToken` into VM `.env` ATLAS_TOKEN/ATLAS_REFRESH_TOKEN,
+`rm -f ~/atlas-migration/.refresh-token`. Do NOT run a 2nd Atlas process. Later cleanup: `--retry-errors` for
+recoverable 5xx (many are permanent unservable files, confirmed by staff — don't expect all back).
+
 ### 2026-07-16 — Migration RESUMED and running (root cause: open-case logjam, not Atlas degradation)
 
 **The migration is running again and storing docs.** The 2026-07-15 "Atlas is degraded" conclusion was
