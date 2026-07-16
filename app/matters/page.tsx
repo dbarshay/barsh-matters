@@ -29,6 +29,8 @@ type MatterRow = {
   provider: string;
   insurer: string;
   claimNumber: string;
+  policyNumber: string;
+  policy_number: string;
   dosStart: string;
   dosEnd: string;
   dateOfLoss: string;
@@ -242,6 +244,8 @@ function toMatterRow(row: any, matchedBy: string): MatterRow | null {
     provider: providerName(row),
     insurer: insurerName(row),
     claimNumber: claimNumberFromMatter(row),
+    policyNumber: clean(row?.policyNumber ?? row?.policy_number),
+    policy_number: clean(row?.policyNumber ?? row?.policy_number),
     dosStart: clean(row?.dosStart ?? row?.dos_start),
     dosEnd: clean(row?.dosEnd ?? row?.dos_end),
     dateOfLoss: clean(row?.dateOfLoss ?? row?.date_of_loss ?? row?.lossDate ?? row?.loss_date),
@@ -4896,6 +4900,20 @@ function masterSettlementDateFiledValue(): string {
       href: filteredUrl("claim", claims[0]),
     };
   }, [rows]);
+
+  // Policy number is shared across a lawsuit's sibling matters (one insurer claim). Show the shared value.
+  const masterPolicyNumberSummary = useMemo(() => {
+    const policies = Array.from(
+      new Set(rows.map((row: any) => clean(row.policyNumber || row.policy_number)).filter(Boolean))
+    );
+    if (policies.length === 0) return "—";
+    if (policies.length === 1) return policies[0];
+    return `${policies[0]} + ${policies.length - 1} more`;
+  }, [rows]);
+
+  function masterPolicyNumberDisplayValue(): string {
+    return masterInfoDisplayValue("policyNumber", masterPolicyNumberSummary);
+  }
 
   const masterServiceTypeSummary = useMemo(() => {
     const serviceTypes = Array.from(
@@ -10297,6 +10315,11 @@ function masterDocumentPreviewText(value: unknown): string {
                             "—"
                           )}
                         </strong>
+                      </div>
+
+                      <div style={masterInfoCardStyle}>
+                        <span style={masterSummaryCardTitleStyle}>Policy Number</span>
+                        <strong style={masterSummaryCardValueStyle}>{masterPolicyNumberDisplayValue()}</strong>
                       </div>
 
                       <div style={masterInfoCardStyle}>

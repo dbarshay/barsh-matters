@@ -1639,7 +1639,7 @@ const activeGroupKey =
   const [paymentShowVoided, setPaymentShowVoided] = useState(true);
   const [expandedPaymentReceiptId, setExpandedPaymentReceiptId] = useState<number | null>(null);
   const [paymentClosePromptOpen, setPaymentClosePromptOpen] = useState(false);
-  const [directFieldEditModal, setDirectFieldEditModal] = useState<"claimAmount" | "dos" | "denialReason" | "status" | null>(null);
+  const [directFieldEditModal, setDirectFieldEditModal] = useState<"claimAmount" | "dos" | "denialReason" | "status" | "policyNumber" | null>(null);
   const [directFieldEditLoading, setDirectFieldEditLoading] = useState(false);
   const [directFieldEditResult, setDirectFieldEditResult] = useState<any>(null);
   const [directFieldPicklistsLoading, setDirectFieldPicklistsLoading] = useState(false);
@@ -1652,6 +1652,7 @@ const activeGroupKey =
   const [identityFieldEditLoading, setIdentityFieldEditLoading] = useState(false);
   const [identityFieldEditResult, setIdentityFieldEditResult] = useState<any>(null);
   const [claimAmountInput, setClaimAmountInput] = useState("");
+  const [policyNumberInput, setPolicyNumberInput] = useState("");
   const [dosStartInput, setDosStartInput] = useState("");
   const [dosEndInput, setDosEndInput] = useState("");
   const [denialReasonInput, setDenialReasonInput] = useState("");
@@ -2680,6 +2681,62 @@ function openClaimAmountEditDialog() {
       setDirectFieldEditResult({
         ok: false,
         error: error?.message || String(error),
+      });
+    } finally {
+      setDirectFieldEditLoading(false);
+    }
+  }
+
+  function openPolicyNumberEditDialog() {
+    setDirectFieldEditResult(null);
+    setPolicyNumberInput(textValue(matter?.policyNumber || matter?.policy_number));
+    setDirectFieldEditModal("policyNumber");
+  }
+
+  async function savePolicyNumberEditDialog() {
+    const policyNumber = textValue(policyNumberInput);
+    try {
+      setDirectFieldEditLoading(true);
+      setDirectFieldEditResult(null);
+
+      const response = await fetch("/api/matters/update-direct-field", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matterId: resolvedNumericMatterId(),
+          field: "policyNumber",
+          policyNumber,
+        }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok || !json?.ok) {
+        setDirectFieldEditResult({
+          ok: false,
+          error: json?.error || "Policy Number could not be updated.",
+          details: json,
+        });
+        return;
+      }
+
+      setMatter((current: any) => ({
+        ...(current || {}),
+        ...(json?.matter || {}),
+        policyNumber,
+        policy_number: policyNumber,
+      }));
+
+      setDirectFieldEditResult({
+        ok: true,
+        message: "Policy Number updated locally.",
+        safety: json.safety,
+      });
+      setDirectFieldEditModal(null);
+    } catch (error: any) {
+      setDirectFieldEditResult({
+        ok: false,
+        error: error?.message || "Policy Number could not be updated.",
       });
     } finally {
       setDirectFieldEditLoading(false);
@@ -8681,6 +8738,42 @@ function openClaimAmountEditDialog() {
         </BarshModal>
       )}
 
+      {directFieldEditModal === "policyNumber" && (
+        <BarshModal
+          title="Edit Policy Number"
+          dataModalId="direct-policy-number-edit"
+          initialWidth={520}
+          closeLabel="Cancel"
+          submitLabel={directFieldEditLoading ? "Saving..." : "Confirm Edit"}
+          submitDisabled={directFieldEditLoading}
+          onClose={() => { setDirectFieldEditModal(null); setDirectFieldEditResult(null); }}
+          onSubmit={() => { if (!directFieldEditLoading) void savePolicyNumberEditDialog(); }}
+        >
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "grid", gap: 6, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+              <span style={{ fontSize: 12, fontWeight: 950, letterSpacing: "0.06em", textTransform: "uppercase", color: "#385a83" }}>Current</span>
+              <strong style={{ fontSize: 16, color: "#00346e" }}>{textValue(matter?.policyNumber || matter?.policy_number) || "—"}</strong>
+            </div>
+            <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
+              <span>Policy Number</span>
+              <input
+                type="text"
+                value={policyNumberInput}
+                autoFocus
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => setPolicyNumberInput(event.target.value)}
+                style={{ height: 40, border: "1px solid #cbd5e1", borderRadius: 10, padding: "0 10px", fontWeight: 800 }}
+              />
+            </label>
+            {directFieldEditResult && !directFieldEditResult.ok && (
+              <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: 10, fontSize: 13, fontWeight: 800 }}>
+                {textValue(directFieldEditResult.error) || "Policy Number could not be updated."}
+              </div>
+            )}
+          </div>
+        </BarshModal>
+      )}
+
       {directFieldEditModal === "dos" && (
         <div
           role="dialog"
@@ -8746,7 +8839,7 @@ function openClaimAmountEditDialog() {
         </div>
       )}
 
-      {directFieldEditModal && directFieldEditModal !== "claimAmount" && directFieldEditModal !== "dos" && (
+      {directFieldEditModal && directFieldEditModal !== "claimAmount" && directFieldEditModal !== "dos" && directFieldEditModal !== "policyNumber" && (
         <div
           role="dialog"
           aria-modal="true"
@@ -9237,6 +9330,28 @@ function openClaimAmountEditDialog() {
                     {textValue(matter?.claimNumber) || "—"}
                   </div>
                 </a>
+
+
+                <div className="barsh-direct-summary-card">
+                  <div
+                    className="barsh-direct-summary-label"
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}
+                  >
+                    <span>Policy Number</span>
+                    <button
+                      type="button"
+                      onClick={openPolicyNumberEditDialog}
+                      disabled={directFieldEditLoading}
+                      title="Edit Policy Number."
+                      style={identityEditButtonStyle}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div className="barsh-direct-summary-value barsh-direct-summary-value-strong">
+                    {textValue(matter?.policyNumber || matter?.policy_number) || "—"}
+                  </div>
+                </div>
 
 
                 <div className="barsh-direct-summary-card">
