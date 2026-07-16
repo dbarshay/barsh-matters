@@ -279,7 +279,7 @@ export async function resolveTemplateTokenBaseValues(params: {
 
     // 3b. Provider reference tax id (by provider name)
     const providerEntity = await findReferenceEntityByName(
-      ["provider", "client", "company"],
+      ["provider_client", "provider", "client", "company"],
       claim.client_name || claim.provider_name,
     );
     const providerDetails = flattenReferenceDetails(providerEntity?.details);
