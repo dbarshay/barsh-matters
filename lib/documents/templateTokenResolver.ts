@@ -264,6 +264,8 @@ export async function resolveTemplateTokenBaseValues(params: {
     text("provider.state", pick(providerDetails, ["state"]));
     text("provider.zipcode", pick(providerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("provider.fullAddressBlock", composeAddress(providerDetails));
+    text("provider.phone", pick(providerDetails, ["phone", "phoneNumber", "phone_number", "telephone", "tel", "mainPhone", "phoneMain", "primaryPhone"]));
+    text("provider.email", pick(providerDetails, ["email", "emailAddress", "email_address", "primaryEmail"]));
   }
 
   // 4. Lawsuit (YYYY.MM.NNNNNN)
