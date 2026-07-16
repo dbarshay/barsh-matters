@@ -80,6 +80,21 @@ function pick(details: Record<string, any>, keys: string[]): string {
   return "";
 }
 
+// Proper-case an imported address part that may be stored ALL CAPS (e.g. "NEW YORK", "PO BOX 4652").
+// Preserves common all-caps tokens (PO, directionals, state abbrevs) and anything containing a digit
+// (street numbers, ZIPs, ordinals like "1st"), which title-casing would otherwise mangle.
+const KEEP_UPPER = new Set(["PO", "P.O.", "N", "S", "E", "W", "NE", "NW", "SE", "SW", "NY", "NYC", "US", "USA"]);
+function titleCasePart(value: string): string {
+  const s = clean(value);
+  if (!s) return "";
+  return s.replace(/\S+/g, (w) => {
+    const u = w.toUpperCase();
+    if (KEEP_UPPER.has(u)) return u;
+    if (/\d/.test(w)) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  });
+}
+
 function normalizeName(value: unknown): string {
   return clean(value).toLowerCase().replace(/\s+/g, " ");
 }
@@ -91,12 +106,12 @@ function joinNonEmpty(parts: Array<string | null | undefined>, sep: string): str
 // Single-line address (street, city, state zip). Template authors compose multi-line
 // addressee blocks by placing the structured tokens on separate lines.
 function composeAddress(details: Record<string, any>): string {
-  const street = joinNonEmpty(
+  const street = titleCasePart(joinNonEmpty(
     [pick(details, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(details, ["addressLine2", "address_line_2"])],
     ", ",
-  );
-  const city = pick(details, ["city"]);
-  const state = pick(details, ["state"]);
+  ));
+  const city = titleCasePart(pick(details, ["city"]));
+  const state = titleCasePart(pick(details, ["state"]));
   const zip = pick(details, ["zip", "zipcode", "zipCode", "postalCode"]);
   const cityStateZip = joinNonEmpty([city, joinNonEmpty([state, zip], " ")], ", ");
   // Newline-separated; the fill engine converts "\n" to a Word line break.
@@ -245,9 +260,9 @@ export async function resolveTemplateTokenBaseValues(params: {
       claim.insurer_name,
     );
     const insurerDetails = flattenReferenceDetails(insurerEntity?.details);
-    text("insurer.street", joinNonEmpty([pick(insurerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(insurerDetails, ["addressLine2", "address_line_2"])], ", "));
-    text("insurer.city", pick(insurerDetails, ["city"]));
-    text("insurer.state", pick(insurerDetails, ["state"]));
+    text("insurer.street", titleCasePart(joinNonEmpty([pick(insurerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(insurerDetails, ["addressLine2", "address_line_2"])], ", ")));
+    text("insurer.city", titleCasePart(pick(insurerDetails, ["city"])));
+    text("insurer.state", titleCasePart(pick(insurerDetails, ["state"])));
     text("insurer.zipcode", pick(insurerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("insurer.fullAddressBlock", composeAddress(insurerDetails));
 
@@ -259,9 +274,9 @@ export async function resolveTemplateTokenBaseValues(params: {
     const providerDetails = flattenReferenceDetails(providerEntity?.details);
     text("provider.taxId", pick(providerDetails, ["taxId", "tax_id", "federalTaxId", "ein", "EIN"]));
     // Provider/client reference address (same details record as the tax id).
-    text("provider.street", joinNonEmpty([pick(providerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(providerDetails, ["addressLine2", "address_line_2"])], ", "));
-    text("provider.city", pick(providerDetails, ["city"]));
-    text("provider.state", pick(providerDetails, ["state"]));
+    text("provider.street", titleCasePart(joinNonEmpty([pick(providerDetails, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(providerDetails, ["addressLine2", "address_line_2"])], ", ")));
+    text("provider.city", titleCasePart(pick(providerDetails, ["city"])));
+    text("provider.state", titleCasePart(pick(providerDetails, ["state"])));
     text("provider.zipcode", pick(providerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("provider.fullAddressBlock", composeAddress(providerDetails));
     text("provider.phone", pick(providerDetails, ["phone", "phoneNumber", "phone_number", "telephone", "tel", "mainPhone", "phoneMain", "primaryPhone"]));
@@ -337,9 +352,9 @@ export async function resolveTemplateTokenBaseValues(params: {
       adversaryDetails = flattenReferenceDetails(adversaryEntity?.details);
     }
     const adv = adversaryDetails || {};
-    text("adversaryAttorney.street", joinNonEmpty([pick(adv, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(adv, ["addressLine2", "address_line_2"])], ", "));
-    text("adversaryAttorney.city", pick(adv, ["city"]));
-    text("adversaryAttorney.state", pick(adv, ["state"]));
+    text("adversaryAttorney.street", titleCasePart(joinNonEmpty([pick(adv, ["addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(adv, ["addressLine2", "address_line_2"])], ", ")));
+    text("adversaryAttorney.city", titleCasePart(pick(adv, ["city"])));
+    text("adversaryAttorney.state", titleCasePart(pick(adv, ["state"])));
     text("adversaryAttorney.zipcode", pick(adv, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("adversary.fullAddressBlock", composeAddress(adv));
 
@@ -361,9 +376,9 @@ export async function resolveTemplateTokenBaseValues(params: {
       text("court.longName2", pick(courtDetails, ["longName2", "courtLongName2"]));
       // `addressStreet` is the actual stored key (confirmed from the Edit Court dialog rendering); keep the
       // others as fallbacks. Court reference data has no zip field, so court.zipcode stays blank by design.
-      text("court.street", joinNonEmpty([pick(courtDetails, ["addressStreet", "courtAddressLine1", "addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["addressStreet2", "courtAddressLine2", "addressLine2", "address_line_2"])], ", "));
-      text("court.city", pick(courtDetails, ["courtCity", "city"]));
-      text("court.state", pick(courtDetails, ["courtState", "state"]));
+      text("court.street", titleCasePart(joinNonEmpty([pick(courtDetails, ["addressStreet", "courtAddressLine1", "addressLine1", "address_line_1", "streetAddress", "street_address", "street", "address"]), pick(courtDetails, ["addressStreet2", "courtAddressLine2", "addressLine2", "address_line_2"])], ", ")));
+      text("court.city", titleCasePart(pick(courtDetails, ["courtCity", "city"])));
+      text("court.state", titleCasePart(pick(courtDetails, ["courtState", "state"])));
       text("court.zipcode", pick(courtDetails, ["courtZip", "courtZipcode", "courtZipCode", "zip", "zipcode", "zipCode", "postalCode"]));
     }
   }

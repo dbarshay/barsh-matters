@@ -640,6 +640,8 @@ export default function AdminReferenceDataPage() {
 
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editDetailsJson, setEditDetailsJson] = useState("");
   const [newAlias, setNewAlias] = useState("");
 
@@ -804,6 +806,8 @@ export default function AdminReferenceDataPage() {
     if (!selectedRow) {
       setEditDisplayName("");
       setEditNotes("");
+      setEditPhone("");
+      setEditEmail("");
       setNewAlias("");
       return;
     }
@@ -811,6 +815,12 @@ export default function AdminReferenceDataPage() {
     setEditDisplayName(selectedRow.displayName || "");
     setEditNotes(selectedRow.notes || "");
     setEditDetailsJson(prettyJson(selectedRow.details));
+    const d =
+      selectedRow.details && typeof selectedRow.details === "object" && !Array.isArray(selectedRow.details)
+        ? (selectedRow.details as Record<string, any>)
+        : {};
+    setEditPhone(text(d.phone ?? d.phoneNumber ?? d.telephone ?? d.tel) || "");
+    setEditEmail(text(d.email ?? d.emailAddress) || "");
     setNewAlias("");
   }, [selectedRow]);
 
@@ -1136,7 +1146,21 @@ export default function AdminReferenceDataPage() {
       if (operation === "update") {
         body.displayName = editDisplayName;
         body.notes = editNotes;
-        body.details = parseJsonInput(editDetailsJson);
+        // Merge the dedicated Phone/Email fields into the details JSON (canonical keys the merge
+        // fields read: details.phone / details.email). Spreading the existing JSON preserves
+        // everything else (address, _hiddenImportFields, …); a cleared field removes the key.
+        const parsedDetails = parseJsonInput(editDetailsJson);
+        const mergedDetails: Record<string, any> =
+          parsedDetails && typeof parsedDetails === "object" && !Array.isArray(parsedDetails)
+            ? { ...(parsedDetails as Record<string, any>) }
+            : {};
+        const phoneVal = text(editPhone);
+        const emailVal = text(editEmail);
+        if (phoneVal) mergedDetails.phone = phoneVal;
+        else delete mergedDetails.phone;
+        if (emailVal) mergedDetails.email = emailVal;
+        else delete mergedDetails.email;
+        body.details = mergedDetails;
       }
 
       const res = await fetch("/api/reference-data/entities", {
@@ -3054,6 +3078,33 @@ return (
                         marginBottom: 12,
                       }}
                     />
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: "#385a83", marginBottom: 6 }}>
+                          Phone
+                        </label>
+                        <input
+                          type="text"
+                          value={editPhone}
+                          onChange={(event) => setEditPhone(event.target.value)}
+                          placeholder="(516) 555-0100"
+                          style={{ width: "100%", padding: "11px 12px", borderRadius: 12, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: "#385a83", marginBottom: 6 }}>
+                          Email
+                        </label>
+                        <input
+                          type="text"
+                          value={editEmail}
+                          onChange={(event) => setEditEmail(event.target.value)}
+                          placeholder="billing@example.com"
+                          style={{ width: "100%", padding: "11px 12px", borderRadius: 12, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                    </div>
 
                     <div
                       style={{
