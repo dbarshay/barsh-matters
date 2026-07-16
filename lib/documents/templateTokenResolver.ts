@@ -90,8 +90,13 @@ function titleCasePart(value: string): string {
   return s.replace(/\S+/g, (w) => {
     const u = w.toUpperCase();
     if (KEEP_UPPER.has(u)) return u;
-    if (/\d/.test(w)) return w;
-    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    // Tokens with a digit stay as-is (street numbers, ZIPs), but lowercase ordinal suffixes: 42ND -> 42nd.
+    if (/\d/.test(w)) return w.replace(/(\d)(ST|ND|RD|TH)\b/gi, (_m, d, suf) => d + suf.toLowerCase());
+    let out = w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    // Recapitalize after an apostrophe (O'Brien) and the Mc prefix (McDonald).
+    out = out.replace(/([A-Za-z])'([a-z])/g, (_m, a, b) => `${a}'${b.toUpperCase()}`);
+    out = out.replace(/^Mc([a-z])/, (_m, b) => `Mc${b.toUpperCase()}`);
+    return out;
   });
 }
 
@@ -234,6 +239,10 @@ export async function resolveTemplateTokenBaseValues(params: {
     text("insurer.name", claim.insurer_name);
     text("claim.number", claim.claim_number_raw || claim.claim_number_normalized);
     date("claim.dateOfLoss", claim.date_of_loss);
+    // Policy number is shared across a lawsuit's sibling matters (one insurer claim), so it resolves for
+    // both the individual matter and the lawsuit's representative member.
+    text("claim.policyNumber", claim.policy_number);
+    text("lawsuit.policyNumber", claim.policy_number);
 
     // Per-claim fields — only for an individual matter, not a lawsuit's representative member (they vary by
     // member and have no single lawsuit-level value).
@@ -265,6 +274,8 @@ export async function resolveTemplateTokenBaseValues(params: {
     text("insurer.state", titleCasePart(pick(insurerDetails, ["state"])));
     text("insurer.zipcode", pick(insurerDetails, ["zip", "zipcode", "zipCode", "postalCode"]));
     text("insurer.fullAddressBlock", composeAddress(insurerDetails));
+    text("insurer.phone", pick(insurerDetails, ["phone", "phoneNumber", "phone_number", "telephone", "tel", "mainPhone", "phoneMain", "primaryPhone"]));
+    text("insurer.email", pick(insurerDetails, ["email", "emailAddress", "email_address", "primaryEmail"]));
 
     // 3b. Provider reference tax id (by provider name)
     const providerEntity = await findReferenceEntityByName(
