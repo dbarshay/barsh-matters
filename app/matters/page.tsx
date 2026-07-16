@@ -10244,7 +10244,9 @@ function masterDocumentPreviewText(value: unknown): string {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                        // 6 cards on one row: Provider/Patient/Insurer wider; Claim Number, Policy Number
+                        // and Date of Loss shrunk to fit alongside them.
+                        gridTemplateColumns: "1.15fr 1.15fr 1.15fr 0.85fr 0.85fr 0.85fr",
                         gap: 12,
                         alignItems: "stretch",
                       }}
