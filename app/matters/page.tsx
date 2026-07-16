@@ -10340,9 +10340,10 @@ function masterDocumentPreviewText(value: unknown): string {
                         display: "grid",
                         // Index/AAA and Date Filed shrunk to make room for the
                         // Adversary Attorney File No. card on the same row.
-                        // Four equal date boxes (Filed / Served / Service Complete / Answer Received) on
-                        // one row; Index/AAA and Adversary File No. shrunk to fit.
-                        gridTemplateColumns: "0.65fr 0.95fr 1.1fr 0.75fr 0.72fr 0.72fr 0.72fr 0.72fr",
+                        // 4-column grid → the 8 cards flow as two even rows: row 1 = Index/AAA, Court,
+                        // Adversary Attorney, Adversary File No.; row 2 = the four equal-width date boxes
+                        // (Filed / Served / Service Complete / Answer Received).
+                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                         gap: 12,
                         alignItems: "stretch",
                       }}
