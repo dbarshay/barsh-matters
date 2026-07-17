@@ -56,7 +56,11 @@ const targetRows = rows.filter(
 );
 
 console.log(`Total users: ${rows.length}`);
-console.log(`Keeping (owner): ${KEEP}`);
+console.log("All users in the database:");
+for (const r of rows) {
+  console.log(`  - ${r.email} | ${r.displayName || "(no name)"} | status=${r.status} | bootstrapSafe=${r.bootstrapSafe}`);
+}
+console.log(`\nKeeping (owner): ${KEEP}`);
 if (keepRows.length === 0) {
   console.error(`\n*** ABORT: the KEEP owner email (${KEEP}) was not found among users. ***`);
   console.error("Refusing to run so you don't accidentally deactivate everyone. Set KEEP_EMAIL correctly.");
