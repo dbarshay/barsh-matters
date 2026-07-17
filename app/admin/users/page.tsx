@@ -959,7 +959,12 @@ export default function AdminUsersPlanningPage() {
         return;
       }
       if (apply) {
-        setCreateMessage("Admin user created. Roles were not assigned. Permission enforcement setting was not changed.");
+        if (json?.temporaryPassword && json?.temporaryPasswordOneTimeDisplay) {
+          pushAdminUsersActionHistory("password-reset-one-time");
+          setPasswordResetOneTimePassword(String(json.temporaryPassword));
+          setPasswordResetCopyMessage("");
+        }
+        setCreateMessage("Admin user created with a one-time temporary password. Copy it from the modal now — it is shown once and the user must change it at first login. Roles were not assigned.");
         setCreateFirstName("");
         setCreateLastName("");
         setCreateDisplayName("");

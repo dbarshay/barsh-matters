@@ -8,6 +8,13 @@ import { buildAdminUserSignerProfileWritePayloadPhase7 } from "@/src/lib/admin-u
 import { normalizeE164Phone } from "@/src/lib/auth/twilio-verify-2fa";
 import { ensureSubscriptionForMailbox } from "@/lib/graph/emailSubscription";
 import { isEmailWebhookEnabled } from "@/lib/graph/webhookConfig";
+import {
+  generateTemporaryPassword,
+  hashPasswordForPhase1,
+  passwordReusesLastThree,
+  updatePasswordHistory,
+  validatePasswordPolicy,
+} from "@/src/lib/auth/admin-user-password-security-phase1";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -229,9 +236,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Username uniqueness: normalizedUsername is the @unique column AND the login lookup key
+    // (auth/login queries WHERE normalizedUsername = ...). Check it here and return a clean 409
+    // instead of letting the DB unique constraint surface as a generic 500 on apply.
+    if (signerProfilePayload.usernameNormalized) {
+      const existingUsername = await prisma.adminUser.findFirst({
+        where: { normalizedUsername: signerProfilePayload.usernameNormalized },
+        select: { id: true, email: true, username: true, status: true },
+      });
+      if (existingUsername) {
+        return NextResponse.json(
+          {
+            ok: false,
+            action: "admin-user-create",
+            mode: apply ? "apply-blocked" : "preview-blocked",
+            error: "An admin user with this username already exists.",
+            duplicateUsernamePrevented: true,
+            existingUser: {
+              id: existingUsername.id,
+              email: existingUsername.email,
+              username: existingUsername.username,
+              status: existingUsername.status,
+            },
+            actorEmail,
+            enforcementChanged: false,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const preview = {
       email,
       displayName,
+      username: signerProfilePayload.username,
       status,
       bootstrapSafe: false,
       notes,
@@ -246,13 +284,43 @@ export async function POST(req: NextRequest) {
         applyRequiredForWrite: true,
         wouldCreate: preview,
         duplicateEmailPrevented: false,
+        temporaryPasswordWillBeGeneratedOnApply: true,
+        forcePasswordChangeWillBe: true,
         actorEmail,
         actorRoleRequired: "owner_admin",
         actorEffectivePermissionCount: actorEffectivePermissionKeys.length,
         enforcementChanged: false,
-        note: "Preview only. No AdminUser row, role assignment, permission override, enforcement setting, Clio record, document, email, or print queue item was changed.",
+        note: "Preview only. No AdminUser row, role assignment, permission override, enforcement setting, Clio record, document, email, or print queue item was changed. On apply, a one-time temporary password is generated and returned once.",
       });
     }
+
+    // Mint a compliant one-time temporary password so the created user can actually sign in. A new user
+    // has no password history, so the reuse-guard here just confirms policy compliance. The plaintext is
+    // hashed immediately, returned exactly once in the response, and never stored or logged. forcePasswordChange
+    // makes the user reset it at first login.
+    let temporaryPassword = generateTemporaryPassword();
+    let policyErrors = validatePasswordPolicy(temporaryPassword);
+    let passwordGuard = 0;
+    while ((policyErrors.length > 0 || passwordReusesLastThree(temporaryPassword, null)) && passwordGuard < 10) {
+      temporaryPassword = generateTemporaryPassword();
+      policyErrors = validatePasswordPolicy(temporaryPassword);
+      passwordGuard += 1;
+    }
+    if (policyErrors.length > 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          action: "admin-user-create",
+          mode: "apply-blocked",
+          error: "Could not generate a compliant temporary password. No admin user was created.",
+          actorEmail,
+          enforcementChanged: false,
+        },
+        { status: 500 }
+      );
+    }
+    const passwordHash = hashPasswordForPhase1(temporaryPassword);
+    const passwordHistoryJson = updatePasswordHistory(null, passwordHash);
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.adminUser.create({
@@ -263,6 +331,12 @@ export async function POST(req: NextRequest) {
           username: signerProfilePayload.username,
           emailNormalized: signerProfilePayload.emailNormalized,
           usernameNormalized: signerProfilePayload.usernameNormalized,
+          normalizedUsername: signerProfilePayload.usernameNormalized,
+          passwordHash,
+          passwordHistoryJson,
+          passwordSetAt: new Date(),
+          forcePasswordChange: true,
+          passwordChangeRequired: true,
           phoneExtension: signerProfilePayload.phoneExtension,
           faxNumber: signerProfilePayload.faxNumber,
           signatureBlockName: signerProfilePayload.signatureBlockName,
@@ -302,6 +376,9 @@ export async function POST(req: NextRequest) {
           enforcementChanged: false,
           rolesAssigned: [],
           permissionOverridesCreated: [],
+          temporaryPasswordGenerated: true,
+          temporaryPasswordStored: false,
+          forcePasswordChange: true,
         },
         sourcePage: "/admin/users",
         workflow: "admin-users-phase3",
@@ -334,13 +411,18 @@ export async function POST(req: NextRequest) {
         bootstrapSafe: created.bootstrapSafe,
         signerEligible: created.signerEligible,
       },
+      temporaryPassword,
+      temporaryPasswordOneTimeDisplay: true,
+      copyButtonRecommended: true,
+      forcePasswordChange: true,
+      warning: "This temporary password is shown once. Copy it now; it is not stored or recoverable. The user must change it at first login.",
       rolesAssigned: [],
       permissionOverridesCreated: [],
       actorEmail,
       actorRoleRequired: "owner_admin",
       actorEffectivePermissionCount: actorEffectivePermissionKeys.length,
       enforcementChanged: false,
-      note: "Admin user row created. Permission enforcement setting was not changed.",
+      note: "Admin user row created with a one-time temporary password (hashed on the server, returned once). The user must change it at first login. Permission enforcement setting was not changed.",
     });
   } catch (error: any) {
     return NextResponse.json(
