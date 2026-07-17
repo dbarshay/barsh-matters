@@ -15,6 +15,7 @@ import {
   flattenFileLeaves,
   fetchFileBytes,
   enumerateCasesFromAtlas,
+  AtlasAuthDeadError,
 } from "./atlasClient";
 import {
   initSchema,
@@ -248,6 +249,7 @@ async function processCase(caseId: string): Promise<number> {
     return done;
   } catch (e: any) {
     if (e instanceof CacheIntegrityError) throw e; // propagate past the per-case handler and stop the run
+    if (e instanceof AtlasAuthDeadError) throw e; // token expired — HALT the run, don't churn the queue into 401s
     await setCase(caseId, { status: "error", error: e?.message || String(e) });
     console.log(`  ${caseId}: CASE ERROR — ${e?.message || e}`);
     return 0;
@@ -495,6 +497,16 @@ async function docTypes() {
       );
   } catch (e: any) {
     const msg = e?.message || String(e);
+    if (e instanceof AtlasAuthDeadError) {
+      console.error("\n" + "=".repeat(90));
+      console.error("*** RUN HALTED: ATLAS TOKEN EXPIRED (401 + refresh grant dead) — sweep PARKED, not churned ***");
+      console.error("=".repeat(90));
+      console.error("Nothing is lost — pending cases stay pending. To resume: drop a FRESH token into .env");
+      console.error("(ATLAS_TOKEN + ATLAS_REFRESH_TOKEN from DevTools GetAccessToken), `rm -f .refresh-token`,");
+      console.error("then relaunch `--run`. No reset needed — the run stopped instead of 401-poisoning the queue.\n");
+      process.exitCode = 3;
+      return;
+    }
     if (e instanceof CacheIntegrityError) {
       console.error("\n" + "!".repeat(100));
       console.error("*** RUN HALTED: FILE-ID CACHE INTEGRITY FAILURE — POSSIBLE MISFILED DOCUMENTS ***");

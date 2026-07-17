@@ -6,6 +6,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { config, assertAtlas } from "./config";
 
+/** Thrown when a 401 is met and the refresh grant is dead (the ~24h token-family cap). Callers HALT the
+ *  run on this — a token expiry should PARK the sweep (pending stays pending), not churn the whole queue
+ *  into 401-errors. Recover by dropping a fresh token in .env and relaunching. */
+export class AtlasAuthDeadError extends Error {}
+
 export type AtlasFileLeaf = {
   atlasFileId: number; // node leaf id (== ImageId)
   fileName: string;
@@ -178,9 +183,9 @@ async function api(path: string, init?: RequestInit, _retried = false, _attempt 
 
   if (res.status === 401 && !_retried) {
     if (await refresh(gen)) return api(path, init, true, _attempt);
-    throw new Error(
-      "Atlas 401 and refresh failed. Drop a fresh token into ATLAS_TOKEN_FILE (localStorage.token from a " +
-        "logged-in tab) — the run resumes automatically; nothing is lost."
+    throw new AtlasAuthDeadError(
+      "Atlas 401 and refresh failed (token family expired). Drop a fresh ATLAS_TOKEN + ATLAS_REFRESH_TOKEN " +
+        "into .env, rm -f .refresh-token, and relaunch — nothing is lost."
     );
   }
 
