@@ -877,6 +877,29 @@ export default function AdminUsersPlanningPage() {
     }
   }
 
+  async function deleteUserFromRow(user: any): Promise<void> {
+    if (String(user.email || "").trim().toLowerCase() === adminUsersWriteActorEmail()) {
+      await bmAlert("You cannot delete your own account.");
+      return;
+    }
+    if (!await bmConfirm(`Permanently DELETE ${user.email}?\n\nThis removes the user along with their role assignments and permission overrides. This cannot be undone. To deactivate reversibly instead, use Lock.`)) return;
+    const reason = await bmPrompt(`Reason for permanently deleting ${user.email} (min 6 characters)`, "Delete test user");
+    if (!reason || reason.trim().length < 6) {
+      if (reason !== null) await bmAlert("A reason of at least 6 characters is required to delete a user.");
+      return;
+    }
+    try {
+      setAdminUsersRowBusy(true);
+      await postAdminUsersAction("/api/admin/users/delete", { apply: true, targetEmail: user.email, reason, actorEmail: adminUsersWriteActorEmail() }, "Delete user");
+      setAdminUsersRowMessage(`Permanently deleted ${user.email}.`);
+      await loadAdminUsersPlanning();
+    } catch (error: any) {
+      setAdminUsersRowMessage(error?.message || "Delete user failed.");
+    } finally {
+      setAdminUsersRowBusy(false);
+    }
+  }
+
   async function assignRoleFromRow(user: any): Promise<void> {
     const roleKey = await bmPrompt(`Role to assign to ${user.email}`, "");
     if (!roleKey) return;
@@ -1618,6 +1641,7 @@ export default function AdminUsersPlanningPage() {
                       {twoFactorSetupPending ? <><span data-barsh-admin-users-2fa-pending-label="true" style={{ border: "1px solid #fde68a", background: "#fefce8", color: "#713f12", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Setup Pending</span><button data-barsh-admin-users-verify-2fa-setup-row-button="true" type="button" onClick={() => openTwoFactorVerifyPanel(user)} disabled={adminUsersRowBusy} style={{ ...secondaryButtonStyle, border: "1px solid #16a34a", color: "#166534" }}>Verify Setup</button></> : twoFactorEnforced ? <span data-barsh-admin-users-2fa-enforced-label="true" style={{ border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 999, padding: "10px 12px", fontSize: 13, fontWeight: 950 }}>2FA Enforced</span> : <button data-barsh-admin-users-activate-2fa-row-button="true" type="button" onClick={() => openTwoFactorSetupPanel(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Activate 2FA</button>}
                       <button data-barsh-admin-users-lock-row-button="true" type="button" onClick={() => void lockUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>{active ? "Lock" : "Unlock"}</button>
                       <button data-barsh-admin-users-signout-row-button="true" type="button" onClick={() => void signOutUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, color: "#ffffff" }}>Sign out</button>
+                      <button data-barsh-admin-users-delete-row-button="true" type="button" onClick={() => void deleteUserFromRow(user)} disabled={adminUsersRowBusy} style={{ ...primaryButtonStyle, border: "1px solid #991b1b", background: "#b91c1c", color: "#ffffff" }}>Delete</button>
                     </div>
                   </td>
                 </tr>
