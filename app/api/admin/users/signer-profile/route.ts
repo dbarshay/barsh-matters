@@ -226,7 +226,9 @@ export async function PATCH(req: NextRequest) {
     if (payload.usernameNormalized !== existing.usernameNormalized && payload.usernameNormalized !== null) {
       const duplicateUsername = await prisma.adminUser.findFirst({
         where: {
-          usernameNormalized: payload.usernameNormalized,
+          // normalizedUsername is the @unique column and the auth/login lookup key; check it (not the
+          // parallel non-unique usernameNormalized) so the DB constraint can't surface as a 500.
+          normalizedUsername: payload.usernameNormalized,
           id: { not: userId },
         },
         select: { id: true, username: true },
@@ -316,6 +318,7 @@ export async function PATCH(req: NextRequest) {
         email: payload.email ?? existing.email,
         emailNormalized: payload.emailNormalized,
         usernameNormalized: payload.usernameNormalized,
+        normalizedUsername: payload.usernameNormalized,
         phoneExtension: payload.phoneExtension,
         faxNumber: payload.faxNumber,
         signatureBlockName: payload.signatureBlockName,
