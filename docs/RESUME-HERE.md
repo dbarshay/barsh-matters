@@ -18,6 +18,54 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-17 — Admin Users: create/login fixes, Delete capability; migration parked
+
+**All pushed to `main` and DEPLOYED** (through commit `02d9e92`; local == origin). Next session: **continue the
+new-user-creation walkthrough** (user wants a live, on-screen walk-through of the create flow — nothing to build,
+just orientation; do NOT actually create a user unless asked).
+
+**New-user creation was broken two ways — both fixed:**
+- **Username login never worked for created users.** The create route wrote `usernameNormalized`, but auth/login and
+  the `@unique` constraint use a *different* column, `normalizedUsername`, which nothing populated (grep-confirmed
+  repo-wide). So created users had `normalizedUsername = NULL` → never found at login, and duplicate usernames slipped
+  through. Fixed: write `normalizedUsername` (matching normalizer = trim+lowercase) + a duplicate-username 409
+  pre-check. `01151c8`.
+- **No password at creation.** Created users had `passwordHash = NULL` → couldn't sign in until a separate reset.
+  Now creation mints a compliant one-time temp password (reuses `admin-user-password-security-phase1` helpers),
+  hashes it, sets `forcePasswordChange`+`passwordChangeRequired`, returns it once; the create UI surfaces it in the
+  existing one-time "Temporary Password" modal. `01151c8`.
+- Same column-mismatch fixed in the **edit** route (`signer-profile`) so username edits reach the login-lookup column
+  and the dup-check hits the right column. `631c14d`.
+
+**Delete-user capability added (owner requested delete/lockout/reset in the UI; lockout+reset already existed):**
+- New `POST /api/admin/users/delete` — owner_admin-gated, preview/apply, requires ≥6-char reason. Guards: cannot
+  delete self, cannot delete the sole active bootstrapSafe owner. Prisma delete cascades `AdminUserRole` +
+  `AdminUserPermissionOverride` (both `onDelete: Cascade`); writes an audit snapshot before removal. `83e5828`.
+- Red **Delete** row button in the admin Users table (confirm + reason prompt), next to Reset Password / Lock
+  (=deactivate) / Sign out. `83e5828`.
+- `scripts/deactivate-non-owner-users.mjs` — one-time REVERSIBLE cleanup the owner runs locally: previews all users,
+  `--apply` sets every non-owner user inactive/locked. Aborts if the keep-owner email isn't found. `83e5828` / `02d9e92`.
+
+**Users in DB (2 total):** owner = **`dbarshay@brlfirm.com`** (David Barshay, bootstrapSafe) — note the app email is NOT
+`dbarshay15@gmail.com` (that's the Cowork login). Test user = **`tluisi@brlfirm.com`** (Tara Luisi). To remove Tara:
+click the new Delete button, OR `KEEP_EMAIL=dbarshay@brlfirm.com node scripts/deactivate-non-owner-users.mjs --apply`
+(deactivate, reversible). Not yet done.
+
+**Auth-review note (not a bug for now):** the admin routes gate on the shared admin-gate cookie + a body-supplied
+`actorEmail` (verified as active owner_admin), NOT the session identity — so actor attribution is technically
+spoofable. Low risk since the owner is the sole owner_admin. Future hardening: bind `actorEmail` to the signed
+identity cookie.
+
+**Migration — PARKED for the day.** Owner cancelled the run (Atlas crashing / slowing the system). Nothing lost;
+pending stays pending. Auth-halt fix shipped so a dead token now parks the run instead of churning the queue into
+401s (repo `3a362b6`; VM applied via `patch-authhalt.mjs`). Last status ~mid-day: done **303,124**, error **57,814**,
+pending **194,561**; docs stored **67.8M / ~26.7 TB**. **To resume (another day, Atlas healthy):** fresh token in the
+VM `.env` → relaunch `STALL_HALT_BATCHES=0 MAX_CASE_ATTEMPTS=1 CASE_CONCURRENCY=1 FILE_CONCURRENCY=8
+FETCH_TIMEOUT_MS=1000 HTTP_RETRIES=0 npx tsx extract.ts --run` (1s timeout gave ~80% throughput; giants/timeouts
+defer and get a final `FETCH_TIMEOUT_MS=180000` slow pass). Do NOT reset timeout errors again — let them park.
+
+---
+
 ### 2026-07-16 (afternoon) — Merge-field batch: provider/insurer contact, court county, Policy Number, sibling table
 
 All committed on `main` (push with `git push origin main`; commits `616c45f` → `028c837`). Migration status at
