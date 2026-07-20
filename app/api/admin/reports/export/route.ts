@@ -98,9 +98,9 @@ export async function POST(req: NextRequest) {
     if (!r) return NextResponse.json({ ok: false, error: "Saved report not found." }, { status: 404 });
     const me = reportOwnerId(gate.identity);
     if (!(r.isShared || (r.ownerId || "") === me)) return NextResponse.json({ ok: false, error: "Not visible to you." }, { status: 403 });
-    config = { base: (r.baseEntity as any) || "matter", ...((r.config as any) || {}) };
+    config = { ...((r.config as any) || {}) };
   } else if (body?.config && typeof body.config === "object") {
-    config = { base: body.config.base === "lawsuit" ? "lawsuit" : "matter", ...body.config };
+    config = { ...body.config };
   }
   if (!config) return NextResponse.json({ ok: false, error: "No report config provided." }, { status: 400 });
 

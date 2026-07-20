@@ -2,24 +2,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { gateReports } from "@/lib/reports/reportsAuth";
-import { fieldsFor, OPERATORS_BY_TYPE, AGGREGATIONS, type ReportBase } from "@/lib/reports/reportCatalog";
+import { fieldsFor, OPERATORS_BY_TYPE, AGGREGATIONS } from "@/lib/reports/reportCatalog";
 import { normalizeProviderName } from "@/lib/providerNameCase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function distinctNormalized(rows: any[], col: string): string[] {
+  return Array.from(new Set(rows.map((r) => normalizeProviderName(r[col])).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
 export async function GET(req: NextRequest) {
   const gate = gateReports(req, "GET");
   if (!gate.ok) return gate.response;
 
-  const base: ReportBase = new URL(req.url).searchParams.get("base") === "lawsuit" ? "lawsuit" : "matter";
-  const fields = fieldsFor(base);
+  const fields = fieldsFor();
   const categoryValues: Record<string, string[]> = {};
 
   for (const f of fields.filter((x) => x.type === "category" && x.column)) {
     try {
-      const model: any = base === "matter" ? prisma.claimIndex : prisma.lawsuit;
-      const rows: any[] = await model.findMany({
+      const rows: any[] = await prisma.claimIndex.findMany({
         distinct: [f.column as any],
         select: { [f.column as string]: true } as any,
         take: 1000,
@@ -32,5 +34,32 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, base, fields, operators: OPERATORS_BY_TYPE, aggregations: AGGREGATIONS, categoryValues });
+  // Top-line quick-filter dropdowns (normalized, deduped).
+  let providers: string[] = [];
+  let insurers: string[] = [];
+  try {
+    const provRows: any[] = await prisma.claimIndex.findMany({ distinct: ["provider_name"] as any, select: { provider_name: true } as any, take: 5000 });
+    providers = distinctNormalized(provRows, "provider_name").slice(0, 2000);
+  } catch {}
+  try {
+    const insRows: any[] = await prisma.claimIndex.findMany({ distinct: ["insurer_name"] as any, select: { insurer_name: true } as any, take: 5000 });
+    insurers = distinctNormalized(insRows, "insurer_name").slice(0, 2000);
+  } catch {}
+
+  return NextResponse.json({
+    ok: true,
+    fields,
+    operators: OPERATORS_BY_TYPE,
+    aggregations: AGGREGATIONS,
+    categoryValues,
+    topLine: {
+      providers,
+      insurers,
+      caseTypes: [
+        { key: "nf", label: "No-Fault" },
+        { key: "wc", label: "Workers' Comp" },
+        { key: "lien", label: "Lien" },
+      ],
+    },
+  });
 }

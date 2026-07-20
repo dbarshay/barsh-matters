@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Client page fetches untyped JSON (search/template rows); existing file is any-heavy. */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { normalizeProviderName } from "@/lib/providerNameCase";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
 import BarshHeaderActions from "@/app/components/BarshHeaderActions";
 import BarshHeader from "@/app/components/BarshHeader";
@@ -1203,7 +1204,7 @@ export default function LawsuitsPage() {
                                 style={fieldTextFilterLink}
                                 title="Show all matters for this provider"
                               >
-                                {val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}
+                                {normalizeProviderName(val(m, "client_name", "clientName", "provider_name", "providerName")) || "—"}
                               </button>
                             </td>
                             <td style={td}>
@@ -1213,7 +1214,7 @@ export default function LawsuitsPage() {
                                 style={fieldTextFilterLink}
                                 title="Show all matters for this insurer"
                               >
-                                {insurerName(m) || "—"}
+                                {normalizeProviderName(insurerName(m)) || "—"}
                               </button>
                             </td>
                             <td style={tdRight}>{money(val(m, "claimAmount", "claim_amount"))}</td>
@@ -1484,8 +1485,8 @@ export default function LawsuitsPage() {
                     <tr key={`create-review-${matterId(m)}`}>
                       <td style={td}>{displayNumber(m)}{legacyTag(m)}</td>
                       <td style={td}>{val(m, "patientName", "patient_name") || "—"}</td>
-                      <td style={td}>{val(m, "client_name", "clientName", "provider_name", "providerName") || "—"}</td>
-                      <td style={td}>{insurerName(m) || "—"}</td>
+                      <td style={td}>{normalizeProviderName(val(m, "client_name", "clientName", "provider_name", "providerName")) || "—"}</td>
+                      <td style={td}>{normalizeProviderName(insurerName(m)) || "—"}</td>
                       <td style={tdRight}>{money(val(m, "claimAmount", "claim_amount"))}</td>
                       <td style={tdRight}>{money(paymentAmount(m))}</td>
                       <td style={tdRight}>{money(val(m, "balancePresuit", "balance_presuit", "balanceAmount", "balance_amount"))}</td>

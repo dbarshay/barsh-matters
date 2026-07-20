@@ -63,7 +63,6 @@ export const MATTER_FIELDS: ReportField[] = [
   // Financials
   { key: "claim_amount", label: "Claim Amount", group: "Financials", type: "number", column: "claim_amount" },
   { key: "settled_amount", label: "Settled Amount", group: "Financials", type: "number", column: "settled_amount" },
-  { key: "allocated_settlement", label: "Allocated Settlement", group: "Financials", type: "number", column: "allocated_settlement" },
   { key: "interest_amount", label: "Interest Amount", group: "Financials", type: "number", column: "interest_amount" },
   { key: "principal_fee", label: "Principal Fee", group: "Financials", type: "number", column: "principal_fee" },
   { key: "interest_fee", label: "Interest Fee", group: "Financials", type: "number", column: "interest_fee" },
@@ -77,8 +76,7 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "balance_presuit", label: "Pre-Suit Balance", group: "Financials", type: "number", column: "balance_presuit" },
   { key: "overdue_days", label: "Overdue Days", group: "Financials", type: "number", column: "overdue_days" },
   // Dates (stored as strings in ClaimIndex; ISO-style compare)
-  { key: "dos_start", label: "Date of Service (Start)", group: "Dates", type: "date", column: "dos_start" },
-  { key: "dos_end", label: "Date of Service (End)", group: "Dates", type: "date", column: "dos_end" },
+  { key: "dos_range", label: "Date of Service", group: "Dates", type: "text" },
   { key: "date_of_loss", label: "Date of Loss", group: "Dates", type: "date", column: "date_of_loss" },
   { key: "status_date", label: "Status Date", group: "Dates", type: "date", column: "status_date" },
   { key: "date_bill_submitted", label: "Bill Submitted Date", group: "Dates", type: "date", column: "date_bill_submitted" },
@@ -95,36 +93,27 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "master_lawsuit_id", label: "Lawsuit Number", group: "Lawsuit", type: "text", column: "master_lawsuit_id" },
 ];
 
-export const LAWSUIT_FIELDS: ReportField[] = [
-  // Identifiers
-  { key: "masterLawsuitId", label: "Lawsuit Number", group: "Identifiers", type: "text", column: "masterLawsuitId" },
-  { key: "oldLawsuitNumber", label: "Legacy Lawsuit Number", group: "Identifiers", type: "text", column: "oldLawsuitNumber" },
-  { key: "claimNumber", label: "Claim Number", group: "Identifiers", type: "text", column: "claimNumber" },
-  { key: "indexAaaNumber", label: "Index / AAA Number", group: "Identifiers", type: "text", column: "indexAaaNumber" },
-  // Venue
-  { key: "venue", label: "Venue / Court", group: "Venue", type: "category", column: "venue" },
-  // Amounts
-  { key: "amountSought", label: "Amount Sought", group: "Amounts", type: "number", column: "amountSought" },
-  { key: "amountSoughtMode", label: "Amount Basis", group: "Amounts", type: "category", column: "amountSoughtMode" },
-  { key: "customAmountSought", label: "Custom Amount Sought", group: "Amounts", type: "number", column: "customAmountSought" },
-  // Rollups (derived from member matters)
-  { key: "matterCount", label: "Matter Count", group: "Rollups", type: "number", rollup: true },
-  { key: "totalClaimAmount", label: "Total Claim Amount", group: "Rollups", type: "number", rollup: true },
-  { key: "totalBalancePresuit", label: "Total Pre-Suit Balance", group: "Rollups", type: "number", rollup: true },
-  { key: "memberMatterNumbers", label: "Member Matter Numbers", group: "Rollups", type: "text", rollup: true },
-  // Notes & meta
-  { key: "lawsuitNotes", label: "Notes", group: "Meta", type: "text", column: "lawsuitNotes" },
-  { key: "createdAt", label: "Created Date", group: "Meta", type: "date", column: "createdAt" },
-  { key: "updatedAt", label: "Updated Date", group: "Meta", type: "date", column: "updatedAt" },
+// Lawsuit attributes joined onto each matter via master_lawsuit_id. Reports always use matters +
+// lawsuits together, so these appear as extra columns on every matter row (blank if not in a lawsuit).
+export const LAWSUIT_JOIN_FIELDS: ReportField[] = [
+  { key: "lawsuit_venue", label: "Lawsuit Venue / Court", group: "Lawsuit", type: "category" },
+  { key: "lawsuit_index_aaa", label: "Lawsuit Index / AAA", group: "Lawsuit", type: "text" },
+  { key: "lawsuit_amount_sought", label: "Lawsuit Amount Sought", group: "Lawsuit", type: "number" },
+  { key: "lawsuit_amount_basis", label: "Lawsuit Amount Basis", group: "Lawsuit", type: "category" },
+  { key: "lawsuit_notes", label: "Lawsuit Notes", group: "Lawsuit", type: "text" },
+  { key: "lawsuit_created", label: "Lawsuit Created", group: "Lawsuit", type: "date" },
+  { key: "lawsuit_updated", label: "Lawsuit Updated", group: "Lawsuit", type: "date" },
 ];
 
-export function fieldsFor(base: ReportBase): ReportField[] {
-  return base === "lawsuit" ? LAWSUIT_FIELDS : MATTER_FIELDS;
+export const REPORT_FIELDS: ReportField[] = [...MATTER_FIELDS, ...LAWSUIT_JOIN_FIELDS];
+
+export function fieldsFor(): ReportField[] {
+  return REPORT_FIELDS;
 }
 
-export function fieldMap(base: ReportBase): Record<string, ReportField> {
+export function fieldMap(): Record<string, ReportField> {
   const out: Record<string, ReportField> = {};
-  for (const f of fieldsFor(base)) out[f.key] = f;
+  for (const f of REPORT_FIELDS) out[f.key] = f;
   return out;
 }
 
