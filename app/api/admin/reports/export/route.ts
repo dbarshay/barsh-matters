@@ -28,8 +28,8 @@ function buildXlsx(title: string, result: any): Buffer {
   const body = result.rows.map((r: any) => cols.map((c) => fmtCell(r[c.key], c.type)));
   const aoa: any[][] = [[title], header, ...body];
   if (result.grandTotals) {
-    const totalRow = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
-    if (totalRow.every((x) => x === "")) totalRow[0] = "Totals";
+    let totalRow: string[] = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
+    if (totalRow.every((x) => x === "")) totalRow = ["Totals", ...totalRow.slice(1)];
     aoa.push(totalRow);
   }
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -78,8 +78,8 @@ async function buildPdf(title: string, result: any): Promise<Uint8Array> {
 
   for (const r of result.rows as any[]) drawRow(cols.map((c) => fmtCell(r[c.key], c.type)));
   if (result.grandTotals) {
-    const totals = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
-    if (totals.every((x) => x === "")) totals[0] = "Totals";
+    let totals: string[] = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
+    if (totals.every((x) => x === "")) totals = ["Totals", ...totals.slice(1)];
     drawRow(totals, true);
   }
   return doc.save();
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     const result = await runReport(config);
     if (format === "pdf") {
       const bytes = await buildPdf(title, result);
-      return new NextResponse(Buffer.from(bytes), {
+      return new NextResponse(bytes as any, {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${safeName(title)}.pdf"`,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       });
     }
     const buf = buildXlsx(title, result);
-    return new NextResponse(buf, {
+    return new NextResponse(buf as any, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${safeName(title)}.xlsx"`,
