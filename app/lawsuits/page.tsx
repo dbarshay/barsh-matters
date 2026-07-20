@@ -1629,11 +1629,13 @@ const modalButtonRow: React.CSSProperties = {
 };
 
 const secondaryBtn: React.CSSProperties = {
-  padding: "8px 10px",
-  borderRadius: 6,
+  border: "1px solid #64748b",
   background: "#f8fafc",
-  color: "#00346e",
-  border: "1px solid #cbd5e1",
+  color: "#385a83",
+  borderRadius: 999,
+  padding: "10px 14px",
+  fontSize: 13,
+  fontWeight: 950,
   cursor: "pointer",
 };
 
@@ -1651,12 +1653,13 @@ const panelLine: React.CSSProperties = {
 };
 
 const primaryBtn: React.CSSProperties = {
-  padding: "8px 10px",
-  borderRadius: 6,
+  border: "1px solid #00346e",
   background: "#00346e",
   color: "#ffffff",
-  border: "1px solid #00346e",
-  fontWeight: 900,
+  borderRadius: 999,
+  padding: "10px 14px",
+  fontSize: 13,
+  fontWeight: 950,
   cursor: "pointer",
 };
 
