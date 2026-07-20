@@ -307,7 +307,7 @@ export default function PrintQueuePage() {
     if (!Number.isFinite(id)) return;
     const label = textValue(row.filename) || textValue(row.documentLabel) || "this document";
     const confirmed = window.confirm(
-      `Delete ${label} from the Print Queue?\n\nThis removes the queue entry only \u2014 the generated document and any Clio copy are not deleted.`
+      `Delete ${label} from the Print Queue?\n\nThis removes the queue entry only \u2014 the saved document is not deleted.`
     );
     if (!confirmed) return;
 
