@@ -3,7 +3,8 @@
 :root {
   color-scheme: light;
   --background: #ffffff;
-  --foreground: #171717;
+  /* App-wide default text color = Barsh Matters navy (used throughout BM). */
+  --foreground: #00346e;
 }
 
 @theme inline {
