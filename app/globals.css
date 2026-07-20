@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -12,12 +13,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Dark-mode override intentionally removed: every surface in this app uses a hardcoded
+   light background, so OS dark mode turned inherited text near-white on white and made
+   table/body text unreadable. The app is light-only. */
 
 body {
   background: var(--background);
