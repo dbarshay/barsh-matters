@@ -1154,14 +1154,18 @@ export default function LawsuitsPage() {
                               </button>
                             </td>
                             <td style={td}>
-                              <button
-                                type="button"
-                                onClick={() => searchLinkedField("adversaryAttorney", adversaryAttorneyName(m))}
-                                style={fieldTextFilterLink}
-                                title="Show all matters for this adversary attorney"
-                              >
-                                {adversaryAttorneyName(m) || "—"}
-                              </button>
+                              {adversaryAttorneyName(m) !== "—" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => searchLinkedField("adversaryAttorney", adversaryAttorneyName(m))}
+                                  style={fieldTextFilterLink}
+                                  title="Show all matters for this adversary attorney"
+                                >
+                                  {adversaryAttorneyName(m)}
+                                </button>
+                              ) : (
+                                "—"
+                              )}
                             </td>
                             <td style={td}>
                               {hasMaster ? (
@@ -1432,9 +1436,13 @@ const searchGrid: React.CSSProperties = {
 };
 
 const input: React.CSSProperties = {
-  padding: 8,
-  border: "1px solid #ccc",
-  borderRadius: 6,
+  boxSizing: "border-box",
+  border: "1px solid #cbd5e1",
+  borderRadius: 12,
+  padding: "10px 12px",
+  fontSize: 14,
+  background: "#ffffff",
+  color: "#00346e",
 };
 
 const card: React.CSSProperties = {
