@@ -12,6 +12,7 @@ export type ReportField = {
   type: ReportFieldType;
   column?: string;      // underlying DB column (absent for derived rollups)
   rollup?: boolean;     // lawsuit-only: derived from member matters
+  format?: "provider";  // display-time legal-name case normalization
 };
 
 export const OPERATORS_BY_TYPE: Record<ReportFieldType, { key: string; label: string; arity: 0 | 1 | 2 | "list" }[]> = {
@@ -55,10 +56,10 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "old_matter_number", label: "Legacy File Number", group: "Identifiers", type: "text", column: "old_matter_number" },
   // Parties
   { key: "patient_name", label: "Patient", group: "Parties", type: "text", column: "patient_name" },
-  { key: "provider_name", label: "Provider", group: "Parties", type: "text", column: "provider_name" },
-  { key: "treating_provider", label: "Treating Provider", group: "Parties", type: "text", column: "treating_provider" },
-  { key: "insurer_name", label: "Insurer", group: "Parties", type: "category", column: "insurer_name" },
-  { key: "settled_with", label: "Settled With", group: "Parties", type: "text", column: "settled_with" },
+  { key: "provider_name", label: "Provider", group: "Parties", type: "text", column: "provider_name", format: "provider" },
+  { key: "treating_provider", label: "Treating Provider", group: "Parties", type: "text", column: "treating_provider", format: "provider" },
+  { key: "insurer_name", label: "Insurer", group: "Parties", type: "category", column: "insurer_name", format: "provider" },
+  { key: "settled_with", label: "Settled With", group: "Parties", type: "text", column: "settled_with", format: "provider" },
   // Financials
   { key: "claim_amount", label: "Claim Amount", group: "Financials", type: "number", column: "claim_amount" },
   { key: "settled_amount", label: "Settled Amount", group: "Financials", type: "number", column: "settled_amount" },

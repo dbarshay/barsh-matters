@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Report rows are dynamic (field-key -> value) by design. */
 import { prisma } from "@/lib/prisma";
 import { fieldMap, fieldsFor, type ReportBase, type ReportField } from "./reportCatalog";
+import { normalizeProviderName } from "@/lib/providerNameCase";
+
+function displayValue(field: ReportField | undefined, v: any): any {
+  if (field?.format === "provider") return normalizeProviderName(v);
+  return v;
+}
 
 export type ReportFilter = { field: string; op: string; value?: any; value2?: any };
 export type ReportAggregation = { field: string; fn: "sum" | "avg" | "count" | "distinct" | "min" | "max" };
@@ -210,7 +216,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportResult> {
     const rows: Record<string, any>[] = [];
     for (const [, groupRecs] of groups) {
       const row: Record<string, any> = {};
-      for (const g of groupBy) row[g] = groupRecs[0][g];
+      for (const g of groupBy) row[g] = displayValue(fmap[g], groupRecs[0][g]);
       for (const a of aggs) row[`${a.fn}__${a.field}`] = aggregate(groupRecs, a);
       row.__count = groupRecs.length;
       rows.push(row);
@@ -229,7 +235,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportResult> {
   const columns = selectedColumns.map((c) => ({ key: c, label: fmap[c].label, type: fmap[c].type }));
   const rows = records.map((rec) => {
     const row: Record<string, any> = {};
-    for (const c of selectedColumns) row[c] = rec[c];
+    for (const c of selectedColumns) row[c] = displayValue(fmap[c], rec[c]);
     return row;
   });
   let grandTotals: Record<string, number | string> | null = null;
