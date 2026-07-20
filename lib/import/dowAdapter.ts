@@ -31,7 +31,7 @@ function s(v: unknown): string {
 }
 
 /** Map ONE Dow row to a staged matter (validation errors included, never thrown). */
-export function mapDowRow(row: Record<string, unknown>): StagedDowMatter {
+export function mapDowRow(row: Record<string, unknown>, caseType?: string): StagedDowMatter {
   const claim = s(row["insuredsID"]);
   const patientRaw = s(row["PatientsName"]);
   const patient = toFirstLastProperCase(patientRaw);
@@ -69,7 +69,7 @@ export function mapDowRow(row: Record<string, unknown>): StagedDowMatter {
     claim_amount: amount,
     balance_presuit: amount,
     service_type: billType,
-    case_type: DOW_CASE_TYPE,
+    case_type: (caseType && caseType.trim()) || DOW_CASE_TYPE,
     fingerprint,
     errors,
     raw: row,
@@ -77,6 +77,6 @@ export function mapDowRow(row: Record<string, unknown>): StagedDowMatter {
 }
 
 /** Map all Dow rows, skipping fully-blank rows. */
-export function mapDowRows(rows: Record<string, unknown>[]): StagedDowMatter[] {
-  return rows.filter((r) => Object.values(r).some((v) => s(v) !== "")).map(mapDowRow);
+export function mapDowRows(rows: Record<string, unknown>[], caseType?: string): StagedDowMatter[] {
+  return rows.filter((r) => Object.values(r).some((v) => s(v) !== "")).map((r) => mapDowRow(r, caseType));
 }

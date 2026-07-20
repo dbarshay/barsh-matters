@@ -49,7 +49,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const staged = mapDowRows(rows);
+  const caseType = String(body?.caseType || "").trim();
+  const staged = mapDowRows(rows, caseType);
 
   // Resolve DISTINCT carriers and DISTINCT patient names once (not per row) to keep this fast.
   const distinctCarriers = Array.from(new Set(staged.map((s) => s.carrier_raw).filter(Boolean)));
@@ -133,7 +134,7 @@ export async function POST(request: Request) {
     ok: true,
     source: "dow",
     writes: false,
-    caseTypeForAll: "No-Fault",
+    caseTypeForAll: caseType || "No-Fault",
     note: "Provider is operator-selected once at confirm (Dow sheets don't name the provider).",
     summary,
     rows: previewRows,

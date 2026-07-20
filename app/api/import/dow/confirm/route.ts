@@ -63,7 +63,8 @@ export async function POST(request: Request) {
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: `Could not parse spreadsheet: ${error?.message || String(error)}` }, { status: 400 });
   }
-  const staged = mapDowRows(rows);
+  const caseType = String(body?.caseType || "").trim();
+  const staged = mapDowRows(rows, caseType);
 
   // Resolve distinct carriers once.
   const carrierMap = new Map<string, ReferenceResolution>();

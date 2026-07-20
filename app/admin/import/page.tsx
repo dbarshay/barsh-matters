@@ -54,6 +54,7 @@ export default function DowImportPage() {
   const [fileName, setFileName] = useState("");
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [providerId, setProviderId] = useState("");
+  const [caseType, setCaseType] = useState("No-Fault");
   const [preview, setPreview] = useState<any>(null);
   const [confirmResult, setConfirmResult] = useState<any>(null);
   const [undoResult, setUndoResult] = useState<any>(null);
@@ -230,7 +231,7 @@ export default function DowImportPage() {
       const r = await fetch(`/api/import/${source}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileBase64 }),
+        body: JSON.stringify({ fileBase64, ...(source === "dow" ? { caseType } : {}) }),
       });
       const j = await r.json();
       if (!j.ok) setError(j.error || "Preview failed.");
@@ -250,7 +251,7 @@ export default function DowImportPage() {
     setError("");
     try {
       const payload: Record<string, unknown> = { fileBase64, sourceFile: fileName };
-      if (source === "dow") payload.providerEntityId = providerId;
+      if (source === "dow") { payload.providerEntityId = providerId; payload.caseType = caseType; }
       const r = await fetch(`/api/import/${source}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -470,13 +471,20 @@ export default function DowImportPage() {
             <div style={{ marginTop: 14 }}>
               {source === "dow" ? (
                 <>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>3. Provider (applies to every row) — Case Type = No-Fault</div>
-                  <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ height: 38, minWidth: 340, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 10px" }}>
-                    <option value="">Select provider…</option>
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>{p.displayName}</option>
-                    ))}
-                  </select>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>3. Provider &amp; Case Type (apply to every row)</div>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                    <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ height: 38, minWidth: 340, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 10px" }}>
+                      <option value="">Select provider…</option>
+                      {providers.map((p) => (
+                        <option key={p.id} value={p.id}>{p.displayName}</option>
+                      ))}
+                    </select>
+                    <select value={caseType} onChange={(e) => setCaseType(e.target.value)} style={{ height: 38, minWidth: 200, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 10px" }}>
+                      <option value="No-Fault">No-Fault</option>
+                      <option value="Workers' Comp">Workers' Comp</option>
+                      <option value="Lien">Lien</option>
+                    </select>
+                  </div>
                 </>
               ) : (
                 <div style={{ fontWeight: 700, marginBottom: 6, color: MUTED }}>
