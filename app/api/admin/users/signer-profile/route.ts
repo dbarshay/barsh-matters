@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createMatterAuditLogEntry } from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
+import { MAX_SIGNATURE_IMAGE_BYTES, parseSignatureDataUrl } from "@/lib/documents/docxSignatureImage";
 import {
   buildAdminUserSignerProfileWritePayloadPhase7,
   getAdminUserSignerProfileChangedFieldsPhase7,
@@ -28,6 +29,7 @@ type AdminSignerProfileUpdateBody = {
   twoFactorPhone?: unknown;
   twoFactorDisabled?: unknown;
   twoFactorPendingSetup?: unknown;
+  signatureImageDataUrl?: unknown;
   apply?: unknown;
 };
 
@@ -180,6 +182,8 @@ export async function PATCH(req: NextRequest) {
         phoneExtension: true,
         faxNumber: true,
         signatureBlockName: true,
+        signatureImageDataUrl: true,
+        signatureImageMimeType: true,
         signerEligible: true,
         locked: true,
         inactive: true,
@@ -192,6 +196,36 @@ export async function PATCH(req: NextRequest) {
     if (!existing) {
       return NextResponse.json({ ok: false, error: "Admin user not found." }, { status: 404 });
     }
+
+    // Wet-signature image (optional). Absent field = leave as-is; empty string = clear; otherwise a
+    // PNG/JPEG base64 data URL, size-capped. Stored on the AdminUser row and surfaced through the
+    // {{signer.signatureImage}} generation token.
+    let sigSet = false;
+    let sigChanged = false;
+    let sigDataUrl: string | null = existing.signatureImageDataUrl ?? null;
+    let sigMime: string | null = existing.signatureImageMimeType ?? null;
+    if (body.signatureImageDataUrl !== undefined) {
+      const raw = String(body.signatureImageDataUrl ?? "").trim();
+      if (raw.length === 0) {
+        sigSet = true;
+        sigChanged = (existing.signatureImageDataUrl ?? null) !== null;
+        sigDataUrl = null;
+        sigMime = null;
+      } else {
+        const parsed = parseSignatureDataUrl(raw);
+        if (!parsed) {
+          return NextResponse.json({ ok: false, error: "Signature image must be a PNG or JPEG image (base64 data URL)." }, { status: 400 });
+        }
+        if (parsed.buffer.length > MAX_SIGNATURE_IMAGE_BYTES) {
+          return NextResponse.json({ ok: false, error: "Signature image is too large. Please upload an image under about 1.5 MB." }, { status: 400 });
+        }
+        sigSet = true;
+        sigChanged = raw !== (existing.signatureImageDataUrl ?? "");
+        sigDataUrl = raw;
+        sigMime = parsed.mime;
+      }
+    }
+    const signatureImagePresent = sigDataUrl !== null;
 
     const payload = buildAdminUserSignerProfileWritePayloadPhase7({
       firstName: nullableString(body.firstName) ?? existing.firstName,
@@ -293,6 +327,7 @@ export async function PATCH(req: NextRequest) {
       twoFactorPendingSetup: payload.twoFactorPendingSetup,
     };
     const changedFields = getAdminUserSignerProfileChangedFieldsPhase7(before, after);
+    if (sigChanged && !changedFields.includes("signatureImage")) changedFields.push("signatureImage");
 
     if (!apply) {
       return NextResponse.json({
@@ -301,6 +336,8 @@ export async function PATCH(req: NextRequest) {
         previewOnly: true,
         userId,
         changedFields,
+        signatureImagePresent,
+        signatureImageChanged: sigChanged,
         signerProfileStatus: payload.signerProfileStatus,
         signerMissingFields: payload.signerMissingFields,
         twoFactorStatus: payload.twoFactorStatus,
@@ -328,6 +365,7 @@ export async function PATCH(req: NextRequest) {
         twoFactorPhone: payload.twoFactorPhone,
         twoFactorDisabled: payload.twoFactorDisabled,
         twoFactorPendingSetup: payload.twoFactorPendingSetup,
+        ...(sigSet ? { signatureImageDataUrl: sigDataUrl, signatureImageMimeType: sigMime, signatureImageUpdatedAt: new Date() } : {}),
       },
       select: {
         id: true,
@@ -370,6 +408,8 @@ export async function PATCH(req: NextRequest) {
       mode: "apply",
       user: updated,
       changedFields,
+      signatureImagePresent,
+      signatureImageChanged: sigChanged,
       signerProfileStatus: payload.signerProfileStatus,
       signerMissingFields: payload.signerMissingFields,
       twoFactorStatus: payload.twoFactorStatus,

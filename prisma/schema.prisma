@@ -1196,6 +1196,9 @@ model AdminUser {
   phoneExtension String?
   faxNumber String?
   signatureBlockName String?
+  signatureImageDataUrl String?
+  signatureImageMimeType String?
+  signatureImageUpdatedAt DateTime?
   signerEligible Boolean @default(true)
   locked Boolean @default(false)
   inactive Boolean @default(false)

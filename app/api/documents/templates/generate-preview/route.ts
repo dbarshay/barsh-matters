@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing generation-route handler uses broad any for template metadata/version shapes; the signature-image change preserves those. */
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
+import { embedSignatureImage } from "@/lib/documents/docxSignatureImage";
 import { prisma } from "@/lib/prisma";
 import { BARSH_FIRM_CONTACT } from "@/lib/firmContact";
 import { resolveTemplateTokenBaseValues } from "@/lib/documents/templateTokenResolver";
@@ -58,6 +60,7 @@ type ResolvedSigner = {
   signatureBlockName: string | null;
   phoneExtension: string | null;
   faxNumber: string | null;
+  signatureImageDataUrl: string | null;
   signerEligible: boolean;
   signerProfileStatus: "Complete" | "Missing Fields";
   signerMissingFields: string[];
@@ -125,6 +128,7 @@ async function resolveSigner(req: NextRequest): Promise<{ signer: ResolvedSigner
       signatureBlockName: true,
       phoneExtension: true,
       faxNumber: true,
+      signatureImageDataUrl: true,
       signerEligible: true,
       status: true,
       locked: true,
@@ -152,6 +156,7 @@ async function resolveSigner(req: NextRequest): Promise<{ signer: ResolvedSigner
     signatureBlockName: user.signatureBlockName,
     phoneExtension: user.phoneExtension,
     faxNumber: user.faxNumber,
+    signatureImageDataUrl: user.signatureImageDataUrl ?? null,
     signerEligible: Boolean(user.signerEligible),
     signerProfileStatus: missing.length === 0 ? "Complete" : "Missing Fields",
     signerMissingFields: missing,
@@ -162,15 +167,6 @@ async function resolveSigner(req: NextRequest): Promise<{ signer: ResolvedSigner
   }
 
   return { signer };
-}
-
-function buildTokenValuesFromSigner(signer: ResolvedSigner) {
-  return {
-    "{{signer.signatureName}}": clean(signer.signatureBlockName),
-    "{{signer.email}}": clean(signer.email),
-    "{{signer.extension}}": clean(signer.phoneExtension),
-    "{{signer.fax}}": clean(signer.faxNumber),
-  };
 }
 
 function docxTextPartName(name: string) {
@@ -331,21 +327,66 @@ function expandLoopRows(xml: string, loops: Record<string, Array<Record<string, 
   return out;
 }
 
+const SIGNATURE_IMAGE_SENTINEL = "%%BM_SIGNATURE_IMAGE%%";
+
+// Replace a sentinel (already collapsed into a single <w:t> text node) with an inline <w:drawing>.
+// A drawing is run-level, so we split the enclosing <w:t> into pre-text / drawing / post-text — a run
+// may legally hold that sequence — keeping any surrounding text on the signature line intact.
+function insertDrawingAtSentinel(xml: string, drawing: string): string {
+  let out = xml;
+  while (true) {
+    const sIdx = out.indexOf(SIGNATURE_IMAGE_SENTINEL);
+    if (sIdx < 0) break;
+    const openTagEnd = out.lastIndexOf(">", sIdx);
+    const openTagStart = out.lastIndexOf("<w:t", openTagEnd);
+    const closeIdx = out.indexOf("</w:t>", sIdx);
+    if (openTagStart < 0 || openTagEnd < 0 || closeIdx < 0) {
+      // Not inside a text node as expected; drop the sentinel rather than leave it visible.
+      out = out.split(SIGNATURE_IMAGE_SENTINEL).join("");
+      break;
+    }
+    const inner = out.slice(openTagEnd + 1, closeIdx);
+    const parts = inner.split(SIGNATURE_IMAGE_SENTINEL);
+    const pre = parts[0] || "";
+    const post = parts.slice(1).join("");
+    const rebuilt =
+      (pre ? '<w:t xml:space="preserve">' + pre + "</w:t>" : "") +
+      drawing +
+      (post ? '<w:t xml:space="preserve">' + post + "</w:t>" : "");
+    out = out.slice(0, openTagStart) + rebuilt + out.slice(closeIdx + "</w:t>".length);
+  }
+  return out;
+}
+
 async function replaceTokensInDocx(
   buffer: Buffer,
   tokenValues: Record<string, string>,
   loops: Record<string, Array<Record<string, string>>> = {},
+  imageTokens: Record<string, string> = {},
 ) {
   const zip = await JSZip.loadAsync(buffer);
   const replacements = Object.entries(tokenValues).map(([token, value]) => ({ token, value, count: 0 }));
+  const imageEntries = Object.entries(imageTokens);
 
   const partNames = Object.keys(zip.files).filter(docxTextPartName);
+
+  // Embed the signature image into the zip once (media + rels + content types) the first time an
+  // image token with usable bytes is actually placed; cache the resulting <w:drawing> XML.
+  const drawingCache: Record<string, string | null> = {};
+  async function drawingFor(dataUrl: string): Promise<string | null> {
+    if (!(dataUrl in drawingCache)) {
+      const embedded = dataUrl ? await embedSignatureImage(zip, dataUrl) : null;
+      drawingCache[dataUrl] = embedded ? embedded.drawingXml : null;
+    }
+    return drawingCache[dataUrl];
+  }
 
   for (const partName of partNames) {
     const file = zip.file(partName);
     if (!file) continue;
 
     let xml = await file.async("string");
+    const isBody = partName === "word/document.xml";
 
     // Expand repeating table rows FIRST (so per-row {{row.*}} tokens are filled), then scalar tokens.
     xml = expandLoopRows(xml, loops);
@@ -354,6 +395,24 @@ async function replaceTokensInDocx(
       const result = replaceTokenAcrossTextNodes(xml, replacement.token, replacement.value);
       xml = result.xml;
       replacement.count += result.count;
+    }
+
+    // Image tokens. Only the document body embeds an image; headers/footers just clear the token
+    // (image relationships there live in separate rels parts we intentionally do not touch).
+    for (const [imgToken, dataUrl] of imageEntries) {
+      if (!isBody || !String(dataUrl || "").trim()) {
+        xml = replaceTokenAcrossTextNodes(xml, imgToken, "").xml;
+        continue;
+      }
+      const collapsed = replaceTokenAcrossTextNodes(xml, imgToken, SIGNATURE_IMAGE_SENTINEL);
+      xml = collapsed.xml;
+      if (collapsed.count === 0) continue;
+      const drawing = await drawingFor(String(dataUrl));
+      if (!drawing) {
+        xml = xml.split(SIGNATURE_IMAGE_SENTINEL).join("");
+        continue;
+      }
+      xml = insertDrawingAtSentinel(xml, drawing);
     }
 
     zip.file(partName, xml);
@@ -535,6 +594,12 @@ export async function GET(req: NextRequest) {
 
     for (const token of docTokens) {
       const { base, modifiers } = parseTemplateToken(token);
+      if (base === "signer.signatureImage") {
+        // Handled as an embedded image (not scalar text) after this loop.
+        if (clean(resolvedSigner.signer.signatureImageDataUrl)) filledTokens.push(token);
+        else emptyTokens.push(token);
+        continue;
+      }
       const entry = baseResolution.values[base];
       if (!entry) {
         // Not a known canonical/custom field we can resolve. Leave the token visible
@@ -558,7 +623,12 @@ export async function GET(req: NextRequest) {
       unrecognizedTokens,
     };
 
-    const generated = await replaceTokensInDocx(sourceBuffer, tokenValues, baseResolution.rows);
+    const imageTokens: Record<string, string> = {
+      "{{signer.signatureImage}}": clean(resolvedSigner.signer.signatureImageDataUrl)
+        ? String(resolvedSigner.signer.signatureImageDataUrl)
+        : "",
+    };
+    const generated = await replaceTokensInDocx(sourceBuffer, tokenValues, baseResolution.rows, imageTokens);
     const filename = `${safeFilename(template.label || template.key)} - Generated Preview.docx`;
 
     return new NextResponse(generated.buffer, {

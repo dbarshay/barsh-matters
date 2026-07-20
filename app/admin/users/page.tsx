@@ -274,6 +274,8 @@ export default function AdminUsersPlanningPage() {
   const [signerProfileFaxNumber, setSignerProfileFaxNumber] = useState("");
   const [signerProfileSignatureBlockName, setSignerProfileSignatureBlockName] = useState("");
   const [signerProfileEligible, setSignerProfileEligible] = useState(true);
+  const [signerProfileSignatureImage, setSignerProfileSignatureImage] = useState<string>("");
+  const [signerProfileSignatureImageOriginal, setSignerProfileSignatureImageOriginal] = useState<string>("");
   const [signerProfileBusy, setSignerProfileBusy] = useState(false);
   const [signerProfileMessage, setSignerProfileMessage] = useState("");
   const [signerProfileResult, setSignerProfileResult] = useState<any>(null);
@@ -1210,6 +1212,8 @@ export default function AdminUsersPlanningPage() {
     setSignerProfileFaxNumber(String(user?.faxNumber || ""));
     setSignerProfileSignatureBlockName(String(user?.signatureBlockName || user?.displayName || ""));
     setSignerProfileEligible(user?.signerEligible !== false);
+    setSignerProfileSignatureImage(String(user?.signatureImageDataUrl || ""));
+    setSignerProfileSignatureImageOriginal(String(user?.signatureImageDataUrl || ""));
     setSignerProfileMessage("");
     setSignerProfileResult(null);
   }
@@ -1221,12 +1225,32 @@ export default function AdminUsersPlanningPage() {
     setSignerProfileResult(null);
   }
 
+  function handleSignerProfileSignatureFile(file: File | null | undefined) {
+    if (!file) return;
+    if (!/^image\/(png|jpe?g)$/i.test(file.type)) {
+      setSignerProfileMessage("Signature must be a PNG or JPEG image.");
+      return;
+    }
+    if (file.size > 1_500_000) {
+      setSignerProfileMessage("Signature image is too large (max about 1.5 MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSignerProfileSignatureImage(String(reader.result || ""));
+      setSignerProfileMessage("");
+    };
+    reader.onerror = () => setSignerProfileMessage("Could not read the image file.");
+    reader.readAsDataURL(file);
+  }
+
   async function saveSignerProfilePanel() {
     if (!signerProfileUser) return;
     setSignerProfileBusy(true);
     setSignerProfileMessage("");
     setSignerProfileResult(null);
     try {
+      const signatureImageChanged = signerProfileSignatureImage !== signerProfileSignatureImageOriginal;
       const response = await fetch(ADMIN_USERS_PHASE12_SIGNER_PROFILE_UPDATE_ROUTE, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -1239,6 +1263,7 @@ export default function AdminUsersPlanningPage() {
           faxNumber: signerProfileFaxNumber,
           signatureBlockName: signerProfileSignatureBlockName,
           signerEligible: signerProfileEligible,
+          ...(signatureImageChanged ? { signatureImageDataUrl: signerProfileSignatureImage } : {}),
           locked: signerProfileUser.locked === true,
           inactive: signerProfileUser.inactive === true,
           twoFactorPhone: signerProfileUser.twoFactorPhone || "",
@@ -1575,25 +1600,6 @@ export default function AdminUsersPlanningPage() {
           {twoFactorVerifyMessage ? <p data-barsh-admin-users-2fa-verify-message="true" style={{ margin: "12px 0 0", color: twoFactorVerifyMessage.toLowerCase().includes("failed") || twoFactorVerifyMessage.toLowerCase().includes("enter") ? "#991b1b" : "#166534", fontWeight: 900 }}>{twoFactorVerifyMessage}</p> : null}
         </section>) : null}
 
-        <section data-barsh-admin-users-signer-profile-visibility-panel="true" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 22, padding: 18, display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 20 }}>Signer Profiles</h2>
-              <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
-                Each signer profile is stored directly on the Admin User record. A signer is usable for template generation only when eligible, active, unlocked, and complete.
-              </p>
-            </div>
-            <span data-barsh-admin-users-signer-profile-token-note="true" style={{ border: "1px solid #bfdbfe", background: "#eff6ff", color: "#00346e", borderRadius: 999, padding: "7px 10px", fontWeight: 950, fontSize: 12 }}>
-              Required for signer.* tokens
-            </span>
-          </div>
-          <div data-barsh-admin-users-signer-profile-required-fields="true" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Eligibility</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Signer Eligible must be enabled.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Signature Name</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>This is the typed signature/name used by generated documents.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>Contact Fields</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Email, extension, and fax resolve signer contact tokens.</p></div>
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12, background: "#f8fafc" }}><strong>No Wet Signature</strong><p style={{ margin: "6px 0 0", color: "#385a83" }}>Wet signature upload/storage remains intentionally disabled.</p></div>
-          </div>
-        </section>
         <section data-barsh-admin-users-table="true" style={{ ...cardStyle, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>{["Display Name", "User Name", "Signer Profile", "Signature Name", "Signer Contact", "Role", "Last Sign-in", "2FA", "Actions"].map((header) => <th key={header} style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #cbd5e1" }}>{header}</th>)}</tr></thead>
@@ -1723,6 +1729,20 @@ export default function AdminUsersPlanningPage() {
                 <input data-barsh-admin-users-signer-profile-eligible="true" type="checkbox" checked={signerProfileEligible} onChange={(event) => setSignerProfileEligible(event.target.checked)} />
                 Eligible signer for document generation
               </label>
+              <div data-barsh-admin-users-signer-profile-signature-image="true" style={{ display: "grid", gap: 8, border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#f8fafc" }}>
+                <span style={{ fontWeight: 850 }}>Wet Signature (optional)</span>
+                <span style={{ color: "#385a83", fontSize: 13 }}>Upload a PNG or JPEG of the handwritten signature. It fills the {"{{signer.signatureImage}}"} document token; leave empty and the token renders blank.</span>
+                {signerProfileSignatureImage ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={signerProfileSignatureImage} alt="Signature preview" style={{ maxHeight: 70, maxWidth: 260, border: "1px solid #e5e7eb", borderRadius: 8, background: "#ffffff", padding: 4 }} />
+                    <button data-barsh-admin-users-signer-profile-signature-clear="true" type="button" onClick={() => setSignerProfileSignatureImage("")} style={secondaryButtonStyle}>Remove signature</button>
+                  </div>
+                ) : (
+                  <span style={{ color: "#94a3b8", fontSize: 13 }}>No signature on file.</span>
+                )}
+                <input data-barsh-admin-users-signer-profile-signature-file="true" type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignerProfileSignatureFile(event.target.files?.[0])} />
+              </div>
               {signerProfileResult?.signerMissingFields?.length ? (
                 <div data-barsh-admin-users-signer-profile-missing-fields="true" style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: 10, fontWeight: 850 }}>
                   Missing signer fields: {signerProfileResult.signerMissingFields.join(", ")}

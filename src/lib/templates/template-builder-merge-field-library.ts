@@ -1,5 +1,5 @@
 export type TemplateBuilderMergeFieldKind = "canonical" | "custom";
-export type TemplateBuilderFieldType = "text" | "date" | "currency";
+export type TemplateBuilderFieldType = "text" | "date" | "currency" | "image";
 export type TemplateBuilderFormatModifier =
   | "upper"
   | "lower"
@@ -129,6 +129,16 @@ export const TEMPLATE_BUILDER_CANONICAL_MERGE_FIELDS: TemplateBuilderCanonicalMe
     compatibleModifiers: TEXT_MODIFIERS,
     exampleOutput: "Selected Signer",
     aliases: ["selected signer signature name", "signature block name", "attorney signature name"],
+  },
+  {
+    kind: "canonical",
+    category: "Signer",
+    fieldLabel: "Signer wet signature (image)",
+    mergeField: "{{signer.signatureImage}}",
+    fieldType: "image",
+    compatibleModifiers: [],
+    exampleOutput: "[signature image]",
+    aliases: ["wet signature", "handwritten signature", "signature image", "signer signature image"],
   },
   {
     kind: "canonical",

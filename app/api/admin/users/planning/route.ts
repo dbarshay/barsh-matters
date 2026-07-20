@@ -100,6 +100,8 @@ export async function GET(req: NextRequest) {
           phoneExtension: user.phoneExtension,
           faxNumber: user.faxNumber,
           signatureBlockName: user.signatureBlockName,
+          signatureImageDataUrl: user.signatureImageDataUrl || "",
+          signatureImagePresent: Boolean(user.signatureImageDataUrl),
           signerEligible: user.signerEligible !== false,
           locked: Boolean(user.locked),
           inactive: Boolean(user.inactive),
