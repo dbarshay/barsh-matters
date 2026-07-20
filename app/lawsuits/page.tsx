@@ -1571,8 +1571,8 @@ const modalDragHandle: React.CSSProperties = {
   padding: "14px 18px",
   borderTopLeftRadius: 12,
   borderTopRightRadius: 12,
-  background: "#0f2a44",
-  boxShadow: "0 8px 18px rgba(15, 42, 68, 0.28)",
+  background: "#00346e",
+  boxShadow: "0 8px 18px rgba(0, 52, 110, 0.28)",
 };
 
 const modalTitle: React.CSSProperties = {
@@ -1653,9 +1653,10 @@ const panelLine: React.CSSProperties = {
 const primaryBtn: React.CSSProperties = {
   padding: "8px 10px",
   borderRadius: 6,
-  background: "#111",
-  color: "white",
-  border: "none",
+  background: "#00346e",
+  color: "#ffffff",
+  border: "1px solid #00346e",
+  fontWeight: 900,
   cursor: "pointer",
 };
 
@@ -1680,7 +1681,7 @@ const lawsuitCreatedNotice: React.CSSProperties = {
   left: "50%",
   transform: "translateX(-50%)",
   zIndex: 10050,
-  background: "#052e63",
+  background: "#00346e",
   color: "white",
   border: "1px solid #00346e",
   borderRadius: 12,
