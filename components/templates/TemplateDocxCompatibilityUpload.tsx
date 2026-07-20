@@ -125,6 +125,16 @@ function findTokens(text: string) {
   return Array.from(tokens).sort((a, b) => a.localeCompare(b));
 }
 
+// A token may carry formatting modifiers (e.g. {{insurer.name|upper}}). The canonical field table
+// lists base tokens without modifiers, and modifiers like |upper are applied at generation time — so
+// a modifier never makes a known field "unknown". Compare on the base token (everything before the
+// first "|") to avoid false "needs review" flags on every formatted token.
+function baseToken(token: string): string {
+  const inner = token.replace(/^\{\{/, "").replace(/\}\}$/, "");
+  const base = inner.split("|")[0].trim();
+  return `{{${base}}}`;
+}
+
 function pageTokens() {
   const tokens = new Set<string>();
 
@@ -188,7 +198,9 @@ async function scanDocx(file: File): Promise<ScanResult> {
 
   const tokens = findTokens(combined);
   const canonical = pageTokens();
-  const unknownTokens = tokens.filter((token) => canonical.has(token) === false);
+  const unknownTokens = tokens.filter(
+    (token) => canonical.has(token) === false && canonical.has(baseToken(token)) === false,
+  );
 
   if (tokens.length === 0) {
     return {
