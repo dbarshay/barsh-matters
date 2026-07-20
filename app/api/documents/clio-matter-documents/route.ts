@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/prefer-as-const -- Pre-existing loosely-typed Clio route; this change only extracts shared folder-resolution helpers to a lib. */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clioFetch } from "@/lib/clio";
 import { listClioFolderDocuments, listClioMatterDocuments } from "@/lib/clioDocumentUpload";
-import { findExactClioChildFolderByNameWithGuard } from "@/lib/clioFolderResolverExecutor";
-import { buildClioStorageTargetPlan, type ClioStorageTargetInput } from "@/lib/clioStoragePlan";
+import { type ClioStorageTargetInput } from "@/lib/clioStoragePlan";
+import { normalizeClioDocumentRows, resolveExistingSingleMasterFolderForDocuments, sourceLabel } from "@/lib/documents/clioMatterFolderDocuments";
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -110,103 +111,6 @@ async function resolveClioMatterByDisplayNumber(displayNumberInput: string) {
     clioDisplayNumber: exact.displayNumber,
     candidates,
     error: "",
-  };
-}
-
-function normalizeClioDocumentRows(documents: any[], source: {
-  clioMatterId: number | null;
-  clioDisplayNumber: string;
-  sourceRole: "lawsuit" | "bill";
-  sourceLabel: string;
-}) {
-  return documents.map((doc: any) => ({
-    clioDocumentId: doc.id,
-    clioDocumentName: doc.name,
-    clioDocumentFilename: doc.filename,
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
-    sourceClioMatterId: source.clioMatterId,
-    sourceClioDisplayNumber: source.clioDisplayNumber,
-    sourceRole: source.sourceRole,
-    sourceLabel: source.sourceLabel,
-    latestDocumentVersion: doc.latestDocumentVersion
-      ? {
-          id: doc.latestDocumentVersion.id,
-          uuid: doc.latestDocumentVersion.uuid,
-          filename: doc.latestDocumentVersion.filename,
-          size: doc.latestDocumentVersion.size,
-          contentType: doc.latestDocumentVersion.contentType,
-          fullyUploaded: doc.latestDocumentVersion.fullyUploaded,
-          receivedAt: doc.latestDocumentVersion.receivedAt,
-          createdAt: doc.latestDocumentVersion.createdAt,
-          updatedAt: doc.latestDocumentVersion.updatedAt,
-        }
-      : null,
-  }));
-}
-
-function sourceLabel(displayNumber: string, role: "lawsuit" | "bill") {
-  return `${normalizeBrl(displayNumber)}- ${role === "lawsuit" ? "Lawsuit" : "Bill"}`;
-}
-
-async function resolveExistingSingleMasterFolderForDocuments(input: ClioStorageTargetInput) {
-  const targetPlan = buildClioStorageTargetPlan(input);
-  const rootFolderId = numberOrNull(
-    process.env.CLIO_SINGLE_MASTER_ROOT_FOLDER_ID || process.env.CLIO_DOCUMENTS_ROOT_FOLDER_ID
-  );
-
-  if (!rootFolderId) {
-    throw new Error("[CLIO_STORAGE] Missing or invalid CLIO_SINGLE_MASTER_ROOT_FOLDER_ID for read-only document listing.");
-  }
-
-  const configuredSegments =
-    Array.isArray(targetPlan.folderSegments) && targetPlan.folderSegments.length
-      ? targetPlan.folderSegments
-      : [targetPlan.bucketFolderName, targetPlan.matterFolderName];
-
-  const folderSegments: any[] = [];
-  let parentId = rootFolderId;
-
-  for (const segmentName of configuredSegments) {
-    const folderName = clean(segmentName);
-    if (!folderName) {
-      throw new Error("[CLIO_STORAGE] Empty folder segment in read-only document listing.");
-    }
-
-    const found = await findExactClioChildFolderByNameWithGuard({
-      matterId: targetPlan.masterMatterId,
-      parentId,
-      folderName,
-    });
-
-    if (!found?.id) {
-      return {
-        ok: false as const,
-        targetPlan,
-        folderId: null,
-        folderSegments,
-        missingFolderName: folderName,
-        missingParentId: parentId,
-        createdFolderCount: 0,
-        reusedFolderCount: folderSegments.length,
-      };
-    }
-
-    folderSegments.push(found);
-    parentId = Number(found.id);
-  }
-
-  const finalFolder = folderSegments[folderSegments.length - 1];
-
-  return {
-    ok: true as const,
-    targetPlan,
-    bucketFolderId: Number(folderSegments[0]?.id || finalFolder?.id || 0),
-    matterFolderId: Number(finalFolder?.id || 0),
-    folderId: Number(finalFolder?.id || 0),
-    folderSegments,
-    createdFolderCount: 0,
-    reusedFolderCount: folderSegments.length,
   };
 }
 
