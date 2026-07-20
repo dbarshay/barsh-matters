@@ -18,6 +18,35 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-20 (later) — Case Type end-to-end, DOW import Case Type selector, report field cleanup, service_type test data
+
+**Case Type made a settable per-matter attribute** (the report filter already read `case_type`; this session made it *settable*):
+- Per-matter **Case Type selector** (No-Fault / Workers' Comp / Lien) on the individual matter screen, right of "Old Matter
+  Number", saving via a dedicated `/api/admin/matter-case-type` endpoint + `components/CaseTypeField.tsx` (mirrors the
+  `OldFileNumberField` pattern). Deliberately NOT on the lawsuit screen (case type is per-matter). Commit `6ef5808`.
+- **Backfill:** `prisma/manual/backfill_casetype_nofault.sql` set every blank BRL_ matter to `No-Fault` (48 rows), run in the
+  Neon SQL Editor. Report's Case Type (NF) filter now returns all existing matters.
+- **DOW import Case Type picker** — imports already set `case_type` in code (DOW hardcoded No-Fault, CARISK mapped,
+  Other/bulk + Other/spreadsheet had pickers, Reconcile resolves unknowns); the one UI gap was the DOW import. Added an
+  operator-selectable Case Type dropdown (No-Fault default) threaded through `app/admin/import/page.tsx` ->
+  `app/api/import/dow/preview|confirm/route.ts` -> `lib/import/dowAdapter.ts` (`mapDowRow(row, caseType?)`, safe
+  `DOW_CASE_TYPE` fallback). Commit `db72746`, typechecks clean.
+
+**Reports field cleanup:** dropped the redundant matter-level **"Index / AAA Number"** field from
+`lib/reports/reportCatalog.ts` (rendered blank); the **"Lawsuit Index / AAA"** field (populates when a lawsuit exists) is
+the real one. Commit `db72746`. NOTE: the duplicate column only clears after a Vercel **redeploy** — `git push` alone
+doesn't rebuild. Use `git push && vercel --prod` (or restart `npm run dev` if testing locally).
+
+**service_type was polluted with case-type values:** an old migration wrote "No-Fault" into the `service_type` column for
+legacy matters (48 rows), so the report showed "No-Fault" as a service type. No clean recovery source in the DB (real
+values live only in source spreadsheets Dow.xlsx / NF All Closed.xlsx). This is a **test DB**, so per operator we
+randomized the 48 to sample values (Chiro/PT/MRI/...) via a single Neon `UPDATE ... (ARRAY[...])[floor(random()*10)+1]`
+just to exercise the report display. For REAL data the correct fix is blank (NULL) or spreadsheet-derived values.
+
+**Infra note (for the agent):** neither the cloud sandbox nor the on-device shell can reach Neon (5432 blocked; proxy 403
+on 443; device shell has no network) — DB changes must go through the **Neon SQL Editor** (browser) or a Claude-in-Chrome
+driven session. This is NOT a credentials problem. Likewise `git push` must run **on the Mac** (cloud egress blocks GitHub).
+
 ### 2026-07-20 — Reports builder (NEW), theme/button standardization, lawsuit-doc pipeline fixes, edit-in-Word
 
 **Reports (NEW feature)** — saveable custom report builder at **Admin → Reports**:
