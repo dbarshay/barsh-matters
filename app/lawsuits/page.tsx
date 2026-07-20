@@ -871,6 +871,24 @@ export default function LawsuitsPage() {
         throw new Error(`The "${templateLabel}" template is not available. Upload it and mark it Production Ready.`);
       }
 
+      const workingRes = await fetch("/api/documents/working-docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmCreate: true,
+          masterLawsuitId,
+          uploadTargetMode: "master",
+          documentLaunchMode: "lawsuit",
+          documentKeys: [templateKey],
+        }),
+      });
+      const workingJson = await workingRes.json().catch(() => null);
+      const workingDriveItemId = String(workingJson?.workingDocument?.driveItemId || "");
+      if (!workingRes.ok || !workingJson?.ok || !workingDriveItemId) {
+        console.error("Lawsuit working document creation failed:", workingJson);
+        throw new Error("The document was not uploaded. Please try again.");
+      }
+
       const finalizeRes = await fetch("/api/documents/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -882,6 +900,8 @@ export default function LawsuitsPage() {
           singleMasterDryRun: false,
           singleMasterResolveFolders: true,
           documentKeys: [templateKey],
+          workingDocumentDriveItemId: workingDriveItemId,
+          workingDocumentKey: templateKey,
         }),
       });
       const finalizeJson = await finalizeRes.json().catch(() => null);
