@@ -877,7 +877,10 @@ export default function LawsuitsPage() {
         body: JSON.stringify({
           masterLawsuitId,
           uploadTargetMode: "master-lawsuit",
+          useSingleMasterClioStorage: true,
           confirmUpload: true,
+          singleMasterDryRun: false,
+          singleMasterResolveFolders: true,
           documentKeys: [templateKey],
         }),
       });
