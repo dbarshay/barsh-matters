@@ -201,9 +201,9 @@ export default function AdminDocumentTemplateDetailPage() {
       const workingDoc = json.workingDocument || null;
       setEditTemplateWorkingDoc(workingDoc);
 
-      const desktopUrl = (workingDoc?.webUrl ? `ms-word:ofe|u|${workingDoc.webUrl}` : "")
-        || workingDoc?.msWordEditUrl
-        || (workingDoc?.desktopWordFileUrl ? `ms-word:ofe|u|${workingDoc.desktopWordFileUrl}` : "");
+      const desktopUrl = workingDoc?.msWordEditUrl
+        || (workingDoc?.desktopWordFileUrl ? `ms-word:ofe|u|${workingDoc.desktopWordFileUrl}` : "")
+        || (workingDoc?.webUrl ? `ms-word:ofe|u|${workingDoc.webUrl}` : "");
       const onlineUrl = workingDoc?.webUrl || workingDoc?.desktopWordFileUrl || "";
       if (desktopUrl) {
         setEditTemplateMessage("Opening the template in Word for Mac. Make your edits, save in Word, then click Save Edited Template here.");
@@ -450,10 +450,7 @@ export default function AdminDocumentTemplateDetailPage() {
                     <div data-barsh-admin-document-template-edit-template-working-doc="true" style={{ border: "1px solid #bfdbfe", background: "#ffffff", color: "#00346e", borderRadius: 12, padding: 10, fontWeight: 850, display: "grid", gap: 8 }}>
                       <div>Working DOCX: {editTemplateWorkingDoc.name || "Template Edit"}</div>
                       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-                        <a href={editTemplateWorkingDoc.webUrl ? `ms-word:ofe|u|${editTemplateWorkingDoc.webUrl}` : (editTemplateWorkingDoc.msWordEditUrl || "#")} style={{ color: "#00346e", fontWeight: 950 }}>Open in Word for Mac</a>
-                        {editTemplateWorkingDoc.msWordEditUrl || editTemplateWorkingDoc.desktopWordFileUrl ? (
-                          <a href={editTemplateWorkingDoc.msWordEditUrl || `ms-word:ofe|u|${editTemplateWorkingDoc.desktopWordFileUrl}`} style={{ color: "#385a83", fontWeight: 850 }}>Alternate desktop link</a>
-                        ) : null}
+                        <a href={editTemplateWorkingDoc.msWordEditUrl || (editTemplateWorkingDoc.desktopWordFileUrl ? `ms-word:ofe|u|${editTemplateWorkingDoc.desktopWordFileUrl}` : (editTemplateWorkingDoc.webUrl ? `ms-word:ofe|u|${editTemplateWorkingDoc.webUrl}` : "#"))} style={{ color: "#00346e", fontWeight: 950 }}>Open in Word for Mac</a>
                         {editTemplateWorkingDoc.webUrl ? (
                           <a href={editTemplateWorkingDoc.webUrl} target="_blank" rel="noreferrer" style={{ color: "#385a83", fontWeight: 850 }}>Open in Word Online instead</a>
                         ) : null}
