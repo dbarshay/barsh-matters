@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing responsePreview/payload state uses any; the browser-side image-downsizing change preserves those shapes. */
 
 import { useMemo, useState } from "react";
 import {
@@ -89,6 +90,88 @@ function readFileBase64(file: File) {
   });
 }
 
+// Downsample oversized embedded images (e.g. a high-resolution letterhead logo) in the browser BEFORE
+// the DOCX is base64-encoded and uploaded. Vercel rejects request bodies over ~4.5 MB at the platform
+// edge (before any server route runs), so this compression has to happen client-side. Only images whose
+// largest dimension exceeds the cap are touched; text, tables, merge fields, and normally-sized media are
+// preserved. On any failure we fall back to the original file untouched so template creation never breaks.
+const TEMPLATE_IMAGE_MAX_DIMENSION = 2000;
+const TEMPLATE_IMAGE_DIMENSION_TRIGGER = 2200;
+
+function blobToBase64(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to encode optimized DOCX."));
+    reader.onload = () => {
+      const value = String(reader.result || "");
+      const comma = value.indexOf(",");
+      resolve(comma >= 0 ? value.slice(comma + 1) : value);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function downscaleImageBlob(blob: Blob, path: string): Promise<Blob | null> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(blob);
+  } catch {
+    return null;
+  }
+  const width = bitmap.width;
+  const height = bitmap.height;
+  if (Math.max(width, height) <= TEMPLATE_IMAGE_DIMENSION_TRIGGER) {
+    bitmap.close?.();
+    return null;
+  }
+  const scale = TEMPLATE_IMAGE_MAX_DIMENSION / Math.max(width, height);
+  const targetWidth = Math.max(1, Math.round(width * scale));
+  const targetHeight = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close?.();
+    return null;
+  }
+  context.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+  bitmap.close?.();
+  const isJpeg = /\.jpe?g$/i.test(path);
+  return await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((result) => resolve(result), isJpeg ? "image/jpeg" : "image/png", isJpeg ? 0.85 : undefined),
+  );
+}
+
+async function readDocxWithDownsizedImages(
+  file: File,
+): Promise<{ base64: string; byteLength: number; downsized: number }> {
+  try {
+    const JSZipModule = await import("jszip");
+    const JSZip = JSZipModule.default;
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const mediaPaths = Object.keys(zip.files).filter((name) => /^word\/media\/.+\.(png|jpe?g)$/i.test(name));
+    let downsized = 0;
+    for (const path of mediaPaths) {
+      const entry = zip.file(path);
+      if (!entry) continue;
+      const originalBlob = await entry.async("blob");
+      const resized = await downscaleImageBlob(originalBlob, path);
+      if (resized && resized.size < originalBlob.size) {
+        zip.file(path, resized);
+        downsized += 1;
+      }
+    }
+    if (downsized === 0) {
+      return { base64: await readFileBase64(file), byteLength: file.size, downsized: 0 };
+    }
+    const outBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+    return { base64: await blobToBase64(outBlob), byteLength: outBlob.size, downsized };
+  } catch {
+    return { base64: await readFileBase64(file), byteLength: file.size, downsized: 0 };
+  }
+}
+
 export default function CreateTemplateMetadataShell({ file, tokens, partCount, onCancel }: CreateTemplateMetadataShellProps) {
   const defaultDisplayName = useMemo(() => file.name.replace(/\.docx$/i, "").replace(/[-_]+/g, " ").trim(), [file.name]);
   const [displayName, setDisplayName] = useState(defaultDisplayName);
@@ -173,7 +256,13 @@ export default function CreateTemplateMetadataShell({ file, tokens, partCount, o
       setStatus("saving");
       setMessage("Saving DOCX template to the local Barsh Matters repository…");
 
-      const contentBase64 = await readFileBase64(file);
+      const optimizedUpload = await readDocxWithDownsizedImages(file);
+      const contentBase64 = optimizedUpload.base64;
+      if (optimizedUpload.downsized > 0) {
+        setMessage(
+          `Optimized ${optimizedUpload.downsized} oversized image${optimizedUpload.downsized === 1 ? "" : "s"} and saving DOCX template to the local Barsh Matters repository…`,
+        );
+      }
       const confirmRow = {
         ...row,
         metadata: {
@@ -181,7 +270,7 @@ export default function CreateTemplateMetadataShell({ file, tokens, partCount, o
           uploadedTemplateFile: {
             name: file.name,
             type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            size: file.size,
+            size: optimizedUpload.byteLength,
             lastModified: file.lastModified,
             lastModifiedIso: file.lastModified ? new Date(file.lastModified).toISOString() : null,
             contentBase64,
