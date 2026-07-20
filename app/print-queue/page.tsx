@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Client queue page maps untyped queue rows; pre-existing any usage. */
 
 import { useEffect, useMemo, useState } from "react";
 import BarshHeaderQuickNav from "@/app/components/BarshHeaderQuickNav";
@@ -296,6 +297,36 @@ export default function PrintQueuePage() {
         ok: false,
         error: err?.message || "Could not update print queue status.",
       });
+    } finally {
+      setStatusLoadingId(null);
+    }
+  }
+
+  async function deleteQueueItem(row: any) {
+    const id = Number(row?.id);
+    if (!Number.isFinite(id)) return;
+    const label = textValue(row.filename) || textValue(row.documentLabel) || "this document";
+    const confirmed = window.confirm(
+      `Delete ${label} from the Print Queue?\n\nThis removes the queue entry only \u2014 the generated document and any Clio copy are not deleted.`
+    );
+    if (!confirmed) return;
+
+    setStatusLoadingId(id);
+    setStatusResult(null);
+    try {
+      const res = await fetch("/api/documents/print-queue", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, confirmDelete: true }),
+      });
+      const json = await res.json().catch(() => null);
+      setStatusResult(json);
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || "Could not delete the print queue item.");
+      }
+      await loadQueue({ status: statusFilter, masterLawsuitId, limit, finalizedPdfOnly, dedupeClioDocumentId }, { replaceUrl: true });
+    } catch (err: any) {
+      setStatusResult({ ok: false, error: err?.message || "Could not delete the print queue item." });
     } finally {
       setStatusLoadingId(null);
     }
@@ -676,6 +707,24 @@ export default function PrintQueuePage() {
                                       : "Re-Queue"}
                             </button>
                           ))}
+                          <button
+                            key={`${textValue(row.id)}-delete`}
+                            type="button"
+                            onClick={() => void deleteQueueItem(row)}
+                            disabled={statusLoadingId === Number(row.id)}
+                            style={{
+                              fontSize: 11,
+                              padding: "2px 6px",
+                              border: "1px solid #dc2626",
+                              borderRadius: 4,
+                              background: "#fff",
+                              color: "#dc2626",
+                              fontWeight: 800,
+                              cursor: statusLoadingId === Number(row.id) ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing loosely-typed Clio/queue candidate rows. */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -678,3 +679,36 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
+
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const id = numberOrNull(body?.id);
+    const confirmDelete = body?.confirmDelete === true;
+
+    if (!id) {
+      return NextResponse.json({ ok: false, action: "print-queue-delete", error: "Missing print queue item id." }, { status: 400 });
+    }
+    if (!confirmDelete) {
+      return NextResponse.json({ ok: false, action: "print-queue-delete", error: "Print queue item was not deleted. This endpoint requires confirmDelete: true." }, { status: 400 });
+    }
+
+    const existing = await prisma.documentPrintQueueItem.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ ok: false, action: "print-queue-delete", error: `No print queue item with id ${id}.` }, { status: 404 });
+    }
+
+    await prisma.documentPrintQueueItem.delete({ where: { id } });
+
+    return NextResponse.json({
+      ok: true,
+      action: "print-queue-delete",
+      deletedId: id,
+      note: "Removed the print queue item only. The generated/finalized document and any Clio document were left untouched.",
+      safety: { removedQueueItemOnly: true, noClioRecordsChanged: true, noDocumentsDeleted: true },
+    });
+  } catch (error) {
+    return NextResponse.json({ ok: false, action: "print-queue-delete", error: error instanceof Error ? error.message : "Could not delete the print queue item." }, { status: 500 });
+  }
+}

@@ -885,6 +885,7 @@ export default function LawsuitsPage() {
       if (!finalizeRes.ok || !finalizeJson?.ok) {
         throw new Error(finalizeJson?.error || "Could not generate and finalize the document.");
       }
+      const finalizeUploaded = Array.isArray(finalizeJson?.uploaded) ? finalizeJson.uploaded.length : 0;
 
       const queueRes = await fetch("/api/documents/print-queue", {
         method: "POST",
@@ -892,13 +893,15 @@ export default function LawsuitsPage() {
         body: JSON.stringify({ masterLawsuitId, confirmAdd: true }),
       });
       const queueJson = await queueRes.json().catch(() => null);
-      if (!queueRes.ok || !queueJson?.ok) {
-        throw new Error(queueJson?.error || "The document was finalized but could not be added to the Print Queue.");
-      }
+      const created = Number(queueJson?.createdCount || 0);
+      const already = Number(queueJson?.existingCount || 0);
 
-      const created = Number(queueJson.createdCount || 0);
-      const already = Number(queueJson.existingCount || 0);
-      setGenerateDocMessage(`${templateLabel} generated and ${created > 0 ? "added to" : already > 0 ? "already in" : "sent to"} the Print Queue.`);
+      if (created > 0 || already > 0) {
+        setGenerateDocMessage(`${templateLabel} generated (Clio uploads: ${finalizeUploaded}). Print Queue: ${created} added${already ? `, ${already} already queued` : ""}.`);
+      } else {
+        const reason = queueJson?.error || queueJson?.note || (finalizeUploaded === 0 ? "the finalize step uploaded 0 documents to Clio, so there was nothing to queue" : "no finalized print candidate was found to queue");
+        setGenerateDocMessage(`${templateLabel} generated (Clio uploads: ${finalizeUploaded}), but nothing was added to the Print Queue: ${reason}.`);
+      }
     } catch (err: any) {
       setGenerateDocMessage(err?.message || "Could not generate the document.");
     } finally {
@@ -1330,7 +1333,7 @@ export default function LawsuitsPage() {
               Lawsuit <strong>{generateForLawsuitId}</strong> was created. The venue-matched document is being generated and sent to the Print Queue automatically.
             </p>
             {generateDocMessage ? (
-              <div style={{ marginBottom: 10, fontWeight: 800, color: /could not|does not map|not available|could not add|but could not/i.test(generateDocMessage) ? "#991b1b" : /generated and/i.test(generateDocMessage) ? "#166534" : "#385a83" }}>{generateDocMessage}</div>
+              <div style={{ marginBottom: 10, fontWeight: 800, color: /but nothing|could not|does not map|not available/i.test(generateDocMessage) ? "#991b1b" : /Print Queue: [1-9]/.test(generateDocMessage) ? "#166534" : "#385a83" }}>{generateDocMessage}</div>
             ) : null}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
               <button type="button" onClick={closeLawsuitDocumentPicker} disabled={generateDocBusy} style={{ ...primaryBtn, opacity: generateDocBusy ? 0.55 : 1, cursor: generateDocBusy ? "not-allowed" : "pointer" }}>{generateDocBusy ? "Working..." : "Close"}</button>
