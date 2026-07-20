@@ -20,6 +20,7 @@ import InboundAttachmentReview from "@/components/email/InboundAttachmentReview"
 import MatterEmailInbox from "@/components/email/MatterEmailInbox";
 import DraggableResizableModal from "@/components/ui/DraggableResizableModal";
 import OldFileNumberField from "@/components/OldFileNumberField";
+import CaseTypeField from "@/components/CaseTypeField";
 import ServiceTypePicklist from "@/components/ServiceTypePicklist";
 import { bmConfirm, bmAlert } from "@/app/components/BmDialogHost";
 
@@ -9167,7 +9168,10 @@ function openClaimAmountEditDialog() {
                   >
                     Claim Information
                   </div>
-                  <OldFileNumberField matterId={resolvedNumericMatterId()} label="Old Matter Number" />
+                  <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+                    <OldFileNumberField matterId={resolvedNumericMatterId()} label="Old Matter Number" />
+                    <CaseTypeField matterId={resolvedNumericMatterId()} label="Case Type" />
+                  </div>
                 </div>
 
                 <a

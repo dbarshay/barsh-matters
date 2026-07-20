@@ -85,7 +85,6 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "status", label: "Status", group: "Status & Classification", type: "category", column: "status" },
   { key: "final_status", label: "Final Status", group: "Status & Classification", type: "category", column: "final_status" },
   { key: "close_reason", label: "Close Reason", group: "Status & Classification", type: "category", column: "close_reason" },
-  { key: "matter_stage_name", label: "Stage", group: "Status & Classification", type: "category", column: "matter_stage_name" },
   { key: "denial_reason", label: "Denial Reason", group: "Status & Classification", type: "category", column: "denial_reason" },
   { key: "service_type", label: "Service Type", group: "Status & Classification", type: "category", column: "service_type" },
   { key: "case_type", label: "Case Type", group: "Status & Classification", type: "category", column: "case_type" },
