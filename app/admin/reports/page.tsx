@@ -15,6 +15,8 @@ const pillOutline: React.CSSProperties = { border: `1px solid ${navy}`, backgrou
 const input: React.CSSProperties = { border: "1px solid #cbd5e1", borderRadius: 8, padding: "6px 8px", fontSize: 13, color: navy };
 const card: React.CSSProperties = { border: "1px solid #dbe4f0", borderRadius: 14, padding: 14, background: "#fff", marginBottom: 14 };
 const h3: React.CSSProperties = { margin: "0 0 8px", fontSize: 15, color: navy };
+const topLbl: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#385a83", fontWeight: 800 };
+const topSel: React.CSSProperties = { border: "1px solid #cbd5e1", borderRadius: 8, padding: "6px 8px", fontSize: 13, color: navy, minWidth: 150 };
 
 function fmtCell(v: any, type: string): string {
   if (v === null || v === undefined) return "";
@@ -88,6 +90,11 @@ export default function ReportsPage() {
   }, [fields]);
 
   function toggleColumn(key: string) { setColumns((c) => (c.includes(key) ? c.filter((x) => x !== key) : [...c, key])); }
+  function toggleGroup(gf: Field[]) {
+    const keys = gf.map((f) => f.key);
+    const allSelected = keys.every((k) => columns.includes(k));
+    setColumns((c) => (allSelected ? c.filter((k) => !keys.includes(k)) : Array.from(new Set([...c, ...keys]))));
+  }
   function currentConfig() {
     return { columns, filters, filterLogic, groupBy, aggregations: aggs, sort, mode, openClosed, provider, insurer, caseType, lawsuitBill };
   }
@@ -158,36 +165,35 @@ export default function ReportsPage() {
 
       <div style={card}>
         <h3 style={h3}>Filters</h3>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#385a83", fontWeight: 800 }}>Status</span>
-              {(["all", "open", "closed"] as const).map((v) => <button key={v} type="button" onClick={() => setOpenClosed(v)} style={seg(openClosed === v)}>{v === "all" ? "All" : v[0].toUpperCase() + v.slice(1)}</button>)}
-            </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#385a83", fontWeight: 800 }}>Case Type</span>
-              <button type="button" onClick={() => setCaseType("all")} style={seg(caseType === "all")}>All</button>
-              {caseTypes.map((ct) => <button key={ct.key} type="button" onClick={() => setCaseType(ct.key)} style={seg(caseType === ct.key)}>{ct.label}</button>)}
-            </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#385a83", fontWeight: 800 }}>Lawsuit / Bill</span>
-              {(["all", "lawsuit", "bill"] as const).map((v) => <button key={v} type="button" onClick={() => setLawsuitBill(v)} style={seg(lawsuitBill === v)}>{v === "all" ? "All" : v[0].toUpperCase() + v.slice(1)}</button>)}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-            <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "#385a83", fontWeight: 800 }}>Provider
-              <select value={provider} onChange={(e) => setProvider(e.target.value)} style={{ ...input, minWidth: 220 }}>
-                <option value="all">All</option>
-                {providers.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </label>
-            <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "#385a83", fontWeight: 800 }}>Insurer
-              <select value={insurer} onChange={(e) => setInsurer(e.target.value)} style={{ ...input, minWidth: 220 }}>
-                <option value="all">All</option>
-                {insurers.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </label>
-          </div>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <label style={topLbl}>Status
+            <select value={openClosed} onChange={(e) => setOpenClosed(e.target.value as any)} style={topSel}>
+              <option value="all">All</option><option value="open">Open</option><option value="closed">Closed</option>
+            </select>
+          </label>
+          <label style={topLbl}>Case Type
+            <select value={caseType} onChange={(e) => setCaseType(e.target.value)} style={topSel}>
+              <option value="all">All</option>
+              {caseTypes.map((ct) => <option key={ct.key} value={ct.key}>{ct.label}</option>)}
+            </select>
+          </label>
+          <label style={topLbl}>Lawsuit / Bill
+            <select value={lawsuitBill} onChange={(e) => setLawsuitBill(e.target.value as any)} style={topSel}>
+              <option value="all">All</option><option value="lawsuit">Lawsuit</option><option value="bill">Bill</option>
+            </select>
+          </label>
+          <label style={topLbl}>Provider
+            <select value={provider} onChange={(e) => setProvider(e.target.value)} style={{ ...topSel, minWidth: 220 }}>
+              <option value="all">All</option>
+              {providers.map((pv) => <option key={pv} value={pv}>{pv}</option>)}
+            </select>
+          </label>
+          <label style={topLbl}>Insurer
+            <select value={insurer} onChange={(e) => setInsurer(e.target.value)} style={{ ...topSel, minWidth: 220 }}>
+              <option value="all">All</option>
+              {insurers.map((iv) => <option key={iv} value={iv}>{iv}</option>)}
+            </select>
+          </label>
         </div>
       </div>
 
@@ -196,7 +202,10 @@ export default function ReportsPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
           {Object.entries(grouped).map(([group, gf]) => (
             <div key={group}>
-              <div style={{ fontWeight: 900, color: navy, fontSize: 12, marginBottom: 4 }}>{group}</div>
+              <label style={{ display: "flex", gap: 6, alignItems: "center", fontWeight: 900, color: navy, fontSize: 12, marginBottom: 4, cursor: "pointer" }}>
+                <input type="checkbox" checked={gf.length > 0 && gf.every((f) => columns.includes(f.key))} onChange={() => toggleGroup(gf)} />
+                {group} <span style={{ fontWeight: 600, color: "#385a83" }}>(all)</span>
+              </label>
               {gf.map((f) => (
                 <label key={f.key} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: navy, padding: "2px 0" }}>
                   <input type="checkbox" checked={columns.includes(f.key)} onChange={() => toggleColumn(f.key)} />{f.label}

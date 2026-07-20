@@ -68,6 +68,7 @@ async function loadRecords(): Promise<Record<string, any>[]> {
   return (matters as any[]).map((m) => {
     const rec: Record<string, any> = {};
     for (const f of REPORT_FIELDS) if (f.column) rec[f.key] = (m as any)[f.column];
+    rec.provider_name = str((m as any).client_name) || str((m as any).provider_name);
     const law = lawByMaster.get(str(m.master_lawsuit_id));
     rec.lawsuit_venue = law ? str(law.venue || law.venueSelection || law.venueOther) : "";
     rec.lawsuit_index_aaa = law ? str(law.indexAaaNumber) : "";

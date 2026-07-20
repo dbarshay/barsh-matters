@@ -38,12 +38,18 @@ export async function GET(req: NextRequest) {
   let providers: string[] = [];
   let insurers: string[] = [];
   try {
-    const provRows: any[] = await prisma.claimIndex.findMany({ distinct: ["provider_name"] as any, select: { provider_name: true } as any, take: 5000 });
-    providers = distinctNormalized(provRows, "provider_name").slice(0, 2000);
+    const [byClient, byProvider]: any[][] = await Promise.all([
+      prisma.claimIndex.findMany({ distinct: ["client_name"] as any, select: { client_name: true } as any, take: 10000 }),
+      prisma.claimIndex.findMany({ distinct: ["provider_name"] as any, select: { provider_name: true } as any, take: 10000 }),
+    ]);
+    const set = new Set<string>();
+    for (const r of byClient) { const v = normalizeProviderName(r.client_name); if (v) set.add(v); }
+    for (const r of byProvider) { const v = normalizeProviderName(r.provider_name); if (v) set.add(v); }
+    providers = Array.from(set).sort((a, b) => a.localeCompare(b));
   } catch {}
   try {
-    const insRows: any[] = await prisma.claimIndex.findMany({ distinct: ["insurer_name"] as any, select: { insurer_name: true } as any, take: 5000 });
-    insurers = distinctNormalized(insRows, "insurer_name").slice(0, 2000);
+    const insRows: any[] = await prisma.claimIndex.findMany({ distinct: ["insurer_name"] as any, select: { insurer_name: true } as any, take: 10000 });
+    insurers = distinctNormalized(insRows, "insurer_name");
   } catch {}
 
   return NextResponse.json({
