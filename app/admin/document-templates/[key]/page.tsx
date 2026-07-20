@@ -198,12 +198,25 @@ export default function AdminDocumentTemplateDetailPage() {
         throw new Error(json?.error || "Could not launch template editor.");
       }
 
-      setEditTemplateWorkingDoc(json.workingDocument || null);
-      setEditTemplateMessage("Editable DOCX launched in Word Online. Make edits, save there, then click Save Edited Template here. If needed, use Word Online’s Open in Desktop App option.");
+      const workingDoc = json.workingDocument || null;
+      setEditTemplateWorkingDoc(workingDoc);
 
-      const openUrl = json?.workingDocument?.webUrl || json?.workingDocument?.desktopWordFileUrl || json?.workingDocument?.msWordEditUrl || "";
-      if (openUrl) {
-        window.open(openUrl, "_blank", "noopener,noreferrer");
+      const desktopUrl = workingDoc?.msWordEditUrl
+        || (workingDoc?.desktopWordFileUrl ? `ms-word:ofe|u|${workingDoc.desktopWordFileUrl}` : "")
+        || (workingDoc?.webUrl ? `ms-word:ofe|u|${workingDoc.webUrl}` : "");
+      const onlineUrl = workingDoc?.webUrl || workingDoc?.desktopWordFileUrl || "";
+      if (desktopUrl) {
+        setEditTemplateMessage("Opening the template in Word for Mac. Make your edits, save in Word, then click Save Edited Template here.");
+        const opener = document.createElement("a");
+        opener.href = desktopUrl;
+        document.body.appendChild(opener);
+        opener.click();
+        opener.remove();
+      } else if (onlineUrl) {
+        setEditTemplateMessage("Opened the template in Word Online. Make your edits, save there, then click Save Edited Template here.");
+        window.open(onlineUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setEditTemplateMessage("Prepared the editable template, but no open link was returned. Use the links below.");
       }
     } catch (error: any) {
       setEditTemplateMessage(error?.message || "Could not launch template editor.");
@@ -422,7 +435,7 @@ export default function AdminDocumentTemplateDetailPage() {
                     <div>
                       <h3 style={{ margin: 0, fontSize: 16 }}>Edit Template</h3>
                       <p style={{ margin: "6px 0 0", color: "#385a83", lineHeight: 1.45 }}>
-                        Open the current repository DOCX in Word, make edits, save in Word, then save the edited DOCX back as the new active template version. Prior versions are preserved.
+                        Open the current template in Word for Mac, make your edits, save in Word, then save the edited DOCX back as the new active template version. Prior versions are preserved.
                       </p>
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><button data-barsh-admin-document-template-edit-template-button="true" type="button" onClick={() => void launchEditTemplate()} disabled={editTemplateBusy || !currentVersion?.hasStoredDocx} style={buttonStyle(editTemplateBusy || !currentVersion?.hasStoredDocx)}>
@@ -433,9 +446,15 @@ export default function AdminDocumentTemplateDetailPage() {
                       </button>
                     </div>
                   </div>
-                  {editTemplateWorkingDoc?.webUrl ? (
-                    <div data-barsh-admin-document-template-edit-template-working-doc="true" style={{ border: "1px solid #bfdbfe", background: "#ffffff", color: "#00346e", borderRadius: 12, padding: 10, fontWeight: 850 }}>
-                      Working DOCX: <a href={editTemplateWorkingDoc.webUrl} target="_blank" rel="noreferrer" style={{ color: "#00346e", fontWeight: 950 }}>{editTemplateWorkingDoc.name || "Open in Word Online"}</a>
+                  {editTemplateWorkingDoc?.webUrl || editTemplateWorkingDoc?.msWordEditUrl || editTemplateWorkingDoc?.desktopWordFileUrl ? (
+                    <div data-barsh-admin-document-template-edit-template-working-doc="true" style={{ border: "1px solid #bfdbfe", background: "#ffffff", color: "#00346e", borderRadius: 12, padding: 10, fontWeight: 850, display: "grid", gap: 8 }}>
+                      <div>Working DOCX: {editTemplateWorkingDoc.name || "Template Edit"}</div>
+                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+                        <a href={editTemplateWorkingDoc.msWordEditUrl || (editTemplateWorkingDoc.desktopWordFileUrl ? `ms-word:ofe|u|${editTemplateWorkingDoc.desktopWordFileUrl}` : (editTemplateWorkingDoc.webUrl ? `ms-word:ofe|u|${editTemplateWorkingDoc.webUrl}` : "#"))} style={{ color: "#00346e", fontWeight: 950 }}>Open in Word for Mac</a>
+                        {editTemplateWorkingDoc.webUrl ? (
+                          <a href={editTemplateWorkingDoc.webUrl} target="_blank" rel="noreferrer" style={{ color: "#385a83", fontWeight: 850 }}>Open in Word Online instead</a>
+                        ) : null}
+                      </div>
                     </div>
                   ) : null}
                   {editTemplateMessage ? (
