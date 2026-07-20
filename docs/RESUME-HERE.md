@@ -18,6 +18,48 @@
 
 ## Session log (most recent first — **append a dated entry at the end of each working day**)
 
+### 2026-07-20 — Reports builder (NEW), theme/button standardization, lawsuit-doc pipeline fixes, edit-in-Word
+
+**Reports (NEW feature)** — saveable custom report builder at **Admin → Reports**:
+- Base entity Matters or Lawsuits (selectable per report); curated field catalog (`lib/reports/reportCatalog.ts`)
+  incl. lawsuit rollups (matter count, total claim/balance, member matters). Filters (full operator set per type,
+  AND/OR), grouping + totals (sum/avg/count/distinct/min/max), detail + summary modes, multi-sort. On-screen table +
+  **XLSX** (SheetJS) and **PDF** (pdf-lib) export. Saved reports are **private by default; owner-gated sharing**.
+- Gated by a new **`reports.access` admin card** in the permission catalog. New Prisma model **`SavedReport`**.
+- Files: `lib/reports/*`, `app/api/admin/reports/*` (fields, CRUD, run, export), `app/admin/reports/page.tsx`, admin
+  landing card. Commits `261631c` + export-route TS build fix.
+- **DB step (done via SQL, NOT db push):** `prisma/manual/create_saved_report.sql` + `npx prisma db execute --file
+  prisma/manual/create_saved_report.sql`. Build runs `prisma generate` so the client picks up the model.
+- Open/optional: strict per-user Reports-card gating (currently any `admin.access` holder can reach it).
+
+**Lawsuit auto-generate pipeline fixed** (creating a lawsuit → auto venue-matched doc → Print Queue was failing):
+- finalize now engages single-master Clio storage (`useSingleMasterClioStorage:true`, `singleMasterDryRun:false`,
+  `singleMasterResolveFolders:true`) and creates a working Word doc first, then finalizes it.
+- The 3 lawsuit templates need **Auto-file targets** set: NYC/District → Litigation / Pleadings / Receipts / "Complaint";
+  Arbitration Submission → Arbitration / Correspondence / AR1 / "AR1".
+- Vercel prod was missing `CLIO_MASTER_MATTER_ID` + the single-master `CLIO_*` env vars — added. Now shows "Document uploaded."
+
+**Doc-generation token spacing bug fixed:** generate-preview dropped the space after a filled token ("Barshaywas",
+"1111to") because the run holding the trailing space lacked `xml:space="preserve"`. Fixed in `renderTokenText`
+(adds preserve when a run's text has leading/trailing space). Affects **all** generated documents.
+
+**Template edit → desktop Word for Mac:** Edit Template now opens desktop Word via `ms-word:ofe|u|<direct path>`
+(not Word Online). Required signing Word into **`dbarshay@brlfirm.com`** (the app's Graph mailbox that owns the
+working files) — different accounts = "couldn't open".
+
+**Document Templates list — Last Edited / Last Edited By** now real (were "—" / hardcoded "System"): list API returns
+`updatedAt` + captured editor; both save routes record the signed-in editor into template metadata.
+
+**Theme + buttons standardized:** `globals.css` forced `color-scheme: light` and default text color = **BM navy `#00346e`**
+(was near-black and inverted to near-white in OS dark mode). All buttons → navy `#00346e` **pill**; danger buttons
+unified to red **`#dc2626`** (kept red, pill shape). Removed user-facing "Clio" language (success = "Document uploaded.").
+Print Queue: per-row Delete. Lawsuit Cleanup: one-click deaggregate confirm (owner).
+
+**PENDING (see `docs/PENDING-legacy-docs-db.md`):** move `legacy_case`/`legacy_document` manifest to a dedicated
+`LEGACY_DOCS_DATABASE_URL` DB (currently unmanaged in main `neondb`). **NEVER run `prisma db push` on this repo** — it
+will try to DROP those ~806k-row legacy tables. Use targeted SQL or `prisma migrate` instead.
+
+
 ### 2026-07-17 — Admin Users: create/login fixes, Delete capability; migration parked
 
 **All pushed to `main` and DEPLOYED** (through commit `02d9e92`; local == origin). Next session: **continue the
