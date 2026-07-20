@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Admin cleanup page fetches untyped JSON rows; pre-existing any usage. */
 
 import { useEffect, useMemo, useState } from "react";
 import BarshHeader from "@/app/components/BarshHeader";
@@ -87,7 +88,6 @@ export default function AdminLawsuitCleanupPage() {
   const [preview, setPreview] = useState<CleanupPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [cleanupRunning, setCleanupRunning] = useState("");
-  const [confirmByMaster, setConfirmByMaster] = useState<Record<string, string>>({});
   const [cleanupResult, setCleanupResult] = useState<any | null>(null);
   const [error, setError] = useState("");
 
@@ -102,13 +102,10 @@ export default function AdminLawsuitCleanupPage() {
   );
 
   async function confirmCleanup(lawsuit: CleanupLawsuit) {
-    const expectedConfirmation = `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`;
-    const typedConfirmation = String(confirmByMaster[lawsuit.masterLawsuitId] || "").trim();
-
-    if (typedConfirmation !== expectedConfirmation) {
-      setError(`Exact confirmation required: ${expectedConfirmation}`);
-      return;
-    }
+    const proceed = window.confirm(
+      `Deaggregate and delete lawsuit ${lawsuit.masterLawsuitId}?\n\nThis unlinks its child matters and deletes the local lawsuit record. It cannot be undone from here.`
+    );
+    if (!proceed) return;
 
     setCleanupRunning(lawsuit.masterLawsuitId);
     setError("");
@@ -121,7 +118,7 @@ export default function AdminLawsuitCleanupPage() {
         cache: "no-store",
         body: JSON.stringify({
           masterLawsuitId: lawsuit.masterLawsuitId,
-          confirmation: typedConfirmation,
+          confirmation: `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`,
           deleteClioShell: true,
           actorName: "Admin Lawsuit Cleanup",
         }),
@@ -134,7 +131,6 @@ export default function AdminLawsuitCleanupPage() {
       }
 
       setCleanupResult(json);
-      setConfirmByMaster((prev) => ({ ...prev, [lawsuit.masterLawsuitId]: "" }));
       await loadPreview();
     } catch (err: any) {
       setError(err?.message || "Lawsuit cleanup failed.");
@@ -186,7 +182,7 @@ export default function AdminLawsuitCleanupPage() {
           <div style={eyebrowStyle}>Administrator</div>
           <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.1 }}>Lawsuit Cleanup / Deaggregate</h1>
           <p style={subtitleStyle}>
-            Preview-only Admin utility for inspecting extra local lawsuit records, child matter links, and legacy Clio storage references.
+            Admin utility to inspect and deaggregate local lawsuits: unlink child matters, delete the local lawsuit row, and record an audit entry. Clio storage is left untouched.
           </p>
         </div>
 
@@ -196,7 +192,7 @@ export default function AdminLawsuitCleanupPage() {
       </section>
 
       <section style={warningStyle}>
-        <strong>Preview only.</strong> This page does not deaggregate matters, delete local lawsuits, delete Clio shells, update ClaimIndex, write Clio, upload documents, send email, or queue print jobs.
+        <strong>Loading the candidate list is read-only.</strong> Running a guarded <strong>Confirm Deaggregate</strong> action on a candidate below is destructive: it unlinks the child matters from that lawsuit (setting each member matter master-lawsuit link to none), deletes the local Lawsuit row, and writes an audit entry. It makes no Clio changes, uploads no documents, sends no email, and queues no print jobs.
       </section>
 
       <section style={filterCardStyle}>
@@ -306,7 +302,7 @@ export default function AdminLawsuitCleanupPage() {
           <section style={panelStyle}>
             <h2 style={sectionTitleStyle}>Cleanup Candidates</h2>
             <p style={mutedTextStyle}>
-              Preview-only candidate list. Future destructive action should require a separate exact confirmation and audit entry.
+              Each candidate has a one-click deaggregate action (with a confirmation prompt) that unlinks the child matters, deletes the local Lawsuit row, and writes an audit entry.
             </p>
 
             {candidateLawsuits.length ? (
@@ -336,51 +332,22 @@ export default function AdminLawsuitCleanupPage() {
                       <div>
                         <strong>Guarded cleanup action</strong>
                         <div style={mutedTextStyle}>
-                          This will clear local child lawsuit links, remove the local lawsuit record, and leave repository storage untouched,
-                          delete this local Lawsuit row, and create an AuditLog entry.  It will not delete child/bill Clio matters.
+                          This unlinks the child matters from this lawsuit, deletes the local Lawsuit row, and writes an audit entry. Clio repository storage is left untouched.
                         </div>
                       </div>
-                      <label style={labelStyle}>
-                        Type exact confirmation
-                        <input
-                          value={confirmByMaster[lawsuit.masterLawsuitId] || ""}
-                          onChange={(event) =>
-                            setConfirmByMaster((prev) => ({
-                              ...prev,
-                              [lawsuit.masterLawsuitId]: event.target.value,
-                            }))
-                          }
-                          placeholder={`DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`}
-                          style={inputStyle}
-                        />
-                      </label>
                       <button
                         type="button"
                         onClick={() => void confirmCleanup(lawsuit)}
-                        disabled={
-                          cleanupRunning === lawsuit.masterLawsuitId ||
-                          (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
-                            `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
-                        }
+                        disabled={cleanupRunning === lawsuit.masterLawsuitId}
                         style={{
                           ...dangerButtonStyle,
-                          opacity:
-                            cleanupRunning === lawsuit.masterLawsuitId ||
-                            (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
-                              `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
-                              ? 0.45
-                              : 1,
-                          cursor:
-                            cleanupRunning === lawsuit.masterLawsuitId ||
-                            (confirmByMaster[lawsuit.masterLawsuitId] || "").trim() !==
-                              `DEAGGREGATE AND DELETE ${lawsuit.masterLawsuitId}`
-                              ? "not-allowed"
-                              : "pointer",
+                          opacity: cleanupRunning === lawsuit.masterLawsuitId ? 0.45 : 1,
+                          cursor: cleanupRunning === lawsuit.masterLawsuitId ? "not-allowed" : "pointer",
                         }}
                       >
                         {cleanupRunning === lawsuit.masterLawsuitId
-                          ? "Cleaning Up..."
-                          : "Confirm Deaggregate / Delete Shell"}
+                          ? "Deaggregating..."
+                          : "Deaggregate & Delete Lawsuit"}
                       </button>
                     </div>
 

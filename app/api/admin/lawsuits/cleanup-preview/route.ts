@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing loosely-typed Clio/claim rows; messaging-only change. */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -143,6 +144,6 @@ export async function GET(request: Request) {
       details: entry.details || null,
     })),
     safetyDecision:
-      "Preview only. This route does not deaggregate matters, delete local lawsuits, delete Clio shells, update ClaimIndex, write Clio, upload documents, send email, or queue print jobs.",
+      "Loading this candidate list is read-only \u2014 it makes no changes. Deaggregation happens only when a guarded Confirm action is run on a candidate (exact confirmation required), which unlinks child matters, deletes the local Lawsuit row, and writes an audit entry. No Clio writes, document uploads, email, or print-queue changes occur.",
   });
 }
