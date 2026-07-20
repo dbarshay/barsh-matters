@@ -30,14 +30,27 @@ function xmlUnescape(value: string) {
     .replace(/&amp;/g, "&");
 }
 
+// Ensure a <w:t ...> open tag carries xml:space="preserve" whenever its text has a
+// leading or trailing space. Word stores a run without preserve when its original text
+// had no edge whitespace (e.g. a run beginning with a closing token brace); once the
+// following space becomes leading in that run, and without preserve Word strips it,
+// producing "Barshaywas" instead of "Barshay was".
+function ensurePreserveOpen(open: string, text: string): string {
+  if (!/^\s|\s$/.test(text)) return open;
+  if (/xml:space\s*=/.test(open)) {
+    return open.replace(/xml:space\s*=\s*"[^"]*"/, 'xml:space="preserve"');
+  }
+  return open.replace(/<w:t\b/, '<w:t xml:space="preserve"');
+}
+
 // Render replacement text into a w:t node, converting newlines into Word line breaks
 // (so multi-line values like an address block stack onto separate lines).
 function renderTokenText(open: string, close: string, text: string) {
-  if (!text.includes("\n")) return open + xmlEscape(text) + close;
+  if (!text.includes("\n")) return ensurePreserveOpen(open, text) + xmlEscape(text) + close;
   const segments = text.split("\n");
   let out = "";
   segments.forEach((segment, index) => {
-    const openTag = index === 0 ? open : '<w:t xml:space="preserve">';
+    const openTag = index === 0 ? ensurePreserveOpen(open, segment) : '<w:t xml:space="preserve">';
     out += openTag + xmlEscape(segment) + close;
     if (index < segments.length - 1) out += "<w:br/>";
   });
