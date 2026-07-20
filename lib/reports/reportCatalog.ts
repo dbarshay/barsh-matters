@@ -13,6 +13,7 @@ export type ReportField = {
   column?: string;      // underlying DB column (absent for derived rollups)
   rollup?: boolean;     // lawsuit-only: derived from member matters
   format?: "provider";  // display-time legal-name case normalization
+  money?: boolean;      // render as USD currency
 };
 
 export const OPERATORS_BY_TYPE: Record<ReportFieldType, { key: string; label: string; arity: 0 | 1 | 2 | "list" }[]> = {
@@ -61,19 +62,19 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "insurer_name", label: "Insurer", group: "Parties", type: "category", column: "insurer_name", format: "provider" },
   { key: "settled_with", label: "Settled With", group: "Parties", type: "text", column: "settled_with", format: "provider" },
   // Financials
-  { key: "claim_amount", label: "Claim Amount", group: "Financials", type: "number", column: "claim_amount" },
-  { key: "settled_amount", label: "Settled Amount", group: "Financials", type: "number", column: "settled_amount" },
-  { key: "interest_amount", label: "Interest Amount", group: "Financials", type: "number", column: "interest_amount" },
-  { key: "principal_fee", label: "Principal Fee", group: "Financials", type: "number", column: "principal_fee" },
-  { key: "interest_fee", label: "Interest Fee", group: "Financials", type: "number", column: "interest_fee" },
-  { key: "total_fee", label: "Total Fee", group: "Financials", type: "number", column: "total_fee" },
-  { key: "provider_net", label: "Provider Net", group: "Financials", type: "number", column: "provider_net" },
-  { key: "provider_principal_net", label: "Provider Principal Net", group: "Financials", type: "number", column: "provider_principal_net" },
-  { key: "provider_interest_net", label: "Provider Interest Net", group: "Financials", type: "number", column: "provider_interest_net" },
-  { key: "payment_amount", label: "Payment Amount", group: "Financials", type: "number", column: "payment_amount" },
-  { key: "payment_voluntary", label: "Voluntary Payment", group: "Financials", type: "number", column: "payment_voluntary" },
-  { key: "balance_amount", label: "Balance", group: "Financials", type: "number", column: "balance_amount" },
-  { key: "balance_presuit", label: "Pre-Suit Balance", group: "Financials", type: "number", column: "balance_presuit" },
+  { key: "claim_amount", label: "Claim Amount", group: "Financials", type: "number", column: "claim_amount", money: true },
+  { key: "settled_amount", label: "Settled Amount", group: "Financials", type: "number", column: "settled_amount", money: true },
+  { key: "interest_amount", label: "Interest Amount", group: "Financials", type: "number", column: "interest_amount", money: true },
+  { key: "principal_fee", label: "Principal Fee", group: "Financials", type: "number", column: "principal_fee", money: true },
+  { key: "interest_fee", label: "Interest Fee", group: "Financials", type: "number", column: "interest_fee", money: true },
+  { key: "total_fee", label: "Total Fee", group: "Financials", type: "number", column: "total_fee", money: true },
+  { key: "provider_net", label: "Provider Net", group: "Financials", type: "number", column: "provider_net", money: true },
+  { key: "provider_principal_net", label: "Provider Principal Net", group: "Financials", type: "number", column: "provider_principal_net", money: true },
+  { key: "provider_interest_net", label: "Provider Interest Net", group: "Financials", type: "number", column: "provider_interest_net", money: true },
+  { key: "payment_amount", label: "Payment Amount", group: "Financials", type: "number", column: "payment_amount", money: true },
+  { key: "payment_voluntary", label: "Voluntary Payment", group: "Financials", type: "number", column: "payment_voluntary", money: true },
+  { key: "balance_amount", label: "Balance", group: "Financials", type: "number", column: "balance_amount", money: true },
+  { key: "balance_presuit", label: "Pre-Suit Balance", group: "Financials", type: "number", column: "balance_presuit", money: true },
   { key: "overdue_days", label: "Overdue Days", group: "Financials", type: "number", column: "overdue_days" },
   // Dates (stored as strings in ClaimIndex; ISO-style compare)
   { key: "dos_range", label: "Date of Service", group: "Dates", type: "text" },
@@ -98,7 +99,7 @@ export const MATTER_FIELDS: ReportField[] = [
 export const LAWSUIT_JOIN_FIELDS: ReportField[] = [
   { key: "lawsuit_venue", label: "Lawsuit Venue / Court", group: "Lawsuit", type: "category" },
   { key: "lawsuit_index_aaa", label: "Lawsuit Index / AAA", group: "Lawsuit", type: "text" },
-  { key: "lawsuit_amount_sought", label: "Lawsuit Amount Sought", group: "Lawsuit", type: "number" },
+  { key: "lawsuit_amount_sought", label: "Lawsuit Amount Sought", group: "Lawsuit", type: "number", money: true },
   { key: "lawsuit_amount_basis", label: "Lawsuit Amount Basis", group: "Lawsuit", type: "category" },
   { key: "lawsuit_notes", label: "Lawsuit Notes", group: "Lawsuit", type: "text" },
   { key: "lawsuit_created", label: "Lawsuit Created", group: "Lawsuit", type: "date" },

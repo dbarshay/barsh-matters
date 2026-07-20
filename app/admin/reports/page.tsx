@@ -18,9 +18,13 @@ const h3: React.CSSProperties = { margin: "0 0 8px", fontSize: 15, color: navy }
 const topLbl: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#385a83", fontWeight: 800 };
 const topSel: React.CSSProperties = { border: "1px solid #cbd5e1", borderRadius: 8, padding: "6px 8px", fontSize: 13, color: navy, minWidth: 150 };
 
-function fmtCell(v: any, type: string): string {
+function fmtCell(v: any, type: string, money = false): string {
   if (v === null || v === undefined) return "";
-  if (type === "number") { const n = Number(v); return Number.isFinite(n) ? (Math.round(n * 100) / 100).toLocaleString("en-US") : String(v); }
+  if (type === "number") {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return money ? n.toLocaleString("en-US", { style: "currency", currency: "USD" }) : (Math.round(n * 100) / 100).toLocaleString("en-US");
+  }
   return String(v);
 }
 
@@ -316,11 +320,11 @@ export default function ReportsPage() {
               <thead><tr>{result.columns.map((c: any) => <th key={c.key} style={{ textAlign: c.type === "number" ? "right" : "left", borderBottom: `2px solid ${navy}`, padding: "6px 8px", color: navy, whiteSpace: "nowrap" }}>{c.label}</th>)}</tr></thead>
               <tbody>
                 {result.rows.map((r: any, ri: number) => (
-                  <tr key={ri}>{result.columns.map((c: any) => <td key={c.key} style={{ textAlign: c.type === "number" ? "right" : "left", borderBottom: "1px solid #eef2f7", padding: "5px 8px", color: navy }}>{fmtCell(r[c.key], c.type)}</td>)}</tr>
+                  <tr key={ri}>{result.columns.map((c: any) => <td key={c.key} style={{ textAlign: c.type === "number" ? "right" : "left", borderBottom: "1px solid #eef2f7", padding: "5px 8px", color: navy }}>{fmtCell(r[c.key], c.type, c.money)}</td>)}</tr>
                 ))}
               </tbody>
               {result.grandTotals ? (
-                <tfoot><tr>{result.columns.map((c: any, i: number) => <td key={c.key} style={{ textAlign: c.type === "number" ? "right" : "left", borderTop: `2px solid ${navy}`, padding: "6px 8px", fontWeight: 950, color: navy }}>{result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : (i === 0 ? "Totals" : "")}</td>)}</tr></tfoot>
+                <tfoot><tr>{result.columns.map((c: any, i: number) => <td key={c.key} style={{ textAlign: c.type === "number" ? "right" : "left", borderTop: `2px solid ${navy}`, padding: "6px 8px", fontWeight: 950, color: navy }}>{result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number", c.money) : (i === 0 ? "Totals" : "")}</td>)}</tr></tfoot>
               ) : null}
             </table>
           </div>

@@ -9,11 +9,12 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function fmtCell(v: any, type: string): string {
+function fmtCell(v: any, type: string, money = false): string {
   if (v === null || v === undefined) return "";
   if (type === "number") {
     const n = Number(v);
-    return Number.isFinite(n) ? (Math.round(n * 100) / 100).toLocaleString("en-US") : String(v);
+    if (!Number.isFinite(n)) return String(v);
+    return money ? n.toLocaleString("en-US", { style: "currency", currency: "USD" }) : (Math.round(n * 100) / 100).toLocaleString("en-US");
   }
   return String(v);
 }
@@ -23,9 +24,9 @@ function safeName(v: string): string {
 }
 
 function buildXlsx(title: string, result: any): Buffer {
-  const cols = result.columns as { key: string; label: string; type: string }[];
+  const cols = result.columns as { key: string; label: string; type: string; money?: boolean }[];
   const header = cols.map((c) => c.label);
-  const body = result.rows.map((r: any) => cols.map((c) => fmtCell(r[c.key], c.type)));
+  const body = result.rows.map((r: any) => cols.map((c: any) => fmtCell(r[c.key], c.type, c.money)));
   const aoa: any[][] = [[title], header, ...body];
   if (result.grandTotals) {
     let totalRow: string[] = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
@@ -39,7 +40,7 @@ function buildXlsx(title: string, result: any): Buffer {
 }
 
 async function buildPdf(title: string, result: any): Promise<Uint8Array> {
-  const cols = (result.columns as { key: string; label: string; type: string }[]).slice(0, 12);
+  const cols = (result.columns as { key: string; label: string; type: string; money?: boolean }[]).slice(0, 12);
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -76,7 +77,7 @@ async function buildPdf(title: string, result: any): Promise<Uint8Array> {
     y -= rowH;
   };
 
-  for (const r of result.rows as any[]) drawRow(cols.map((c) => fmtCell(r[c.key], c.type)));
+  for (const r of result.rows as any[]) drawRow(cols.map((c: any) => fmtCell(r[c.key], c.type, c.money)));
   if (result.grandTotals) {
     let totals: string[] = cols.map((c) => (result.grandTotals[c.key] !== undefined ? fmtCell(result.grandTotals[c.key], "number") : ""));
     if (totals.every((x) => x === "")) totals = ["Totals", ...totals.slice(1)];

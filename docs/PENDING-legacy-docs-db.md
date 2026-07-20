@@ -25,3 +25,14 @@ Deferred on purpose (2026-07). Do NOT lose this.
 ## Reports feature (also open)
 - Optional: strict per-user "Reports card" gating (currently any admin-access holder can reach Reports
   because `/admin/reports` also matches the broad `admin.access` scope). One-line resolver change if wanted.
+
+
+## PENDING — Rotate ALL credentials before go-live (security)
+Before real PHI lands, rotate every secret and remove test/break-glass creds:
+- Neon DB password (`neondb_owner`) — a dev password was pasted into a chat and is compromised; reset it in
+  Neon Console -> Roles, then update DATABASE_URL / POSTGRES_URL / POSTGRES_DATABASE_URL_UNPOOLED in `.env.local`
+  AND Vercel, and redeploy.
+- Microsoft Graph client secret, Clio access/refresh tokens + client secret + webhook secret, Azure Document
+  Intelligence key, Twilio auth token, admin password + admin session token, 2FA break-glass, and any dev API keys.
+- A full `.env.local` was pasted into chat during development -> treat all of those specific secrets as compromised
+  and rotate now, not just at go-live.

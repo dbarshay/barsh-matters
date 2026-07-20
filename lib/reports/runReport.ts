@@ -187,7 +187,7 @@ function aggregate(records: Record<string, any>[], agg: ReportAggregation): numb
 
 export type ReportResult = {
   mode: "detail" | "summary";
-  columns: { key: string; label: string; type: string }[];
+  columns: { key: string; label: string; type: string; money?: boolean }[];
   rows: Record<string, any>[];
   grandTotals: Record<string, number | string> | null;
   rowCount: number;
@@ -225,16 +225,16 @@ export async function runReport(cfg: ReportConfig): Promise<ReportResult> {
       rows.push(row);
     }
     const columns = [
-      ...groupBy.map((g) => ({ key: g, label: fmap[g].label, type: fmap[g].type })),
-      ...aggs.map((a) => ({ key: `${a.fn}__${a.field}`, label: `${a.fn.toUpperCase()} of ${fmap[a.field].label}`, type: "number" })),
-      { key: "__count", label: "Rows", type: "number" },
+      ...groupBy.map((g) => ({ key: g, label: fmap[g].label, type: fmap[g].type, money: Boolean(fmap[g].money) })),
+      ...aggs.map((a) => ({ key: `${a.fn}__${a.field}`, label: `${a.fn.toUpperCase()} of ${fmap[a.field].label}`, type: "number", money: a.fn !== "count" && a.fn !== "distinct" && Boolean(fmap[a.field].money) })),
+      { key: "__count", label: "Rows", type: "number", money: false },
     ];
     const grandTotals: Record<string, number | string> = { __count: records.length };
     for (const a of aggs) grandTotals[`${a.fn}__${a.field}`] = aggregate(records, a);
     return { mode: "summary", columns, rows, grandTotals, rowCount: records.length, capped };
   }
 
-  const columns = selectedColumns.map((c) => ({ key: c, label: fmap[c].label, type: fmap[c].type }));
+  const columns = selectedColumns.map((c) => ({ key: c, label: fmap[c].label, type: fmap[c].type, money: Boolean(fmap[c].money) }));
   const rows = records.map((rec) => {
     const row: Record<string, any> = {};
     for (const c of selectedColumns) row[c] = displayValue(fmap[c], rec[c]);
