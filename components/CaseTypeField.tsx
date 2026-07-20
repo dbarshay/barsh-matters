@@ -57,7 +57,7 @@ export default function CaseTypeField({ matterId, label }: { matterId?: number |
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }} data-barsh-case-type-field="true">
       <span style={{ fontSize: 12, fontWeight: 900, color: "#00346e", whiteSpace: "nowrap" }}>{lbl}:</span>
-      <span style={{ fontSize: 13, fontWeight: 700, color: value ? "#1b2a3d" : "#8a97a8" }}>{value || "—"}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: value ? "#00346e" : "#8a97a8" }}>{value || "—"}</span>
       <button
         type="button"
         onClick={() => { setDraft(value); setErr(null); setOpen(true); }}

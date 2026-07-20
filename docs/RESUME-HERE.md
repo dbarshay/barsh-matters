@@ -24,6 +24,11 @@
 - Per-matter **Case Type selector** (No-Fault / Workers' Comp / Lien) on the individual matter screen, right of "Old Matter
   Number", saving via a dedicated `/api/admin/matter-case-type` endpoint + `components/CaseTypeField.tsx` (mirrors the
   `OldFileNumberField` pattern). Deliberately NOT on the lawsuit screen (case type is per-matter). Commit `6ef5808`.
+- **Case Type field UI (final):** read-only display + **Edit** button; editing opens the standard **BarshModal** popup
+  (same as Patient / Provider / Policy Number) with a "Current" box + dropdown + **Confirm Edit** / Cancel — the modal IS
+  the confirm step (no separate `window.confirm`). **FONT COLOR (remember):** the read-only VALUE for both Case Type AND
+  **"Old Matter Number"** must be BM navy **`#00346e`** — same color as the **Patient name** (CSS `.barsh-direct-summary-value`).
+  Empty = `#8a97a8`; field labels stay `#00346e`. Set in both `CaseTypeField.tsx` + `OldFileNumberField.tsx`.
 - **Backfill:** `prisma/manual/backfill_casetype_nofault.sql` set every blank BRL_ matter to `No-Fault` (48 rows), run in the
   Neon SQL Editor. Report's Case Type (NF) filter now returns all existing matters.
 - **DOW import Case Type picker** — imports already set `case_type` in code (DOW hardcoded No-Fault, CARISK mapped,

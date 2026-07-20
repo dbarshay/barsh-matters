@@ -86,7 +86,7 @@ export default function OldFileNumberField({
         </>
       ) : (
         <>
-          <span style={{ fontSize: 13, fontWeight: 700, color: value ? "#1b2a3d" : "#8a97a8" }}>{value || "—"}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: value ? "#00346e" : "#8a97a8" }}>{value || "—"}</span>
           <button
             type="button"
             onClick={() => { setDraft(value); setEditing(true); setErr(null); }}
