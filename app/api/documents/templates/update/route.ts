@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateTemplateFilingTarget } from "@/lib/documents/templateFiling";
+import { readSignedAdminIdentityCookie, ADMIN_IDENTITY_COOKIE_NAME } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,16 @@ export async function POST(req: NextRequest) {
     if (!key) {
       return NextResponse.json({ ok: false, action: "document-template-update", error: "Missing template key." }, { status: 400 });
     }
+
+    const editorDisplayName = (() => {
+      try {
+        const identity = readSignedAdminIdentityCookie(req.cookies.get(ADMIN_IDENTITY_COOKIE_NAME)?.value);
+        if (!identity) return "System";
+        return clean(identity.username) || clean(identity.email) || "System";
+      } catch {
+        return "System";
+      }
+    })();
 
     const existing = await prisma.documentTemplate.findUnique({
       where: { key },
@@ -90,6 +101,8 @@ export async function POST(req: NextRequest) {
       signerTokenRule: "signer.* tokens resolve from selected signer",
       lastMetadataEditAt: new Date().toISOString(),
       lastMetadataEditSource: "template-detail-ui",
+      lastEditedBy: editorDisplayName,
+      lastEditedAt: new Date().toISOString(),
     };
 
     const updated = await prisma.documentTemplate.update({

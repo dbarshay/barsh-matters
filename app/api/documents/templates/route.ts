@@ -64,6 +64,16 @@ function readOnlyDbTemplateToRepositoryRecord(row: any) {
     enabled: row.enabled !== false,
     editableInRepository: row.editableInRepository !== false,
     versioningPlanned: true,
+    updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+    createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+    lastEditedAt:
+      (row?.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as any).lastEditedAt
+        : null) || (row.updatedAt ? new Date(row.updatedAt).toISOString() : null),
+    lastEditedBy:
+      (row?.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as any).lastEditedBy
+        : null) || "System",
     currentVersionId: row.currentVersionId || currentVersion?.id || null,
     currentVersion: currentVersion
       ? {

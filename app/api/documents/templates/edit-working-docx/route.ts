@@ -4,6 +4,7 @@ import {
   downloadWorkingDocxFromGraph,
   uploadWorkingDocxToGraph,
 } from "@/lib/documents/graphWorkingDocuments";
+import { readSignedAdminIdentityCookie, ADMIN_IDENTITY_COOKIE_NAME } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,6 +77,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const key = clean(body?.key);
     const mode = clean(body?.mode || body?.action || "launch").toLowerCase();
+
+    const editorDisplayName = (() => {
+      try {
+        const identity = readSignedAdminIdentityCookie(req.cookies.get(ADMIN_IDENTITY_COOKIE_NAME)?.value);
+        if (!identity) return "System";
+        return clean(identity.username) || clean(identity.email) || "System";
+      } catch {
+        return "System";
+      }
+    })();
 
     if (!key) {
       return NextResponse.json({ ok: false, action: "document-template-edit-working-docx", error: "Missing template key.", safety: editSafety(false, false, false) }, { status: 400 });
@@ -161,6 +172,8 @@ export async function POST(req: NextRequest) {
             currentVersionId: version.id,
             metadata: {
               ...safeObject(loaded.template.metadata),
+              lastEditedBy: editorDisplayName,
+              lastEditedAt: new Date().toISOString(),
               lastEditTemplateSave: {
                 versionId: version.id,
                 versionNumber: version.versionNumber,

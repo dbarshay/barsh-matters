@@ -30,6 +30,8 @@ type TemplateRow = {
   mergeFields?: Array<{ key?: string }>;
   updatedAt?: string;
   createdAt?: string;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
 };
 
 const filters = ["All", "Production Ready", "Inactive", "Draft", "Archived", "Deleted"];
@@ -61,7 +63,7 @@ function defaultSignature(template: TemplateRow) {
 }
 
 function lastEdited(template: TemplateRow) {
-  const value = template.updatedAt || template.createdAt;
+  const value = template.lastEditedAt || template.updatedAt || template.createdAt;
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -243,7 +245,7 @@ export default function ViewTemplatesPage() {
                   <td style={{ padding: "12px" }}>{template.category || "—"}</td>
                   <td style={{ padding: "12px" }}>{template.currentVersion?.versionNumber || "—"}</td>
                   <td style={{ padding: "12px" }}>{lastEdited(template)}</td>
-                  <td style={{ padding: "12px" }}>System</td>
+                  <td style={{ padding: "12px" }}>{template.lastEditedBy || "System"}</td>
                   <td style={{ padding: "12px" }}>{defaultSignature(template)}</td>
                   <td style={{ padding: "12px" }}>
                     {template.currentVersion?.hasStoredDocx ? "Yes" : "No"}
