@@ -55,7 +55,6 @@ export const MATTER_FIELDS: ReportField[] = [
   { key: "old_matter_number", label: "Legacy File Number", group: "Identifiers", type: "text", column: "old_matter_number" },
   // Parties
   { key: "patient_name", label: "Patient", group: "Parties", type: "text", column: "patient_name" },
-  { key: "client_name", label: "Provider-Client", group: "Parties", type: "text", column: "client_name" },
   { key: "provider_name", label: "Provider", group: "Parties", type: "text", column: "provider_name" },
   { key: "treating_provider", label: "Treating Provider", group: "Parties", type: "text", column: "treating_provider" },
   { key: "insurer_name", label: "Insurer", group: "Parties", type: "category", column: "insurer_name" },
