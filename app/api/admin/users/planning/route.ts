@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing planning-read mapping helpers use broad Prisma row shapes; this change only adds owner gating and preserves those shapes. */
+import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_IDENTITY_COOKIE_NAME, adminUnauthorizedJson, isAdminRequestAuthorized, readSignedAdminIdentityCookie } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { configuredAdminPermissionsEnforcementEnabled } from "@/lib/adminPermissions";
 import { ADMIN_ROLE_PLANNING_DEFINITIONS, ADMIN_USER_PLANNING_ROWS, adminRolePlanningSummary, effectiveAdminUserPlanningRows } from "@/lib/adminUsersPlanning";
@@ -9,8 +11,21 @@ const ADMIN_USERS_PHASE_V4B_ADMIN_CARD_GRANT_KEY_SET = new Set(ADMIN_USERS_PHASE
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+// This route feeds the owner-only Admin Users page, so it must itself be owner-gated;
+// it previously had no auth check at all.
+const OWNER_ADMIN_EMAIL = (process.env.BARSH_OWNER_ADMIN_EMAIL || "dbarshay@brlfirm.com").trim().toLowerCase();
+
+export async function GET(req: NextRequest) {
   try {
+    if (!isAdminRequestAuthorized(req)) return adminUnauthorizedJson(401);
+    const identity = readSignedAdminIdentityCookie(req.cookies.get(ADMIN_IDENTITY_COOKIE_NAME)?.value);
+    const roleKeys = Array.isArray(identity?.roleKeys) ? identity.roleKeys : [];
+    const isOwner =
+      Boolean(identity) &&
+      (identity!.email === OWNER_ADMIN_EMAIL || roleKeys.includes("owner_admin") || roleKeys.includes("owner"));
+    if (!isOwner) {
+      return NextResponse.json({ ok: false, action: "admin-users-roles-planning-read-only", error: "Owner access required." }, { status: 403 });
+    }
   const [dbUsers, dbRoles, dbRolePermissions, dbUserRoles, dbUserPermissionOverrides] = await Promise.all([
     prisma.adminUser.findMany({ orderBy: [{ email: "asc" }], take: 200, include: { roles: { include: { role: { include: { permissions: true } } } }, permissionOverrides: true } }),
     prisma.adminRole.findMany({ orderBy: [{ key: "asc" }], take: 200, include: { permissions: true } }),

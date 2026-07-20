@@ -1275,9 +1275,6 @@ export default function AdminUsersPlanningPage() {
       <div style={{ width: "100%", maxWidth: "none", margin: 0, display: "grid", gap: 18 }}>
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 24, padding: 22 }}>
           <h1 style={{ margin: 0, fontSize: 30 }}>Users & Roles</h1>
-          <p data-barsh-admin-users-signer-profile-location-note="true" style={{ margin: "8px 0 0", color: "#385a83", lineHeight: 1.5 }}>
-            Signer profiles are managed on each Admin User. Use <strong>Signer Profile</strong> to manage signer eligibility, signature name, email, phone extension, and fax. Use <strong>Edit</strong> for roles, security, and general user settings. These fields drive signer.* document-generation tokens.
-          </p>
         </section>
 
         {error ? <section data-barsh-admin-users-planning-error="true" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 18, padding: 16 }}>{error}</section> : null}
@@ -1287,9 +1284,6 @@ export default function AdminUsersPlanningPage() {
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <a href="/admin/audit-history" data-barsh-admin-users-audit-history-top-link="true" onClick={markAdminUsersAuditHistoryNavigation} style={{ ...primaryButtonStyle, display: "inline-flex", textDecoration: "none", color: "#ffffff" }}>Open Audit History</a>
             <button data-barsh-admin-users-create-top-button="true" type="button" onClick={openCreateUserAction} style={primaryButtonStyle}>Create User</button>
-          </div>
-          <div data-barsh-admin-users-phase-v2-final-role-model-note="true" style={{ width: "100%", border: "1px solid #dbeafe", background: "#eff6ff", color: "#00346e", borderRadius: 12, padding: 10, fontWeight: 850 }}>
-            Administrator Admin-card access can be previewed and saved. Permission enforcement is not active yet.
           </div>
           {adminUsersRowMessage ? <div data-barsh-admin-users-row-action-message="true" style={{ width: "100%", color: adminUsersRowMessage.toLowerCase().includes("failed") ? "#991b1b" : "#166534", fontWeight: 900 }}>{adminUsersRowMessage}</div> : null}
         </section>
@@ -1381,10 +1375,6 @@ export default function AdminUsersPlanningPage() {
             <label style={{ fontSize: 12, fontWeight: 900, color: "#385a83", display: "flex", alignItems: "center", gap: 8 }}>
               <input data-barsh-admin-users-create-two-factor-pending-setup="true" type="checkbox" checked={createTwoFactorPendingSetup} onChange={(event) => { setCreateTwoFactorPendingSetup(event.target.checked); setCreateResult(null); }} />
               2FA Pending Setup
-            </label>
-            <label style={{ display: "grid", gap: 6, fontWeight: 850 }}>
-              Owner Admin Actor Email
-              <input data-barsh-admin-users-create-actor-email="true" value={createActorEmail} onChange={(event) => setCreateActorEmail(event.target.value)} style={inputStyle} placeholder="owner_admin email" />
             </label>
             <label style={{ display: "grid", gap: 6, fontWeight: 850, gridColumn: "1 / -1" }}>
               Notes
