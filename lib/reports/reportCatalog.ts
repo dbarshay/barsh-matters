@@ -50,10 +50,8 @@ export const MATTER_FIELDS: ReportField[] = [
   // Identifiers
   { key: "display_number", label: "Matter Number", group: "Identifiers", type: "text", column: "display_number" },
   { key: "claim_number", label: "Claim Number", group: "Identifiers", type: "text", column: "claim_number_normalized" },
-  { key: "bill_number", label: "Bill Number", group: "Identifiers", type: "text", column: "bill_number" },
   { key: "index_aaa_number", label: "Index / AAA Number", group: "Identifiers", type: "text", column: "index_aaa_number" },
   { key: "policy_number", label: "Policy Number", group: "Identifiers", type: "text", column: "policy_number" },
-  { key: "description", label: "Description", group: "Identifiers", type: "text", column: "description" },
   { key: "old_matter_number", label: "Legacy File Number", group: "Identifiers", type: "text", column: "old_matter_number" },
   // Parties
   { key: "patient_name", label: "Patient", group: "Parties", type: "text", column: "patient_name" },
