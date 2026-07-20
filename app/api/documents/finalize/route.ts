@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Pre-existing loosely-typed finalize/preview/Clio payloads; this change only adds a Production-Ready bypass to the packet-validation gate. */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -542,7 +543,17 @@ export async function POST(req: NextRequest) {
       uploadRewiredToSingleMasterFolder = true;
     }
 
-    if (!validation.canGenerate && !isBlankLetterheadWorkingDocumentFinalize) {
+    // A Production Ready stored template has wouldGenerate=true even when packet/matter validation says
+    // canGenerate=false (mirrors buildStoredDbDocxTemplateDocuments and the preview routes). Do not block
+    // the whole finalize on packet validation when at least one requested document is generatable/uploadable.
+    const plannedDocumentsForGate: any[] = Array.isArray(preview?.plannedDocuments) ? preview.plannedDocuments : [];
+    const hasGeneratableProductionReadyDocument = plannedDocumentsForGate.some((document: any) => {
+      if (!document?.wouldGenerate || !document?.wouldUploadToClio) return false;
+      if (!requestedKeys.length) return true;
+      return requestedKeys.includes(document.key);
+    });
+
+    if (!validation.canGenerate && !isBlankLetterheadWorkingDocumentFinalize && !hasGeneratableProductionReadyDocument) {
       return NextResponse.json(
         {
           ok: false,
@@ -816,7 +827,7 @@ export async function POST(req: NextRequest) {
         Boolean(workingDocumentDriveItemId) &&
         (!workingDocumentKey || clean(workingDocumentKey) === clean(document.key));
 
-      let sourceDocxByteLength: number | null = null;
+      const sourceDocxByteLength: number | null = null;
       let pdfBuffer: Buffer;
       let pdfConversion: any;
 
