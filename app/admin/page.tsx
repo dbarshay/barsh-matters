@@ -17,6 +17,13 @@ import React, { useEffect, useState } from "react";
 
 const adminCards = [
   {
+    label: "Reports",
+    href: "/admin/reports",
+    description:
+      "Custom report builder over matters and lawsuits: field picker, filters, grouping/totals, sorting, and XLSX/PDF export. Saveable and shareable.",
+    icon: "📈",
+  },
+  {
     label: "Readiness Dashboard",
     href: "/admin/readiness-dashboard",
     description:

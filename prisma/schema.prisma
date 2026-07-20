@@ -1432,3 +1432,20 @@ model OcrEntityDefault {
 // SEPARATE dedicated database (LEGACY_DOCS_DATABASE_URL), NOT here — the app DB's backup/restore tooling
 // kept wiping raw tables it doesn't manage. The viewer reads it via a dedicated pool (lib/legacyDocs.ts).
 
+
+model SavedReport {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  baseEntity    String   @default("matter") // "matter" | "lawsuit"
+  config        Json // { columns, filters, filterLogic, groupBy, aggregations, sort, mode }
+  ownerId       String? // admin identity id of creator
+  ownerEmail    String?
+  ownerUsername String?
+  isShared      Boolean  @default(false) // owner-gated visibility to other Reports-card holders
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([isShared])
+}

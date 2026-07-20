@@ -42,6 +42,16 @@ export const ADMIN_PERMISSION_CATALOG: AdminPermissionCatalogItem[] = [
     enforcementStatus: "enforced-currently",
   },
   {
+    key: "reports.access",
+    group: "Reports",
+    label: "Reports",
+    description: "Build, save, run, and export custom reports over matters and lawsuits. Grantable per-user.",
+    routeScopes: ["/admin/reports", "/admin/reports/*", "/api/admin/reports", "/api/admin/reports/*"],
+    functionScopes: ["reports-builder"],
+    tier: "admin",
+    enforcementStatus: "enforced-currently",
+  },
+  {
     key: "admin.users.manage",
     group: "Security",
     label: "Manage Admin Users",
