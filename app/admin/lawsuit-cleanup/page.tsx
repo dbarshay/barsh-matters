@@ -558,10 +558,10 @@ const inputStyle: React.CSSProperties = {
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background: "#0f172a",
+  background: "#00346e",
   color: "white",
   border: 0,
-  borderRadius: 12,
+  borderRadius: 999,
   padding: "11px 16px",
   fontWeight: 900,
   cursor: "pointer",
@@ -726,10 +726,10 @@ const dangerActionStyle: React.CSSProperties = {
 };
 
 const dangerButtonStyle: React.CSSProperties = {
-  background: "#991b1b",
+  background: "#dc2626",
   color: "white",
   border: 0,
-  borderRadius: 12,
+  borderRadius: 999,
   padding: "11px 16px",
   fontWeight: 950,
 };

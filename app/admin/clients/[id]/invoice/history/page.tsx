@@ -41,7 +41,7 @@ const tdStyle: React.CSSProperties = {
 
 const primaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: 10,
+  borderRadius: 999,
   border: "1px solid #00346e",
   background: "#00346e",
   color: "#ffffff",
@@ -52,7 +52,7 @@ const primaryButtonStyle: React.CSSProperties = {
 
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: 10,
+  borderRadius: 999,
   border: "1px solid #cbd5e1",
   background: "#ffffff",
   color: "#00346e",
@@ -368,7 +368,7 @@ export default function ClientInvoiceHistoryPage() {
                           type="button"
                           onClick={() => voidInvoice(invoice)}
                           disabled={actionBusyInvoiceId === clean(invoice.id)}
-                          style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}
+                          style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", fontWeight: 900, cursor: "pointer" }}
                         >
                           Void
                         </button>

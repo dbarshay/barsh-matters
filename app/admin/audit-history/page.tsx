@@ -113,8 +113,8 @@ export default function AdminAuditHistoryPage() {
               disabled={loading}
               style={{
                 alignSelf: "flex-start",
-                border: "1px solid #0f172a",
-                background: loading ? "#e5e7eb" : "#0f172a",
+                border: "1px solid #00346e",
+                background: loading ? "#e5e7eb" : "#00346e",
                 color: loading ? "#385a83" : "#ffffff",
                 borderRadius: 12,
                 padding: "9px 13px",

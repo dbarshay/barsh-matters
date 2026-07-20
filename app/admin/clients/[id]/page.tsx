@@ -82,7 +82,7 @@ const providerHubButtonBaseStyle: React.CSSProperties = {
   width: "100%",
   textAlign: "center",
   padding: "13px 16px",
-  borderRadius: 12,
+  borderRadius: 999,
   fontWeight: 950,
   fontSize: 15,
   boxSizing: "border-box",
@@ -1156,7 +1156,7 @@ export default function AdminClientDetailPage({ params }: { params: Promise<{ id
                     <button
                       type="button"
                       onClick={() => deleteEditableNote(noteIndex)}
-                      style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900 }}
+                      style={{ padding: "7px 11px", borderRadius: 8, border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", fontWeight: 900 }}
                     >
                       Delete
                     </button>

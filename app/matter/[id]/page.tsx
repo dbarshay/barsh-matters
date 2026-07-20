@@ -431,7 +431,7 @@ const bmPrimaryButtonStyle: React.CSSProperties = {
   padding: "12px 14px",
   color: "#ffffff",
   border: "none",
-  borderRadius: 10,
+  borderRadius: 999,
   cursor: "pointer",
   fontWeight: 850,
   fontSize: 14,
@@ -7456,14 +7456,14 @@ function openClaimAmountEditDialog() {
 
             <details style={{ marginTop: 12 }}>
               <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Template Fields</summary>
-              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#00346e", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(templateFields, null, 2)}
               </pre>
             </details>
 
             <details style={{ marginTop: 10 }}>
               <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Reference Data</summary>
-              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#00346e", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(referenceData, null, 2)}
               </pre>
             </details>
@@ -10600,9 +10600,9 @@ function openClaimAmountEditDialog() {
                         justifyContent: "center",
                         minWidth: 92,
                         height: 30,
-                        border: "1px solid #991b1b",
+                        border: "1px solid #dc2626",
                         borderRadius: 8,
-                        background: "#991b1b",
+                        background: "#dc2626",
                         color: "#ffffff",
                         fontSize: 12,
                         fontWeight: 900,
@@ -11237,7 +11237,7 @@ function openClaimAmountEditDialog() {
                         style={{
                           fontSize: 12,
                           padding: "4px 9px",
-                          border: `1px solid ${active ? "#0f172a" : "#94a3b8"}`,
+                          border: `1px solid ${active ? "#00346e" : "#94a3b8"}`,
                           borderRadius: 999,
                           background: active ? "#e2e8f0" : "#fff",
                           cursor: printQueueListLoading ? "not-allowed" : "pointer",

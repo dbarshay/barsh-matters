@@ -38,7 +38,7 @@ const tdStyle: React.CSSProperties = {
 };
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "5px 8px",
-  borderRadius: 8,
+  borderRadius: 999,
   border: "1px solid #d1d5db",
   background: "#ffffff",
   fontWeight: 800,
@@ -719,9 +719,9 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
   <style>
     @page { margin: 0.35in; size: landscape; }
     body { font-family: Arial, sans-serif; color: #00346e; font-size: 13px; line-height: 1.35; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    button { margin: 0 0 14px; padding: 8px 12px; border: 1px solid #0f172a; border-radius: 8px; background: #0f172a; color: #ffffff; font-weight: 800; }
+    button { margin: 0 0 14px; padding: 8px 12px; border: 1px solid #00346e; border-radius: 8px; background: #00346e; color: #ffffff; font-weight: 800; }
     h1 { margin: 0; font-size: 28px; letter-spacing: -0.025em; }
-    h2 { margin: 20px 0 6px; font-size: 16px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; }
+    h2 { margin: 20px 0 6px; font-size: 16px; border-bottom: 2px solid #00346e; padding-bottom: 4px; }
     .topline { display: grid; grid-template-columns: 390px minmax(720px, 1fr) 340px; gap: 34px; align-items: stretch; border-bottom: 2px solid #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
     .header-left { display: flex; align-items: flex-start; justify-content: flex-start; }
     .header-center { display: flex; flex-direction: column; justify-content: space-between; align-items: center; min-height: 170px; }
@@ -757,7 +757,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
     .summary-emphasis { padding-left: 28px !important; font-weight: 900; }
     .summary-emphasis span { font-weight: 900; }
     .negative-remit-adjustment { color: #b91c1c; font-weight: 900; }
-    .total { font-weight: 900; border-top: 4px solid #0f172a; margin-top: 12px; padding-top: 16px !important; font-size: 28px; }
+    .total { font-weight: 900; border-top: 4px solid #00346e; margin-top: 12px; padding-top: 16px !important; font-size: 28px; }
     .footer { margin-top: 18px; color: #385a83; font-size: 10px; }
     @media print { button { display: none; } body { padding: 0; } thead { display: table-header-group; } tfoot { display: table-footer-group; } .totals { break-inside: avoid; page-break-inside: avoid; } }
   </style>
@@ -1192,7 +1192,7 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
           {hasCostExcessAdded && <Row label="Cost Excess Added to Net Remit" value={summary.costBalanceReimbursementToProvider} variant="blue" />}
           {hasDeduction && <Row label="Cost Deduction Applied" value={summary.costBalanceDeductionApplied} variant="red" />}
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 18, alignItems: "center", marginTop: 14, padding: "16px 14px", borderRadius: 14, background: "#0f172a", color: "#ffffff", fontSize: 18, fontWeight: 950, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 18, alignItems: "center", marginTop: 14, padding: "16px 14px", borderRadius: 14, background: "#00346e", color: "#ffffff", fontSize: 18, fontWeight: 950, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16)" }}>
             <div>Final Net Remit to Provider</div>
             <div>{money(summary.netRemitToProviderTotal)}</div>
           </div>
@@ -1922,12 +1922,12 @@ export default function ProviderClientInvoiceWorkflowPage({ params }: { params: 
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "start", flexWrap: "wrap" }}>
-              <button type="button" onClick={printableInvoice} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #0f172a", background: "#0f172a", color: "#ffffff", fontWeight: 900 }}>Print / Save PDF</button>
+              <button type="button" onClick={printableInvoice} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #00346e", background: "#00346e", color: "#ffffff", fontWeight: 900 }}>Print / Save PDF</button>
               {detailInvoice?.status === "draft" && (
                 <button type="button" onClick={() => finalizeInvoice(detailInvoice)} disabled={finalizing} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #166534", background: "#166534", color: "#ffffff", fontWeight: 900 }}>Finalize</button>
               )}
               {detailInvoice?.status === "finalized" && (
-                <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #991b1b", background: "#991b1b", color: "#ffffff", fontWeight: 900 }}>Void</button>
+                <button type="button" onClick={() => voidInvoice(detailInvoice)} disabled={voiding} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #dc2626", background: "#dc2626", color: "#ffffff", fontWeight: 900 }}>Void</button>
               )}
             </div>
           </div>

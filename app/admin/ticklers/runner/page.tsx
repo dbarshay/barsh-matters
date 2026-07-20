@@ -309,8 +309,8 @@ export default function AdminTicklerRunnerPage() {
             title={completeDisabled ? "Run Preview first. Completion is locked to the exact current filter set." : "Complete the exact previewed filter set."}
             onClick={() => run("complete")}
             style={{
-              border: "1px solid #7f1d1d",
-              background: "#7f1d1d",
+              border: "1px solid #dc2626",
+              background: "#dc2626",
               color: "#ffffff",
               borderRadius: 10,
               padding: "9px 16px",

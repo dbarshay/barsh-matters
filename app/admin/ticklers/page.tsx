@@ -780,7 +780,7 @@ export default function AdminTicklersPage() {
             onClick={previewDuplicateSettlementTicklers}
             disabled={duplicateDiagnosticLoading}
             style={{
-              border: "1px solid #7f1d1d",
+              border: "1px solid #dc2626",
               background: "#ffffff",
               color: "#7f1d1d",
               borderRadius: 10,
@@ -1005,8 +1005,8 @@ export default function AdminTicklersPage() {
           href="/admin/ticklers/runner"
           data-barsh-admin-tickler-bulk-runner-link="true"
           style={{
-            border: "1px solid #7f1d1d",
-            background: "#7f1d1d",
+            border: "1px solid #dc2626",
+            background: "#dc2626",
             color: "#ffffff",
             borderRadius: 10,
             padding: "9px 14px",

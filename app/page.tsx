@@ -3233,7 +3233,7 @@ function primaryButtonStyle(disabled: boolean): React.CSSProperties {
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "15px 26px",
   border: "1px solid #cbd5e1",
-  borderRadius: 16,
+  borderRadius: 999,
   background: "#ffffff",
   color: colors.ink,
   cursor: "pointer",
@@ -3555,7 +3555,7 @@ const structuredSearchTitleStyle: React.CSSProperties = {
 const advancedSearchButtonStyle: React.CSSProperties = {
   appearance: "none",
   border: "1px solid #bfdbfe",
-  borderRadius: 16,
+  borderRadius: 999,
   background: "#eff6ff",
   color: "#00346e",
   padding: "12px 16px",
@@ -3676,7 +3676,7 @@ const advancedCloseButtonStyle: React.CSSProperties = {
   width: 40,
   height: 40,
   border: "1px solid " + colors.line,
-  borderRadius: 14,
+  borderRadius: 999,
   background: "#ffffff",
   color: colors.ink,
   fontSize: 26,

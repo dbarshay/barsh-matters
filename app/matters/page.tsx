@@ -7541,7 +7541,7 @@ function masterDocumentPreviewText(value: unknown): string {
         {masterEmailThreadPreviewResult && (
           <details style={{ marginTop: 14 }}>
             <summary style={{ cursor: "pointer", fontWeight: 850 }}>Raw local master thread preview JSON</summary>
-            <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto", margin: "8px 0 0 0", padding: 10, background: "#0f172a", color: "#e5e7eb", borderRadius: 8, fontSize: 12 }}>
+            <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto", margin: "8px 0 0 0", padding: 10, background: "#00346e", color: "#e5e7eb", borderRadius: 8, fontSize: 12 }}>
               {JSON.stringify(masterEmailThreadPreviewResult, null, 2)}
             </pre>
           </details>
@@ -8558,7 +8558,7 @@ function masterDocumentPreviewText(value: unknown): string {
                     margin: 0,
                     whiteSpace: "pre-wrap",
                     overflowX: "auto",
-                    background: "#0f172a",
+                    background: "#00346e",
                     color: "#e5e7eb",
                     borderRadius: 12,
                     padding: 14,
@@ -8903,7 +8903,7 @@ function masterDocumentPreviewText(value: unknown): string {
       border: "1px solid #00346e",
       background: "#00346e",
       color: "#ffffff",
-      borderRadius: 12,
+      borderRadius: 999,
       padding: "10px 14px",
       fontWeight: 900,
       cursor: "pointer",
@@ -8914,7 +8914,7 @@ function masterDocumentPreviewText(value: unknown): string {
       border: "1px solid #d1d5db",
       background: "#f3f4f6",
       color: "#385a83",
-      borderRadius: 12,
+      borderRadius: 999,
       padding: "10px 14px",
       fontWeight: 900,
       cursor: "not-allowed",
@@ -8924,7 +8924,7 @@ function masterDocumentPreviewText(value: unknown): string {
       border: "1px solid #cbd5e1",
       background: "#ffffff",
       color: "#00346e",
-      borderRadius: 12,
+      borderRadius: 999,
       padding: "10px 14px",
       fontWeight: 900,
       cursor: "pointer",
@@ -9376,21 +9376,21 @@ function masterDocumentPreviewText(value: unknown): string {
 
             <details style={{ marginTop: 12 }}>
               <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Template Fields</summary>
-              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#00346e", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(templateFields, null, 2)}
               </pre>
             </details>
 
             <details style={{ marginTop: 10 }}>
               <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Reference Data</summary>
-              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#00346e", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(referenceData, null, 2)}
               </pre>
             </details>
 
             <details style={{ marginTop: 10 }}>
               <summary style={{ cursor: "pointer", fontWeight: 900 }}>Raw Court Details</summary>
-              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#0f172a", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
+              <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", overflowX: "auto", background: "#00346e", color: "#e2e8f0", padding: 12, borderRadius: 12 }}>
                 {JSON.stringify(uiFields.selectedCourtDetails || templateFields.courtDetails || null, null, 2)}
               </pre>
             </details>
@@ -11210,7 +11210,7 @@ function masterDocumentPreviewText(value: unknown): string {
                                 style={{
                                   minWidth: 132,
                                   height: 40,
-                                  border: "1px solid #b91c1c",
+                                  border: "1px solid #dc2626",
                                   borderRadius: 10,
                                   background: masterClosing || !masterCloseReason ? "#fecaca" : "#b91c1c",
                                   color: "#ffffff",
@@ -11583,9 +11583,9 @@ function masterDocumentPreviewText(value: unknown): string {
                       style={{
                         minWidth: 110,
                         height: 40,
-                        border: "1px solid #b91c1c",
+                        border: "1px solid #dc2626",
                         borderRadius: 10,
-                        background: "#b91c1c",
+                        background: "#dc2626",
                         color: "#ffffff",
                         fontWeight: 950,
                         cursor: "pointer",
@@ -14392,7 +14392,7 @@ const backButtonStyle: React.CSSProperties = {
   justifyContent: "center",
   padding: "12px 18px",
   border: "1px solid #b6c7e3",
-  borderRadius: 16,
+  borderRadius: 999,
   background: "#f8fbff",
   color: colors.blueDark,
   textDecoration: "none",
@@ -15048,7 +15048,7 @@ const masterSettlementGhostButtonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
   background: "#00346e",
   color: "#ffffff",
-  borderRadius: 4,
+  borderRadius: 999,
   padding: "8px 12px",
   fontSize: 13,
   fontWeight: 800,

@@ -483,7 +483,7 @@ export default function PrintQueuePage() {
                 style={{
                   fontSize: 12,
                   padding: "4px 10px",
-                  border: `1px solid ${active ? "#0f172a" : "#94a3b8"}`,
+                  border: `1px solid ${active ? "#00346e" : "#94a3b8"}`,
                   borderRadius: 999,
                   background: active ? "#e2e8f0" : "#fff",
                   cursor: loading ? "not-allowed" : "pointer",
@@ -684,7 +684,7 @@ export default function PrintQueuePage() {
                                 fontSize: 11,
                                 padding: "2px 6px",
                                 border: "1px solid #94a3b8",
-                                borderRadius: 4,
+                                borderRadius: 999,
                                 background:
                                   textValue(row.status).toLowerCase() === statusOption
                                     ? "#e2e8f0"
@@ -716,7 +716,7 @@ export default function PrintQueuePage() {
                               fontSize: 11,
                               padding: "2px 6px",
                               border: "1px solid #dc2626",
-                              borderRadius: 4,
+                              borderRadius: 999,
                               background: "#fff",
                               color: "#dc2626",
                               fontWeight: 800,
@@ -751,7 +751,7 @@ const smallActionButtonStyle: React.CSSProperties = {
   fontSize: 11,
   padding: "3px 7px",
   border: "1px solid #00346e",
-  borderRadius: 5,
+  borderRadius: 999,
   background: "#eff6ff",
   color: "#00346e",
   fontWeight: 800,
@@ -759,13 +759,13 @@ const smallActionButtonStyle: React.CSSProperties = {
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid #0f172a",
-  borderRadius: 6,
-  background: "#0f172a",
+  padding: "10px 14px",
+  border: "1px solid #00346e",
+  borderRadius: 999,
+  background: "#00346e",
   color: "#ffffff",
   cursor: "pointer",
-  fontWeight: 700,
+  fontWeight: 950,
 };
 
 const errorBoxStyle: React.CSSProperties = {

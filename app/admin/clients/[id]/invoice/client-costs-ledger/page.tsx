@@ -40,7 +40,7 @@ const tdStyle: React.CSSProperties = {
 
 const primaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: 10,
+  borderRadius: 999,
   border: "1px solid #00346e",
   background: "#00346e",
   color: "#ffffff",
@@ -51,7 +51,7 @@ const primaryButtonStyle: React.CSSProperties = {
 
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: 10,
+  borderRadius: 999,
   border: "1px solid #cbd5e1",
   background: "#ffffff",
   color: "#00346e",

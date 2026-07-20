@@ -84,7 +84,7 @@ const footerStyle: React.CSSProperties = {
 // Close / Cancel = red (uniform across all standard modals).
 const closeButtonStyle: React.CSSProperties = {
   padding: "8px 16px",
-  borderRadius: 8,
+  borderRadius: 999,
   border: "1px solid #dc2626",
   background: "#dc2626",
   color: "#ffffff",
@@ -96,7 +96,7 @@ const closeButtonStyle: React.CSSProperties = {
 // Standard Barsh Matters blue primary button (white lettering).
 const submitButtonStyle: React.CSSProperties = {
   padding: "8px 16px",
-  borderRadius: 8,
+  borderRadius: 999,
   border: "1px solid #00346e",
   background: "#00346e",
   color: "#ffffff",

@@ -100,7 +100,7 @@ const inputStyle: React.CSSProperties = {
 
 const primaryButtonStyle: React.CSSProperties = {
   border: "1px solid #00346e",
-  borderRadius: 12,
+  borderRadius: 999,
   background: "#00346e",
   color: "#ffffff",
   fontWeight: 900,
@@ -111,7 +111,7 @@ const primaryButtonStyle: React.CSSProperties = {
 
 const secondaryButtonStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
-  borderRadius: 12,
+  borderRadius: 999,
   background: "#ffffff",
   color: "#385a83",
   fontWeight: 900,
