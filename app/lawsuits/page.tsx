@@ -69,6 +69,14 @@ function insurerName(m: Matter) {
   );
 }
 
+function lawsuitTemplateLabelForVenue(venue: string): string | null {
+  const value = venue.toLowerCase();
+  if (/arbitration|american arbitration|\baaa\b/.test(value)) return "Arbitration Submission";
+  if (/district/.test(value)) return "District Summons and Complaint";
+  if (/city civil|\bnyc\b|new york city|city of new york/.test(value)) return "NYC Summons and Complaint";
+  return null;
+}
+
 function adversaryAttorneyName(m: Matter) {
   return (
     val(m, "adversaryAttorney", "adversary_attorney") ||
@@ -319,9 +327,6 @@ export default function LawsuitsPage() {
   const [createPopupOpen, setCreatePopupOpen] = useState(false);
   const [createModalPosition, setCreateModalPosition] = useState({ x: 80, y: 70 });
   const [generateForLawsuitId, setGenerateForLawsuitId] = useState<string>("");
-  const [lawsuitDocTemplates, setLawsuitDocTemplates] = useState<Array<{ key: string; label: string }>>([]);
-  const [lawsuitDocTemplatesLoading, setLawsuitDocTemplatesLoading] = useState(false);
-  const [selectedDocTemplateKey, setSelectedDocTemplateKey] = useState<string>("");
   const [generateDocBusy, setGenerateDocBusy] = useState(false);
   const [generateDocMessage, setGenerateDocMessage] = useState<string>("");
   const [createModalDrag, setCreateModalDrag] = useState<null | {
@@ -702,6 +707,7 @@ export default function LawsuitsPage() {
 
   function validateCreateLawsuitInputs() {
     if (!lawsuitCourt.trim()) return "Court / Venue is required before creating a lawsuit.";
+    if (!lawsuitTemplateLabelForVenue(lawsuitCourt.trim())) return "The selected Court/Venue does not map to a lawsuit document template (District, NYC, or Arbitration). Adjust the Court/Venue.";
 
     if (lawsuitAmountMode === "custom" && lawsuitAmountForMode() <= 0) {
       return "A valid Lawsuit Amount is required when Other is selected.";
@@ -826,7 +832,7 @@ export default function LawsuitsPage() {
       }
 
       if (createdMasterLawsuitId) {
-        void openLawsuitDocumentPicker(createdMasterLawsuitId);
+        void autoGenerateLawsuitDocument(createdMasterLawsuitId, lawsuitTemplateLabelForVenue(lawsuitCourt.trim()));
       }
 
       setCreatePopupOpen(false);
@@ -846,93 +852,64 @@ export default function LawsuitsPage() {
     }
   }
 
-  const LAWSUIT_DOC_TEMPLATE_LABELS = ["Arbitration Submission", "NYC Summons and Complaint", "District Summons and Complaint"];
-
-  async function openLawsuitDocumentPicker(masterLawsuitId: string) {
+  async function autoGenerateLawsuitDocument(masterLawsuitId: string, templateLabel: string | null) {
     setGenerateForLawsuitId(masterLawsuitId);
-    setSelectedDocTemplateKey("");
     setGenerateDocMessage("");
-    setLawsuitDocTemplates([]);
-    setLawsuitDocTemplatesLoading(true);
+    if (!templateLabel) {
+      setGenerateDocMessage("This lawsuit's venue does not map to a document template (District, NYC, or Arbitration).");
+      return;
+    }
+    setGenerateDocBusy(true);
+    setGenerateDocMessage(`Generating ${templateLabel} and sending it to the Print Queue...`);
     try {
-      const res = await fetch("/api/documents/templates?category=all", { cache: "no-store" });
-      const json = await res.json().catch(() => null);
-      const rows: any[] = Array.isArray(json?.templates) ? json.templates : [];
-      const wanted = LAWSUIT_DOC_TEMPLATE_LABELS.map((label) => label.toLowerCase());
-      const matched = rows
-        .filter((t: any) => wanted.includes(String(t?.label || "").trim().toLowerCase()))
-        .map((t: any) => ({ key: String(t?.key || ""), label: String(t?.label || "") }))
-        .filter((t) => t.key)
-        .sort((a, b) => wanted.indexOf(a.label.toLowerCase()) - wanted.indexOf(b.label.toLowerCase()));
-      setLawsuitDocTemplates(matched);
-      if (!matched.length) {
-        setGenerateDocMessage("No lawsuit document templates were found. Make sure Arbitration Submission, NYC Summons and Complaint, and District Summons and Complaint are uploaded and Production Ready.");
+      const templatesRes = await fetch("/api/documents/templates?category=all", { cache: "no-store" });
+      const templatesJson = await templatesRes.json().catch(() => null);
+      const rows: any[] = Array.isArray(templatesJson?.templates) ? templatesJson.templates : [];
+      const match = rows.find((t: any) => String(t?.label || "").trim().toLowerCase() === templateLabel.toLowerCase());
+      const templateKey = String(match?.key || "");
+      if (!templateKey) {
+        throw new Error(`The "${templateLabel}" template is not available. Upload it and mark it Production Ready.`);
       }
-    } catch {
-      setGenerateDocMessage("Could not load lawsuit templates.");
+
+      const finalizeRes = await fetch("/api/documents/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          masterLawsuitId,
+          uploadTargetMode: "master-lawsuit",
+          confirmUpload: true,
+          documentKeys: [templateKey],
+        }),
+      });
+      const finalizeJson = await finalizeRes.json().catch(() => null);
+      if (!finalizeRes.ok || !finalizeJson?.ok) {
+        throw new Error(finalizeJson?.error || "Could not generate and finalize the document.");
+      }
+
+      const queueRes = await fetch("/api/documents/print-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterLawsuitId, confirmAdd: true }),
+      });
+      const queueJson = await queueRes.json().catch(() => null);
+      if (!queueRes.ok || !queueJson?.ok) {
+        throw new Error(queueJson?.error || "The document was finalized but could not be added to the Print Queue.");
+      }
+
+      const created = Number(queueJson.createdCount || 0);
+      const already = Number(queueJson.existingCount || 0);
+      setGenerateDocMessage(`${templateLabel} generated and ${created > 0 ? "added to" : already > 0 ? "already in" : "sent to"} the Print Queue.`);
+    } catch (err: any) {
+      setGenerateDocMessage(err?.message || "Could not generate the document.");
     } finally {
-      setLawsuitDocTemplatesLoading(false);
+      setGenerateDocBusy(false);
     }
   }
 
   function closeLawsuitDocumentPicker() {
     if (generateDocBusy) return;
     setGenerateForLawsuitId("");
-    setLawsuitDocTemplates([]);
-    setSelectedDocTemplateKey("");
     setGenerateDocMessage("");
-  }
-
-  async function generateLawsuitDocument() {
-    if (!generateForLawsuitId || !selectedDocTemplateKey) return;
-    setGenerateDocBusy(true);
-    setGenerateDocMessage("Generating the document...");
-    const previewWindow = window.open("", "_blank");
-    try {
-      const workingRes = await fetch("/api/documents/working-docx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          masterLawsuitId: generateForLawsuitId,
-          uploadTargetMode: "master-lawsuit",
-          documentLaunchMode: "lawsuit",
-          documentKeys: [selectedDocTemplateKey],
-          confirmCreate: true,
-        }),
-      });
-      const workingJson = await workingRes.json().catch(() => null);
-      if (!workingRes.ok || !workingJson?.ok) {
-        throw new Error(workingJson?.error || "Could not generate the working document.");
-      }
-      const working = workingJson.workingDocument || {};
-      if (!working.driveItemId) {
-        throw new Error("The working document was created but Graph did not return a drive item id.");
-      }
-      const pdfRes = await fetch("/api/documents/preview-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workingDocumentDriveItemId: working.driveItemId,
-          workingDocumentName: working.name || selectedDocTemplateKey,
-          filename: working.originalFilename || working.name || `${generateForLawsuitId}.pdf`,
-        }),
-      });
-      if (!pdfRes.ok) {
-        const errJson = await pdfRes.json().catch(() => null);
-        throw new Error(errJson?.error || "Could not render the PDF.");
-      }
-      const pdfBlob = await pdfRes.blob();
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      if (previewWindow) previewWindow.location.href = pdfUrl;
-      else window.open(pdfUrl, "_blank");
-      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120000);
-      setGenerateDocMessage("Document generated. The PDF opened in a new tab.");
-    } catch (err: any) {
-      if (previewWindow) previewWindow.close();
-      setGenerateDocMessage(err?.message || "Could not generate the document.");
-    } finally {
-      setGenerateDocBusy(false);
-    }
   }
 
   function sortValue(m: Matter, key: SortKey) {
@@ -1344,32 +1321,19 @@ export default function LawsuitsPage() {
       )}
 
       {generateForLawsuitId && (
-        <div style={modalBackdrop} data-barsh-lawsuit-doc-picker="true">
-          <div style={{ ...createModal, position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(560px, calc(100vw - 48px))", height: "auto", maxHeight: "calc(100vh - 96px)", minWidth: 0, minHeight: 0, resize: "none" }}>
+        <div style={modalBackdrop} data-barsh-lawsuit-doc-auto="true">
+          <div style={{ ...createModal, position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(520px, calc(100vw - 48px))", height: "auto", maxHeight: "calc(100vh - 96px)", minWidth: 0, minHeight: 0, resize: "none" }}>
             <div style={modalDragHandle}>
-              <h2 style={modalTitle}>Generate Lawsuit Document</h2>
+              <h2 style={modalTitle}>Lawsuit Document</h2>
             </div>
             <p style={{ margin: "0 0 12px", color: "#385a83", lineHeight: 1.5 }}>
-              Lawsuit <strong>{generateForLawsuitId}</strong> was created. Choose the document to generate.
+              Lawsuit <strong>{generateForLawsuitId}</strong> was created. The venue-matched document is being generated and sent to the Print Queue automatically.
             </p>
-            {lawsuitDocTemplatesLoading ? (
-              <div style={{ color: "#385a83", fontWeight: 800 }}>Loading templates...</div>
-            ) : lawsuitDocTemplates.length > 0 ? (
-              <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
-                {lawsuitDocTemplates.map((t) => (
-                  <label key={t.key} style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #cbd5e1", borderRadius: 10, padding: "10px 12px", background: selectedDocTemplateKey === t.key ? "#eff6ff" : "#ffffff", cursor: "pointer" }}>
-                    <input type="radio" name="lawsuit-doc-template" checked={selectedDocTemplateKey === t.key} onChange={() => setSelectedDocTemplateKey(t.key)} />
-                    <span style={{ fontWeight: 850, color: "#00346e" }}>{t.label}</span>
-                  </label>
-                ))}
-              </div>
-            ) : null}
             {generateDocMessage ? (
-              <div style={{ marginBottom: 10, fontWeight: 800, color: /could not|no lawsuit/i.test(generateDocMessage) ? "#991b1b" : "#166534" }}>{generateDocMessage}</div>
+              <div style={{ marginBottom: 10, fontWeight: 800, color: /could not|does not map|not available|could not add|but could not/i.test(generateDocMessage) ? "#991b1b" : /generated and/i.test(generateDocMessage) ? "#166534" : "#385a83" }}>{generateDocMessage}</div>
             ) : null}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
-              <button type="button" onClick={closeLawsuitDocumentPicker} disabled={generateDocBusy} style={secondaryBtn}>Close</button>
-              <button type="button" onClick={() => void generateLawsuitDocument()} disabled={generateDocBusy || !selectedDocTemplateKey} style={{ ...primaryBtn, opacity: generateDocBusy || !selectedDocTemplateKey ? 0.55 : 1, cursor: generateDocBusy || !selectedDocTemplateKey ? "not-allowed" : "pointer" }}>{generateDocBusy ? "Generating..." : "Generate & Preview"}</button>
+              <button type="button" onClick={closeLawsuitDocumentPicker} disabled={generateDocBusy} style={{ ...primaryBtn, opacity: generateDocBusy ? 0.55 : 1, cursor: generateDocBusy ? "not-allowed" : "pointer" }}>{generateDocBusy ? "Working..." : "Close"}</button>
             </div>
           </div>
         </div>
